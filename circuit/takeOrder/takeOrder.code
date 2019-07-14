@@ -1,4 +1,4 @@
-import "somewhere/sha1024packed"
+import "../sha/1024bitPacked.code" as sha256
 
 /*
 circuit: takeOrder(
