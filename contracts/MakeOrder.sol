@@ -41,14 +41,14 @@ contract MakerOrder is MakerOrderVerifier, ZkDaiBase {
   {
       Submission storage submission = submissions[proofHash];
       bytes32[4] memory _notes = get4Notes(submission.publicInput);
-      // check that the first note (among public params) is committed and 
+      // check that the first note (among public params) is committed and
       // new notes should not be existing at this point
       require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
       require(notes[_notes[1]] == State.Committed, "output note1 is already minted");
-      
+
       notes[_notes[0]] = State.Trading;
       notes[_notes[1]] = State.Trading;
-      
+
       delete submissions[proofHash];
       submission.submitter.transfer(stake);
       emit NoteStateChange(_notes[0], State.Trading);
@@ -60,8 +60,8 @@ contract MakerOrder is MakerOrderVerifier, ZkDaiBase {
     pure
     returns(bytes32[2] notes)
   {
-      notes[0] = calcNoteHash(input[0], input[1]);
-      notes[1] = calcNoteHash(input[2], input[3]);
+      notes[0] = calcHash(input[0], input[1]);
+      notes[1] = calcHash(input[2], input[3]);
   }
 
   /**
