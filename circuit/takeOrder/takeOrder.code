@@ -3,9 +3,7 @@ import "../sha/1024bitPacked.code" as sha256
 
 // Note = (_owner, _value, type, _senderViewingKey, _salt, _isSmart)
 
-def main(field oh0, field oh1, field oType, private field pk0, private field pk1, private field oVal, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, 
-field nh0, field nh1, field nType, field rpk0, field rpk1, private field nVal, private field nvk0, private field nvk1, private field nSalt, private field nIsSmart) -> (field):
-
+def main(field oh0, field oh1, field oType, private field pk0, private field pk1, private field oVal, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field nh0, field nh1, field nType, field rpk0, field rpk1, private field nVal, private field nvk0, private field nvk1, private field nSalt, private field nIsSmart) -> (field):
   oVal == nVal
 
   // get public key corresponding to private key
@@ -17,5 +15,8 @@ field nh0, field nh1, field nType, field rpk0, field rpk1, private field nVal, p
   h = sha256([rpk0, rpk1, nVal, nType, nvk0, nvk1, nSalt, nIsSmart])
   nh0 == h[0]
   nh1 == h[1]
+
+  field bit = if nIsSmart > 0 then 1 else 0 fi
+  bit == 1
 
   return 1
