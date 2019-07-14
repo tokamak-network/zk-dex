@@ -1,0 +1,48 @@
+import "../sha/1024bitPacked.code" as sha256
+
+// Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
+
+// oh0 + oh1 : old note hash
+// pk0 + pk1 : old note's owner
+// oVal : old note value
+// oType : old note type
+// ovk0 + ovk1 : old note viewKey
+// oSalt : old note salt, random value
+// oIsSmart : old note isSmart, 0 if is not smart note
+
+// n0h0 + n0h1 : new note 0 hash
+// rpk0 + rpk1 : reciever(new note 0 owner)
+// n0Val : new note 0 value
+// n0Type : new note 0 type
+// n0vk0 + n0vk1 : new note 0 viewKey
+// n0Salt : new note 0 salt
+// n0IsSmart : new note 0 isSmart, 0 if is not smart note
+
+// n1h0 + n1h1 : new note 1 hash
+// n1rpk0 + n1rpk1 : reciever2(new note 2 owner)
+// n1Val : new note 1 value
+// n1Type : new note 1 type
+// n1vk0+ n1vk1 : new note 1 viewKey
+// 1Salt : new note 1 salt
+// n1IsSmart : new note 1 isSmart, 0 if is not smart note
+
+
+def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oType, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart) -> (field):
+
+  oVal == n0Val + n1Val
+
+  // get public key corresponding to private key
+  // circuit for above hasn't been implemented as yet, so directly using the private key for PoC
+  h = sha256([pk0, pk1, oVal, oType, ovk0, ovk1, oSalt, oIsSmart])
+  oh0 == h[0]
+  oh1 == h[1]
+
+  h = sha256([rpk0, rpk1, n0Val, n0Type, n0vk0, n0vk1, n0Salt, n0IsSmart])
+  n0h0 == h[0]
+  n0h1 == h[1]
+
+  h = sha256([n1rpk0, n1rpk1, n1Val, n1Type, n1vk0, n1vk1, n1Salt, n1IsSmart])
+  n1h0 == h[0]
+  n1h1 == h[1]
+
+  return 1
