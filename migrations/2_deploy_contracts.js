@@ -3,5 +3,5 @@ const MockDai = artifacts.require("MockDai.sol");
 
 module.exports = async function(deployer) {
   await deployer.deploy(MockDai);
-  return  deployer.deploy(ZkDai, 10000, 10**18, MockDai.address);
+  await deployer.deploy(ZkDai, 10000, web3.utils.toBN(1e18.toString(10))  , MockDai.address);
 };
