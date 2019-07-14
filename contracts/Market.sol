@@ -103,7 +103,7 @@ contract Market is ZkDai {
 
     notes[takerNoteToMaker] = State.Spent;
 
-    emit OrderTaken(orderHash, tarketNoteToMaker, parentNote);
+    emit OrderSettled(orderHash, tarketNoteToMaker, parentNote);
   }
 
   function hashOrder(Order storage order) internal view returns (bytes32) {
