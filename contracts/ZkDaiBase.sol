@@ -18,7 +18,10 @@ contract ZkDaiBase {
   // maps proofHash to Submission
   mapping(bytes32 => Submission) public submissions;
 
-  enum State {Invalid, Spent, Committed, Trading}
+  // note hash --> encrypted note data
+  mapping(bytes32 => bytes) public encryptedNotes;
+
+  enum State {Invalid, Committed, Traiding, Spent}
   // maps note to State
   mapping(bytes32 => State) public notes;
 

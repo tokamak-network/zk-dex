@@ -20,7 +20,10 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
       uint256[2] c_p,
       uint256[2] h,
       uint256[2] k,
-      uint256[7] input)
+      uint256[7] input,
+      bytes memory encryptedNote1,
+      bytes memory encryptedNote2
+  )
     internal
   {
       bytes32 proofHash = getProofHash(a, a_p, b, b_p, c, c_p, h, k);
@@ -29,6 +32,10 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
         publicInput[i] = input[i];
       }
       submissions[proofHash] = Submission(msg.sender, SubmissionType.Spend, now, publicInput);
+
+      encryptedNotes[calcHash(input[2], input[3])] = encryptedNotes1;
+      encryptedNotes[calcHash(input[4], input[5])] = encryptedNotes2;
+
       emit Submitted(msg.sender, proofHash);
   }
 
