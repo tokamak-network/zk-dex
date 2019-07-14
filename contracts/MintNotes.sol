@@ -20,7 +20,9 @@ contract MintNotes is MintNoteVerifier, ZkDaiBase {
       uint256[2] c_p,
       uint256[2] h,
       uint256[2] k,
-      uint256[4] input)
+      uint256[4] input,
+      bytes memory encryptedNote
+  )
     internal
   {
       bytes32 proofHash = getProofHash(a, a_p, b, b_p, c, c_p, h, k);
@@ -29,6 +31,9 @@ contract MintNotes is MintNoteVerifier, ZkDaiBase {
         publicInput[i] = input[i];
       }
       submissions[proofHash] = Submission(msg.sender, SubmissionType.Mint, now, publicInput);
+
+      encryptedNotes[calcHash(input[0], input[1])] = encryptedNotes;
+
       emit Submitted(msg.sender, proofHash);
   }
 
