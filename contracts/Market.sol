@@ -22,7 +22,6 @@ contract Market is ZkDai {
   mapping(bytes32 => Order) public orders;
 
   event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed  targetToken, uint price);
-  event OrderTaken(bytes32 orderHash, bytes32 takerNoteToMaker, bytes32 parentNote);
 
   function makeOrder(
     bytes32 makerViewingKey,
@@ -75,11 +74,11 @@ contract Market is ZkDai {
 
     emit OrderTaken(orderHash, tarketNoteToMaker, parentNote);
   }
+
   function settleOrder() external {
 
   }
 
-    // TODO: use zk-SNARK proofs
   function hashOrder(Order storage order) internal view returns (bytes32) {
     return keccak256(abi.encode(
       order.makerViewingKey,

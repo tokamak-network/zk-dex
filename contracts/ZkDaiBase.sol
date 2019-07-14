@@ -52,7 +52,7 @@ contract ZkDaiBase {
   * @param _a Most significant 128 bits of the note hash
   * @param _b Least significant 128 bits of the note hash
   */
-  function calcNoteHash(uint _a, uint _b)
+  function calcHash(uint _a, uint _b)
     internal
     pure
     returns(bytes32 note)

@@ -29,7 +29,7 @@ contract LiquidateNotes is MintNoteVerifier, ZkDaiBase {
       for(uint8 i = 0; i < NUM_PUBLIC_INPUTS; i++) {
         publicInput[i] = input[i];
       }
-      // last element is the beneficiary to whom the liquidated dai will be transferred 
+      // last element is the beneficiary to whom the liquidated dai will be transferred
       publicInput[NUM_PUBLIC_INPUTS] = uint256(to);
       submissions[proofHash] = Submission(msg.sender, SubmissionType.Liquidate, now, publicInput);
       emit Submitted(msg.sender, proofHash);
@@ -43,7 +43,7 @@ contract LiquidateNotes is MintNoteVerifier, ZkDaiBase {
     internal
   {
       Submission storage submission = submissions[proofHash];
-      bytes32 note = calcNoteHash(submission.publicInput[0], submission.publicInput[1]);
+      bytes32 note = calcHash(submission.publicInput[0], submission.publicInput[1]);
       require(notes[note] == State.Committed, "Note is either invalid or already spent");
 
       notes[note] = State.Spent;

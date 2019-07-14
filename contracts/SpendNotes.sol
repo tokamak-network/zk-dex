@@ -41,7 +41,7 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
   {
       Submission storage submission = submissions[proofHash];
       bytes32[3] memory _notes = get3Notes(submission.publicInput);
-      // check that the first note (among public params) is committed and 
+      // check that the first note (among public params) is committed and
       // new notes should not be existing at this point
       require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
       require(notes[_notes[1]] == State.Invalid, "output note1 is already minted");
@@ -63,9 +63,9 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     pure
     returns(bytes32[3] notes)
   {
-      notes[0] = calcNoteHash(input[0], input[1]);
-      notes[1] = calcNoteHash(input[2], input[3]);
-      notes[2] = calcNoteHash(input[4], input[5]);
+      notes[0] = calcHash(input[0], input[1]);
+      notes[1] = calcHash(input[2], input[3]);
+      notes[2] = calcHash(input[4], input[5]);
   }
 
   /**
