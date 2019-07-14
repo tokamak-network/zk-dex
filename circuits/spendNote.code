@@ -1,5 +1,17 @@
 import "LIBSNARK/sha256packed"
 
+// - oh0 + oh1        = hash of old note
+// - pk0 + pk1        = (private) public key of owner of old note
+// - oVal             = (private) value of old note
+// - oNonce           = (private) nonce of old note
+// - n0h0 + n0h1      = hash of new note 1
+// - rpk0 + rpk1      = (private) public key of owner of new note 1
+// - n0Val            = (private) value of new note 1
+// - n0Nonce          = (private) nonce of new note 1
+// - n1h0 + n1h1      = hash of new note 2
+// - n1rpk0 + n1rpk2  = (private) public key of owner of new note 1
+// - n1Val            = (private) value of new note 1
+// - n1Nonce          = (private) nonce of new note 1
 def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oNonce, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Nonce, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Nonce) -> (field):
   oVal == n0Val + n1Val
 
