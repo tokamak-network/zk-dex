@@ -1,0 +1,11 @@
+import "somewhere/sha1024packed"
+
+// Note = (_owner, value, type, _senderViewingKey, _salt, _isSmart)
+
+def main(field nh0, field nh1, field value, private field pk0, private field pk1, private field type, private field vk0, private field vk1, private field salt, private field isSmart) -> (field):
+  // get public key corresponding to private key
+  // circuit for above hasn't been implemented as yet, so sending in the public key instead for PoC
+  h0, h1 = sha1024packed(pk0, pk1, value, type, vk0, vk1, salt, isSmart)
+  h0 == nh0
+  h1 == nh1
+  return 1
