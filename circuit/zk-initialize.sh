@@ -8,7 +8,7 @@ for d in */ ; do
     rm zokrates
     echo "Create symbolic link of zokrates"
  
-    ln -s ../../zokrates ./
+    ln -sF ../../zokrates ./
     echo "circuit $d compile"
     ./zokrates compile -i $DIR.code
 
@@ -18,6 +18,6 @@ for d in */ ; do
     echo "$d export verifier"
     ./zokrates export-verifier --proving-scheme pghr13
 
-    cp verifier.sol ../contracts/$DIR_verifier.sol
+    cp verifier.sol "../../contracts/$DIR-verifier.sol"
     cd ..
 done

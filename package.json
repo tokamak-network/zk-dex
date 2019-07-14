@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:zokrates": "docker run --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -ti zokrates/zokrates:latest /bin/bash",
-    "initialize:zokrates": "docker exec --workdir /home/zokrates/circuit zokrates /bin/bash initialized.sh",
+    "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
+    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh",
     "zokrates": "npm run zokrates:compile && npm run zokrates:setup && npm run zokrates:export-verifier",
     "zokrates:compile": "docker exec --workdir /home/zokrates/zk-related zokrates ../zokrates compile -i zk-circuit.code",
     "zokrates:setup": "docker exec --workdir /home/zokrates/zk-related zokrates ../zokrates setup --proving-scheme pghr13",
@@ -19,6 +19,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "ethlint": "^1.2.2",
+    "truffle": "^5.0.0-beta.1",
     "bluebird": "^3.5.5",
     "child-process-promise": "^2.2.1",
     "jsonic": "^0.3.1",
