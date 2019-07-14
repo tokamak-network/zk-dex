@@ -95,10 +95,10 @@ contract Market is ZkDai {
     require(notes[parentNote] == State.Spent, "Market: parent note is already spent");
     require(notes[takerNoteToMaker] == State.Committed, "Market: taker note is not available");
 
-    notes[newNoteToMaker] = State.Spent;
-    notes[newNoteToTaker] = State.Spent;
-    notes[changeToMaker1] = State.Spent;
-    notes[changeToMaker2] = State.Spent;
+    notes[newNoteToMaker] = State.Committed;
+    notes[newNoteToTaker] = State.Committed;
+    notes[changeToMaker1] = State.Committed;
+    notes[changeToMaker2] = State.Committed;
 
     emit OrderSettled(newNoteToMaker, newNoteToTaker, changeNoteToMaker, changeNoteToTaker);
   }
