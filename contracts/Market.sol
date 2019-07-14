@@ -47,8 +47,9 @@ contract Market is ZkDai {
     bytes32 orderHash = hashOrder(order);
 
     orders[orderHash] = order;
-    notes[makerNote] = State.Spent;
+    notes[makerNote] = State.Traiding;
 
+    emit NoteStateChange(makerNote, State.Traiding);
     emit OrderCreated(orderHash, sourceToken, targetToken);
   }
 
@@ -65,13 +66,15 @@ contract Market is ZkDai {
     require(notes[parentNote] == State.Committed, "Market: taker note is not available");
     require(notes[takerNoteToMaker] == State.Invalid, "Market: taker send invalid note to maker");
 
-    notes[parentNote] = State.Spent;
-    notes[takerNoteToMaker] = State.Committed;
+    notes[parentNote] = State.Traiding;
+    notes[takerNoteToMaker] = State.Traiding;
 
     order.takerNoteToMaker = takerNoteToMaker;
     order.parentNote = parentNote;
     order.state = OrderState.Taken;
 
+    emit NoteStateChange(notes[parentNote], State.Traiding);
+    emit NoteStateChange(notes[takerNoteToMaker], State.Traiding);
     emit OrderTaken(orderHash, tarketNoteToMaker, parentNote);
   }
 
