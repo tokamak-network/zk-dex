@@ -19,9 +19,10 @@ contract Market is ZkDai {
     OrderState state;
   }
 
-  event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed  targetToken);
-
   mapping(bytes32 => Order) public orders;
+
+  event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed  targetToken, uint price);
+  event OrderTaken(bytes32 orderHash, bytes32 takerNoteToMaker, bytes32 parentNote);
 
   function makeOrder(
     bytes32 makerViewingKey,
@@ -46,10 +47,7 @@ contract Market is ZkDai {
 
     bytes32 orderHash = hashOrder(order);
 
-    // save order
     orders[orderHash] = order;
-
-    // mark maker note as spent
     notes[makerNote] = State.Spent;
 
     emit OrderCreated(orderHash, sourceToken, targetToken);
@@ -57,9 +55,25 @@ contract Market is ZkDai {
 
   function takeOrder(
     bytes32 orderHash,
-    bytes32 takerNoteToMaker
+    bytes32 takerNoteToMaker,
+    bytes32 parentNote
   ) external {
+    // TODO: verify circuit:takerOrder
+
     Order storage order = orders[orderHash];
+
+    require(order.state == OrderState.Created);
+    require(notes[parentNote] == State.Committed, "Market: taker note is not available");
+    require(notes[takerNoteToMaker] == State.Invalid, "Market: taker send invalid note to maker");
+
+    notes[parentNote] = State.Spent;
+    notes[takerNoteToMaker] = State.Committed;
+
+    order.takerNoteToMaker = takerNoteToMaker;
+    order.parentNote = parentNote;
+    order.state = OrderState.Taken;
+
+    emit OrderTaken(orderHash, tarketNoteToMaker, parentNote);
   }
   function settleOrder() external {
 

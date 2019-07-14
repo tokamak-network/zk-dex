@@ -45,7 +45,7 @@ contract ZkDaiBase {
   {
       proofHash = keccak256(abi.encodePacked(a, a_p, b, b_p, c, c_p, h, k));
   }
-  
+
   /**
   * @dev Concatenates the 2 chunks of the sha256 hash of the note
   * @notice This method is required due to the field limitations imposed by the zokrates zkSnark library
@@ -60,7 +60,7 @@ contract ZkDaiBase {
       bytes16 a = bytes16(_a);
       bytes16 b = bytes16(_b);
       bytes memory _note = new bytes(32);
-      
+
       for (uint i = 0; i < 16; i++) {
         _note[i] = a[i];
         _note[16 + i] = b[i];
