@@ -18,11 +18,7 @@ contract ZkDaiBase {
   // maps proofHash to Submission
   mapping(bytes32 => Submission) public submissions;
 
-<<<<<<< HEAD
-  enum State {Invalid, Committed, Traiding, Spent}
-=======
   enum State {Invalid, Spent, Committed, Trading}
->>>>>>> contracts: add settleOrder
   // maps note to State
   mapping(bytes32 => State) public notes;
 
