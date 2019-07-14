@@ -29,4 +29,24 @@ function parseProof(file) {
   return _proof;
 }
 
-module.exports = { sleep, parseProof }
+function marshalString (str) {
+  if (str.slice(0, 2) === '0x') return str;
+  return '0x'.concat(str);
+}
+
+function unmarshalString (str) {
+  if (str.slice(0, 2) === '0x') return str.slice(2);
+  return str;
+}
+
+function calcHash(h0, h1) {
+  return marshalString(unmarshalString(h0) + unmarshalString(h1));
+}
+
+module.exports = {
+  sleep,
+  parseProof,
+  calcHash,
+  marshalString,
+  unmarshalString,
+}

@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "chai": "^4.2.0",
     "ethlint": "^1.2.2",
     "openzeppelin-solidity": "^2.0.0",
     "truffle": "^5.0.27"
