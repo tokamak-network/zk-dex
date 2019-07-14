@@ -32,7 +32,7 @@ contract MintNotes is MintNoteVerifier, ZkDaiBase {
       }
       submissions[proofHash] = Submission(msg.sender, SubmissionType.Mint, now, publicInput);
 
-      encryptedNotes[calcHash(input[0], input[1])] = encryptedNotes;
+      encryptedNotes[calcHash(input[0], input[1])] = encryptedNote;
 
       emit Submitted(msg.sender, proofHash);
   }

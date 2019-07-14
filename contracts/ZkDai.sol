@@ -37,7 +37,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
       uint256[2] h,
       uint256[2] k,
       uint256[4] input,
-      bytes calldata encryptedNote
+      bytes encryptedNote
   )
     external
     payable
@@ -65,8 +65,8 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
       uint256[2] h,
       uint256[2] k,
       uint256[7] input,
-      bytes calldata encryptedNote1,
-      bytes calldata encryptedNote2
+      bytes encryptedNote1,
+      bytes encryptedNote2
   )
     external
     payable
