@@ -15,7 +15,7 @@
   "devDependencies": {
     "ethlint": "^1.2.2",
     "openzeppelin-solidity": "^2.0.0",
-    "truffle": "^5.0.0-beta.1"
+    "truffle": "^4.1.15"
   },
   "dependencies": {
     "eccrypto": "^1.1.0",

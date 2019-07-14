@@ -33,8 +33,8 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
       }
       submissions[proofHash] = Submission(msg.sender, SubmissionType.Spend, now, publicInput);
 
-      encryptedNotes[calcHash(input[2], input[3])] = encryptedNotes1;
-      encryptedNotes[calcHash(input[4], input[5])] = encryptedNotes2;
+      encryptedNotes[calcHash(input[2], input[3])] = encryptedNote1;
+      encryptedNotes[calcHash(input[4], input[5])] = encryptedNote2;
 
       emit Submitted(msg.sender, proofHash);
   }

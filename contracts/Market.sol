@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.4.25;
 
 import "./ZkDai.sol";
 
@@ -21,9 +21,9 @@ contract Market is ZkDai {
 
   mapping(bytes32 => Order) public orders;
 
-  event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed  targetToken, uint price);
+  event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed targetToken, uint price);
   event OrderTaken(bytes32 orderHash, bytes32 takerNoteToMaker, bytes32 parentNote);
-  event OrderSettled(bytes32 newNoteToMaker, bytes32 newNoteToTaker, bytes32 changeNoteToTaker, bytes32 changeNoteToMaker);
+  event OrderSettled(bytes32 newNoteToMaker, bytes32 newNoteToTaker, bytes32 changeNote);
 
   constructor(uint256 _cooldown, uint256 _stake, address daiTokenAddress)
     ZkDai(_cooldown, _stake, daiTokenAddress) public {}
@@ -45,7 +45,10 @@ contract Market is ZkDai {
       makerViewingKey: makerViewingKey,
       makerNote: makerNote,
       sourceToken: sourceToken,
+      targetToken: targetToken,
       price: price,
+      takerNoteToMaker: 0x00,
+      parentNote: 0x00,
       state: OrderState.Created
     });
 
@@ -55,7 +58,7 @@ contract Market is ZkDai {
     notes[makerNote] = State.Traiding;
 
     emit NoteStateChange(makerNote, State.Traiding);
-    emit OrderCreated(orderHash, sourceToken, targetToken);
+    emit OrderCreated(orderHash, sourceToken, targetToken, price);
   }
 
   function takeOrder(
@@ -76,37 +79,44 @@ contract Market is ZkDai {
 
     order.takerNoteToMaker = takerNoteToMaker;
     order.parentNote = parentNote;
+
     order.state = OrderState.Taken;
 
-    emit NoteStateChange(notes[parentNote], State.Traiding);
-    emit NoteStateChange(notes[takerNoteToMaker], State.Traiding);
-    emit OrderTaken(orderHash, tarketNoteToMaker, parentNote);
+    emit NoteStateChange(parentNote, State.Traiding);
+    emit NoteStateChange(takerNoteToMaker, State.Traiding);
+    emit OrderTaken(orderHash, takerNoteToMaker, parentNote);
   }
 
   function settleOrder(
     bytes32 orderHash,
     bytes32 newNoteToMaker,
     bytes32 newNoteToTaker,
-    bytes32 changeNoteToMaker,
-    bytes32 changeNoteToTaker
+    bytes32 changeNote
   ) external {
     // TODO: verify circuit:settleOrder
 
     Order storage order = orders[orderHash];
 
     require(order.state == OrderState.Taken);
-    require(notes[parentNote] == State.Spent, "Market: parent note is already spent");
-    require(notes[takerNoteToMaker] == State.Committed, "Market: taker note is not available");
+
+    require(notes[newNoteToMaker] == State.Invalid, "Market: newNoteToMaker is invalid");
+    require(notes[newNoteToTaker] == State.Invalid, "Market: newNoteToTaker is invalid");
+    require(notes[changeNote] == State.Invalid, "Market: changeNote is invalid");
 
     notes[newNoteToMaker] = State.Committed;
     notes[newNoteToTaker] = State.Committed;
-    notes[changeToMaker1] = State.Committed;
-    notes[changeToMaker2] = State.Committed;
+    notes[changeNote] = State.Committed;
 
-    emit OrderSettled(newNoteToMaker, newNoteToTaker, changeNoteToMaker, changeNoteToTaker);
+    emit NoteStateChange(newNoteToMaker, State.Committed);
+    emit NoteStateChange(newNoteToTaker, State.Committed);
+    emit NoteStateChange(changeNote, State.Committed);
+
+    order.state = OrderState.Settled;
+
+    emit OrderSettled(newNoteToMaker, newNoteToTaker, changeNote);
   }
 
-  function hashOrder(Order storage order) internal view returns (bytes32) {
+  function hashOrder(Order memory order) internal view returns (bytes32) {
     return keccak256(abi.encode(
       order.makerViewingKey,
       order.makerNote,
