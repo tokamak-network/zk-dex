@@ -14,8 +14,7 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
   *       - [0, 1]  = old note hash
   *       - [2, 3]  = new note 1 hash
   *       - [4, 5]  = new note 2 hash
-  *       - [6, 7]  = original note hash (>0 for smart-note)
-  *       - [8]     = output
+  *       - [6]     = output
 */
   function submit(
     uint256[2] a,
@@ -26,14 +25,14 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[9] input,
+    uint256[7] input,
     bytes memory encryptedNote1,
     bytes memory encryptedNote2
   )
     internal
   {
     require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
-    bytes32[4] memory _notes = get4Notes(input);
+    bytes32[3] memory _notes = get3Notes(input);
 
     // check that the first note (among public params) is committed and
     // new notes should not be existing at this point
@@ -53,14 +52,13 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     emit NoteStateChange(_notes[2], State.Committed);
   }
 
-  function get4Notes(uint256[9] input)
+  function get3Notes(uint256[7] input)
     internal
     pure
-    returns(bytes32[4] notes)
+    returns(bytes32[3] notes)
   {
     notes[0] = calcHash(input[0], input[1]);
     notes[1] = calcHash(input[2], input[3]);
     notes[2] = calcHash(input[4], input[5]);
-    notes[3] = calcHash(input[6], input[7]);
   }
 }
