@@ -16,6 +16,7 @@
     "chai": "^4.2.0",
     "ethlint": "^1.2.2",
     "openzeppelin-solidity": "^2.0.0",
+    "openzeppelin-test-helpers": "^0.4.0",
     "truffle": "^5.0.27"
   },
   "dependencies": {

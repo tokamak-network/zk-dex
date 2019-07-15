@@ -22,10 +22,10 @@ contract('LiquidateNote', function(accounts) {
     assert.equal(await dai.balanceOf.call(zkdai.address), 0, 'Zkdai contract should have 0 dai tokens');
     assert.equal(await dai.balanceOf.call(accounts[0]), 100 * SCALING_FACTOR, 'user should have 100 dai tokens');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    
+
     const proof = util.parseProof('./test/mintNoteProof.json');
     // the zk proof corresponds to a secret note of value 5
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
     assert.equal(await dai.balanceOf.call(zkdai.address), 5 * SCALING_FACTOR, 'Zkdai contract should have 5 dai tokens');
     assert.equal(await dai.balanceOf.call(accounts[0]), 95 * SCALING_FACTOR, 'user should have 95 dai');
@@ -45,10 +45,10 @@ contract('LiquidateNote', function(accounts) {
 
   it('challenge fails for correct proof', async function() {
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    
+
     const proof = util.parseProof('./test/mintNoteProof.json');
     // the zk proof corresponds to a secret note of value 5
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
     await util.sleep(1);
     await zkdai.commit(proofHash);
@@ -66,13 +66,13 @@ contract('LiquidateNote', function(accounts) {
 
   it('challenge passes if invalid proof was submitted', async function() {
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    
+
     const proof = util.parseProof('./test/mintNoteProof.json');
     const zkpHigherValue = util.parseProof('./test/mintNoteProof_invalid.json');
     // try sending in a note hash of higher value (invalid proof)
     proof[0] = zkpHigherValue[0]
 
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
     await util.sleep(1);
     await zkdai.commit(proofHash);

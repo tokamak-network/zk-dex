@@ -21,10 +21,10 @@ contract('mintNote', function(accounts) {
     assert.equal(await dai.balanceOf.call(accounts[0]), 100 * SCALING_FACTOR, '100 dai tokens were not assigned to the 1st account');
     assert.equal(await dai.balanceOf.call(zkdai.address), 0, 'Zkdai contract should have 0 dai tokens');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    
+
     const proof = util.parseProof('./test/mintNoteProof.json');
     // the zk proof corresponds to a secret note of value 5
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     assert.equal(await dai.balanceOf.call(zkdai.address), 5 * SCALING_FACTOR, 'Zkdai contract should have 5 dai tokens');
     assertEvent(mint.logs[0], 'Submitted', accounts[0], '0x02d554cdd75e795e9e3547843a66321a5ba4ab21c3cb141197b194f410ede8dc')
   })
@@ -32,7 +32,7 @@ contract('mintNote', function(accounts) {
   it('challenge fails for correct proof', async function() {
     const proof = util.parseProof('./test/mintNoteProof.json');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    await zkdai.mint(...proof, {value: 10**18});
+    await zkdai.mintDAI(...proof, {value: 10**18});
 
     const params = proof.slice(0, proof.length - 1);
     const challenge = await zkdai.challenge(...params); // omit sending public params again
@@ -45,10 +45,10 @@ contract('mintNote', function(accounts) {
     const proof = util.parseProof('./test/mintNoteProof.json');
     const zkpHigherValue = util.parseProof('./test/mintNoteProof_invalid.json');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    
+
     // try sending in a note hash of higher value (invalid proof)
     proof[0] = zkpHigherValue[0]
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
 
     const params = proof.slice(0, proof.length - 1);
@@ -62,7 +62,7 @@ contract('mintNote', function(accounts) {
     zkdai = await ZkDai.new(0 /* low cooldown */, 10**18, dai.address);
     const proof = util.parseProof('./test/mintNoteProof.json');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
 
     await util.sleep(1);
