@@ -12,39 +12,39 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
   *      submission time, type, public inputs of the zkSnark and the submitter
   */
   function submit(
-      uint256[2] a,
-      uint256[2] a_p,
-      uint256[2][2] b,
-      uint256[2] b_p,
-      uint256[2] c,
-      uint256[2] c_p,
-      uint256[2] h,
-      uint256[2] k,
-      uint256[7] input,
-      bytes memory encryptedNote1,
-      bytes memory encryptedNote2
+    uint256[2] a,
+    uint256[2] a_p,
+    uint256[2][2] b,
+    uint256[2] b_p,
+    uint256[2] c,
+    uint256[2] c_p,
+    uint256[2] h,
+    uint256[2] k,
+    uint256[7] input,
+    bytes memory encryptedNote1,
+    bytes memory encryptedNote2
   )
     internal
   {
-      require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
-      bytes32[3] memory _notes = get3Notes(input);
+    require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+    bytes32[3] memory _notes = get3Notes(input);
 
-      // check that the first note (among public params) is committed and
-      // new notes should not be existing at this point
-      require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
-      require(notes[_notes[1]] == State.Invalid, "output note1 is already minted");
-      require(notes[_notes[2]] == State.Invalid, "output note2 is already minted");
+    // check that the first note (among public params) is committed and
+    // new notes should not be existing at this point
+    require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
+    require(notes[_notes[1]] == State.Invalid, "output note1 is already minted");
+    require(notes[_notes[2]] == State.Invalid, "output note2 is already minted");
 
-      notes[_notes[0]] = State.Spent;
-      notes[_notes[1]] = State.Committed;
-      notes[_notes[2]] = State.Committed;
+    notes[_notes[0]] = State.Spent;
+    notes[_notes[1]] = State.Committed;
+    notes[_notes[2]] = State.Committed;
 
-      encryptedNotes[_notes[1]] = encryptedNote1;
-      encryptedNotes[_notes[2]] = encryptedNote2;
+    encryptedNotes[_notes[1]] = encryptedNote1;
+    encryptedNotes[_notes[2]] = encryptedNote2;
 
-      emit NoteStateChange(_notes[0], State.Spent);
-      emit NoteStateChange(_notes[1], State.Committed);
-      emit NoteStateChange(_notes[2], State.Committed);
+    emit NoteStateChange(_notes[0], State.Spent);
+    emit NoteStateChange(_notes[1], State.Committed);
+    emit NoteStateChange(_notes[2], State.Committed);
   }
 
   function get3Notes(uint256[7] input)
@@ -52,8 +52,8 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     pure
     returns(bytes32[3] notes)
   {
-      notes[0] = calcHash(input[0], input[1]);
-      notes[1] = calcHash(input[2], input[3]);
-      notes[2] = calcHash(input[4], input[5]);
+    notes[0] = calcHash(input[0], input[1]);
+    notes[1] = calcHash(input[2], input[3]);
+    notes[2] = calcHash(input[4], input[5]);
   }
 }

@@ -32,15 +32,15 @@ contract ZkDaiBase {
     pure
     returns(bytes32 note)
   {
-      bytes16 a = bytes16(_a);
-      bytes16 b = bytes16(_b);
-      bytes memory _note = new bytes(32);
+    bytes16 a = bytes16(_a);
+    bytes16 b = bytes16(_b);
+    bytes memory _note = new bytes(32);
 
-      for (uint i = 0; i < 16; i++) {
-        _note[i] = a[i];
-        _note[16 + i] = b[i];
-      }
-      note = _bytesToBytes32(_note, 0);
+    for (uint i = 0; i < 16; i++) {
+      _note[i] = a[i];
+      _note[16 + i] = b[i];
+    }
+    note = _bytesToBytes32(_note, 0);
   }
 
   function _bytesToBytes32(bytes b, uint offset)
@@ -48,8 +48,8 @@ contract ZkDaiBase {
     pure
     returns (bytes32 out)
   {
-      for (uint i = 0; i < 32; i++) {
-        out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-      }
+    for (uint i = 0; i < 32; i++) {
+      out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+    }
   }
 }
