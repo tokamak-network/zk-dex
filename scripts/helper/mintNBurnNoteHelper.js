@@ -2,6 +2,9 @@ const fs = require('fs');
 const BN = require('bn.js');
 const crypto = require('crypto');
 
+var Docker = require('dockerode');
+var docker = new Docker({socketPath: '/var/run/docker.sock'});
+
 const SCALING_FACTOR = new BN('1000000000000000000');
 
 // Example Params
@@ -54,6 +57,63 @@ function printZokratesCommand(params) {
   return cmd;
 }
 
+function genProof(container, noteParams) {
+  var runCmd = "bash getproof.sh " + noteParams
+
+
+  var options = {
+    Cmd: ['bash', '-c', runCmd],
+    WorkingDir: '/home/zokrates/circuit/mintNBurnNote',
+    AttachStdout: true,
+    AttachStderr: true
+  };
+
+  container.exec(options, function(err, exec) {
+    if (err) return;
+    exec.start(function(err, stream) {
+      if (err) return;
+
+      container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+      exec.inspect(function(err, data) {
+        if (err) return;
+        proof = JSON.parse(data);
+        return data;
+      });
+    });
+  });
+}
+
+function runZokratesCommand(params) {
+    let cmd = '';
+
+    params.forEach(p => {
+    cmd += `${new BN(p, 16).toString(10)} `
+    })
+
+    docker.listContainers({all: true}, function(err, containers) {
+    console.log('err ' + err);
+
+    for (i = 0; i < containers.length; i++) {
+        console.log(containers[i].Names);
+        // if your zokrates container name is not `zokrates` is.
+        // Should be change `/zokrates` to yours.
+        if (containers[i].Names[0] == '/zokrates') {
+                zokrates = containers[i];
+            }
+        }
+
+    console.log("selected Container ID :", zokrates.Id);
+
+    var con = docker.getContainer(zokrates.Id);
+
+    // getCreateParams
+    genProof(con, cmd);
+
+    });
+
+
+
 function test(){
   owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   value = '6'
@@ -62,7 +122,7 @@ function test(){
   salt = "c517f646255d5492089b881965cbd3da";
   isSmart = '0';
   let params = getCreateParams(owner, value, type, viewKey, salt, isSmart);
-  printZokratesCommand(params);
+  runZokratesCommand(params);
   // output
   // ./zokrates compute-witness -a 28438254119279180143054153302986539534 216363634539208029509085300953461217659 6 0 35527165818681367460734522247605632578 33316299488818974410722173859617164385 35527165818681367460734522247605632578 33316299488818974410722173859617164385 261982333027672377144177477746906878938 0
 }
