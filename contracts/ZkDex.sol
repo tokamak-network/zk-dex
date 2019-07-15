@@ -3,7 +3,7 @@ pragma solidity ^0.4.25;
 import "./ZkDai.sol";
 
 
-contract Market is ZkDai {
+contract ZkDex is ZkDai {
 
   enum OrderState {Created, Taken, Settled}
 
@@ -37,8 +37,8 @@ contract Market is ZkDai {
   ) external {
     // TODO: verify circuit:makeOrder
 
-    require(sourceToken != targetToken, "Market: cannot make an order with same token pair");
-    require(notes[makerNote] == State.Committed, "Market: maker note is not available");
+    require(sourceToken != targetToken, "ZkDex: cannot make an order with same token pair");
+    require(notes[makerNote] == State.Committed, "ZkDex: maker note is not available");
 
     // TODO: instnatiate with zk-SNARK proofs
     Order memory order = Order({
@@ -71,8 +71,8 @@ contract Market is ZkDai {
     Order storage order = orders[orderHash];
 
     require(order.state == OrderState.Created);
-    require(notes[parentNote] == State.Committed, "Market: taker note is not available");
-    require(notes[takerNoteToMaker] == State.Invalid, "Market: taker send invalid note to maker");
+    require(notes[parentNote] == State.Committed, "ZkDex: taker note is not available");
+    require(notes[takerNoteToMaker] == State.Invalid, "ZkDex: taker send invalid note to maker");
 
     notes[parentNote] = State.Traiding;
     notes[takerNoteToMaker] = State.Traiding;
@@ -99,9 +99,9 @@ contract Market is ZkDai {
 
     require(order.state == OrderState.Taken);
 
-    require(notes[newNoteToMaker] == State.Invalid, "Market: newNoteToMaker is invalid");
-    require(notes[newNoteToTaker] == State.Invalid, "Market: newNoteToTaker is invalid");
-    require(notes[changeNote] == State.Invalid, "Market: changeNote is invalid");
+    require(notes[newNoteToMaker] == State.Invalid, "ZkDex: newNoteToMaker is invalid");
+    require(notes[newNoteToTaker] == State.Invalid, "ZkDex: newNoteToTaker is invalid");
+    require(notes[changeNote] == State.Invalid, "ZkDex: changeNote is invalid");
 
     notes[newNoteToMaker] = State.Committed;
     notes[newNoteToTaker] = State.Committed;
