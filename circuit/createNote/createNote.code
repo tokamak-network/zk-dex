@@ -6,9 +6,9 @@ import "../sha/1024bitPacked.code" as sha256
 // nh0 + nh1 : new note hash
 
 // Private
-// pk0 + pk1 : new note's owner
 // value : new note value
 // type : new note type
+// pk0 + pk1 : new note's owner
 // vk0 + vk1 : new note viewKey
 // salt : new note salt, random value
 // isSmart : new note isSmart, 0 if is not smart note
