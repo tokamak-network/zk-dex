@@ -25,8 +25,7 @@ contract ZkDex is ZkDai {
   event OrderTaken(bytes32 orderHash, bytes32 takerNoteToMaker, bytes32 parentNote);
   event OrderSettled(bytes32 newNoteToMaker, bytes32 newNoteToTaker, bytes32 changeNote);
 
-  constructor(uint256 _cooldown, uint256 _stake, address daiTokenAddress)
-    ZkDai(_cooldown, _stake, daiTokenAddress) public {}
+  constructor(bool _development, address _dai) ZkDai(_development, _dai) public {}
 
   function makeOrder(
     bytes32 makerViewingKey,

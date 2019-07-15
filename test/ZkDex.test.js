@@ -15,7 +15,7 @@ contract('ZkDex', function(accounts) {
   // Initial setup
   beforeEach(async () => {
     dai = await MockDai.new();
-    market = await ZkDex.new(0, ether(1), dai.address);
+    market = await ZkDex.new(true, dai.address);
   });
 
   describe("create a note", () => {

@@ -3,10 +3,10 @@ pragma solidity ^0.4.25;
 import "../ZkDai.sol";
 
 contract TestZkDai is ZkDai {
-  constructor(uint256 _cooldown, uint256 _stake, address daiTokenAddress)
-    ZkDai(_cooldown, _stake, daiTokenAddress) public {}
+  constructor(bool _development, address _dai) public ZkDai(_development, _dai) {}
 
-  function setCooldown(uint256 _cooldown) public {
-    cooldown = _cooldown;
+
+  function setDevelopment(bool _development) public {
+    development = _development;
   }
 }
