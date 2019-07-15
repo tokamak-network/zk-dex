@@ -4,19 +4,13 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
 contract ZkDaiBase {
-  uint256 public cooldown;
-  uint256 public stake;
+  bool public development;
   ERC20 public dai;
 
-  enum SubmissionType {Invalid, Mint, Spend, Liquidate}
-  struct Submission {
-    address submitter;
-    SubmissionType sType;
-    uint256 submittedAt;
-    uint256[] publicInput;
+  constructor(bool _development, address _dai) public {
+    development = _development;
+    dai = ERC20(_dai);
   }
-  // maps proofHash to Submission
-  mapping(bytes32 => Submission) public submissions;
 
   // note hash --> encrypted note data
   mapping(bytes32 => bytes) public encryptedNotes;
@@ -26,28 +20,6 @@ contract ZkDaiBase {
   mapping(bytes32 => State) public notes;
 
   event NoteStateChange(bytes32 note, State state);
-  event Submitted(address submitter, bytes32 proofHash);
-  event Challenged(address indexed challenger, bytes32 proofHash);
-
-  /**
-  * @dev Calculates the keccak256 of the zkSnark parameters
-  * @return proofHash
-  */
-  function getProofHash(
-      uint256[2] a,
-      uint256[2] a_p,
-      uint256[2][2] b,
-      uint256[2] b_p,
-      uint256[2] c,
-      uint256[2] c_p,
-      uint256[2] h,
-      uint256[2] k)
-    internal
-    pure
-    returns(bytes32 proofHash)
-  {
-      proofHash = keccak256(abi.encodePacked(a, a_p, b, b_p, c, c_p, h, k));
-  }
 
   /**
   * @dev Concatenates the 2 chunks of the sha256 hash of the note

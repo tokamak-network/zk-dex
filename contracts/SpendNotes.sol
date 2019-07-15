@@ -26,28 +26,9 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
   )
     internal
   {
-      bytes32 proofHash = getProofHash(a, a_p, b, b_p, c, c_p, h, k);
-      uint256[] memory publicInput = new uint256[](NUM_PUBLIC_INPUTS);
-      for(uint8 i = 0; i < NUM_PUBLIC_INPUTS; i++) {
-        publicInput[i] = input[i];
-      }
-      submissions[proofHash] = Submission(msg.sender, SubmissionType.Spend, now, publicInput);
+      require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+      bytes32[3] memory _notes = get3Notes(input);
 
-      encryptedNotes[calcHash(input[2], input[3])] = encryptedNote1;
-      encryptedNotes[calcHash(input[4], input[5])] = encryptedNote2;
-
-      emit Submitted(msg.sender, proofHash);
-  }
-
-  /**
-  * @dev Commits the proof i.e. Marks the input note as Spent and mints two new output notes that came with the proof.
-  * @param proofHash Hash of the proof to be committed
-  */
-  function spendCommit(bytes32 proofHash)
-    internal
-  {
-      Submission storage submission = submissions[proofHash];
-      bytes32[3] memory _notes = get3Notes(submission.publicInput);
       // check that the first note (among public params) is committed and
       // new notes should not be existing at this point
       require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
@@ -58,14 +39,15 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
       notes[_notes[1]] = State.Committed;
       notes[_notes[2]] = State.Committed;
 
-      delete submissions[proofHash];
-      submission.submitter.transfer(stake);
+      encryptedNotes[_notes[1]] = encryptedNote1;
+      encryptedNotes[_notes[2]] = encryptedNote2;
+
       emit NoteStateChange(_notes[0], State.Spent);
       emit NoteStateChange(_notes[1], State.Committed);
       emit NoteStateChange(_notes[2], State.Committed);
   }
 
-  function get3Notes(uint256[] input)
+  function get3Notes(uint256[7] input)
     internal
     pure
     returns(bytes32[3] notes)
@@ -73,38 +55,5 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
       notes[0] = calcHash(input[0], input[1]);
       notes[1] = calcHash(input[2], input[3]);
       notes[2] = calcHash(input[4], input[5]);
-  }
-
-  /**
-  * @dev Challenge the proof for spend step
-  * @notice params: a, a_p, b, b_p, c, c_p, h, k zkSnark parameters of the challenged proof
-  * @param proofHash Hash of the proof
-  */
-  function challenge(
-      uint256[2] a,
-      uint256[2] a_p,
-      uint256[2][2] b,
-      uint256[2] b_p,
-      uint256[2] c,
-      uint256[2] c_p,
-      uint256[2] h,
-      uint256[2] k,
-      bytes32 proofHash)
-    internal
-  {
-      Submission storage submission = submissions[proofHash];
-      uint256[NUM_PUBLIC_INPUTS] memory input;
-      for(uint i = 0; i < NUM_PUBLIC_INPUTS; i++) {
-        input[i] = submission.publicInput[i];
-      }
-      if (!spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input)) {
-        // challenge passed
-        delete submissions[proofHash];
-        msg.sender.transfer(stake);
-        emit Challenged(msg.sender, proofHash);
-      } else {
-        // challenge failed
-        spendCommit(proofHash);
-      }
   }
 }
