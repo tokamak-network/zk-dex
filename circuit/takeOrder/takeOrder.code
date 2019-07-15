@@ -1,4 +1,4 @@
-import "../sha/1024bitPacked.code" as sha256
+import "../shaPacked/shaPacked.code" as sha256
 
 
 // Note = (_owner, _value, type, _senderViewingKey, _salt, _isSmart)

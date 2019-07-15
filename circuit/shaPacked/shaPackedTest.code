@@ -1,4 +1,4 @@
-import "./1024bitPacked.code" as sha256
+import "./shaPacked.code" as sha256
 
 // A function that takes an array of 8 field elements as inputs, unpacks each of them to 128
 // bits (big endian), concatenates them and applies sha256.
