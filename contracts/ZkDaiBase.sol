@@ -7,6 +7,9 @@ contract ZkDaiBase {
   bool public development;
   ERC20 public dai;
 
+  uint256 public constant ETH_TOKEY_TYPE = 0;
+  uint256 public constant DAI_TOKEY_TYPE = 1;
+
   constructor(bool _development, address _dai) public {
     development = _development;
     dai = ERC20(_dai);
