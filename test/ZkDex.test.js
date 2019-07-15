@@ -1,7 +1,7 @@
 const { balance } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 
-const Market = artifacts.require("Market");
+const ZkDex = artifacts.require("ZkDex");
 const MockDai = artifacts.require("MockDai");
 
 const util = require('./util');
@@ -9,13 +9,13 @@ const { Note, decrypt } = require('./lib/Note');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
-contract('Market', function(accounts) {
+contract('ZkDex', function(accounts) {
   let dai, market;
 
   // Initial setup
   beforeEach(async () => {
     dai = await MockDai.new();
-    market = await Market.new(0, ether(1), dai.address);
+    market = await ZkDex.new(0, ether(1), dai.address);
   });
 
   describe("create a note", () => {
