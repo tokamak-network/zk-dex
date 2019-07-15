@@ -27,7 +27,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
   * @notice params: a, a_p, b, b_p, c, c_p, h, k zkSnark parameters
   * @param input Public inputs of the zkSnark
   */
-  function mint(
+  function mintDAI(
       uint256[2] a,
       uint256[2] a_p,
       uint256[2][2] b,
@@ -47,6 +47,30 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
         dai.transferFrom(msg.sender, address(this), uint256(input[2]) /* value */),
         "daiToken transfer failed"
       );
+      MintNotes.submit(a, a_p, b, b_p, c, c_p, h, k, input, encryptedNote);
+  }
+
+  /**
+  * @dev Transfers specified number of dai tokens to itself and submits the zkSnark proof to mint a new note
+  * @notice params: a, a_p, b, b_p, c, c_p, h, k zkSnark parameters
+  * @param input Public inputs of the zkSnark
+  */
+  function mintETH(
+      uint256[2] a,
+      uint256[2] a_p,
+      uint256[2][2] b,
+      uint256[2] b_p,
+      uint256[2] c,
+      uint256[2] c_p,
+      uint256[2] h,
+      uint256[2] k,
+      uint256[4] input,
+      bytes encryptedNote
+  )
+    external
+    payable
+  {
+      require(msg.value > stake, "ETH amount should be bigger than stake");
       MintNotes.submit(a, a_p, b, b_p, c, c_p, h, k, input, encryptedNote);
   }
 

@@ -17,7 +17,7 @@ contract('SpendNote', function(accounts) {
     // populate the contract with a valid note
     const proof = util.parseProof('./test/mintNoteProof.json');
     await dai.approve(zkdai.address, 5 * SCALING_FACTOR);
-    const mint = await zkdai.mint(...proof, {value: 10**18});
+    const mint = await zkdai.mintDAI(...proof, {value: 10**18});
     const proofHash = mint.logs[0].args.proofHash;
     await util.sleep(1); // wait out the cooldown period
     await zkdai.commit(proofHash);
@@ -32,7 +32,7 @@ contract('SpendNote', function(accounts) {
   it('challenge fails if valid proof was submitted', async function() {
     const spendProof = util.parseProof('./test/spendNoteProof.json');
     await zkdai.spend(...spendProof, {value: 10**18});
-    
+
     await zkdai.setCooldown(10); // larger cooldown, otherwise challenge period ends
 
     const params = spendProof.slice(0, spendProof.length - 1); // cut public params
@@ -58,7 +58,7 @@ contract('SpendNote', function(accounts) {
     spendProof[spendProof.length - 1][3] = spendProof[spendProof.length - 1][5];
     const spend = await zkdai.spend(...spendProof, {value: 10**18});
     const proofHash = spend.logs[0].args.proofHash;
-    
+
     await zkdai.setCooldown(10); // larger cooldown, otherwise challenge period ends
 
     const params = spendProof.slice(0, spendProof.length - 1); // cut public params
