@@ -14,7 +14,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
   * @notice params: a, a_p, b, b_p, c, c_p, h, k zkSnark parameters
   * @param input Public inputs of the zkSnark
   */
-  function mintDAI(
+  function mint(
     uint256[2] a,
     uint256[2] a_p,
     uint256[2][2] b,
@@ -23,39 +23,22 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[4] input,
-    bytes encryptedNote
-  )
-    external
-  {
-    require(
-      dai.transferFrom(msg.sender, address(this), uint256(input[2])),
-      "daiToken transfer failed"
-    );
-    MintNotes.submit(a, a_p, b, b_p, c, c_p, h, k, input, encryptedNote);
-  }
-
-  /**
-  * @dev Transfers specified number of dai tokens to itself and submits the zkSnark proof to mint a new note
-  * @notice params: a, a_p, b, b_p, c, c_p, h, k zkSnark parameters
-  * @param input Public inputs of the zkSnark
-  */
-  function mintETH(
-    uint256[2] a,
-    uint256[2] a_p,
-    uint256[2][2] b,
-    uint256[2] b_p,
-    uint256[2] c,
-    uint256[2] c_p,
-    uint256[2] h,
-    uint256[2] k,
-    uint256[4] input,
+    uint256[5] input,
     bytes encryptedNote
   )
     external
     payable
   {
-    require(msg.value == uint256(input[2]), "eth transfer failed");
+    if (input[3] == ETH_TOKEY_TYPE) {
+      require(msg.value == input[2],"ether amount doesn't match");
+    } else if (input[3] == DAI_TOKEY_TYPE) {
+      require(msg.value == 0, "msg.value should be 0 for creating dai note");
+      require(
+        dai.transferFrom(msg.sender, address(this), input[2]),
+        "dai transfer failed"
+      );
+    }
+
     MintNotes.submit(a, a_p, b, b_p, c, c_p, h, k, input, encryptedNote);
   }
 
@@ -73,7 +56,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[7] input,
+    uint256[9] input,
     bytes encryptedNote1,
     bytes encryptedNote2
   )
@@ -98,10 +81,19 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[4] input
+    uint256[5] input
   )
     external
   {
     LiquidateNotes.submit(to, a, a_p, b, b_p, c, c_p, h, k, input);
+
+    if (input[3] == ETH_TOKEY_TYPE) {
+      to.transfer(input[2]);
+    } else if (input[3] == DAI_TOKEY_TYPE) {
+      require(
+        dai.transfer(to, input[2]),
+        "dai transfer failed"
+      );
+    }
   }
 }

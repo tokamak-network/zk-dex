@@ -1,15 +1,20 @@
 pragma solidity ^0.4.25;
 
-import {Verifier as LiquidateNoteVerifier} from "./verifiers/LiquidateNoteVerifier.sol";
+import {Verifier as MintNoteVerifier} from "./verifiers/MintNoteVerifier.sol";
 import "./ZkDaiBase.sol";
 
 
-contract LiquidateNotes is LiquidateNoteVerifier, ZkDaiBase {
+contract LiquidateNotes is MintNoteVerifier, ZkDaiBase {
   uint8 internal constant NUM_PUBLIC_INPUTS = 4;
 
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
+  *      public input
+  *       - [0, 1]  = new note hash
+  *       - [2]     = note value
+  *       - [3]     = note type
+  *       - [4]     = output
   */
   function submit(
     address to,
@@ -21,18 +26,17 @@ contract LiquidateNotes is LiquidateNoteVerifier, ZkDaiBase {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[4] input
+    uint256[5] input
   )
     internal
   {
-    require(development || verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "failed to verify circuit");
+    require(development || mintVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "failed to verify circuit");
 
     bytes32 note = calcHash(input[0], input[1]);
 
     require(notes[note] == State.Committed, "Note is either invalid or already spent");
     notes[note] = State.Spent;
 
-    require(dai.transfer(to, uint256(input[2])), "daiToken transfer failed");
     emit NoteStateChange(note, State.Spent);
   }
 }

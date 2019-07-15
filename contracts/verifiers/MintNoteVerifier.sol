@@ -54,7 +54,7 @@ contract Verifier is VerifierBase {
             uint[2] c_p,
             uint[2] h,
             uint[2] k,
-            uint[4] input
+            uint[5] input
         ) public returns (bool r) {
         Proof memory proof;
         proof.A = Pairing.G1Point(a[0], a[1]);
