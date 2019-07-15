@@ -3,7 +3,7 @@
 for d in */ ; do
     DIR=${d%?}
 
-    echo "Workding on $DIR"
+    echo "Working on $DIR"
     cd $DIR
     rm zokrates
     echo "Create symbolic link of zokrates"
@@ -18,6 +18,9 @@ for d in */ ; do
     echo "$d export verifier"
     ./zokrates export-verifier --proving-scheme pghr13
 
-    cp verifier.sol "../../contracts/$DIR-verifier.sol"
+    echo "Replace contract Name"
+    sed -e s/Verifier/$DIR-Verifier/g verifier.sol > $DIR-verifier.sol
+    cp $DIR-verifier.sol  "../../contracts/$DIR-verifier.sol"
+
     cd ..
 done
