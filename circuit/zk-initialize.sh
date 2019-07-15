@@ -19,7 +19,7 @@ for d in */ ; do
     ./zokrates export-verifier --proving-scheme pghr13
 
     echo "Replace contract Name"
-    sed -e s/Verifier/$DIR-Verifier/g verifier.sol > $DIR-verifier.sol
+    sed -e s/Verifier/${DIR}Verifier/g verifier.sol > ${DIR}-verifier.sol
     cp $DIR-verifier.sol  "../../contracts/$DIR-verifier.sol"
 
     cd ..
