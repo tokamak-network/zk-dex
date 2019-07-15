@@ -10,64 +10,80 @@ contract ZkDex is ZkDai {
   struct Order {
     bytes32 makerViewingKey;
     bytes32 makerNote;
-    bytes32 sourceToken;
-    bytes32 targetToken;
-    uint price;
+    uint256 sourceToken;
+    uint256 targetToken;
+    uint256 price;
     bytes32 takerNoteToMaker;
     bytes32 parentNote;
 
     OrderState state;
   }
 
-  mapping(bytes32 => Order) public orders;
+  Order[] public orders;
 
-  event OrderCreated(bytes32 orderHash, bytes32 indexed sourceToken, bytes32 indexed targetToken, uint price);
-  event OrderTaken(bytes32 orderHash, bytes32 takerNoteToMaker, bytes32 parentNote);
-  event OrderSettled(bytes32 newNoteToMaker, bytes32 newNoteToTaker, bytes32 changeNote);
+  event OrderCreated(uint256 orderId, uint256 sourceToken, uint256 targetToken);
+  event OrderTaken(uint256 orderId, bytes32 takerNoteToMaker, bytes32 parentNote);
+  event OrderSettled(uint256 orderId, bytes32 newNoteToMaker, bytes32 newNoteToTaker, bytes32 changeNote);
 
   constructor(bool _development, address _dai) ZkDai(_development, _dai) public {}
 
+  /**
+   * order input
+   *  - [0]     = makerViewingKey
+   *  - [0]     = targetToken
+   *  - [0]     = price
+   * zk-SNARK public input
+   *  - [0, 1]  = maker note hash
+   *  - [2]     = maker note type
+   *  - [3]     = output
+   */
   function makeOrder(
     bytes32 makerViewingKey,
-    bytes32 makerNote,
-    bytes32 sourceToken,
-    bytes32 targetToken,
-    uint price
+    uint256 targetToken,
+    uint price,
+    uint256[2] a,
+    uint256[2] a_p,
+    uint256[2][2] b,
+    uint256[2] b_p,
+    uint256[2] c,
+    uint256[2] c_p,
+    uint256[2] h,
+    uint256[2] k,
+    uint256[4] input
   ) external {
     // TODO: verify circuit:makeOrder
 
-    require(sourceToken != targetToken, "ZkDex: cannot make an order with same token pair");
+    bytes32 makerNote = calcHash(input[0], input[1]);
+
+    require(input[2] != targetToken, "ZkDex: cannot make an order with same token pair");
     require(notes[makerNote] == State.Committed, "ZkDex: maker note is not available");
 
-    // TODO: instnatiate with zk-SNARK proofs
-    Order memory order = Order({
-      makerViewingKey: makerViewingKey,
-      makerNote: makerNote,
-      sourceToken: sourceToken,
-      targetToken: targetToken,
-      price: price,
-      takerNoteToMaker: 0x00,
-      parentNote: 0x00,
-      state: OrderState.Created
-    });
+    uint orderId = orders.length++;
+    Order storage order = orders[orderId];
 
-    bytes32 orderHash = hashOrder(order);
+    order.makerViewingKey = makerViewingKey;
+    order.makerNote = makerNote;
+    order.sourceToken = input[2];
+    order.targetToken = targetToken;
+    order.price = price;
+    order.state = OrderState.Created;
 
-    orders[orderHash] = order;
     notes[makerNote] = State.Traiding;
 
     emit NoteStateChange(makerNote, State.Traiding);
-    emit OrderCreated(orderHash, sourceToken, targetToken, price);
+
+    // NOTE: cannot compile below line due to stack too deep error..
+    // emit OrderCreated(orderId, input[2], targetToken);
   }
 
   function takeOrder(
-    bytes32 orderHash,
+    uint256 orderId,
     bytes32 takerNoteToMaker,
     bytes32 parentNote
   ) external {
     // TODO: verify circuit:takerOrder
 
-    Order storage order = orders[orderHash];
+    Order storage order = orders[orderId];
 
     require(order.state == OrderState.Created);
     require(notes[parentNote] == State.Committed, "ZkDex: taker note is not available");
@@ -83,18 +99,18 @@ contract ZkDex is ZkDai {
 
     emit NoteStateChange(parentNote, State.Traiding);
     emit NoteStateChange(takerNoteToMaker, State.Traiding);
-    emit OrderTaken(orderHash, takerNoteToMaker, parentNote);
+    emit OrderTaken(orderId, takerNoteToMaker, parentNote);
   }
 
   function settleOrder(
-    bytes32 orderHash,
+    uint256 orderId,
     bytes32 newNoteToMaker,
     bytes32 newNoteToTaker,
     bytes32 changeNote
   ) external {
     // TODO: verify circuit:settleOrder
 
-    Order storage order = orders[orderHash];
+    Order storage order = orders[orderId];
 
     require(order.state == OrderState.Taken);
 
@@ -112,7 +128,7 @@ contract ZkDex is ZkDai {
 
     order.state = OrderState.Settled;
 
-    emit OrderSettled(newNoteToMaker, newNoteToTaker, changeNote);
+    emit OrderSettled(orderId, newNoteToMaker, newNoteToTaker, changeNote);
   }
 
   function hashOrder(Order memory order) internal view returns (bytes32) {
