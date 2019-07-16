@@ -4,9 +4,9 @@ import "../sha/1024bitPacked.code" as sha256
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
 // nh0 + nh1 : makerNote hash
+// type : makerNote type
 // pk0 + pk1 : makerNote's owner
 // value : makerNote value
-// type : makerNote type
 // vk0 + vk1 : makerNote viewKey
 // salt : makerNote salt, random value
 // issSmart : makerNote isSmart, 0 if is not smart note
