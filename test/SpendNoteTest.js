@@ -43,11 +43,11 @@ contract('SpendNote', function(accounts) {
 
     assert.equal(challenge.logs[2].event, 'NoteStateChange')
     // @todo assert on challenge.logs[2].args.note
-    assert.equal(challenge.logs[2].args.state, 1 /* committed */)
+    assert.equal(challenge.logs[2].args.state, 1 /* valid */)
 
     assert.equal(challenge.logs[3].event, 'NoteStateChange')
     // @todo assert on challenge.logs[3].args.note
-    assert.equal(challenge.logs[3].args.state, 1 /* committed */)
+    assert.equal(challenge.logs[3].args.state, 1 /* valid */)
   })
 
   it('challenge passes if invalid proof was submitted', async function() {
