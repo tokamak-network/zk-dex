@@ -18,6 +18,7 @@
 	1. npm install
 	2. ganache-cli (background running)
 	3. npm run start:zokrates
-	4. npm run initialize:zokrates // all circuit compile, setup and export verifiers to contracts
-	5. npx truffle compile
-        6. npx truffle migrate --reset
+	4. npm run initialize:zokrates
+	   : circuit compile, setup and export verifiers.sol then copy to contracts/.
+	5. npm run compile
+    6. npm run migrate

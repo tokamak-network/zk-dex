@@ -12,7 +12,7 @@
     "migrate": "npx truffle migrate --reset",
     "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
     "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
-},
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
