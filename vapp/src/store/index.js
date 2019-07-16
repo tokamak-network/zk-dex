@@ -4,6 +4,7 @@ import state from './state'
 
 import getWeb3 from '../util/getWeb3'
 import getContract from '../util/getContract'
+import pollWeb3 from '../util/pollWeb3'
 
 Vue.use(Vuex);
 
@@ -28,6 +29,11 @@ export default new Vuex.Store({
       web3Copy.isInjected = result.injectedWeb3
       web3Copy.web3Instance = result.web3
       state.web3 = web3Copy;
+      pollWeb3();
+    },
+    pollWeb3Instance (state, payload) {
+      state.web3.coinbase = payload.coinbase
+      state.web3.balance = payload.balance
     },
     registerContractInstance (state, payload) {
       state.contractInstance = () => payload
@@ -47,6 +53,9 @@ export default new Vuex.Store({
       getWeb3.then(result => {
         commit('registerWeb3Instance', result)
       }).catch(() => {})
+    },
+    POLL_WEB3 ({commit}, payload) {
+      commit('pollWeb3Instance', payload)
     },
     GET_CONTRACT_INSTANCE ({commit}) {
       getContract.then(result => {
