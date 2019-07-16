@@ -48,8 +48,10 @@ def main(field oh0, field oh1, private field pk0, private field pk1, private fie
   oh0 == h[0]
   oh1 == h[1]
 
+  // originNote should not be smartNote
+  originIsSmart == 0
+
   // check origin of o1
-  
   h = sha256([originPk0, originPk1, originVal, originType, originVk0, originVk1, originSalt, originIsSmart])
   originH0 == h[0]
   originH1 == h[1]
