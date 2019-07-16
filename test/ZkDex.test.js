@@ -7,7 +7,7 @@ const ZkDex = artifacts.require("ZkDex");
 const MockDai = artifacts.require("MockDai");
 
 const util = require('./util');
-const { Note, decrypt, ETH_TOKEN_TYPE, DAI_TOKEN_TYPE, createProof } = require('./lib/Note');
+const { constants, Note, decrypt, createProof } = require('./lib/Note');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
@@ -44,6 +44,10 @@ contract('ZkDex', function(accounts) {
   async function checkNote(note, noteState, msg = "") {
     expect(await market.notes(note.hash()), noteState, "note state mismatch" + msg);
 
+    if (noteState == NoteState.Invalid) {
+      return;
+    }
+
     const encryptedNote = await market.encryptedNotes(note.hash());
 
     const decryptedNote = decrypt(encryptedNote, note.viewingKey);
@@ -52,7 +56,7 @@ contract('ZkDex', function(accounts) {
   }
 
   async function createDAINote(owner, value, viewingKey, salt) {
-    const note = new Note(owner, value, DAI_TOKEN_TYPE, viewingKey, salt);
+    const note = new Note(owner, value, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     const ownerBalance = await dai.balanceOf(owner);
     const marketBalance = await dai.balanceOf(market.address);
@@ -75,7 +79,7 @@ contract('ZkDex', function(accounts) {
   }
 
   async function createETHNote(owner, value, viewingKey, salt) {
-    const note = new Note(owner, value, ETH_TOKEN_TYPE, viewingKey, salt);
+    const note = new Note(owner, value, constants.ETH_TOKEN_TYPE, viewingKey, salt);
 
     const ownerBalance = web3.utils.toBN(await web3.eth.getBalance(owner));
     const marketBalance = web3.utils.toBN(await web3.eth.getBalance(market.address));
@@ -97,9 +101,13 @@ contract('ZkDex', function(accounts) {
     return note;
   }
 
-  async function spendNote(oldNote, newNote1, newNote2) {
+  async function spendNote(oldNote, newNote1, newNote2, originalNote = null) {
+    await checkNote(oldNote, NoteState.Valid);
+    await checkNote(newNote1, NoteState.Invalid);
+    await checkNote(newNote2, NoteState.Invalid);
+
     await market.spend(
-      ...createProof.dummyProofSpendNote(oldNote, newNote1, newNote2),
+      ...createProof.dummyProofSpendNote(oldNote, newNote1, newNote2, originalNote),
       newNote1.encrypt(),
       newNote2.encrypt(),
     );
@@ -111,8 +119,8 @@ contract('ZkDex', function(accounts) {
 
   async function liquidateNote(note) {
     const getBalance =
-      note.token === DAI_TOKEN_TYPE ? dai.balanceOf :
-      note.token === ETH_TOKEN_TYPE ? async (addr) => web3.utils.toBN(await web3.eth.getBalance(addr)) :
+      note.token === constants.DAI_TOKEN_TYPE ? dai.balanceOf :
+      note.token === constants.ETH_TOKEN_TYPE ? async (addr) => web3.utils.toBN(await web3.eth.getBalance(addr)) :
       () => {throw new Error("undefined token type:" + note.token)};
 
     const owner = note.getOwner();
@@ -170,15 +178,15 @@ contract('ZkDex', function(accounts) {
       });
 
       it("should spend DAI note", async () => {
-        const newNote1 = new Note(newNote1Owner, newNote1Amount, DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
-        const newNote2 = new Note(newNote2Owner, newNote2Amount, DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
 
         await spendNote(daiNote, newNote1, newNote2);
       });
 
       it("should spend ETH note", async () => {
-        const newNote1 = new Note(newNote1Owner, newNote1Amount, ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
-        const newNote2 = new Note(newNote2Owner, newNote2Amount, ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
 
         await spendNote(ethNote, newNote1, newNote2);
       });
@@ -189,8 +197,8 @@ contract('ZkDex', function(accounts) {
       });
 
       it('should liquidate a DAI note after spending', async () => {
-        const newNote1 = new Note(newNote1Owner, newNote1Amount, DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
-        const newNote2 = new Note(newNote2Owner, newNote2Amount, DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
 
         await spendNote(daiNote, newNote1, newNote2);
 
@@ -199,8 +207,8 @@ contract('ZkDex', function(accounts) {
       });
 
       it('should liquidate a ETH note after spending', async () => {
-        const newNote1 = new Note(newNote1Owner, newNote1Amount, ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
-        const newNote2 = new Note(newNote2Owner, newNote2Amount, ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
 
         await spendNote(ethNote, newNote1, newNote2);
 
@@ -211,8 +219,8 @@ contract('ZkDex', function(accounts) {
   })
 
   describe("Market", () => {
-    const sourceToken = DAI_TOKEN_TYPE;
-    const targetToken = ETH_TOKEN_TYPE;
+    const sourceToken = constants.DAI_TOKEN_TYPE;
+    const targetToken = constants.ETH_TOKEN_TYPE;
 
     const makerDAIAmount = ether('10');
     const takerETHAmount = ether('100');
@@ -243,7 +251,7 @@ contract('ZkDex', function(accounts) {
     }
 
     async function takeOrder() {
-      stakeNote = new Note(makerNote.hash(), takerNote.value, targetToken, makerVk, web3.utils.randomHex(32));
+      stakeNote = new Note(makerNote.hash(), takerNote.value, targetToken, makerVk, web3.utils.randomHex(32), true);
       await market.takeOrder(
         orderId,
         ...createProof.dummyProofTakeOrder(makerNote, takerNote, stakeNote),
@@ -256,9 +264,9 @@ contract('ZkDex', function(accounts) {
     }
 
     async function settleOrder() {
-      rewardNote = new Note(takerNote.hash(), makerNote.value, sourceToken, takerVk, web3.utils.randomHex(32));
-      paymentNote = new Note(makerNote.hash(), takerNote.value, targetToken, takerVk, web3.utils.randomHex(32));
-      changeNote = new Note(makerNote.hash(), ether('0'), sourceToken, makerVk, web3.utils.randomHex(32));
+      rewardNote = new Note(takerNote.hash(), makerNote.value, sourceToken, takerVk, web3.utils.randomHex(32), true);
+      paymentNote = new Note(makerNote.hash(), takerNote.value, targetToken, takerVk, web3.utils.randomHex(32), true);
+      changeNote = new Note(makerNote.hash(), ether('0'), sourceToken, makerVk, web3.utils.randomHex(32), true);
 
 
       await market.settleOrder(
@@ -299,6 +307,22 @@ contract('ZkDex', function(accounts) {
       await makeOrder();
       await takeOrder();
       await settleOrder();
+    });
+
+    it('should redeem payment note and reward note', async () => {
+      await makeOrder();
+      await takeOrder();
+      await settleOrder();
+
+      const redeemedRewardNote1 = new Note(taker, rewardNote.value, rewardNote.token, takerVk, web3.utils.randomHex(32));
+      const redeemedRewardNote2 = new Note(taker, ether('0'), rewardNote.token, takerVk, web3.utils.randomHex(32));
+
+      await spendNote(rewardNote, redeemedRewardNote1, redeemedRewardNote2, takerNote);
+
+      const redeemedPaymentNote1 = new Note(maker, paymentNote.value, paymentNote.token, makerVk, web3.utils.randomHex(32));
+      const redeemedPaymentNote2 = new Note(maker, ether('0'), paymentNote.token, makerVk, web3.utils.randomHex(32));
+
+      await spendNote(paymentNote, redeemedPaymentNote1, redeemedPaymentNote2, makerNote);
     });
   });
 });
