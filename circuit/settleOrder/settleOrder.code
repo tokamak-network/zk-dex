@@ -8,53 +8,58 @@ import "../sha/1024bitPacked.code" as sha256
 // n1 = newNote1 from takerNotetoMaker to maker(newNoteToMaker)
 // n2 = changeNote from o1 or o2 to maker or taker(change)
 
-// o0h0 + o0h1 : makerNote hash
-// o0Type : makerNote type
-// o0pk0 + o0pk1 : makerNote's owner
-// o0Val : makerNote value
-// o0vk0 + o0vk1 : makerNote viewKey
-// o0Salt : makerNote salt, random value
-// o0IsSmart : makerNote isSmart, 0 if is not smart note
+// (public) o0h0 + o0h1 : makerNote hash
+// (public) o0Type : makerNote type
+// (private) o0pk0 + o0pk1 : makerNote's owner
+// (private) o0Val : makerNote value
+// (private) o0vk0 + o0vk1 : makerNote viewKey
+// (private) o0Salt : makerNote salt, random value
+// (private) o0IsSmart : makerNote isSmart, 0 if is not smart note
 
-// o1h0 + o1h1 : takerNotetoMaker hash
-// o1Type : takerNotetoMaker type
-// o1pk0 + o1pk1 : takerNotetoMaker's owner
-// o1Val : takerNotetoMaker value
-// o1vk0 + o1vk1 : takerNotetoMaker viewKey
-// o1Salt : takerNotetoMaker salt, random value
-// o1IsSmart : takerNotetoMaker isSmart, 0 if is not smart note
+// (public) o1h0 + o1h1 : takerNotetoMaker hash
+// (public) o1Type : takerNotetoMaker type
+// (private) o1pk0 + o1pk1 : takerNotetoMaker's owner
+// (private) o1Val : takerNotetoMaker value
+// (private) o1vk0 + o1vk1 : takerNotetoMaker viewKey
+// (private) o1Salt : takerNotetoMaker salt, random value
+// (private) o1IsSmart : takerNotetoMaker isSmart, 0 if is not smart note
 
-// n0h0 + n0h1 : newNoteToTaker hash
-// n0Type : newNoteToTaker type
-// n0rpk0 + n0rpk1 : reciever(order.parentNote)
-// n0Val : newNoteToTaker value
-// n0vk0 + n0vk1 : newNoteToTaker viewKey
-// n0Salt : newNoteToTaker salt
-// n0IsSmart : newNoteToTaker isSmart, 0 if is not smart note
+// (public) n0h0 + n0h1 : newNoteToTaker hash
+// (public) n0Type : newNoteToTaker type
+// (public) n0rpk0 + n0rpk1 : reciever(order.parentNote)
+// (private) n0Val : newNoteToTaker value
+// (private) n0vk0 + n0vk1 : newNoteToTaker viewKey
+// (private) n0Salt : newNoteToTaker salt
+// (private) n0IsSmart : newNoteToTaker isSmart, 0 if is not smart note
 
-// n1h0 + n1h1 : newNoteToMaker hash
-// n1Type : newNoteToMaker type
-// n1rpk0 + n1rpk1 : reciever(makerNote)
-// n1Val : newNoteToMaker value
-// n1vk0+ n1vk1 : newNoteToMaker viewKey
-// n1Salt : newNoteToMaker salt
-// n1IsSmart : newNoteToMaker isSmart, 0 if is not smart note
+// (public) n1h0 + n1h1 : newNoteToMaker hash
+// (public) n1Type : newNoteToMaker type
+// (public) n1rpk0 + n1rpk1 : reciever(makerNote)
+// (private) n1Val : newNoteToMaker value
+// (private) n1vk0+ n1vk1 : newNoteToMaker viewKey
+// (private) n1Salt : newNoteToMaker salt
+// (private) n1IsSmart : newNoteToMaker isSmart, 0 if is not smart note
 
-// n2h0 + n2h1 : change hash
-// n2Type : change type
-// n2rpk0 + n2rpk1 : reciever(makerNote or order.parentNote)
-// n2Val : change value
-// n2vk0+ n2vk1 : change viewKey
-// n2Salt : change salt
-// n2IsSmart : change isSmart, 0 if is not smart note
+// (public) n2h0 + n2h1 : change hash
+// (public) n2Type : change type
+// (private) n2rpk0 + n2rpk1 : reciever(makerNote or order.parentNote)
+// (private) n2Val : change value
+// (private) n2vk0+ n2vk1 : change viewKey
+// (private) n2Salt : change salt
+// (private) n2IsSmart : change isSmart, 0 if is not smart note
 
-def main(
-field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, 
-field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, 
-field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, 
-field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, 
-field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, 
-field price) -> (field):
+// (public) price : price of 1 sourceToken
+
+
+// Parameters
+// field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, 
+// field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, 
+// field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, 
+// field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, 
+// field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, 
+// field price
+
+def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
   field check = o0Val - o1Val/price
   
   field bit = if check <= o0Val then 1 else 0 fi

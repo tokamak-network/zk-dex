@@ -3,13 +3,13 @@ import "../sha/1024bitPacked.code" as sha256
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
-// nh0 + nh1 : makerNote hash
-// type : makerNote type
-// pk0 + pk1 : makerNote's owner
-// value : makerNote value
-// vk0 + vk1 : makerNote viewKey
-// salt : makerNote salt, random value
-// issSmart : makerNote isSmart, 0 if is not smart note
+// (public) nh0 + nh1 : makerNote hash
+// (public) type : makerNote type
+// (private) pk0 + pk1 : makerNote's owner
+// (private) value : makerNote value
+// (private) vk0 + vk1 : makerNote viewKey
+// (private) salt : makerNote salt, random value
+// (private) isSmart : makerNote isSmart, 0 if is not smart note
 
 def main(field nh0, field nh1, field type, private field pk0, private field pk1, private field value, private field vk0, private field vk1, private field salt, private field isSmart) -> (field):
   h = sha256([pk0, pk1, value, type, vk0, vk1, salt, isSmart])
