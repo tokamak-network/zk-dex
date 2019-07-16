@@ -1,2 +1,7 @@
+out
+out.code
+*.key
+package-lock.json
+zokrates
 .idea
 scripts/node_modules/

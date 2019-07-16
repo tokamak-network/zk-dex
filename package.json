@@ -1,0 +1,27 @@
+{
+  "name": "zk-ERC20",
+  "version": "0.9.0",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "npx truffle compile",
+    "migrate": "npx truffle migrate --reset",
+    "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
+    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ethlint": "^1.2.2",
+    "truffle": "^5.0.0-beta.1",
+    "bluebird": "^3.5.5",
+    "child-process-promise": "^2.2.1",
+    "jsonic": "^0.3.1",
+    "node-docker-api": "^1.1.22"
+  }
+}
