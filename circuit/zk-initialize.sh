@@ -7,7 +7,7 @@ for d in */ ; do
 
     CODE_FILE=${DIR}/${DIR}.code
 
-    if [ -f "$VERIFIER_FILE" ]; then
+    if [ -f "$CODE_FILE" ]; then
 
       echo "Working on $DIR"
       cd $DIR
