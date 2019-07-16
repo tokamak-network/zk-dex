@@ -5,7 +5,7 @@
 for d in */ ; do
     DIR=${d%?}
 
-    CODE_FILE=${DIR}/${DIR}.code
+    CODE_FILE=${DIR}.code
     cd $DIR
 
     if [ -f "$CODE_FILE" ]; then
