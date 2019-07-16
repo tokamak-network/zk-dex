@@ -29,24 +29,39 @@ function parseProof(file) {
   return _proof;
 }
 
-function marshalString (str) {
+function parseProofObj(obj) {
+  const proof = obj.proof;
+  const input = obj.input;
+  input.forEach((i, key) => {
+    if (typeof i == 'number') i = i.toString();
+    input[key] = '0x' + new BN(i, 16).toString('hex')
+  })
+
+  const _proof = [];
+  Object.keys(proof).forEach(key => _proof.push(proof[key]));
+  _proof.push(input);
+  return _proof;
+}
+
+function marshal (str) {
   if (str.slice(0, 2) === '0x') return str;
   return '0x'.concat(str);
 }
 
-function unmarshalString (str) {
+function unmarshal (str) {
   if (str.slice(0, 2) === '0x') return str.slice(2);
   return str;
 }
 
 function calcHash(h0, h1) {
-  return marshalString(unmarshalString(h0) + unmarshalString(h1));
+  return marshal(unmarshal(h0) + unmarshal(h1));
 }
 
 module.exports = {
   sleep,
   parseProof,
+  parseProofObj,
   calcHash,
-  marshalString,
-  unmarshalString,
+  marshal,
+  unmarshal,
 }
