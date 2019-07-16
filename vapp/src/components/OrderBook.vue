@@ -1,5 +1,96 @@
 <template>
-  <div>
+  <div class="columns">
+    <div class="column"></div>
+    <div class="column">
+      <b-table
+        selectable
+        :select-mode="selectMode"
+        selectedVariant="success"
+        :items="orders"
+        :fields="orderFields"
+        @row-selected="selectOrder"
+        responsive="sm"
+      >
+        <template slot="selected" slot-scope="{ rowSelected }">
+          <span v-if="rowSelected">✔</span>
+        </template>
+      </b-table>
+    </div>
+    <div class="column">
+      <div>
+        <b-table
+          selectable
+          :select-mode="selectMode"
+          selectedVariant="success"
+          :items="unspentNotes"
+          :fields="noteFields"
+          @row-selected="selectUnspentNote"
+          responsive="sm"
+          striped
+        >
+          <template slot="selected" slot-scope="{ rowSelected }">
+            <span v-if="rowSelected">✔</span>
+          </template>
+          <template slot="make">
+            <b-button
+              tag="router-link"
+              to="/make"
+            >make
+            </b-button>
+          </template>
+          <template slot="take">
+            <b-button
+              tag="router-link"
+              to="/take"
+            >take
+            </b-button>
+          </template>
+        </b-table>
+      </div>
+      <div style="height:50px; width:100%; clear:both;"></div>
+      <div>
+        <b-table
+          selectable
+          :select-mode="selectMode"
+          selectedVariant="success"
+          :items="tradingNotes"
+          :fields="noteFields"
+          @row-selected="selectTradingNote"
+          responsive="sm"
+        >
+          <template slot="selected" slot-scope="{ rowSelected }">
+            <span v-if="rowSelected">✔</span>
+          </template>
+          <template slot="settle">
+            <b-button
+              tag="router-link"
+              to="/settle"
+            >settle
+            </b-button>
+          </template>
+        </b-table>
+      </div>
+      <div style="height:50px; width:100%; clear:both;"></div>
+      <div>
+        <b-table
+          selectable
+          :select-mode="selectMode"
+          selectedVariant="success"
+          :items="spentNotes"
+          :fields="noteFields"
+          @row-selected="selectSpentNote"
+          responsive="sm"
+        >
+          <template slot="selected" slot-scope="{ rowSelected }">
+            <span v-if="rowSelected">✔</span>
+          </template>
+        </b-table>
+      </div>
+    </div>
+    <div class="column"></div>
+  </div>
+  
+  <!-- <div>
     <div class="columns">
       <div class="column"></div>
       <div class="column">
@@ -74,11 +165,23 @@
       </div>
       <div class="column"></div>
     </div>
-  </div>
+  </div> -->
 </template>
 
 <script>
 const dummyNotes = [
+  {
+    hash: '0x1',
+    token: 'eth',
+    value: 100,
+    status: 'trading'
+  },
+  {
+    hash: '0x1',
+    token: 'eth',
+    value: 100,
+    status: 'trading'
+  },
   {
     hash: '0x1',
     token: 'eth',
@@ -92,6 +195,30 @@ const dummyNotes = [
     status: 'spent'
   },
   {
+    hash: '0x2',
+    token: 'dai',
+    value: 200,
+    status: 'spent'
+  },
+  {
+    hash: '0x2',
+    token: 'dai',
+    value: 200,
+    status: 'spent'
+  },
+  {
+    hash: '0x3',
+    token: 'eth',
+    value: 300,
+    status: 'unspent'
+  },
+  {
+    hash: '0x3',
+    token: 'eth',
+    value: 300,
+    status: 'unspent'
+  },
+  {
     hash: '0x3',
     token: 'eth',
     value: 300,
@@ -102,47 +229,24 @@ const dummyNotes = [
 export default {
   data () {
     return {
+      noteToMakeOrder: null,
+      selectedOrder: [],
+      selectMode: 'single',
       web3: {},
-      radio: '1',
       orders: [],
       selectedNote: null,
-      selectedOrder: null,
       myNotes: [],
       isOrdered: false,
-      radioButton: '',
-      orderColumns: [
-        {
-          field: 'type',
-          label: 'type',
-          centered: true
-        },
-        {
-          field: 'price',
-          label: 'price',
-          centered: true
-        }
-      ],
-      noteColumns: [
-        {
-          field: 'status',
-          label: 'status',
-          centered: true
-        },
-        {
-          field: 'token',
-          label: 'token',
-          centered: true
-        },
-        {
-          field: 'hash',
-          label: 'hash',
-          centered: true
-        },
-        {
-          field: 'value',
-          label: 'value',
-          centered: true
-        }
+      orderFields: ['selected', 'orderId', 'price'],
+      noteFields: [
+        { key: 'selected', label: 'selected', class: 'text-center' },
+        { key: 'status', label: 'status', class: 'text-center' },
+        { key: 'token', label: 'token', class: 'text-center' },
+        { key: 'hash', label: 'hash', class: 'text-center' },
+        { key: 'value', label: 'value', class: 'text-center' },
+        { key: 'make', label: '', class: 'text-center' },
+        { key: 'take', label: '', class: 'text-center' },
+        { key: 'settle', label: '', class: 'text-center' },
       ]
     }
   },
@@ -154,12 +258,6 @@ export default {
     this.$store.dispatch('GET_CONTRACT_INSTANCE')
   },
   computed: {
-    sellOrders() {
-      return this.orders.filter(order => order.type === 'sell');
-    },
-    buyOrders() {
-      return this.orders.filter(order => order.type === 'buy');
-    },
     spentNotes() {
       return this.myNotes.filter(note => note.status === 'spent');
     },
@@ -174,56 +272,21 @@ export default {
     getMyNotes() {
       this.myNotes = dummyNotes;
     },
-    selectOrder() {
-      this.selectedNote = null;
-      this.$store.dispatch('SET_SELECTED_ORDER', this.selectedOrder);
+    selectOrder(order) {
+      this.$store.dispatch('SET_ORDER', order);
     },
-    selectNote() {
-      this.selectedOrder = null;
-      this.$store.dispatch('SET_SELECTED_NOTE', this.selectedNote);
+    selectTradingNote(note) {
+      this.$store.dispatch('SET_NOTE_TO_SETTLE_ORDER', note);
     },
-    takeOrder() {
-
+    selectUnspentNote(note) {
+      this.$store.dispatch('SET_NOTE_TO_MAKE_ORDER', note);
+      this.$store.dispatch('SET_NOTE_TO_TAKE_ORDER', note);
     },
-    settleOrder() {
-
-    },
-    makeOrder() {
-      this.isOrdered = true;
-    },
-    cancelOrder() {
-      this.isOrdered = false;
-    }
+    selectSpentNote(note) {}
   },
 }
 </script>
 
 <style>
-  .el-col {
-    border-radius: 4px;
-  }
-  .bg-purple-dark {
-    background: #99a9bf;
-  }
-  .bg-purple {
-    background: #d3dce6;
-  }
-  .bg-purple-light {
-    background: #e5e9f2;
-  }
-  .grid-content {
-    border-radius: 4px;
-    min-height: 36px;
-  }
-  .row-bg {
-    padding: 10px 0;
-    background-color: #f9fafc;
-  }
-  .fix {
-    bottom: 0px;
-    right: 0px;
-    margin-bottom: 10%;
-    margin-right: 10%;
-    position: fixed;
-  }
+
 </style>

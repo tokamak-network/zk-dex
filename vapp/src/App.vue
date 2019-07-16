@@ -20,8 +20,8 @@
                     <input
                       style="text-align: center;"
                       class="input"
-                      type="text"
-                      placeholder="name"
+                      type="password"
+                      placeholder="password"
                       v-model="id"
                     >
                   </div>

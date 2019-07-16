@@ -1,11 +1,12 @@
 <template>
   <div>
+    {{ note }}
     <div class="columns" style="margin-top: 200px;">
       <div class="column"></div>
       <div class="column">
         <div class="field is-horizontal">
           <div class="field-label is-normal">
-            <label class="label">orderId</label>
+            <label class="label">order id</label>
           </div>
           <div class="field-body">
             <div class="field">
@@ -17,19 +18,7 @@
         </div>
         <div class="field is-horizontal">
           <div class="field-label is-normal">
-            <label class="label">takerNoteToMaker</label>
-          </div>
-          <div class="field-body">
-            <div class="field">
-              <div class="control">
-                <input class="input" type="text">
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="field is-horizontal">
-          <div class="field-label is-normal">
-            <label class="label">parentNote</label>
+            <label class="label">proof</label>
           </div>
           <div class="field-body">
             <div class="field">
@@ -65,13 +54,13 @@
 
 <script>
 export default {
-  data() {
+  data () {
     return {
-      order: null
+      note: null
     }
   },
   created () {
-    this.order = this.$store.state.selectedOrder;
+    this.note = this.$store.state.noteToSettleOrder;
   },
   computed: {
     
@@ -84,4 +73,3 @@ export default {
 <style>
 
 </style>
-

@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@drizzle/vue-plugin": "git+https://git@github.com/trufflesuite/drizzle-vue-plugin.git",
+    "bootstrap": "^4.3.1",
+    "bootstrap-vue": "^2.0.0-rc.26",
     "buefy": "^0.7.10",
     "core-js": "^2.6.5",
     "drizzle": "^1.4.0",

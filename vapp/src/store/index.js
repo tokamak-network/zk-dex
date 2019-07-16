@@ -11,15 +11,20 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state,
   mutations: {
-    setSelectedOrder (state, order) {
-      state.selectedOrder = order;     
+    setOrder (state, order) {
+      state.order = order;
     },
-    setSelectedNote (state, note) {
-      state.selectedNote = note;     
+    setNoteToMakeOrder (state, note) {
+      state.noteToMakeOrder = note;
     },
-    addOrder (state, order) {
-      state.orders.push(order);
+    setNoteToTakeOrder (state, note) {
+      state.noteToTakeOrder = note;
     },
+    setNoteToSettleOrder (state, note) {
+      state.noteToSettleOrder = note;
+    },
+
+
     registerWeb3Instance (state, payload) {
       let result = payload
       let web3Copy = state.web3
@@ -40,15 +45,19 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    SET_SELECTED_ORDER(context, order) {
-      context.commit('setSelectedOrder', order);
+    SET_ORDER(context, order) {
+      context.commit('setOrder', order);
     },
-    SET_SELECTED_NOTE(context, note) {
-      context.commit('setSelectedNote', note);
+    SET_NOTE_TO_MAKE_ORDER(context, note) {
+      context.commit('setNoteToMakeOrder', note);
     },
-    ADD_ORDER(context, order) {
-      context.commit('addOrder', order);
+    SET_NOTE_TO_TAKE_ORDER(context, note) {
+      context.commit('setNoteToTakeOrder', note);
     },
+    SET_NOTE_TO_SETTLE_ORDER(context, note) {
+      context.commit('setNoteToSettleOrder', note);
+    },
+
     REGISTER_WEB3 ({commit}) {
       getWeb3.then(result => {
         commit('registerWeb3Instance', result)
