@@ -7,6 +7,6 @@ else
   ./zokrates generate-proof --proving-scheme pghr13 > "$(date +%FT%T)_generate_proof.log"
   # get line no of Input field
   export noInput=$(cat proof.json | sed -n '/input/ =')
-  cat proof.json | sed "${noInput}s/\[/\['0x/g" | sed "${noInput}s/\]/'\]/g" | sed "${noInput}s/\,/', '0x/g" | sed "s/'/\"/g" > fixed_proof.json
-  cat fixed_proof.json
+  cat proof.json | sed "${noInput}s/\[/\['0x/g" | sed "${noInput}s/\]/'\]/g" | sed "${noInput}s/\,/', '0x/g" | sed "s/'/\"/g" > makeOrderPoof.json
+  cat makeOrderPoof.json
 fi
