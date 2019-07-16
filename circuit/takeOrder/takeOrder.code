@@ -3,6 +3,25 @@ import "../sha/1024bitPacked.code" as sha256
 
 // Note = (_owner, _value, type, _senderViewingKey, _salt, _isSmart)
 
+// o = parentNote
+// n = takerNoteToMaker
+
+// oh0 + oh1 : old note hash
+// oType : old note type
+// pk0 + pk1 : old note's owner
+// oVal : old note value
+// ovk0 + ovk1 : old note viewKey
+// oSalt : old note salt, random value
+// oIsSmart : old note isSmart, 0 if is not smart note
+
+// n0h0 + n0h1 : new note 0 hash
+// n0Type : new note 0 type
+// rpk0 + rpk1 : reciever(new note 0 owner)
+// n0Val : new note 0 value
+// n0vk0 + n0vk1 : new note 0 viewKey
+// n0Salt : new note 0 salt
+// n0IsSmart : new note 0 isSmart, 0 if is not smart note
+
 def main(field oh0, field oh1, field oType, private field pk0, private field pk1, private field oVal, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field nh0, field nh1, field nType, field rpk0, field rpk1, private field nVal, private field nvk0, private field nvk1, private field nSalt, private field nIsSmart) -> (field):
   oVal == nVal
 

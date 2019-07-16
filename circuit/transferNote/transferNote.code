@@ -23,7 +23,7 @@ import "../sha/1024bitPacked.code" as sha256
 // n1Val : new note 1 value
 // n1Type : new note 1 type
 // n1vk0+ n1vk1 : new note 1 viewKey
-// 1Salt : new note 1 salt
+// n1Salt : new note 1 salt
 // n1IsSmart : new note 1 isSmart, 0 if is not smart note
 
 // originH0 + originH1 : origin note hash
