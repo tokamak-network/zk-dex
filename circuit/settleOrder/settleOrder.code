@@ -2,14 +2,14 @@ import "../sha/1024bitPacked.code" as sha256
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
-// o1 = makerNote
-// o2 = takerNotetoMaker
-// n0 = newNote0 from makerNote to taker
-// n1 = newNote1 from takerNotetoMaker to maker
-// n2 = changeNote from o1 or o2 to maker or taker
+// o0 = makerNote
+// o1 = takerNotetoMaker
+// n0 = newNote0 from makerNote to taker(newNoteToTaker)
+// n1 = newNote1 from takerNotetoMaker to maker(newNoteToMaker)
+// n2 = changeNote from o1 or o2 to maker or taker(change)
 
 
-def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, field o1pk0, field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, private field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field pnh0, field pnh1, field price) -> (field):
+def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
   field check = o0Val - o1Val/price
   
   field bit = if check <= o0Val then 1 else 0 fi
@@ -22,48 +22,37 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   field n1ValT = if bit == 1 then o1Val else o0Val*price fi
   field n2ValT = if bit == 1 then o0Val - o1Val/price else o1Val - o0Val*price fi
 
-  // check sum of value: o0Val + o1Val = n0Val + n1Val + n2Val
+  // check value: o0Val + o1Val = n0Val + n1Val + n2Val
   n0Val == n0ValT
   n1Val == n1ValT
   n2Val == n2ValT
 
-  // check owner of n0 is taker
-  pnh0 == n0rpk0
-  pnh1 == n0rpk1
-
-  // check owner of changeNote
-  field n2rpk0T = if bit == 1 then o0pk0 else pnh0 fi
-  field n2rpk1T = if bit == 1 then o0pk1 else pnh1 fi
+  // check owner of n2(change)
+  field n2rpk0T = if bit == 1 then o0pk0 else n0rpk0 fi
+  field n2rpk1T = if bit == 1 then o0pk1 else n0rpk1 fi
 
   n2rpk0 == n2rpk0T
   n2rpk1 == n2rpk1T
 
-  field n2IsSmartT = if bit == 1 then 0 else 1 fi
-  n2IsSmart == n2IsSmartT
-
-  // get public key corresponding to private key
-  // circuit for below hasn't been implemented as yet, so directly using the private key for PoC
+  // check all new notes are smartNote
+  n0IsSmart == 1
+  n1IsSmart == 1
+  n2IsSmart == 1
 
   // check o0
   h = sha256([o0pk0, o0pk1, o0Val, o0Type, o0vk0, o0vk1, o0Salt, o0IsSmart])
   o0h0 == h[0]
   o0h1 == h[1]
 
-  // check o1(smartNote)
+  // check o1
   h = sha256([o1pk0, o1pk1, o1Val, o1Type, o1vk0, o1vk1, o1Salt, o1IsSmart])
-  o1pk0 == o0h0
-  o1pk1 == o0h1
   o1h0 == h[0]
   o1h1 == h[1]
   
-
   // check n0
   h = sha256([n0rpk0, n0rpk1, n0Val, n0Type, n0vk0, n0vk1, n0Salt, n0IsSmart])
   n0h0 == h[0]
   n0h1 == h[1]
-
-  field bit1 = if n0IsSmart > 0 then 1 else 0 fi
-  bit1 == 1
 
   // check n1
   h = sha256([n1rpk0, n1rpk1, n1Val, n1Type, n1vk0, n1vk1, n1Salt, n1IsSmart])
