@@ -1,9 +1,10 @@
 pragma solidity ^0.4.25;
 
 import "./ZkDai.sol";
-
+import "./RLPReader.sol";
 
 contract ZkDex is ZkDai {
+  using RLPReader for *;
 
   enum OrderState {Created, Taken, Settled}
 
@@ -79,7 +80,7 @@ contract ZkDex is ZkDai {
    *  - [0, 1]  = parent note hash
    *  - [2]     = parent note type
    *
-   *  - [3, 4]  = taker note to maker note hash
+   *  - [3, 4]  = taker note to maker note hash (staking note)
    *  - [5]     = taker note to maker type
    *  - [6, 7]  = owner of taker note to maker (== maker note)
    *
@@ -95,7 +96,8 @@ contract ZkDex is ZkDai {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[9] input
+    uint256[9] input,
+    bytes encryptedStakingNote
   ) external {
     // TODO: verify circuit:takerOrder
 
@@ -103,8 +105,8 @@ contract ZkDex is ZkDai {
 
     require(order.state == OrderState.Created);
 
-    require(order.sourceToken == input[2], "ZkDex: source token mismatch");
-    require(order.targetToken == input[5], "ZkDex: target token mismatch");
+    require(order.targetToken == input[2], "ZkDex: parent note token type mismatch");
+    require(order.targetToken == input[5], "ZkDex: staking note token type mismatch");
     require(order.makerNote == calcHash(input[6], input[7]), "ZkDex: owner of taker note to maker mismatch");
 
     bytes32 parentNote = calcHash(input[0], input[1]);
@@ -115,6 +117,8 @@ contract ZkDex is ZkDai {
 
     notes[parentNote] = State.Traiding;
     notes[takerNoteToMaker] = State.Traiding;
+
+    encryptedNotes[takerNoteToMaker] = encryptedStakingNote;
 
     order.parentNote = parentNote;
     order.takerNoteToMaker = takerNoteToMaker;
@@ -147,7 +151,7 @@ contract ZkDex is ZkDai {
    *
    *  - [21]    = price
    *
-   *  - [22]     = output
+   *  - [22]    = output
    */
   function settleOrder(
     uint256 orderId,
@@ -159,16 +163,20 @@ contract ZkDex is ZkDai {
     uint256[2] c_p,
     uint256[2] h,
     uint256[2] k,
-    uint256[23] input
+    uint256[23] input,
+
+    bytes encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
   ) external {
     // TODO: verify circuit:settleOrder
+    // RLPReader.RLPItem[] memory list = proofs.toRLPItem().toList();
+    // RLPReader.RLPItem[] memory input = list[8].toList();
 
     Order storage order = orders[orderId];
 
     require(order.makerNote == calcHash(input[0], input[1]), "ZkDex: maker note mismatch");
     require(order.sourceToken == input[2], "ZkDex: source token mismatch");
     require(order.takerNoteToMaker == calcHash(input[3], input[4]), "ZkDex: taker note to maker mismatch");
-    require(order.targetToken == input[5], "ZkDex: target token mismatch");
+    // require(order.targetToken == input[5], "ZkDex: target token mismatch");
     require(order.makerNote == calcHash(input[6], input[7]), "ZkDex: owner of taker note to maker mismatch");
 
     require(order.sourceToken == input[10], "ZkDex: reward token type mismatch");
@@ -180,33 +188,36 @@ contract ZkDex is ZkDai {
 
     require(order.state == OrderState.Taken, "ZkDex: order cannot be settled");
 
-    bytes32 rewardNote = calcHash(input[8], input[9]);
-    bytes32 paymentNote = calcHash(input[13], input[14]);
-    bytes32 changeNote = calcHash(input[18], input[19]);
 
-    require(notes[rewardNote] == State.Invalid, "ZkDex: reward note must be invalid");
-    require(notes[paymentNote] == State.Invalid, "ZkDex: payment note must be invalid");
-    require(notes[changeNote] == State.Invalid, "ZkDex: change note must be invalid");
+    require(notes[calcHash(input[8], input[9])] == State.Invalid, "ZkDex: reward note must be invalid");
+    require(notes[calcHash(input[13], input[14])] == State.Invalid, "ZkDex: payment note must be invalid");
+    require(notes[calcHash(input[18], input[19])] == State.Invalid, "ZkDex: change note must be invalid");
 
-    notes[rewardNote] = State.Valid;
-    notes[paymentNote] = State.Valid;
-    notes[changeNote] = State.Valid;
+    notes[calcHash(input[8], input[9])] = State.Valid;
+    notes[calcHash(input[13], input[14])] = State.Valid;
+    notes[calcHash(input[18], input[19])] = State.Valid;
 
     notes[order.makerNote] = State.Spent;
     notes[order.parentNote] = State.Spent;
     notes[order.takerNoteToMaker] = State.Spent;
 
+    RLPReader.RLPItem[] memory encList = encDatas.toRLPItem().toList();
+
+    encryptedNotes[calcHash(input[8], input[9])] = encList[0].toBytes();
+    encryptedNotes[calcHash(input[13], input[14])] = encList[1].toBytes();
+    encryptedNotes[calcHash(input[18], input[19])] = encList[2].toBytes();
+
     order.state = OrderState.Settled;
 
-    emit NoteStateChange(rewardNote, State.Valid);
-    emit NoteStateChange(paymentNote, State.Valid);
-    emit NoteStateChange(changeNote, State.Valid);
+    emit NoteStateChange(calcHash(input[8], input[9]), State.Valid);
+    emit NoteStateChange(calcHash(input[13], input[14]), State.Valid);
+    emit NoteStateChange(calcHash(input[18], input[19]), State.Valid);
 
     emit NoteStateChange(order.makerNote, State.Spent);
     emit NoteStateChange(order.parentNote, State.Spent);
     emit NoteStateChange(order.takerNoteToMaker, State.Spent);
 
-    emit OrderSettled(orderId, rewardNote, paymentNote, changeNote);
+    emit OrderSettled(orderId, calcHash(input[8], input[9]), calcHash(input[13], input[14]), calcHash(input[18], input[19]));
   }
 
   function hashOrder(Order memory order) internal view returns (bytes32) {

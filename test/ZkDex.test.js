@@ -1,78 +1,307 @@
 const { balance } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
+const rlp = require('rlp');
+
 
 const ZkDex = artifacts.require("ZkDex");
 const MockDai = artifacts.require("MockDai");
 
 const util = require('./util');
-const { Note, decrypt } = require('./lib/Note');
+const { Note, decrypt, ETH_TOKEN_TYPE, DAI_TOKEN_TYPE, createProof } = require('./lib/Note');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
+
+const NoteState = {
+  Invalid: web3.utils.toBN('0'),
+  Valid: web3.utils.toBN('1'),
+  Traiding: web3.utils.toBN('2'),
+  Spent: web3.utils.toBN('3'),
+};
+
+const OrderState = {
+  Created: web3.utils.toBN('0'),
+  Taken: web3.utils.toBN('1'),
+  Settled: web3.utils.toBN('3'),
+};
 
 contract('ZkDex', function(accounts) {
   let dai, market;
 
   // Initial setup
   beforeEach(async () => {
+    const development = true;
+
     dai = await MockDai.new();
-    market = await ZkDex.new(true, dai.address);
+    market = await ZkDex.new(development, dai.address);
   });
 
-  describe("create a note", () => {
-    it("should create a new note from DAI", async () => {
-      // check dai balance and approve the zkdai contract to be able to move tokens
-      expect(await dai.balanceOf(accounts[0]), ether(100), '100 dai tokens were not assigned to the 1st account');
-      expect(await dai.balanceOf(market.address), 0, 'Zkdai contract should have 0 dai tokens');
-      expect(await dai.balanceOf(accounts[0]), ether(100), 'user should have 100 dai tokens');
-      await dai.approve(market.address, ether(5));
+  async function checkOrderState(orderId, orderState) {
+    const order = await market.orders(orderId);
 
-      const proof = util.parseProof('./test/mintNoteProof.json');
-      const sk = accounts[0] + 'vitalik';
-      const note = new Note(accounts[0], ether(5), dai.address, sk, '0x00');
-      const encryptedNote = '0x' + note.encrypt(sk);
-      const noteHash = util.calcHash(
-        proof[proof.length - 1][0], proof[proof.length - 1][1]
-      );
+    expect(order[order.length - 1], orderState, "order state mismatch");
+  }
 
-      // the zk proof corresponds to a secret note of value 5
-      const mintTx = await market.mintDAI(...proof, encryptedNote, {value: ether(1)});
-      const proofHash = mintTx.logs[0].args.proofHash;
+  async function checkNote(note, noteState, msg = "") {
+    expect(await market.notes(note.hash()), noteState, "note state mismatch" + msg);
 
-      expect(await dai.balanceOf(market.address), ether(5), 'Zkdai contract should have 5 dai tokens');
-      expect(await dai.balanceOf(accounts[0]), ether(95), 'user should have 95 dai');
+    const encryptedNote = await market.encryptedNotes(note.hash());
 
-      await util.sleep(1);
-      await market.commit(proofHash);
+    const decryptedNote = decrypt(encryptedNote, note.viewingKey);
 
-      expect(await market.encryptedNotes(noteHash), encryptedNote, "encrypted note mismatch");
+    expect(note.toString(), decryptedNote.toString(), "decrypted note doesn't match with original note" + msg);
+  }
+
+  async function createDAINote(owner, value, viewingKey, salt) {
+    const note = new Note(owner, value, DAI_TOKEN_TYPE, viewingKey, salt);
+
+    const ownerBalance = await dai.balanceOf(owner);
+    const marketBalance = await dai.balanceOf(market.address);
+
+    await dai.approve(market.address, value, { from: owner });
+    const mintTx = await market.mint(...createProof.dummyProofCreateNote(note), note.encrypt(), {
+      from: owner
     });
 
-    it("should create a new note from ETH", async () => {
-      const proof = util.parseProof('./test/mintNoteProof.json');
-      const sk = accounts[0] + 'vitalik';
-      note = new Note(accounts[0], ether(5), '0x00', sk, '0x00');
-      const encryptedNote = '0x' + note.encrypt(sk);
-      const noteHash = util.calcHash(
-        proof[proof.length - 1][0], proof[proof.length - 1][1]
-      );
+    expect(mintTx.logs[0].args.note, note.hash(), 'note hash mismatch');
 
-      const userBalance = await balance.tracker(accounts[0]);
-      const marketBalance = await balance.tracker(market.address);
+    const ownerBalanceDiff = (await dai.balanceOf(owner)).sub(ownerBalance);
+    const marketBalanceDiff = (await dai.balanceOf(market.address)).sub(marketBalance);
 
-      // the zk proof corresponds to a secret note of value 5
-      const mintTx = await market.mintETH(...proof, encryptedNote, {value: ether(6)});
-      const proofHash = mintTx.logs[0].args.proofHash;
+    expect(ownerBalanceDiff.neg(), value, "owner dai balance mismatch");
+    expect(marketBalanceDiff, value, "market dai balance mismatch");
 
-      expect(await marketBalance.delta(), ether(5), 'Zkdai contract should have 5 dai tokens');
-      expect(await userBalance.delta(), ether(5).add(await calcTxFee(mintTx)).neg(), 'user should have 95 dai');
+    await checkNote(note, NoteState.Valid);
+    return note;
+  }
 
-      await util.sleep(1);
-      await market.commit(proofHash);
+  async function createETHNote(owner, value, viewingKey, salt) {
+    const note = new Note(owner, value, ETH_TOKEN_TYPE, viewingKey, salt);
 
-      expect(await market.encryptedNotes(noteHash), encryptedNote, "encrypted note mismatch");
+    const ownerBalance = web3.utils.toBN(await web3.eth.getBalance(owner));
+    const marketBalance = web3.utils.toBN(await web3.eth.getBalance(market.address));
+
+    const mintTx = await market.mint(...createProof.dummyProofCreateNote(note), note.encrypt(), {
+      from: owner,
+      value: value,
+    });
+
+    expect(mintTx.logs[0].args.note, note.hash(), 'note hash mismatch');
+
+    const ownerBalanceDiff = web3.utils.toBN(await web3.eth.getBalance(owner)).sub(ownerBalance);
+    const marketBalanceDiff = web3.utils.toBN(await web3.eth.getBalance(market.address)).sub(marketBalance);
+
+    expect(ownerBalanceDiff.neg(), value, "owner eth balance mismatch");
+    expect(marketBalanceDiff, value, "market eth balance mismatch");
+
+    await checkNote(note, NoteState.Valid);
+    return note;
+  }
+
+  async function spendNote(oldNote, newNote1, newNote2) {
+    await market.spend(
+      ...createProof.dummyProofSpendNote(oldNote, newNote1, newNote2),
+      newNote1.encrypt(),
+      newNote2.encrypt(),
+    );
+
+    await checkNote(oldNote, NoteState.Spent);
+    await checkNote(newNote1, NoteState.Valid);
+    await checkNote(newNote2, NoteState.Valid);
+  }
+
+  async function liquidateNote(note) {
+    const getBalance =
+      note.token === DAI_TOKEN_TYPE ? dai.balanceOf :
+      note.token === ETH_TOKEN_TYPE ? async (addr) => web3.utils.toBN(await web3.eth.getBalance(addr)) :
+      () => {throw new Error("undefined token type:" + note.token)};
+
+    const owner = note.getOwner();
+
+    const ownerBalance = await getBalance(owner);
+    const marketBalance = await getBalance(market.address);
+
+    await market.liquidate(
+      owner,
+      ...createProof.dummyProofLiquidateNote(note),
+    );
+
+    const ownerBalanceDiff = (await getBalance(owner)).sub(ownerBalance);
+    const marketBalanceDiff = (await getBalance(market.address)).sub(marketBalance);
+
+    expect(ownerBalanceDiff, note.value, "owner eth balance mismatch");
+    expect(marketBalanceDiff.neg(), note.value, "market eth balance mismatch");
+
+    await checkNote(note, NoteState.Spent);
+  }
+
+  describe("Wallet", async () => {
+    describe("create a note", () => {
+      it("should create a new note from DAI", async () => {
+        const vk = accounts[0] + util.unmarshal(web3.utils.fromAscii('vitalik'));
+        const salt = web3.utils.randomHex(32);
+        await createDAINote(accounts[0], ether(5), vk, salt);
+      });
+
+      it("should create a new note from ETH", async () => {
+        const vk = accounts[0] + util.unmarshal(web3.utils.fromAscii('vitalik'));
+        const salt = web3.utils.randomHex(32);
+        await createETHNote(accounts[0], ether(5), vk, salt);
+      });
+    });
+
+    describe("spend and liquidate a note", () => {
+      const oldNoteAmount = ether('5');
+      const newNote1Amount = ether('4');
+      const newNote2Amount = ether('1');
+
+      const oldNoteOwner = accounts[0];
+      const newNote1Owner = accounts[1];
+      const newNote2Owner = accounts[2];
+
+      const vk1 = oldNoteOwner + util.unmarshal(web3.utils.fromAscii('vitalik'));
+      const vk2 = newNote1Owner + util.unmarshal(web3.utils.fromAscii('vitalik'));
+      const vk3 = newNote2Owner + util.unmarshal(web3.utils.fromAscii('vitalik'));
+
+      let daiNote, ethNote;
+
+      beforeEach(async () => {
+        daiNote = await createDAINote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(32));
+        ethNote = await createETHNote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(32));
+      });
+
+      it("should spend DAI note", async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+
+        await spendNote(daiNote, newNote1, newNote2);
+      });
+
+      it("should spend ETH note", async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+
+        await spendNote(ethNote, newNote1, newNote2);
+      });
+
+      it('should liquidate a note without spending', async () => {
+        await liquidateNote(daiNote);
+        await liquidateNote(ethNote);
+      });
+
+      it('should liquidate a DAI note after spending', async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+
+        await spendNote(daiNote, newNote1, newNote2);
+
+        await liquidateNote(newNote1);
+        await liquidateNote(newNote2);
+      });
+
+      it('should liquidate a ETH note after spending', async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(32));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(32));
+
+        await spendNote(ethNote, newNote1, newNote2);
+
+        await liquidateNote(newNote1);
+        await liquidateNote(newNote2);
+      });
     });
   })
-})
+
+  describe("Market", () => {
+    const sourceToken = DAI_TOKEN_TYPE;
+    const targetToken = ETH_TOKEN_TYPE;
+
+    const makerDAIAmount = ether('10');
+    const takerETHAmount = ether('100');
+    const price = web3.utils.toBN('10');
+
+    const maker = accounts[0];
+    const taker = accounts[1];
+
+    const makerVk = maker + util.unmarshal(web3.utils.fromAscii('vitalik'));
+    const takerVk = taker + util.unmarshal(web3.utils.fromAscii('vitalik'));
+
+    const orderId = 0; // event doesn't fired due to solidity stack limit
+
+    let makerNote, takerNote;
+    let stakeNote;
+    let rewardNote, paymentNote, changeNote;
+
+    beforeEach(async () => {
+      makerNote = await createDAINote(maker, makerDAIAmount, makerVk, web3.utils.randomHex(32));
+      takerNote = await createETHNote(taker, takerETHAmount, takerVk, web3.utils.randomHex(32));
+    });
+
+    async function makeOrder() {
+      await market.makeOrder(makerVk, targetToken, price, ...createProof.dummyProofMakeOrder(makerNote));
+
+      await checkNote(makerNote, NoteState.Traiding);
+      await checkOrderState(orderId, OrderState.Created);
+    }
+
+    async function takeOrder() {
+      stakeNote = new Note(makerNote.hash(), takerNote.value, targetToken, makerVk, web3.utils.randomHex(32));
+      await market.takeOrder(
+        orderId,
+        ...createProof.dummyProofTakeOrder(makerNote, takerNote, stakeNote),
+        stakeNote.encrypt(),
+      );
+
+      await checkNote(takerNote, NoteState.Traiding);
+      await checkNote(stakeNote, NoteState.Traiding);
+      await checkOrderState(orderId, OrderState.Taken);
+    }
+
+    async function settleOrder() {
+      rewardNote = new Note(takerNote.hash(), makerNote.value, sourceToken, takerVk, web3.utils.randomHex(32));
+      paymentNote = new Note(makerNote.hash(), takerNote.value, targetToken, takerVk, web3.utils.randomHex(32));
+      changeNote = new Note(makerNote.hash(), ether('0'), sourceToken, makerVk, web3.utils.randomHex(32));
+
+
+      await market.settleOrder(
+        orderId,
+        ...createProof.dummyProofSettleOrder(
+          makerNote,
+          takerNote,
+          stakeNote,
+          rewardNote,
+          paymentNote,
+          changeNote,
+          price
+        ),
+        rlp.encode([rewardNote.encrypt(), paymentNote.encrypt(), changeNote.encrypt()]),
+      );
+
+      await checkNote(makerNote, NoteState.Spent);
+      await checkNote(takerNote, NoteState.Spent);
+      await checkNote(stakeNote, NoteState.Spent);
+
+      await checkNote(rewardNote, NoteState.Valid);
+      await checkNote(paymentNote, NoteState.Valid);
+      await checkNote(changeNote, NoteState.Valid);
+
+      await checkOrderState(orderId, OrderState.Settled);
+    }
+
+    it("should make an order", async () => {
+      await makeOrder();
+    });
+
+    it("should take an order", async () => {
+      await makeOrder();
+      await takeOrder();
+    });
+
+    it('should settle an order', async () => {
+      await makeOrder();
+      await takeOrder();
+      await settleOrder();
+    });
+  });
+});
 
 
 async function calcTxFee(txWithReceipt) {

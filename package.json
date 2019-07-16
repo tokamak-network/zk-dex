@@ -17,6 +17,7 @@
     "ethlint": "^1.2.2",
     "openzeppelin-solidity": "^2.0.0",
     "openzeppelin-test-helpers": "^0.4.0",
+    "rlp": "^2.2.3",
     "truffle": "^5.0.27"
   },
   "dependencies": {
