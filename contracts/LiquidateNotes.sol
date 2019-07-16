@@ -34,7 +34,7 @@ contract LiquidateNotes is MintNoteVerifier, ZkDaiBase {
 
     bytes32 note = calcHash(input[0], input[1]);
 
-    require(notes[note] == State.Committed, "Note is either invalid or already spent");
+    require(notes[note] == State.Valid, "Note is either invalid or already spent");
     notes[note] = State.Spent;
 
     emit NoteStateChange(note, State.Spent);

@@ -38,7 +38,7 @@ contract('mintNote', function(accounts) {
     const challenge = await zkdai.challenge(...params); // omit sending public params again
     assert.equal(challenge.logs[1].event, 'NoteStateChange')
     // @todo assert on challenge.logs[1].args.note
-    assert.equal(challenge.logs[1].args.state, 1 /* committed */)
+    assert.equal(challenge.logs[1].args.state, 1 /* valid */)
   })
 
   it('challenge passes for incorrect proof', async function() {
@@ -68,11 +68,11 @@ contract('mintNote', function(accounts) {
     await util.sleep(1);
     const commit = await zkdai.commit(proofHash);
     assert.equal(commit.logs[0].event, 'NoteStateChange')
-    assert.equal(commit.logs[0].args.state, 1 /* committed */)
+    assert.equal(commit.logs[0].args.state, 1 /* valid */)
   })
 
   it('can not be challenged after cooldown period');
-  it('can not be committed before cooldown period');
+  it('can not be valid before cooldown period');
 })
 
 function assertEvent(event, type, ...args) {

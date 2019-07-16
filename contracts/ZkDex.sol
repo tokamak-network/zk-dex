@@ -52,7 +52,7 @@ contract ZkDex is ZkDai {
     bytes32 makerNote = calcHash(input[0], input[1]);
 
     require(input[2] != targetToken, "ZkDex: cannot make an order with same token pair");
-    require(notes[makerNote] == State.Committed, "ZkDex: maker note is not available");
+    require(notes[makerNote] == State.Valid, "ZkDex: maker note is not available");
 
     uint orderId = orders.length++;
     Order storage order = orders[orderId];
@@ -110,7 +110,7 @@ contract ZkDex is ZkDai {
     bytes32 parentNote = calcHash(input[0], input[1]);
     bytes32 takerNoteToMaker = calcHash(input[3], input[4]);
 
-    require(notes[parentNote] == State.Committed, "ZkDex: taker note is not available");
+    require(notes[parentNote] == State.Valid, "ZkDex: taker note is not available");
     require(notes[takerNoteToMaker] == State.Invalid, "ZkDex: taker send valid note to maker");
 
     notes[parentNote] = State.Traiding;
@@ -188,9 +188,9 @@ contract ZkDex is ZkDai {
     require(notes[paymentNote] == State.Invalid, "ZkDex: payment note must be invalid");
     require(notes[changeNote] == State.Invalid, "ZkDex: change note must be invalid");
 
-    notes[rewardNote] = State.Committed;
-    notes[paymentNote] = State.Committed;
-    notes[changeNote] = State.Committed;
+    notes[rewardNote] = State.Valid;
+    notes[paymentNote] = State.Valid;
+    notes[changeNote] = State.Valid;
 
     notes[order.makerNote] = State.Spent;
     notes[order.parentNote] = State.Spent;
@@ -198,9 +198,9 @@ contract ZkDex is ZkDai {
 
     order.state = OrderState.Settled;
 
-    emit NoteStateChange(rewardNote, State.Committed);
-    emit NoteStateChange(paymentNote, State.Committed);
-    emit NoteStateChange(changeNote, State.Committed);
+    emit NoteStateChange(rewardNote, State.Valid);
+    emit NoteStateChange(paymentNote, State.Valid);
+    emit NoteStateChange(changeNote, State.Valid);
 
     emit NoteStateChange(order.makerNote, State.Spent);
     emit NoteStateChange(order.parentNote, State.Spent);

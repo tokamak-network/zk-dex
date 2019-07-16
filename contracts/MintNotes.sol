@@ -35,9 +35,9 @@ contract MintNotes is MintNoteVerifier, ZkDaiBase {
     bytes32 note = calcHash(input[0], input[1]);
     require(notes[note] == State.Invalid, "Note was already minted");
 
-    notes[note] = State.Committed;
+    notes[note] = State.Valid;
     encryptedNotes[note] = encryptedNote;
 
-    emit NoteStateChange(note, State.Committed);
+    emit NoteStateChange(note, State.Valid);
   }
 }

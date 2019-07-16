@@ -34,22 +34,22 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
     bytes32[3] memory _notes = get3Notes(input);
 
-    // check that the first note (among public params) is committed and
+    // check that the first note (among public params) is valid and
     // new notes should not be existing at this point
-    require(notes[_notes[0]] == State.Committed, "Note is either invalid or already spent");
+    require(notes[_notes[0]] == State.Valid, "Note is either invalid or already spent");
     require(notes[_notes[1]] == State.Invalid, "output note1 is already minted");
     require(notes[_notes[2]] == State.Invalid, "output note2 is already minted");
 
     notes[_notes[0]] = State.Spent;
-    notes[_notes[1]] = State.Committed;
-    notes[_notes[2]] = State.Committed;
+    notes[_notes[1]] = State.Valid;
+    notes[_notes[2]] = State.Valid;
 
     encryptedNotes[_notes[1]] = encryptedNote1;
     encryptedNotes[_notes[2]] = encryptedNote2;
 
     emit NoteStateChange(_notes[0], State.Spent);
-    emit NoteStateChange(_notes[1], State.Committed);
-    emit NoteStateChange(_notes[2], State.Committed);
+    emit NoteStateChange(_notes[1], State.Valid);
+    emit NoteStateChange(_notes[2], State.Valid);
   }
 
   function get3Notes(uint256[7] input)
