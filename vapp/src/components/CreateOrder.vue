@@ -97,12 +97,28 @@ export default {
       this.proof = '1'
     },
     makeOrder() {
-      const order = {
-        type: 'buy',
-        price: 1000,
-        date: '2016-10-15 13:40:40'
-      };
-      this.$store.dispatch('ADD_ORDER', order);
+      // const order = {
+      //   type: 'buy',
+      //   price: 1000,
+      //   date: '2016-10-15 13:40:40'
+      // };
+      // this.$store.dispatch('ADD_ORDER', order);
+      this.$store.state.contractInstance().bet(10, {
+        gas: 300000,
+        value: this.$store.state.web3.web3Instance().toWei(this.amount, 'ether'),
+        from: this.$store.state.web3.coinbase
+      }, (err, result) => {
+        if (err) {
+          this.pending = false
+        } else {
+          let Won = this.$store.state.contractInstance().Won()
+          Won.watch((err, result) => {
+            this.winEvent = result.args
+            this.winEvent._amount = parseInt(result.args._amount, 10)
+            this.pending = false
+          })
+        }
+      });
     }
   },
 }

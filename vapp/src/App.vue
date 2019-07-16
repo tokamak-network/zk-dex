@@ -9,16 +9,19 @@
             <span style="font-size: 80px;">
               ZK-DEX
             </span>
-            <div style="height:40px; width:100%; clear:both;"></div>
             <div class="columns">
               <div class="column"></div>
               <div class="column">
+                <div style="height:20px; width:100%; clear:both;"></div>
+                <meta-mask />
+                <div style="height:40px; width:100%; clear:both;"></div>
                 <div class="field">
                   <div class="control">
                     <input
+                      style="text-align: center;"
                       class="input"
                       type="text"
-                      placeholder="nickname"
+                      placeholder="name"
                       v-model="id"
                     >
                   </div>
@@ -37,24 +40,30 @@
         </div>
       </section>
     </div>
-    <router-view
-      v-else
-      style="margin-top: 60px;"
-    ></router-view>
+    <div v-else>
+      <router-view
+        style="margin-top: 60px;"
+      ></router-view>
+    </div>
   </div>
 </template>
 
 <script>
+import MetaMask from './components/MetaMask.vue';
+
 export default {
   name: 'app',
+  components: {
+    MetaMask,
+  },
   data() {
     return {
       isLogin: false,
       id: null
     }
   },
-  created () {
-
+  beforeCreate () {
+    this.$store.dispatch('REGISTER_WEB3');
   },
   methods: {
     login() {

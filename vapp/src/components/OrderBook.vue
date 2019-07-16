@@ -25,7 +25,7 @@
             to="/make"
             type="is-info"
           >
-            <span v-on:click="takeOrder()">TRADE</span>
+            <span v-on:click="takeOrder()">ORDER</span>
           </b-button>
         </div>
       </div>
@@ -45,7 +45,7 @@
             to="/create"
             type="is-info"
           >
-            <span v-on:click="selectNote()">ORDER</span>
+            <span v-on:click="selectNote()">TRADE</span>
           </b-button>
         </div>
         <div style="height:100px; width:100%; clear:both;"></div>
@@ -102,6 +102,7 @@ const dummyNotes = [
 export default {
   data () {
     return {
+      web3: {},
       radio: '1',
       orders: [],
       selectedNote: null,
@@ -149,6 +150,9 @@ export default {
     this.getMyNotes();
     this.orders = this.$store.state.orders;
   },
+  mounted () {
+    this.$store.dispatch('GET_CONTRACT_INSTANCE')
+  },
   computed: {
     sellOrders() {
       return this.orders.filter(order => order.type === 'sell');
@@ -164,7 +168,7 @@ export default {
     },
     tradingNotes() {
       return this.myNotes.filter(note => note.status === 'trading');
-    }
+    },
   },
   methods: {
     getMyNotes() {

@@ -1,54 +1,14 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import state from './state'
+
+import getWeb3 from '../util/getWeb3'
+import getContract from '../util/getContract'
 
 Vue.use(Vuex);
-// NOTE:
-// state의 변수의 변경은 반드시 mutations의 구현한 함수에 의해서만 변경시킬 수 있다. 
-// action에서 mutation의 함수를 호출하고 mutation이 state를 변경시킨다.
 
 export default new Vuex.Store({
-  state: {
-    orders: [
-      {
-        id: 1,
-        price: 100,
-        type: 'sell',
-        date: '2016-10-15 13:43:27'
-      },
-      {
-        id: 2,
-        price: 200,
-        type: 'buy',
-        date: '2016-10-15 13:43:27'
-      },
-      {
-        id: 3,
-        price: 300,
-        type: 'sell',
-        date: '2016-10-15 13:43:27'
-      },
-      {
-        id: 4,
-        price: 400,
-        type: 'buy',
-        date: '2016-10-15 13:43:27'
-      },
-      {
-        id: 5,
-        price: 500,
-        type: 'buy',
-        date: '2016-10-15 13:43:27'
-      },
-      {
-        id: 6,
-        price: 600,
-        type: 'buy',
-        date: '2016-10-15 13:43:27'
-      }
-    ],
-    selectedOrder: {},
-    selectedNote: {}
-  },
+  state,
   mutations: {
     setSelectedOrder (state, order) {
       state.selectedOrder = order;     
@@ -58,6 +18,19 @@ export default new Vuex.Store({
     },
     addOrder (state, order) {
       state.orders.push(order);
+    },
+    registerWeb3Instance (state, payload) {
+      let result = payload
+      let web3Copy = state.web3
+      web3Copy.coinbase = result.coinbase
+      web3Copy.networkId = result.networkId
+      web3Copy.balance = result.balance
+      web3Copy.isInjected = result.injectedWeb3
+      web3Copy.web3Instance = result.web3
+      state.web3 = web3Copy;
+    },
+    registerContractInstance (state, payload) {
+      state.contractInstance = () => payload
     }
   },
   actions: {
@@ -69,6 +42,16 @@ export default new Vuex.Store({
     },
     ADD_ORDER(context, order) {
       context.commit('addOrder', order);
+    },
+    REGISTER_WEB3 ({commit}) {
+      getWeb3.then(result => {
+        commit('registerWeb3Instance', result)
+      }).catch(() => {})
+    },
+    GET_CONTRACT_INSTANCE ({commit}) {
+      getContract.then(result => {
+        commit('registerContractInstance', result)
+      }).catch(() => {})
     }
   }
 });
