@@ -24,12 +24,13 @@ const sampleProof = `{
 }`;
 
 class Note {
-  constructor(owner, value, token, viewingKey, salt) {
+  constructor(owner, value, token, viewingKey, salt, isSmart = false) {
     this.owner = web3.utils.padLeft(web3.utils.toHex(owner), 64);
     this.value = web3.utils.padLeft(web3.utils.toHex(value), 64);
     this.token = web3.utils.padLeft(web3.utils.toHex(token), 64);
     this.viewingKey = web3.utils.padLeft(web3.utils.toHex(viewingKey), 64);
     this.salt = web3.utils.padLeft(web3.utils.toHex(salt), 64);
+    this.isSmart = web3.utils.padLeft(isSmart ? '0x1' : '0x0', 64);
   }
 
   getOwner() {
@@ -41,9 +42,16 @@ class Note {
   }
 
   hash() {
-    const args = [this.owner, this.value, this.token, this.viewingKey, this.salt];
-    const v = args.map(util.unmarshal).join('');
-    return web3.utils.soliditySha3(util.marshal(v));
+    const args = [this.owner, this.value, this.token, this.viewingKey, this.salt, this.isSmart];
+    const v = args
+      .map(v => web3.utils.padLeft(v, 64)) // double check
+      .map(util.unmarshal)
+      .join('');
+
+    const buf = Buffer.from(util.unmarshal(v), 'hex')
+    const hash = crypto.createHash('sha256').update(buf).digest('hex');
+
+    return util.marshal(hash);
   }
 
   hashArr() {
@@ -94,13 +102,14 @@ function dummyProofCreateNote(note) {
   return util.parseProofObj(proof);
 }
 
-function dummyProofSpendNote(oldNote, newNote1, newNote2) {
+function dummyProofSpendNote(oldNote, newNote1, newNote2, originalNote = null) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
     ...oldNote.hashArr(),
     ...newNote1.hashArr(),
     ...newNote2.hashArr(),
+    ...(originalNote === null ? EMPTY_NOTE.hashArr() : originalNote.hashArr()),
     1,
   ];
 
@@ -144,7 +153,6 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
 
     ...stakeNote.hashArr(),
     stakeNote.token,
-    ...makerNote.hashArr(),
 
     ...rewardNote.hashArr(),
     rewardNote.token,
@@ -165,9 +173,17 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
   return util.parseProofObj(proof);
 }
 
+const EMPTY_NOTE = new Note('0x1111111111111111111111111111111111111111111111111111111111111111', '0', '0', '0x1111111111111111111111111111111111111111111111111111111111111111', '0', false);
+const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
+
+console.log("EMPTY_NOTE_HASH", EMPTY_NOTE_HASH)
+
 module.exports = {
-  ETH_TOKEN_TYPE,
-  DAI_TOKEN_TYPE,
+  constants: {
+    ETH_TOKEN_TYPE,
+    DAI_TOKEN_TYPE,
+    EMPTY_NOTE_HASH,
+  },
   Note,
   decrypt,
   createProof: {
