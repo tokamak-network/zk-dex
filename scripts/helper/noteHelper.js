@@ -57,6 +57,28 @@ function getNoteParamsForTransfer(owner, amount, type, viewKey, salt, isSmart){
   return noteParams;
 }
 
+function getNoteParamsForMakeOrder(owner, amount, type, viewKey, salt, isSmart){
+
+  let paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  let noteOwner = paddedO["noteOwner"];
+  let splittedNoteOwner = paddedO["splittedNoteOwner"];
+  let noteValue =  paddedO["noteValue"];
+  let noteType = paddedO["noteType"];
+  let noteViewKey = paddedO["noteViewKey"];
+  let splittedNoteViewKey = paddedO["splittedNoteViewKey"];
+  let noteSalt = paddedO["noteSalt"];
+  let noteIsSmart = paddedO["noteIsSmart"];
+
+  //To be hashed, raw note info
+  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+
+  let noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+  // console.log(noteParams); //for check parameters
+  return noteParams;
+}
+
 function _toPadedObject(owner, amount, type, viewKey, salt, isSmart){
   //all params should look like this "0001"(o), "0x0001"(x)
   let noteOwner = new BN(owner, 16).toString(16); //32 bytes = 256 bits
@@ -115,5 +137,6 @@ function toHashed(encodedValue){
 module.exports = {
   getNoteParams,
   getNoteParamsForTransfer,
+  getNoteParamsForMakeOrder,
   toHashed,
 }
