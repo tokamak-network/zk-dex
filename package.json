@@ -17,11 +17,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ethlint": "^1.2.2",
-    "truffle": "^5.0.0-beta.1",
-    "bluebird": "^3.5.5",
+    "bn.js": "^5.0.0",
     "child-process-promise": "^2.2.1",
+    "dockerode": "^2.5.8",
+    "dockerode-promise": "^0.1.0",
+    "ethlint": "^1.2.2",
     "jsonic": "^0.3.1",
-    "node-docker-api": "^1.1.22"
+    "node-docker-api": "^1.1.22",
+    "truffle": "^5.0.0-beta.1"
   }
 }

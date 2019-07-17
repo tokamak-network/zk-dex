@@ -27,20 +27,24 @@ function genProof(container, circuitName, noteParams) {
     AttachStderr: true
   };
 
-  container.exec(options, function(err, exec) {
-    if (err) return;
-    exec.start(function(err, stream) {
-      if (err) return;
-
-      container.modem.demuxStream(stream, process.stdout, process.stderr);
-
-      exec.inspect(function(err, data) {
+  container.exec(options)
+    .then(function(exec) {
+      exec.start(function(err, stream) {
         if (err) return;
-        // proof = JSON.parse(data);
-        return data;
+        container.modem.demuxStream(stream, process.stdout, process.stderr);
+        exec.inspect(function(err, data) {
+          if (err) {
+            console.log('err', err);
+          }
+          // proof = JSON.parse(data);
+          console.log(data);
+          return data;
+        });
       });
-    });
-  });
+    })
+    .catch(function (err) {
+      console.log('err', err);
+    })
 }
 
 function runZokratesCommand(params) {
