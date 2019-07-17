@@ -1,0 +1,20 @@
+import "../sha/1024bitPacked.code" as sha256
+
+// Note = (_owner, value, type, _senderViewingKey, _salt, _isSmart)
+
+// Public
+// nh0 + nh1 : new note hash
+
+// Private
+// value : new note value
+// type : new note type
+// pk0 + pk1 : new note's owner
+// vk0 + vk1 : new note viewKey
+// salt : new note salt, random value
+// isSmart : new note isSmart, 0 if is not smart note
+
+def main(field nh0, field nh1, field value, field type, private field pk0, private field pk1, private field vk0, private field vk1, private field salt, private field isSmart) -> (field):
+  h = sha256([pk0, pk1, value, type, vk0, vk1, salt, isSmart])
+  h[0] == nh0
+  h[1] == nh1
+  return 1
