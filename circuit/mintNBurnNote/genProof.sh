@@ -9,7 +9,7 @@ else
   # Next line for fixing 'input' field of proof.json, but zokrates 4.9 version no longer necessary fixing.
   # get line no of Input field
   # export noInput=$(cat proof.json | sed -n '/input/ =')
-  # cat proof.json | sed "${noInput}s/\[/\['0x/g" | sed "${noInput}s/\]/'\]/g" | sed "${noInput}s/\,/', '0x/g" | sed "s/'/\"/g" > mintNBurnProof.json
-  mv proof.json mintNBurnProof.json
-  cat mintNBurnProof.json
+  # cat proof.json | sed "${noInput}s/\[/\['0x/g" | sed "${noInput}s/\]/'\]/g" | sed "${noInput}s/\,/', '0x/g" | sed "s/'/\"/g" > mintNBurnNoteProof.json
+  mv proof.json mintNBurnNoteProof.json
+  cat mintNBurnNoteProof.json
 fi
