@@ -10,3 +10,5 @@ node_modules/
 circuit/*/out
 circuit/*/out.code
 circuit/*/witness
+
+.secret
