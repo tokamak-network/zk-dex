@@ -1,5 +1,5 @@
 {
-  "name": "optimistic-zkdai",
+  "name": "zk-dex",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,9 @@
     "migrate": "truffle migrate --reset",
     "test": "truffle test",
     "lint": "solium --dir ./contracts",
-    "lint:fix": "solium -d contracts/ --fix"
+    "lint:fix": "solium -d contracts/ --fix",
+    "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
+    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
   },
   "author": "",
   "license": "ISC",
@@ -23,5 +25,13 @@
   "dependencies": {
     "eccrypto": "^1.1.0",
     "secp256k1": "^3.6.1"
+    "bn.js": "^5.0.0",
+    "child-process-promise": "^2.2.1",
+    "dockerode": "^2.5.8",
+    "dockerode-promise": "^0.1.0",
+    "ethlint": "^1.2.2",
+    "jsonic": "^0.3.1",
+    "node-docker-api": "^1.1.22",
+    "truffle": "^5.0.0-beta.1"
   }
 }
