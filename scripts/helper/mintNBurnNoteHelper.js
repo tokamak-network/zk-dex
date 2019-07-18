@@ -143,7 +143,7 @@ function test5(){
 
 // it works
 // test4();
-test5();
+// test5();
 
 module.exports = {
   getMintAndBurnCommand,

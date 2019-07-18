@@ -12,4 +12,5 @@ else
   # cat proof.json | sed "${noInput}s/\[/\['0x/g" | sed "${noInput}s/\]/'\]/g" | sed "${noInput}s/\,/', '0x/g" | sed "s/'/\"/g" > settleOrderPoof.json
   mv proof.json settleOrderProof.json
   cat settleOrderProof.json
+  rm witness # Prevent when could not generate witness file, then generate-proof can use previous one
 fi
