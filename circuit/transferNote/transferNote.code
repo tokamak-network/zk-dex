@@ -55,7 +55,7 @@ def main(field oh0, field oh1, private field pk0, private field pk1, private fie
   originH0 == h[0]
   originH1 == h[1]
 
-  field pk0T = if oIsSmart > 0 then originH0 else pk0 fi 
+  field pk0T = if oIsSmart > 0 then originH0 else pk0 fi
   field pk1T = if oIsSmart > 0 then originH1 else pk1 fi
   pk0 == pk0T
   pk1 == pk1T

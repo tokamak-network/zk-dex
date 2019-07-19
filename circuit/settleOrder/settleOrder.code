@@ -52,16 +52,54 @@ import "../sha/1024bitPacked.code" as sha256
 
 
 // Parameters
-// field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, 
-// field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, 
-// field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, 
-// field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, 
-// field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, 
+// field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart,
+// field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart,
+// field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart,
+// field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart,
+// field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart,
 // field price
 
-def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
+// o1h0 + o1h1 : takerNotetoMaker hash
+// o1Type : takerNotetoMaker type
+// o1pk0 + o1pk1 : takerNotetoMaker's owner
+// o1Val : takerNotetoMaker value
+// o1vk0 + o1vk1 : takerNotetoMaker viewKey
+// o1Salt : takerNotetoMaker salt, random value
+// o1IsSmart : takerNotetoMaker isSmart, 0 if is not smart note
+
+// n0h0 + n0h1 : newNoteToTaker hash
+// n0Type : newNoteToTaker type
+// n0rpk0 + n0rpk1 : reciever(order.parentNote)
+// n0Val : newNoteToTaker value
+// n0vk0 + n0vk1 : newNoteToTaker viewKey
+// n0Salt : newNoteToTaker salt
+// n0IsSmart : newNoteToTaker isSmart, 0 if is not smart note
+
+// n1h0 + n1h1 : newNoteToMaker hash
+// n1Type : newNoteToMaker type
+// n1rpk0 + n1rpk1 : reciever(makerNote)
+// n1Val : newNoteToMaker value
+// n1vk0+ n1vk1 : newNoteToMaker viewKey
+// n1Salt : newNoteToMaker salt
+// n1IsSmart : newNoteToMaker isSmart, 0 if is not smart note
+
+// n2h0 + n2h1 : change hash
+// n2Type : change type
+// n2rpk0 + n2rpk1 : reciever(makerNote or order.parentNote)
+// n2Val : change value
+// n2vk0+ n2vk1 : change viewKey
+// n2Salt : change salt
+// n2IsSmart : change isSmart, 0 if is not smart note
+
+def main(
+field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart,
+field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart,
+field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart,
+field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart,
+field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart,
+field price) -> (field):
   field check = o0Val - o1Val/price
-  
+
   field bit = if check <= o0Val then 1 else 0 fi
   // o1Val/price should be positive integer
   // if check <= o0Val - o1Val/price, then o0Val >= o1Val/price
@@ -98,7 +136,7 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   h = sha256([o1pk0, o1pk1, o1Val, o1Type, o1vk0, o1vk1, o1Salt, o1IsSmart])
   o1h0 == h[0]
   o1h1 == h[1]
-  
+
   // check n0
   h = sha256([n0rpk0, n0rpk1, n0Val, n0Type, n0vk0, n0vk1, n0Salt, n0IsSmart])
   n0h0 == h[0]
