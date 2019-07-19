@@ -26,7 +26,7 @@ function getNoteParams(owner, amount, type, viewKey, salt, isSmart){
   let noteIsSmart = paddedO["noteIsSmart"];
 
   //To be hashed, raw note info
-  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
 
   let noteHash = toHashed(note);
 
@@ -48,12 +48,12 @@ function getNoteParamsForTransfer(owner, amount, type, viewKey, salt, isSmart){
   let noteIsSmart = paddedO["noteIsSmart"];
 
   //To be hashed, raw note info
-  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
 
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(splittedNoteOwner, noteValue, noteType, splittedNoteViewKey, noteSalt, noteIsSmart);
-  // console.log(noteParams); //for check parameters
+  console.log(noteViewKey, noteParams); //for check parameters
   return noteParams;
 }
 
@@ -70,7 +70,7 @@ function getNoteParamsForMakeOrder(owner, amount, type, viewKey, salt, isSmart){
   let noteIsSmart = paddedO["noteIsSmart"];
 
   //To be hashed, raw note info
-  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
 
   let noteHash = toHashed(note);
 
@@ -92,7 +92,7 @@ function getNoteParamsForTakeOrder(owner, amount, type, viewKey, salt, isSmart){
   let noteIsSmart = paddedO["noteIsSmart"];
 
   //To be hashed, raw note info
-  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
 
   let noteHash = toHashed(note);
 
@@ -114,7 +114,7 @@ function getNoteParamsForSettleOrder(owner, amount, type, viewKey, salt, isSmart
   let noteIsSmart = paddedO["noteIsSmart"];
 
   //To be hashed, raw note info
-  let note = noteOwner + noteValue + noteType + noteViewKey + noteSalt + noteIsSmart;
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
 
   let noteHash = toHashed(note);
 
@@ -152,23 +152,18 @@ function _toPadedObject(owner, amount, type, viewKey, salt, isSmart){
   return result;
 }
 
-// TODO : Not Working. Only works at " splittedData = [targetHex.slice(0, 32), targetHex.slice(32)] "
 function _checkLenAndReturn(targetHex){
   let splittedData;
   let targetLen = targetHex.length;
   let remainLen = 64 - targetLen;
 
   if(targetHex == "0"){
-    //not working
     splittedData = ["0".repeat(32), "0".repeat(32)];
   } else if(targetLen < 32){
-    //not working
     splittedData = ["0".repeat(32), "0".repeat(32-noteOwnerLen).concat(noteOwner.slice(0,32))];
   } else if(targetLen > 32 && targetLen < 64){
-    //not working
     splittedData = ["0".repeat(remainLen).concat(targetHex.slice(0, 32-remainLen)), targetHex.slice(32-remainLen)];
   } else {
-    // It working
     splittedData = [targetHex.slice(0, 32), targetHex.slice(32)];
   }
 
