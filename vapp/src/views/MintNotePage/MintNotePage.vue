@@ -1,35 +1,32 @@
 <template>
   <div>
     <el-button
-      @click="mint">
-      mint
+      @click="mintNBurn">
+      mintNBurn
     </el-button>
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import runGenProof from '../../../mintNote.js'
 
 export default {
-  computed: mapState({
-    coinbase: state => state.web3.coinbase,
-    web3: state => state.web3.web3Instance,
-    contract: state => state.contractInstance()
-  }),
+  // computed: mapState({
+  //   coinbase: state => state.web3.coinbase,
+  //   web3: state => state.web3.web3Instance,
+  //   contract: state => state.contractInstance()
+  // }),
   methods: {
-    mint() {
-      this.contract.bet(10, {
-        gas: 300000,
-        value: 100,
-        from: this.coinbase
-      }, (err, result) => {
-        let Won = this.contract.Won()
-        Won.watch((err, result) => {
-          this.winEvent = result.args
-          this.winEvent._amount = parseInt(result.args._amount, 10)
-          this.pending = false
-        })
-      });
+    mintNBurn() {
+        // console.log("Clicked MintNBurn!!");
+        // TODO : get input data from web form
+        runGenProof("1111111111111121111111111111111111111111111111111111111111111111",
+                 "0",
+                 "0",
+                 "1111111111111111111111111111111111111111111111111111111111111111",
+                 "0",
+                 "0");
     }
   },
 }
