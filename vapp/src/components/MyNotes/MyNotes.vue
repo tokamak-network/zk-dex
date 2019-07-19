@@ -68,7 +68,8 @@ export default {
   },
   computed: mapState({
     coinbase: state => state.web3.coinbase,
-    contract: state => state.contractInstance()
+    contract: state => state.contractInstance(),
+    web3: state => state.web3.web3Instance,
   }),
   methods: {
     selectNote (note) {
@@ -80,19 +81,19 @@ export default {
     }
   },
   beforeCreate () {
-    const options = {
-      fromBlock: 0,
-      toBlock: 'latest'
-    }
-    const filter = this.web3WS.eth.filter(options, (error, result) => {
-      if (error) console.log('error', error)
-      console.log('result', result)
-    })
-    filter.watch(function(error, result) {
-    });
+    // const options = {
+    //   fromBlock: 0,
+    //   toBlock: 'latest'
+    // }
+    // const filter = this.web3WS.eth.filter(options, (error, result) => {
+    //   if (error) console.log('error', error)
+    //   console.log('result', result)
+    // })
+    // filter.watch(function(error, result) {
+    // });
   },
   mounted () {
-    // this.$store.dispatch('getContract')
+    this.$store.dispatch('getContract')
   },
 }
 </script>

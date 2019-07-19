@@ -1,5 +1,5 @@
 // import getWeb3 from '../utils/getWeb3'
-import getContract from '../utils/getContract'
+import getStorageContract from '../services/web3/getStorageContract'
 import getWeb3 from '../services/web3/getWeb3'
 
 export default {
@@ -10,24 +10,15 @@ export default {
     commit('SET_SECRET_KEY', key)
   },
 
-  registerWeb3 ({commit}) {
-    console.log(1)
-    getWeb3().then(result => {
-      console.log(2)
-      commit('REGISTER_WEB3', result)
-    }).catch((error) => {
-      console.log(2)
-      console.log('err', error)
-    })
-    // getWeb3.then(result => {
-    //   commit('REGISTER_WEB3', result)
-    // }).catch(() => {})
+  async registerWeb3 ({commit}) {
+    const web3 = await getWeb3()
+    commit('REGISTER_WEB3', web3)
   },
-  pollWeb3 ({commit}, payload) {
+  pollingWeb3 ({commit}, payload) {
     commit('POLL_WEB3', payload)
   },
   getContract ({commit}) {
-    getContract.then(result => {
+    getStorageContract.then(result => {
       commit('REGISTER_CONTRACT', result)
     }).catch(() => {})
   }

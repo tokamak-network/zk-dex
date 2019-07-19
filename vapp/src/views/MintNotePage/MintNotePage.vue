@@ -20,18 +20,33 @@ export default {
   computed: mapState({
     coinbase: state => state.web3.coinbase,
     web3: state => state.web3.web3Instance,
-    contract: state => state.contractInstance()
+    contract: state => state.contract()
   }),
   methods: {
     mint() {
-      this.contract.setN(this.n, {
-        gas: 300000,
-        from: this.coinbase
-      }, (err, result) => {
-        // hash
-        console.log('result', result);
+      this.contract.methods.setN(this.n).send({
+        from: this.coinbase,
+        gas: 100000
+      })
+      .on('transactionHash', (hash) => {
+        console.log('hash', hash)
         this.n++;
-      });
+      })
+      .on('receipt', (receipt) => {
+        console.log(receipt)
+      })
+      .on('confirmation', (confirmationNumber, receipt) => {
+        console.log(confirmationNumber, receipt)
+      })
+      .on('error', console.error);
+      // this.contract.setN(this.n, {
+      //   gas: 300000,
+      //   from: this.coinbase
+      // }, (err, result) => {
+      //   // hash
+      //   console.log('result', result);
+      
+      // });
     }
   },
 }

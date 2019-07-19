@@ -1,4 +1,4 @@
-import pollWeb3 from '../utils/pollWeb3'
+import pollingWeb3 from '../services/web3/pollingWeb3'
 
 export default {
   SET_VIEWING_KEY: (state, key) => {
@@ -8,23 +8,23 @@ export default {
     state.secretKey = key
   },
 
-  REGISTER_WEB3 (state, web3) {
-    console.log(web3)
-    // let result = payload
-    // let web3Copy = state.web3
-    // web3Copy.coinbase = result.coinbase
-    // web3Copy.networkId = result.networkId
-    // web3Copy.balance = result.balance
-    // web3Copy.isInjected = result.injectedWeb3
-    // web3Copy.web3Instance = result.web3
-    // state.web3 = web3Copy;
-    // pollWeb3();
+  async REGISTER_WEB3 (state, web3) {
+    const web3Copy = state.web3
+    const accounts = await web3.eth.getAccounts()
+    const account = accounts[0]
+    web3Copy.coinbase = account
+    web3Copy.networkId = await web3.eth.net.getId()
+    web3Copy.balance = await web3.eth.getBalance(account)
+    web3Copy.isInjected = await web3.eth.net.isListening()
+    web3Copy.web3Instance = web3
+
+    pollingWeb3(web3)
   },
   POLL_WEB3 (state, payload) {
     state.web3.coinbase = payload.coinbase
     state.web3.balance = payload.balance
   },
   REGISTER_CONTRACT (state, payload) {
-    state.contractInstance = () => payload
+    state.contract = () => payload
   }
 }

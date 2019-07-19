@@ -9,7 +9,7 @@ const state = {
     balance: null,
     error: null
   },
-  contractInstance: null
+  contract: null
 }
 
 export default state
