@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
@@ -35,8 +35,8 @@ contract ZkDaiBase {
     pure
     returns(bytes32 note)
   {
-    bytes16 a = bytes16(_a);
-    bytes16 b = bytes16(_b);
+    bytes16 a = bytes16(uint128(_a));
+    bytes16 b = bytes16(uint128(_b));
     bytes memory _note = new bytes(32);
 
     for (uint i = 0; i < 16; i++) {
@@ -46,7 +46,7 @@ contract ZkDaiBase {
     note = _bytesToBytes32(_note, 0);
   }
 
-  function _bytesToBytes32(bytes b, uint offset)
+  function _bytesToBytes32(bytes memory b, uint offset)
     internal
     pure
     returns (bytes32 out)

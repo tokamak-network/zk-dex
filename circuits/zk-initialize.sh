@@ -10,27 +10,28 @@ for d in */ ; do
 
     if [ -f "$CODE_FILE" ]; then
 
-      echo "Working on $DIR"
-      rm zokrates
-      echo "Create symbolic link of zokrates"
+        echo "Working on $DIR"
+        rm zokrates
+        echo "Create symbolic link of zokrates"
 
-      ln -sF ../../zokrates ./
-      echo "circuit $d compile"
-      ./zokrates compile -i $DIR.code
+        ln -sF ../../zokrates ./
+        echo "circuit $DIR compile"
+        ./zokrates compile -i $DIR.code 1> /dev/null
 
-      echo "$d setup"
-      ./zokrates setup --proving-scheme pghr13
+        echo "$DIR setup"
+        ./zokrates setup --proving-scheme pghr13 1> /dev/null
 
-      echo "$d export verifier"
-      ./zokrates export-verifier --proving-scheme pghr13
-    fi
+        echo "$DIR export verifier"
+        ./zokrates export-verifier --proving-scheme pghr13 --output "${DIR}_Verifier.sol" --contract-name "${DIR}_Verifier" 1> /dev/null
 
-    VERIFIER_FILE=${DIR}/verifier.sol
+        if [ -f "${DIR}_Verifier.sol" ]; then
+        echo "Move verifier contract"
+        mv "${DIR}_Verifier.sol"  "../../contracts/verifiers/${DIR}_Verifier.sol"
+        fi
 
-    if [ -f "$VERIFIER_FILE" ]; then
-       echo "Replace contract Name"
-       sed -e s/Verifier/${DIR}Verifier/g verifier.sol > ${DIR}Verifier.sol
-       cp $DIR-verifier.sol  "../../contracts/$DIR-verifier.sol"
+        echo "$DIR initialized"
+        echo ""
+
     fi
 
     cd ..

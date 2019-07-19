@@ -1,416 +1,265 @@
-pragma solidity ^0.4.25;
-
-/**
-* @title RLPReader
-*
-* RLPReader is used to read and parse RLP encoded data in memory.
-*
-* @author Andreas Olofsson (androlo1980@gmail.com)
+/*
+* @author Hamdi Allam hamdi.allam97@gmail.com
+* Please reach out with any questions or concerns
 */
+pragma solidity ^0.5.0;
+
 library RLPReader {
+    uint8 constant STRING_SHORT_START = 0x80;
+    uint8 constant STRING_LONG_START  = 0xb8;
+    uint8 constant LIST_SHORT_START   = 0xc0;
+    uint8 constant LIST_LONG_START    = 0xf8;
 
- uint constant DATA_SHORT_START = 0x80;
- uint constant DATA_LONG_START = 0xB8;
- uint constant LIST_SHORT_START = 0xC0;
- uint constant LIST_LONG_START = 0xF8;
+    uint8 constant WORD_SIZE = 32;
 
- uint constant DATA_LONG_OFFSET = 0xB7;
- uint constant LIST_LONG_OFFSET = 0xF7;
+    struct RLPItem {
+        uint len;
+        uint memPtr;
+    }
 
+    /*
+    * @param item RLP encoded bytes
+    */
+    function toRlpItem(bytes memory item) internal pure returns (RLPItem memory) {
+        uint memPtr;
+        assembly {
+            memPtr := add(item, 0x20)
+        }
 
- struct RLPItem {
-     uint _unsafe_memPtr;    // Pointer to the RLP-encoded bytes.
-     uint _unsafe_length;    // Number of bytes. This is the full length of the string.
- }
+        return RLPItem(item.length, memPtr);
+    }
 
- struct Iterator {
-     RLPItem _unsafe_item;   // Item that's being iterated over.
-     uint _unsafe_nextPtr;   // Position of the next item in the list.
- }
+    /*
+    * @param item RLP encoded bytes
+    */
+    function rlpLen(RLPItem memory item) internal pure returns (uint) {
+        return item.len;
+    }
 
- /* Iterator */
+    /*
+    * @param item RLP encoded bytes
+    */
+    function payloadLen(RLPItem memory item) internal pure returns (uint) {
+        return item.len - _payloadOffset(item.memPtr);
+    }
 
- function next(Iterator memory self) internal constant returns (RLPItem memory subItem) {
-     if(hasNext(self)) {
-         var ptr = self._unsafe_nextPtr;
-         var itemLength = _itemLength(ptr);
-         subItem._unsafe_memPtr = ptr;
-         subItem._unsafe_length = itemLength;
-         self._unsafe_nextPtr = ptr + itemLength;
-     }
-     else
-         throw;
- }
+    /*
+    * @param item RLP encoded list in bytes
+    */
+    function toList(RLPItem memory item) internal pure returns (RLPItem[] memory result) {
+        require(isList(item));
 
- function next(Iterator memory self, bool strict) internal constant returns (RLPItem memory subItem) {
-     subItem = next(self);
-     if(strict && !_validate(subItem))
-         throw;
-     return;
- }
+        uint items = numItems(item);
+        result = new RLPItem[](items);
 
- function hasNext(Iterator memory self) internal constant returns (bool) {
-     var item = self._unsafe_item;
-     return self._unsafe_nextPtr < item._unsafe_memPtr + item._unsafe_length;
- }
+        uint memPtr = item.memPtr + _payloadOffset(item.memPtr);
+        uint dataLen;
+        for (uint i = 0; i < items; i++) {
+            dataLen = _itemLength(memPtr);
+            result[i] = RLPItem(dataLen, memPtr);
+            memPtr = memPtr + dataLen;
+        }
+    }
 
- /* RLPItem */
+    // @return indicator whether encoded payload is a list. negate this function call for isData.
+    function isList(RLPItem memory item) internal pure returns (bool) {
+        if (item.len == 0) return false;
 
- /// @dev Creates an RLPItem from an array of RLP encoded bytes.
- /// @param self The RLP encoded bytes.
- /// @return An RLPItem
- function toRLPItem(bytes memory self) internal constant returns (RLPItem memory) {
-     uint len = self.length;
-     if (len == 0) {
-         return RLPItem(0, 0);
-     }
-     uint memPtr;
-     assembly {
-         memPtr := add(self, 0x20)
-     }
-     return RLPItem(memPtr, len);
- }
+        uint8 byte0;
+        uint memPtr = item.memPtr;
+        assembly {
+            byte0 := byte(0, mload(memPtr))
+        }
 
- /// @dev Creates an RLPItem from an array of RLP encoded bytes.
- /// @param self The RLP encoded bytes.
- /// @param strict Will throw if the data is not RLP encoded.
- /// @return An RLPItem
- function toRLPItem(bytes memory self, bool strict) internal constant returns (RLPItem memory) {
-     var item = toRLPItem(self);
-     if(strict) {
-         uint len = self.length;
-         if(_payloadOffset(item) > len)
-             throw;
-         if(_itemLength(item._unsafe_memPtr) != len)
-             throw;
-         if(!_validate(item))
-             throw;
-     }
-     return item;
- }
+        if (byte0 < LIST_SHORT_START)
+            return false;
+        return true;
+    }
 
- /// @dev Check if the RLP item is null.
- /// @param self The RLP item.
- /// @return 'true' if the item is null.
- function isNull(RLPItem memory self) internal constant returns (bool ret) {
-     return self._unsafe_length == 0;
- }
+    /** RLPItem conversions into data types **/
 
- /// @dev Check if the RLP item is a list.
- /// @param self The RLP item.
- /// @return 'true' if the item is a list.
- function isList(RLPItem memory self) internal constant returns (bool ret) {
-     if (self._unsafe_length == 0)
-         return false;
-     uint memPtr = self._unsafe_memPtr;
-     assembly {
-         ret := iszero(lt(byte(0, mload(memPtr)), 0xC0))
-     }
- }
+    // @returns raw rlp encoding in bytes
+    function toRlpBytes(RLPItem memory item) internal pure returns (bytes memory) {
+        bytes memory result = new bytes(item.len);
+        if (result.length == 0) return result;
 
- /// @dev Check if the RLP item is data.
- /// @param self The RLP item.
- /// @return 'true' if the item is data.
- function isData(RLPItem memory self) internal constant returns (bool ret) {
-     if (self._unsafe_length == 0)
-         return false;
-     uint memPtr = self._unsafe_memPtr;
-     assembly {
-         ret := lt(byte(0, mload(memPtr)), 0xC0)
-     }
- }
+        uint ptr;
+        assembly {
+            ptr := add(0x20, result)
+        }
 
- /// @dev Check if the RLP item is empty (string or list).
- /// @param self The RLP item.
- /// @return 'true' if the item is null.
- function isEmpty(RLPItem memory self) internal constant returns (bool ret) {
-     if(isNull(self))
-         return false;
-     uint b0;
-     uint memPtr = self._unsafe_memPtr;
-     assembly {
-         b0 := byte(0, mload(memPtr))
-     }
-     return (b0 == DATA_SHORT_START || b0 == LIST_SHORT_START);
- }
+        copy(item.memPtr, ptr, item.len);
+        return result;
+    }
 
- /// @dev Get the number of items in an RLP encoded list.
- /// @param self The RLP item.
- /// @return The number of items.
- function items(RLPItem memory self) internal constant returns (uint) {
-     if (!isList(self))
-         return 0;
-     uint b0;
-     uint memPtr = self._unsafe_memPtr;
-     assembly {
-         b0 := byte(0, mload(memPtr))
-     }
-     uint pos = memPtr + _payloadOffset(self);
-     uint last = memPtr + self._unsafe_length - 1;
-     uint itms;
-     while(pos <= last) {
-         pos += _itemLength(pos);
-         itms++;
-     }
-     return itms;
- }
+    // any non-zero byte is considered true
+    function toBoolean(RLPItem memory item) internal pure returns (bool) {
+        require(item.len == 1);
+        uint result;
+        uint memPtr = item.memPtr;
+        assembly {
+            result := byte(0, mload(memPtr))
+        }
 
- /// @dev Create an iterator.
- /// @param self The RLP item.
- /// @return An 'Iterator' over the item.
- function iterator(RLPItem memory self) internal constant returns (Iterator memory it) {
-     if (!isList(self))
-         throw;
-     uint ptr = self._unsafe_memPtr + _payloadOffset(self);
-     it._unsafe_item = self;
-     it._unsafe_nextPtr = ptr;
- }
+        return result == 0 ? false : true;
+    }
 
- /// @dev Return the RLP encoded bytes.
- /// @param self The RLPItem.
- /// @return The bytes.
- function toBytes(RLPItem memory self) internal constant returns (bytes memory bts) {
-     var len = self._unsafe_length;
-     if (len == 0)
-         return;
-     bts = new bytes(len);
-     _copyToBytes(self._unsafe_memPtr, bts, len);
- }
+    function toAddress(RLPItem memory item) internal pure returns (address) {
+        // 1 byte for the length prefix
+        require(item.len == 21);
 
- /// @dev Decode an RLPItem into bytes. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toData(RLPItem memory self) internal constant returns (bytes memory bts) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     bts = new bytes(len);
-     _copyToBytes(rStartPos, bts, len);
- }
+        return address(toUint(item));
+    }
 
- /// @dev Get the list of sub-items from an RLP encoded list.
- /// Warning: This is inefficient, as it requires that the list is read twice.
- /// @param self The RLP item.
- /// @return Array of RLPItems.
- function toList(RLPItem memory self) internal constant returns (RLPItem[] memory list) {
-     if(!isList(self))
-         throw;
-     var numItems = items(self);
-     list = new RLPItem[](numItems);
-     var it = iterator(self);
-     uint idx;
-     while(hasNext(it)) {
-         list[idx] = next(it);
-         idx++;
-     }
- }
+    function toUint(RLPItem memory item) internal pure returns (uint) {
+        require(item.len > 0 && item.len <= 33);
 
- /// @dev Decode an RLPItem into an ascii string. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toAscii(RLPItem memory self) internal constant returns (string memory str) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     bytes memory bts = new bytes(len);
-     _copyToBytes(rStartPos, bts, len);
-     str = string(bts);
- }
+        uint offset = _payloadOffset(item.memPtr);
+        uint len = item.len - offset;
 
- /// @dev Decode an RLPItem into a uint. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toUint(RLPItem memory self) internal constant returns (uint data) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     if (len > 32 || len == 0)
-         throw;
-     assembly {
-         data := div(mload(rStartPos), exp(256, sub(32, len)))
-     }
- }
+        uint result;
+        uint memPtr = item.memPtr + offset;
+        assembly {
+            result := mload(memPtr)
 
- /// @dev Decode an RLPItem into a boolean. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toBool(RLPItem memory self) internal constant returns (bool data) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     if (len != 1)
-         throw;
-     uint temp;
-     assembly {
-         temp := byte(0, mload(rStartPos))
-     }
-     if (temp > 1)
-         throw;
-     return temp == 1 ? true : false;
- }
+            // shfit to the correct location if neccesary
+            if lt(len, 32) {
+                result := div(result, exp(256, sub(32, len)))
+            }
+        }
 
- /// @dev Decode an RLPItem into a byte. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toByte(RLPItem memory self) internal constant returns (byte data) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     if (len != 1)
-         throw;
-     uint temp;
-     assembly {
-         temp := byte(0, mload(rStartPos))
-     }
-     return byte(temp);
- }
+        return result;
+    }
 
- /// @dev Decode an RLPItem into an int. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toInt(RLPItem memory self) internal constant returns (int data) {
-     return int(toUint(self));
- }
+    // enforces 32 byte length
+    function toUintStrict(RLPItem memory item) internal pure returns (uint) {
+        // one byte prefix
+        require(item.len == 33);
 
- /// @dev Decode an RLPItem into a bytes32. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toBytes32(RLPItem memory self) internal constant returns (bytes32 data) {
-     return bytes32(toUint(self));
- }
+        uint result;
+        uint memPtr = item.memPtr + 1;
+        assembly {
+            result := mload(memPtr)
+        }
 
- /// @dev Decode an RLPItem into an address. This will not work if the
- /// RLPItem is a list.
- /// @param self The RLPItem.
- /// @return The decoded string.
- function toAddress(RLPItem memory self) internal constant returns (address data) {
-     if(!isData(self))
-         throw;
-     var (rStartPos, len) = _decode(self);
-     if (len != 20)
-         throw;
-     assembly {
-         data := div(mload(rStartPos), exp(256, 12))
-     }
- }
+        return result;
+    }
 
- // Get the payload offset.
- function _payloadOffset(RLPItem memory self) private constant returns (uint) {
-     if(self._unsafe_length == 0)
-         return 0;
-     uint b0;
-     uint memPtr = self._unsafe_memPtr;
-     assembly {
-         b0 := byte(0, mload(memPtr))
-     }
-     if(b0 < DATA_SHORT_START)
-         return 0;
-     if(b0 < DATA_LONG_START || (b0 >= LIST_SHORT_START && b0 < LIST_LONG_START))
-         return 1;
-     if(b0 < LIST_SHORT_START)
-         return b0 - DATA_LONG_OFFSET + 1;
-     return b0 - LIST_LONG_OFFSET + 1;
- }
+    function toBytes(RLPItem memory item) internal pure returns (bytes memory) {
+        require(item.len > 0);
 
- // Get the full length of an RLP item.
- function _itemLength(uint memPtr) private constant returns (uint len) {
-     uint b0;
-     assembly {
-         b0 := byte(0, mload(memPtr))
-     }
-     if (b0 < DATA_SHORT_START)
-         len = 1;
-     else if (b0 < DATA_LONG_START)
-         len = b0 - DATA_SHORT_START + 1;
-     else if (b0 < LIST_SHORT_START) {
-         assembly {
-             let bLen := sub(b0, 0xB7) // bytes length (DATA_LONG_OFFSET)
-             let dLen := div(mload(add(memPtr, 1)), exp(256, sub(32, bLen))) // data length
-             len := add(1, add(bLen, dLen)) // total length
-         }
-     }
-     else if (b0 < LIST_LONG_START)
-         len = b0 - LIST_SHORT_START + 1;
-     else {
-         assembly {
-             let bLen := sub(b0, 0xF7) // bytes length (LIST_LONG_OFFSET)
-             let dLen := div(mload(add(memPtr, 1)), exp(256, sub(32, bLen))) // data length
-             len := add(1, add(bLen, dLen)) // total length
-         }
-     }
- }
+        uint offset = _payloadOffset(item.memPtr);
+        uint len = item.len - offset; // data length
+        bytes memory result = new bytes(len);
 
- // Get start position and length of the data.
- function _decode(RLPItem memory self) private constant returns (uint memPtr, uint len) {
-     if(!isData(self))
-         throw;
-     uint b0;
-     uint start = self._unsafe_memPtr;
-     assembly {
-         b0 := byte(0, mload(start))
-     }
-     if (b0 < DATA_SHORT_START) {
-         memPtr = start;
-         len = 1;
-         return;
-     }
-     if (b0 < DATA_LONG_START) {
-         len = self._unsafe_length - 1;
-         memPtr = start + 1;
-     } else {
-         uint bLen;
-         assembly {
-             bLen := sub(b0, 0xB7) // DATA_LONG_OFFSET
-         }
-         len = self._unsafe_length - 1 - bLen;
-         memPtr = start + bLen + 1;
-     }
-     return;
- }
+        uint destPtr;
+        assembly {
+            destPtr := add(0x20, result)
+        }
 
- // Assumes that enough memory has been allocated to store in target.
- function _copyToBytes(uint btsPtr, bytes memory tgt, uint btsLen) private constant {
-     // Exploiting the fact that 'tgt' was the last thing to be allocated,
-     // we can write entire words, and just overwrite any excess.
-     assembly {
-         {
-                 let i := 0 // Start at arr + 0x20
-                 let words := div(add(btsLen, 31), 32)
-                 let rOffset := btsPtr
-                 let wOffset := add(tgt, 0x20)
-             tag_loop:
-                 jumpi(end, eq(i, words))
-                 {
-                     let offset := mul(i, 0x20)
-                     mstore(add(wOffset, offset), mload(add(rOffset, offset)))
-                     i := add(i, 1)
-                 }
-                 jump(tag_loop)
-             end:
-                 mstore(add(tgt, add(0x20, mload(tgt))), 0)
-         }
-     }
- }
+        copy(item.memPtr + offset, destPtr, len);
+        return result;
+    }
 
- // Check that an RLP item is valid.
-     function _validate(RLPItem memory self) private constant returns (bool ret) {
-         // Check that RLP is well-formed.
-         uint b0;
-         uint b1;
-         uint memPtr = self._unsafe_memPtr;
-         assembly {
-             b0 := byte(0, mload(memPtr))
-             b1 := byte(1, mload(memPtr))
-         }
-         if(b0 == DATA_SHORT_START + 1 && b1 < DATA_SHORT_START)
-             return false;
-         return true;
-     }
+    /*
+    * Private Helpers
+    */
+
+    // @return number of payload items inside an encoded list.
+    function numItems(RLPItem memory item) private pure returns (uint) {
+        if (item.len == 0) return 0;
+
+        uint count = 0;
+        uint currPtr = item.memPtr + _payloadOffset(item.memPtr);
+        uint endPtr = item.memPtr + item.len;
+        while (currPtr < endPtr) {
+           currPtr = currPtr + _itemLength(currPtr); // skip over an item
+           count++;
+        }
+
+        return count;
+    }
+
+    // @return entire rlp item byte length
+    function _itemLength(uint memPtr) private pure returns (uint len) {
+        uint byte0;
+        assembly {
+            byte0 := byte(0, mload(memPtr))
+        }
+
+        if (byte0 < STRING_SHORT_START)
+            return 1;
+
+        else if (byte0 < STRING_LONG_START)
+            return byte0 - STRING_SHORT_START + 1;
+
+        else if (byte0 < LIST_SHORT_START) {
+            assembly {
+                let byteLen := sub(byte0, 0xb7) // # of bytes the actual length is
+                memPtr := add(memPtr, 1) // skip over the first byte
+
+                /* 32 byte word size */
+                let dataLen := div(mload(memPtr), exp(256, sub(32, byteLen))) // right shifting to get the len
+                len := add(dataLen, add(byteLen, 1))
+            }
+        }
+
+        else if (byte0 < LIST_LONG_START) {
+            return byte0 - LIST_SHORT_START + 1;
+        }
+
+        else {
+            assembly {
+                let byteLen := sub(byte0, 0xf7)
+                memPtr := add(memPtr, 1)
+
+                let dataLen := div(mload(memPtr), exp(256, sub(32, byteLen))) // right shifting to the correct length
+                len := add(dataLen, add(byteLen, 1))
+            }
+        }
+    }
+
+    // @return number of bytes until the data
+    function _payloadOffset(uint memPtr) private pure returns (uint) {
+        uint byte0;
+        assembly {
+            byte0 := byte(0, mload(memPtr))
+        }
+
+        if (byte0 < STRING_SHORT_START)
+            return 0;
+        else if (byte0 < STRING_LONG_START || (byte0 >= LIST_SHORT_START && byte0 < LIST_LONG_START))
+            return 1;
+        else if (byte0 < LIST_SHORT_START)  // being explicit
+            return byte0 - (STRING_LONG_START - 1) + 1;
+        else
+            return byte0 - (LIST_LONG_START - 1) + 1;
+    }
+
+    /*
+    * @param src Pointer to source
+    * @param dest Pointer to destination
+    * @param len Amount of memory to copy from the source
+    */
+    function copy(uint src, uint dest, uint len) private pure {
+        if (len == 0) return;
+
+        // copy as many word sizes as possible
+        for (; len >= WORD_SIZE; len -= WORD_SIZE) {
+            assembly {
+                mstore(dest, mload(src))
+            }
+
+            src += WORD_SIZE;
+            dest += WORD_SIZE;
+        }
+
+        // left over bytes. Mask is used to remove unwanted bytes from the word
+        uint mask = 256 ** (WORD_SIZE - len) - 1;
+        assembly {
+            let srcpart := and(mload(src), not(mask)) // zero out src
+            let destpart := and(mload(dest), mask) // retrieve the bytes
+            mstore(dest, or(destpart, srcpart))
+        }
+    }
 }

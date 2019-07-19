@@ -1,13 +1,19 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.0;
 
-import {Verifier as SpendNoteVerifier} from "./verifiers/SpendNoteVerifier.sol";
+import {transferNote_Verifier as SpendNoteVerifier} from "./verifiers/transferNote_Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
-contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
+contract SpendNotes is ZkDaiBase {
   uint8 internal constant NUM_PUBLIC_INPUTS = 9;
 
   bytes32 public constant EMPTY_NOTE_HASH = 0xbecedd494a23f6178d5b0fbd7aa6698b218367c9810c013e41649ad9d375a63a;
+
+  SpendNoteVerifier public spendNoteVerifier;
+
+  constructor(SpendNoteVerifier _spendNoteVerifier) public {
+    spendNoteVerifier = _spendNoteVerifier;
+  }
 
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
@@ -20,21 +26,21 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
   *       - [8]     = output
 */
   function submit(
-    uint256[2] a,
-    uint256[2] a_p,
-    uint256[2][2] b,
-    uint256[2] b_p,
-    uint256[2] c,
-    uint256[2] c_p,
-    uint256[2] h,
-    uint256[2] k,
-    uint256[9] input,
+    uint256[2] memory a,
+    uint256[2] memory a_p,
+    uint256[2][2] memory b,
+    uint256[2] memory b_p,
+    uint256[2] memory c,
+    uint256[2] memory c_p,
+    uint256[2] memory h,
+    uint256[2] memory k,
+    uint256[9] memory input,
     bytes memory encryptedNote1,
     bytes memory encryptedNote2
   )
     internal
   {
-    require(development || spendVerifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+    require(development || spendNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
     bytes32[4] memory _notes = get4Notes(input);
 
     // check that the first note (among public params) is valid and
@@ -56,10 +62,10 @@ contract SpendNotes is SpendNoteVerifier, ZkDaiBase {
     emit NoteStateChange(_notes[2], State.Valid);
   }
 
-  function get4Notes(uint256[9] input)
+  function get4Notes(uint256[9] memory input)
     internal
     pure
-    returns(bytes32[4] notes)
+    returns(bytes32[4] memory notes)
   {
     notes[0] = calcHash(input[0], input[1]);
     notes[1] = calcHash(input[2], input[3]);

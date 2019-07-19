@@ -1,10 +1,20 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.0;
+
+import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
+import {transferNote_Verifier as SpendNoteVerifier} from "./verifiers/transferNote_Verifier.sol";
+import {makeOrder_Verifier as MakeOrderVerifier} from "./verifiers/makeOrder_Verifier.sol";
+import {takeOrder_Verifier as TakeOrderVerifier} from "./verifiers/takeOrder_Verifier.sol";
+import {settleOrder_Verifier as SettleOrderVerifier} from "./verifiers/settleOrder_Verifier.sol";
 
 import "./ZkDai.sol";
 import "./RLPReader.sol";
 
 contract ZkDex is ZkDai {
   using RLPReader for *;
+
+  MakeOrderVerifier public makeOrderVerifier;
+  TakeOrderVerifier public takeOrderVerifier;
+  SettleOrderVerifier public settleOrderVerifier;
 
   enum OrderState {Created, Taken, Settled}
 
@@ -26,7 +36,22 @@ contract ZkDex is ZkDai {
   event OrderTaken(uint256 orderId, bytes32 takerNoteToMaker, bytes32 parentNote);
   event OrderSettled(uint256 orderId, bytes32 rewardNote, bytes32 paymentNote, bytes32 changeNote);
 
-  constructor(bool _development, address _dai) ZkDai(_development, _dai) public {}
+  constructor(
+    bool _development,
+    address _dai,
+    MintNoteVerifier _mintNoteVerifier,
+    SpendNoteVerifier _spendNoteVerifier,
+    MakeOrderVerifier _makeOrderVerifier,
+    TakeOrderVerifier _takeOrderVerifier,
+    SettleOrderVerifier _settleOrderVerifier
+  )
+    public
+    ZkDai(_development, _dai, _mintNoteVerifier, _spendNoteVerifier)
+  {
+    makeOrderVerifier = _makeOrderVerifier;
+    takeOrderVerifier = _takeOrderVerifier;
+    settleOrderVerifier = _settleOrderVerifier;
+  }
 
   /**
    * zk-SNARK public input
@@ -38,15 +63,15 @@ contract ZkDex is ZkDai {
     bytes32 makerViewingKey,
     uint256 targetToken,
     uint price,
-    uint256[2] a,
-    uint256[2] a_p,
-    uint256[2][2] b,
-    uint256[2] b_p,
-    uint256[2] c,
-    uint256[2] c_p,
-    uint256[2] h,
-    uint256[2] k,
-    uint256[4] input
+    uint256[2] calldata a,
+    uint256[2] calldata a_p,
+    uint256[2][2] calldata b,
+    uint256[2] calldata b_p,
+    uint256[2] calldata c,
+    uint256[2] calldata c_p,
+    uint256[2] calldata h,
+    uint256[2] calldata k,
+    uint256[4] calldata input
   ) external {
     // TODO: verify circuit:makeOrder
 
@@ -88,16 +113,16 @@ contract ZkDex is ZkDai {
    */
    function takeOrder(
     uint256 orderId,
-    uint256[2] a,
-    uint256[2] a_p,
-    uint256[2][2] b,
-    uint256[2] b_p,
-    uint256[2] c,
-    uint256[2] c_p,
-    uint256[2] h,
-    uint256[2] k,
-    uint256[9] input,
-    bytes encryptedStakingNote
+    uint256[2] calldata a,
+    uint256[2] calldata a_p,
+    uint256[2][2] calldata b,
+    uint256[2] calldata b_p,
+    uint256[2] calldata c,
+    uint256[2] calldata c_p,
+    uint256[2] calldata h,
+    uint256[2] calldata k,
+    uint256[9] calldata input,
+    bytes calldata encryptedStakingNote
   ) external {
     // TODO: verify circuit:takerOrder
 
@@ -154,17 +179,17 @@ contract ZkDex is ZkDai {
    */
   function settleOrder(
     uint256 orderId,
-    uint256[2] a,
-    uint256[2] a_p,
-    uint256[2][2] b,
-    uint256[2] b_p,
-    uint256[2] c,
-    uint256[2] c_p,
-    uint256[2] h,
-    uint256[2] k,
-    uint256[21] input,
+    uint256[2] calldata a,
+    uint256[2] calldata a_p,
+    uint256[2][2] calldata b,
+    uint256[2] calldata b_p,
+    uint256[2] calldata c,
+    uint256[2] calldata c_p,
+    uint256[2] calldata h,
+    uint256[2] calldata k,
+    uint256[21] calldata input,
 
-    bytes encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
+    bytes calldata encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
   ) external {
     // TODO: verify circuit:settleOrder
 
@@ -197,7 +222,7 @@ contract ZkDex is ZkDai {
     notes[order.parentNote] = State.Spent;
     notes[order.takerNoteToMaker] = State.Spent;
 
-    RLPReader.RLPItem[] memory encList = encDatas.toRLPItem().toList();
+    RLPReader.RLPItem[] memory encList = encDatas.toRlpItem().toList();
 
     encryptedNotes[calcHash(input[6], input[7])] = encList[0].toBytes();
     encryptedNotes[calcHash(input[11], input[12])] = encList[1].toBytes();
