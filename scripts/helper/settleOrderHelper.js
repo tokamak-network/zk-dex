@@ -27,8 +27,7 @@ function getSettleOrderCommand(
   return command;
 }
 
-// TODO : If hash of note(hash(makerNote)) start from 0, newNote2MakerOwner start from 0, so it fails
-// TODO : Because of 128 + 128 variables start from 0 always fails.
+
 // v1 - v2/price >= 0, makerNote --> (newNoteToTaker, Change), takerNoteToMaker --> newNoteToMaker
 // price == 1
 // all note type == 0

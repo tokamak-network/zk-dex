@@ -105,10 +105,10 @@ function test3(){
 //pass
 // test1();
 
-//fails
+//fails : intend
 // test2();
 
-//fails
+//fails : intend
 // test3();
 
 module.exports = {

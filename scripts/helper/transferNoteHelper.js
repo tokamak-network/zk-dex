@@ -68,7 +68,7 @@ function test2(){
   fromOwner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   fromValue = '6';
   fromType = '0';
-  fromViewKey = "0"; // TODO : it fails
+  fromViewKey = "0";
   fromSalt = "c517f646255d5492089b881965cbd3da";
   fromIsSmart = '0';
 
@@ -107,7 +107,7 @@ function test2(){
 //it works
 // test();
 
-//it fails
+//it works
 // test2();
 
 module.exports = {
