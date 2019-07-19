@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import store from '../store/index.js';
 
-let pollWeb3 = function () {
+const pollWeb3 = function () {
   let web3 = window.web3
   web3 = new Web3(web3.currentProvider)
 

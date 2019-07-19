@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div id="app">
     <div
       v-if="!isLogin"
@@ -46,39 +46,52 @@
       ></router-view>
     </div>
   </div>
+</template> -->
+<template>
+  <div id="app">
+    <router-view />
+  </div>
 </template>
 
 <script>
-import MetaMask from './components/MetaMask.vue';
-
 export default {
-  name: 'app',
-  components: {
-    MetaMask,
-  },
-  data() {
-    return {
-      isLogin: false,
-      id: null
-    }
-  },
-  beforeCreate () {
-    this.$store.dispatch('REGISTER_WEB3');
-  },
-  methods: {
-    login() {
-      this.isLogin = true;
-    }
-  },
+  name: 'App'
 }
 </script>
 
-<style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-</style>
+<!-- <script> 
+// import MetaMask from './components/MetaMask.vue';
+
+// export default {
+//   name: 'app',
+//   components: {
+//     MetaMask,
+//   },
+//   data() {
+//     return {
+//       isLogin: false,
+//       id: null
+//     }
+//   },
+//   beforeCreate () {
+//     this.$store.dispatch('REGISTER_WEB3');
+//   },
+//   methods: {
+//     login() {
+//       this.isLogin = true;
+//     }
+//   },
+// }
+// </script>
+
+// <style>
+// #app {
+//   font-family: 'Avenir', Helvetica, Arial, sans-serif;
+//   -webkit-font-smoothing: antialiased;
+//   -moz-osx-font-smoothing: grayscale;
+//   text-align: center;
+//   color: #2c3e50;
+// }
+// </style>
+
+-->

@@ -1,30 +1,32 @@
-import Vue from 'vue';
-import Router from 'vue-router';
+import Vue from 'vue'
+import Router from 'vue-router'
 
-import OrderBook from '../components/OrderBook.vue';
-import OrderMaker from '../components/OrderMaker.vue';
-import OrderTaker from '../components/OrderTaker.vue';
-import OrderSettler from '../components/OrderSettler.vue';
+Vue.use(Router)
 
-Vue.use(Router);
+import LoginPage from '../views/LoginPage'
+import MainPage from '../views/MainPage'
+import MintNotePage from '../views/MintNotePage'
 
-export default new Router({
-  routes:[
-    {
-      path: '/',
-      component: OrderBook
-    },
-    {
-      path: '/make',
-      component: OrderMaker
-    },
-    {
-      path: '/take',
-      component: OrderTaker
-    },
-    {
-      path: '/settle',
-      component: OrderSettler
-    }
-  ]
+const routes = [
+  {
+    path: '/',
+    component: LoginPage
+  },
+  {
+    path: '/main',
+    component: MainPage
+  },
+  {
+    path: '/mint',
+    component: MintNotePage
+  }
+]
+
+const createRouter = () => new Router({
+  scrollBehavior: () => ({ y: 0 }),
+  routes
 })
+
+const router = createRouter()
+
+export default router

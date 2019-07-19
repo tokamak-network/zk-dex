@@ -1,13 +1,5 @@
 import Web3 from 'web3'
 
-/*
-* 1. Check for injected web3 (mist/metamask)
-* 2. If metamask/mist create a new web3 instance and pass on result
-* 3. Get networkId - Now we can check the user is connected to the right network to use our dApp
-* 4. Get user account from metamask
-* 5. Get user balance
-*/
-
 let getWeb3 = new Promise(function (resolve, reject) {
   // Check for injected web3 (mist/metamask)
   var web3js = window.web3

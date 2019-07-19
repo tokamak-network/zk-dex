@@ -1,16 +1,13 @@
 import Vue from 'vue';
+
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+
 import App from './App.vue';
-import router from './router/index.js';
-import store from './store/index.js';
-import Buefy from 'buefy'
-import 'buefy/dist/buefy.css'
+import router from './router'
+import store from './store'
 
-import BootstrapVue from 'bootstrap-vue'
-
-Vue.config.productionTip = false;
-
-Vue.use(Buefy);
-Vue.use(BootstrapVue)
+Vue.use(ElementUI);
 
 new Vue({
   el: '#app',
