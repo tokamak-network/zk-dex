@@ -2,38 +2,37 @@ import "../sha/1024bitPacked.code" as sha256
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
-// oh0 + oh1 : old note hash
-// pk0 + pk1 : old note's owner
-// oVal : old note value
-// oType : old note type
-// ovk0 + ovk1 : old note viewKey
-// oSalt : old note salt, random value
-// oIsSmart : old note isSmart, 0 if is not smart note
+// (public) oh0 + oh1 : old note hash
+// (private) pk0 + pk1 : old note's owner
+// (private) oVal : old note value
+// (private) oType : old note type
+// (private) ovk0 + ovk1 : old note viewKey
+// (private) oSalt : old note salt, random value
+// (private) oIsSmart : old note isSmart, 0 if is not smart note
 
-// n0h0 + n0h1 : new note 0 hash
-// rpk0 + rpk1 : reciever(new note 0 owner)
-// n0Val : new note 0 value
-// n0Type : new note 0 type
-// n0vk0 + n0vk1 : new note 0 viewKey
-// n0Salt : new note 0 salt
-// n0IsSmart : new note 0 isSmart, 0 if is not smart note
+// (public) n0h0 + n0h1 : new note 0 hash
+// (private) rpk0 + rpk1 : reciever(new note 0 owner)
+// (private) n0Val : new note 0 value
+// (private) n0Type : new note 0 type
+// (private) n0vk0 + n0vk1 : new note 0 viewKey
+// (private) n0Salt : new note 0 salt
+// (private) n0IsSmart : new note 0 isSmart, 0 if is not smart note
 
-// n1h0 + n1h1 : new note 1 hash
-// n1rpk0 + n1rpk1 : reciever2(new note 2 owner)
-// n1Val : new note 1 value
-// n1Type : new note 1 type
-// n1vk0+ n1vk1 : new note 1 viewKey
-// 1Salt : new note 1 salt
-// n1IsSmart : new note 1 isSmart, 0 if is not smart note
+// (public) n1h0 + n1h1 : new note 1 hash
+// (private) n1rpk0 + n1rpk1 : reciever2(new note 2 owner)
+// (private) n1Val : new note 1 value
+// (private) n1Type : new note 1 type
+// (private) n1vk0+ n1vk1 : new note 1 viewKey
+// (private) n1Salt : new note 1 salt
+// (private) n1IsSmart : new note 1 isSmart, 0 if is not smart note
 
-// originH0 + originH1 : origin note hash
-// originPk0 + originPk1 : origin note's owner
-// originVal : origin note value
-// originType : origin note type
-// originVk0 + originVk1 : origin note viewKey
-// originSalt : origin note salt, random value
-// originIsSmart : origin note isSmart, it should be 0. Note that you cannot make smartNote from smartNote
-
+// (public) originH0 + originH1 : origin note hash
+// (private) originPk0 + originPk1 : origin note's owner
+// (private) originVal : origin note value
+// (private) originType : origin note type
+// (private) originVk0 + originVk1 : origin note viewKey
+// (private) originSalt : origin note salt, random value
+// (private) originIsSmart : origin note isSmart, it should be 0. Note that you cannot make smartNote from smartNote
 
 
 def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oType, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field originH0, field originH1, private field originPk0, private field originPk1, private field originVal, private field originType, private field originVk0, private field originVk1, private field originSalt, private field originIsSmart) -> (field):

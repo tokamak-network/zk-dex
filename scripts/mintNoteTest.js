@@ -16,6 +16,37 @@ function getMintAndBurnCmd(owner, value, type, viewKey, salt, isSmart){
   let params = noteHelper.getNoteParams(owner, value, type, viewKey, salt, isSmart);
   let cmd = 'bash genProof.sh ';
 
+function genProof(container, circuitName, noteParams) {
+  var runCmd = "bash genProof.sh " + noteParams
+  var containerPath = '/home/zokrates/circuit/' + circuitName
+  console.log(containerPath)
+
+  var options = {
+    Cmd: ['bash', '-c', runCmd],
+    WorkingDir: containerPath,
+    AttachStdout: true,
+    AttachStderr: true
+  };
+
+  container.exec(options, function(err, exec) {
+    if (err) return;
+    exec.start(function(err, stream) {
+      if (err) return;
+
+      container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+      exec.inspect(function(err, data) {
+        if (err) return;
+        // proof = JSON.parse(data);
+        return data;
+      });
+    });
+  });
+}
+
+function runZokratesCommand(params) {
+    let cmd = '';
+
     params.forEach(p => {
     cmd += `${new BN(p, 16).toString(10)} `
     })

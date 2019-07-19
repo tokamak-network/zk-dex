@@ -1,27 +1,37 @@
 {
-  "name": "zk-ERC20",
-  "version": "0.9.0",
+  "name": "zk-dex",
+  "version": "1.0.0",
   "description": "",
-  "main": "truffle.js",
-  "directories": {
-    "test": "test"
-  },
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npx truffle compile",
-    "migrate": "npx truffle migrate --reset",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate --reset",
+    "test": "truffle test",
+    "lint": "solium --dir ./contracts",
+    "lint:fix": "solium -d contracts/ --fix",
     "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
     "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
+  "devDependencies": {
+    "chai": "^4.2.0",
     "ethlint": "^1.2.2",
-    "truffle": "^5.0.0-beta.1",
-    "bluebird": "^3.5.5",
+    "openzeppelin-solidity": "^2.0.0",
+    "openzeppelin-test-helpers": "^0.4.0",
+    "rlp": "^2.2.3",
+    "truffle": "^5.0.27"
+  },
+  "dependencies": {
+    "eccrypto": "^1.1.0",
+    "secp256k1": "^3.6.1"
+    "bn.js": "^5.0.0",
     "child-process-promise": "^2.2.1",
+    "dockerode": "^2.5.8",
+    "dockerode-promise": "^0.1.0",
+    "ethlint": "^1.2.2",
     "jsonic": "^0.3.1",
-    "node-docker-api": "^1.1.22"
+    "node-docker-api": "^1.1.22",
+    "truffle": "^5.0.0-beta.1"
   }
 }

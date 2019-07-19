@@ -1,0 +1,7 @@
+import "LIBSNARK/sha256packed"
+
+def main(field nh0, field nh1, field value, private field pk0, private field pk1, private field nonce) -> (field):
+  h0, h1 = sha256packed(pk0, pk1, value, nonce)
+  h0 == nh0
+  h1 == nh1
+  return 1
