@@ -23,15 +23,12 @@ export default {
         value: 100,
         from: this.coinbase
       }, (err, result) => {
-        if (err) {
-        } else {
-          let Won = contract.Won()
-          Won.watch((err, result) => {
-            this.winEvent = result.args
-            this.winEvent._amount = parseInt(result.args._amount, 10)
-            this.pending = false
-          })
-        }
+        let Won = this.contract.Won()
+        Won.watch((err, result) => {
+          this.winEvent = result.args
+          this.winEvent._amount = parseInt(result.args._amount, 10)
+          this.pending = false
+        })
       });
     }
   },

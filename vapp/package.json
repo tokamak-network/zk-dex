@@ -8,15 +8,11 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@drizzle/vue-plugin": "git+https://git@github.com/trufflesuite/drizzle-vue-plugin.git",
-    "bootstrap": "^4.3.1",
-    "bootstrap-vue": "^2.0.0-rc.26",
-    "buefy": "^0.7.10",
     "core-js": "^2.6.5",
-    "drizzle": "^1.4.0",
     "element-ui": "^2.10.1",
     "vue": "^2.6.10",
     "vue-router": "^3.0.7",
+    "vuex": "^3.1.1",
     "web3": "^0.20.5"
   },
   "devDependencies": {
