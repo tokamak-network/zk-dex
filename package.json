@@ -9,10 +9,11 @@
     "test": "truffle test",
     "lint": "solium --dir ./contracts",
     "lint:fix": "solium -d contracts/ --fix",
+    "docker": "npm run docker:start && npm run docker:init",
     "docker:start": "docker run -d -it --name zokrates -v $(pwd)/circuits:/home/zokrates/circuits -v $(pwd)/contracts:/home/zokrates/contracts 4000d/zokrates:latest /bin/bash",
     "docker:clean": "docker stop zokrates && docker rm zokrates",
     "docker:restart": "npm run docker:clean && npm run docker:start",
-    "init": "docker exec -it --workdir /home/zokrates/circuits zokrates /bin/bash /home/zokrates/circuits/zk-initialize.sh"
+    "docker:init": "docker exec -it --workdir /home/zokrates/circuits zokrates /bin/bash /home/zokrates/circuits/zk-initialize.sh"
   },
   "author": "",
   "license": "ISC",

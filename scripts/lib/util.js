@@ -32,10 +32,6 @@ function parseProof(file) {
 function parseProofObj(obj) {
   const proof = obj.proof;
   const input = obj.input;
-  input.forEach((i, key) => {
-    if (typeof i == 'number') i = i.toString();
-    input[key] = '0x' + new BN(i, 16).toString('hex')
-  })
 
   const _proof = [];
   Object.keys(proof).forEach(key => _proof.push(proof[key]));

@@ -15,10 +15,19 @@
 - ganache-cli
 
 ## Usage
-	1. npm install
-	2. ganache-cli (background running)
-	3. npm run start:zokrates
-	4. npm run initialize:zokrates
-	   : circuit compile, setup and export verifiers.sol then copy to contracts/.
-	5. npm run compile
-    6. npm run migrate
+```bash
+# 1. install node packages.
+$ npm install
+
+# 2. run ganache-cli in another terminal.
+$ ganache-cli -e 10000
+
+# 3. run zokrates docker container and initialize it.
+$ npm run docker
+
+# 3-1. (optional) if container is already running, restart it.
+$ npm run docker:restart && npm run docker:init
+
+# 4. run truffle commands (e.g., test).
+$ npx truffle test ./test/ZkDex.test.js
+```

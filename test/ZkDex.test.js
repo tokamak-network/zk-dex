@@ -2,12 +2,17 @@ const { balance } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 const rlp = require('rlp');
 
+const MakeNoteVerifier = artifacts.require("mintNBurnNote_Verifier.sol");
+const SpendNoteVerifier = artifacts.require("transferNote_Verifier.sol");
+const MakeOrderVerifier = artifacts.require("makeOrder_Verifier.sol");
+const TakeOrderVerifier = artifacts.require("takeOrder_Verifier.sol");
+const SettleOrderVerifier = artifacts.require("settleOrder_Verifier.sol");
 
 const ZkDex = artifacts.require("ZkDex");
 const MockDai = artifacts.require("MockDai");
 
-const util = require('./util');
-const { constants, Note, decrypt, createProof } = require('./lib/Note');
+const util = require('../scripts/lib/util');
+const { constants, Note, decrypt, createProof } = require('../scripts/lib/Note');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
@@ -32,7 +37,15 @@ contract('ZkDex', function(accounts) {
     const development = true;
 
     dai = await MockDai.new();
-    market = await ZkDex.new(development, dai.address);
+    market = await ZkDex.new(
+      development,
+      dai.address,
+      (await MakeNoteVerifier.new()).address,
+      (await SpendNoteVerifier.new()).address,
+      (await MakeOrderVerifier.new()).address,
+      (await TakeOrderVerifier.new()).address,
+      (await SettleOrderVerifier.new()).address,
+    );
   });
 
   async function checkOrderState(orderId, orderState) {

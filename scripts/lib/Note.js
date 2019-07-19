@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const util = require('../util');
+const util = require('./util');
 const mode = 'aes-256-cbc';
 
 const ETH_TOKEN_TYPE = web3.utils.padLeft('0x0', 64);
