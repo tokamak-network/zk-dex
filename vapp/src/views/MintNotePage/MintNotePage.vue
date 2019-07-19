@@ -4,6 +4,7 @@
       @click="mint">
       mint
     </el-button>
+    {{ n }}
   </div>
 </template>
 
@@ -11,6 +12,11 @@
 import { mapState } from 'vuex'
 
 export default {
+  data() {
+    return {
+      n: 0
+    }
+  },
   computed: mapState({
     coinbase: state => state.web3.coinbase,
     web3: state => state.web3.web3Instance,
@@ -18,17 +24,13 @@ export default {
   }),
   methods: {
     mint() {
-      this.contract.bet(10, {
+      this.contract.setN(this.n, {
         gas: 300000,
-        value: 100,
         from: this.coinbase
       }, (err, result) => {
-        let Won = this.contract.Won()
-        Won.watch((err, result) => {
-          this.winEvent = result.args
-          this.winEvent._amount = parseInt(result.args._amount, 10)
-          this.pending = false
-        })
+        // hash
+        console.log('result', result);
+        this.n++;
       });
     }
   },

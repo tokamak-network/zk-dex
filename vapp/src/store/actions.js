@@ -1,5 +1,6 @@
-import getWeb3 from '../utils/getWeb3'
+// import getWeb3 from '../utils/getWeb3'
 import getContract from '../utils/getContract'
+import getWeb3 from '../services/web3/getWeb3'
 
 export default {
   setViewingKey({ commit }, key) {
@@ -10,9 +11,17 @@ export default {
   },
 
   registerWeb3 ({commit}) {
-    getWeb3.then(result => {
+    console.log(1)
+    getWeb3().then(result => {
+      console.log(2)
       commit('REGISTER_WEB3', result)
-    }).catch(() => {})
+    }).catch((error) => {
+      console.log(2)
+      console.log('err', error)
+    })
+    // getWeb3.then(result => {
+    //   commit('REGISTER_WEB3', result)
+    // }).catch(() => {})
   },
   pollWeb3 ({commit}, payload) {
     commit('POLL_WEB3', payload)

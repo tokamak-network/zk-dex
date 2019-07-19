@@ -40,6 +40,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   data() {
     return {
@@ -60,9 +62,14 @@ export default {
         name: 'Tom',
         address: 'No. 189, Grove St, Los Angeles'
       }],
-      selectedNote: null
+      selectedNote: null,
+      web3WS: null
     }
   },
+  computed: mapState({
+    coinbase: state => state.web3.coinbase,
+    contract: state => state.contractInstance()
+  }),
   methods: {
     selectNote (note) {
       this.selectedNote = note
@@ -70,10 +77,22 @@ export default {
     handleNoteToMakeOrder(index, note) {
     },
     handleNoteToTakeOrder(index, note) {
-    },
+    }
+  },
+  beforeCreate () {
+    const options = {
+      fromBlock: 0,
+      toBlock: 'latest'
+    }
+    const filter = this.web3WS.eth.filter(options, (error, result) => {
+      if (error) console.log('error', error)
+      console.log('result', result)
+    })
+    filter.watch(function(error, result) {
+    });
   },
   mounted () {
-    this.$store.dispatch('getContract')
+    // this.$store.dispatch('getContract')
   },
 }
 </script>
