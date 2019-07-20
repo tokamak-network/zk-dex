@@ -15,6 +15,31 @@ function getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart){
   zokratesHelper.printZokratesCommand(params);
 }
 
+function test1(){
+  owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+  value = '6'
+  type = '0'
+  viewKey = "1aba488300a9d72s97a315d127837be4219107c62c61966ecdf7a75431d75cc6";
+  salt = "c517f646255d5492089b881965cbd3da";
+  isSmart = '0';
+
+  getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart);
+  //input
+  // ./zokrates compute-witness -a 42506636700999808740256801842565816051 328950857246332021701192061140886785235 6 0 35527165818681367460734522247605632578 33316299488818974410722173859617164385 35527165818681367352175737833940810724 44617564583168493833591961795197099206 261982333027672377144177477746906878938 0
+}
+
+function test2(){
+  owner = "ad4aba886f3dac973beef31e714c11dff0811b69ab55b135d9c56e8b06e27f5c";
+  value = '6'
+  type = '0'
+  viewKey = "1aba488300a9d72s97a315d127837be4219107c62c61966ecdf7a75431d75cc6";
+  // salt = "1111111111111111111111111111";
+  salt = "c517f646255d5492089b881965cbd3da";
+  isSmart = '0';
+
+  getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart);
+}
+
 function genProof(container, noteParams) {
   var runCmd = "bash getproof.sh " + noteParams
 
@@ -69,35 +94,10 @@ function runZokratesCommand(params) {
     genProof(con, cmd);
 
     });
-}
-
-function test1(){
-  owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
-  value = '6'
-  type = '0'
-  viewKey = "1aba488300a9d72s97a315d127837be4219107c62c61966ecdf7a75431d75cc6";
-  salt = "c517f646255d5492089b881965cbd3da";
-  isSmart = '0';
-
-  getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart);
-  //input
-  // ./zokrates compute-witness -a 42506636700999808740256801842565816051 328950857246332021701192061140886785235 6 0 35527165818681367460734522247605632578 33316299488818974410722173859617164385 35527165818681367352175737833940810724 44617564583168493833591961795197099206 261982333027672377144177477746906878938 0
-}
-
-function test2(){
-  owner = "ad4aba886f3dac973beef31e714c11dff0811b69ab55b135d9c56e8b06e27f5c";
-  value = '6'
-  type = '0'
-  viewKey = "1aba488300a9d72s97a315d127837be4219107c62c61966ecdf7a75431d75cc6";
-  // salt = "1111111111111111111111111111";
-  salt = "c517f646255d5492089b881965cbd3da";
-  isSmart = '0';
-
-  getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart);
-}
 
 
-function test3(){
+
+function test(){
   owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   value = '6'
   type = '0'

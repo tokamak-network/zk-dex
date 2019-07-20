@@ -5,18 +5,29 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "compile": "truffle compile",
+    "migrate": "truffle migrate --reset",
+    "test": "truffle test",
+    "lint": "solium --dir ./contracts",
+    "lint:fix": "solium -d contracts/ --fix",
+    "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
+    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
   },
   "dependencies": {
-    "@drizzle/vue-plugin": "git+https://git@github.com/trufflesuite/drizzle-vue-plugin.git",
-    "bootstrap": "^4.3.1",
-    "bootstrap-vue": "^2.0.0-rc.26",
-    "buefy": "^0.7.10",
+    "chai": "^4.2.0",
     "core-js": "^2.6.5",
-    "drizzle": "^1.4.0",
+    "dockerode": "^2.5.8",
+    "eccrypto": "^1.1.1",
+    "element-ui": "^2.10.1",
+    "ethlint": "^1.2.4",
+    "jsonic": "^0.3.1",
+    "rlp": "^2.2.3",
+    "secp256k1": "^3.7.1",
+    "truffle": "^5.0.28",
     "vue": "^2.6.10",
     "vue-router": "^3.0.7",
-    "web3": "^0.20.5"
+    "vuex": "^3.1.1",
+    "web3": "^0.20.7"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.9.0",
