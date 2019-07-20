@@ -23,6 +23,22 @@ const sampleProof = `{
   "input": []
 }`;
 
+const NoteState = {
+  Invalid: web3.utils.toBN('0'),
+  Valid: web3.utils.toBN('1'),
+  Traiding: web3.utils.toBN('2'),
+  Spent: web3.utils.toBN('3'),
+
+  toString: function(s) {
+    if (this.Invalid.cmp(s) === 0) { return "Invalid"; }
+    if (this.Valid.cmp(s) === 0) { return "Valid"; }
+    if (this.Traiding.cmp(s) === 0) { return "Traiding"; }
+    if (this.Spent.cmp(s) === 0) { return "Spent"; }
+
+    throw new Error(`Undefined state: ${s}`)
+  }
+};
+
 class Note {
   constructor(owner, value, token, viewingKey, salt, isSmart = false) {
     this.owner = web3.utils.padLeft(web3.utils.toHex(owner), 64);
@@ -184,6 +200,7 @@ module.exports = {
     DAI_TOKEN_TYPE,
     EMPTY_NOTE_HASH,
   },
+  NoteState,
   Note,
   decrypt,
   createProof: {

@@ -12,3 +12,5 @@ circuit/*/out.code
 circuit/*/witness
 
 .secret
+
+db

@@ -12,16 +12,17 @@ const ZkDex = artifacts.require("ZkDex");
 const MockDai = artifacts.require("MockDai");
 
 const util = require('../scripts/lib/util');
-const { constants, Note, decrypt, createProof } = require('../scripts/lib/Note');
+const {
+  constants,
+  Note,
+  NoteState,
+  decrypt,
+  createProof
+} = require('../scripts/lib/Note');
+const { Wallet } = require('../scripts/lib/Wallet');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
-const NoteState = {
-  Invalid: web3.utils.toBN('0'),
-  Valid: web3.utils.toBN('1'),
-  Traiding: web3.utils.toBN('2'),
-  Spent: web3.utils.toBN('3'),
-};
 
 const OrderState = {
   Created: web3.utils.toBN('0'),
@@ -30,7 +31,7 @@ const OrderState = {
 };
 
 contract('ZkDex', function(accounts) {
-  let dai, market;
+  let dai, market, wallet;
 
   // Initial setup
   beforeEach(async () => {
@@ -46,6 +47,14 @@ contract('ZkDex', function(accounts) {
       (await TakeOrderVerifier.new()).address,
       (await SettleOrderVerifier.new()).address,
     );
+
+    wallet = new Wallet();
+    await wallet.init(market.address);
+
+    accounts.forEach(a => {
+      const vk = a + util.unmarshal(web3.utils.fromAscii('vitalik'));
+      wallet.setVk(a, vk);
+    });
   });
 
   async function checkOrderState(orderId, orderState) {
@@ -158,13 +167,15 @@ contract('ZkDex', function(accounts) {
   describe("Wallet", async () => {
     describe("create a note", () => {
       it("should create a new note from DAI", async () => {
-        const vk = accounts[0] + util.unmarshal(web3.utils.fromAscii('vitalik'));
+        const vk = wallet.getVk(accounts[0]);
         const salt = web3.utils.randomHex(32);
+
+        console.log("vk,", vk, vk.length);
         await createDAINote(accounts[0], ether(5), vk, salt);
       });
 
       it("should create a new note from ETH", async () => {
-        const vk = accounts[0] + util.unmarshal(web3.utils.fromAscii('vitalik'));
+        const vk = wallet.getVk(accounts[0]);
         const salt = web3.utils.randomHex(32);
         await createETHNote(accounts[0], ether(5), vk, salt);
       });
@@ -179,13 +190,16 @@ contract('ZkDex', function(accounts) {
       const newNote1Owner = accounts[1];
       const newNote2Owner = accounts[2];
 
-      const vk1 = oldNoteOwner + util.unmarshal(web3.utils.fromAscii('vitalik'));
-      const vk2 = newNote1Owner + util.unmarshal(web3.utils.fromAscii('vitalik'));
-      const vk3 = newNote2Owner + util.unmarshal(web3.utils.fromAscii('vitalik'));
+      let vk1, vk2, vk3;
 
       let daiNote, ethNote;
 
       beforeEach(async () => {
+        vk1 = wallet.getVk(oldNoteOwner);
+        vk2 = wallet.getVk(newNote1Owner);
+        vk3 = wallet.getVk(newNote2Owner);
+
+
         daiNote = await createDAINote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(32));
         ethNote = await createETHNote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(32));
       });
