@@ -21,7 +21,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import { fetchProof } from '../../../api/index';
+import { fetchProof } from '../../api/index';
 
 export default {
   data() {
