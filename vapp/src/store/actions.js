@@ -9,6 +9,12 @@ export default {
   setSecretKey({ commit }, key) {
     commit('SET_SECRET_KEY', key)
   },
+  setOrder({ commit }, key) {
+    commit('SET_ORDER', key)
+  },
+  setNote({ commit }, key) {
+    commit('SET_NOTE', key)
+  },
 
   async registerWeb3 ({commit}) {
     const web3 = await getWeb3()
@@ -18,8 +24,8 @@ export default {
     commit('POLL_WEB3', payload)
   },
   getContract ({commit}) {
-    getStorageContract.then(result => {
-      commit('REGISTER_CONTRACT', result)
+    getStorageContract.then(contract => {
+      commit('REGISTER_CONTRACT', contract)
     }).catch(() => {})
   }
 }

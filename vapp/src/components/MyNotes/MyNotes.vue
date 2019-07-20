@@ -1,27 +1,28 @@
 <template>
-  <div>
+  <div style="text-align: center;">
+    <h1>MY NOTES</h1>
     <el-table
       :data="notes"
       highlight-current-row
       @current-change="selectNote"
       style="width: 100%">
       <el-table-column
-        type="index"
-        width="50">
-      </el-table-column>
-      <el-table-column
         property="date"
         label="Date"
-        width="120">
+        align="center"
+      >
       </el-table-column>
       <el-table-column
         property="name"
         label="Name"
-        width="120">
+        align="center"
+      >
       </el-table-column>
       <el-table-column
         property="address"
-        label="Address">
+        label="Address"
+        align="center"
+      >
       </el-table-column>
       <el-table-column
         align="right">
@@ -35,12 +36,12 @@
         </template>
       </el-table-column>
     </el-table>
-    {{selectedNote}}
+    <p>selected note: {{ selectedNote }}</p>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   data() {
@@ -72,12 +73,19 @@ export default {
     web3: state => state.web3.web3Instance,
   }),
   methods: {
+    ...mapActions([
+      'setNote'
+    ]),
     selectNote (note) {
       this.selectedNote = note
     },
     handleNoteToMakeOrder(index, note) {
+      this.setNote(note)
+      this.$router.push({ path: '/make' })
     },
     handleNoteToTakeOrder(index, note) {
+      this.setNote(note)
+      this.$router.push({ path: '/take' })
     }
   },
   beforeCreate () {

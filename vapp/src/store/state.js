@@ -1,6 +1,8 @@
 const state = {
   secretKey: null,
   viewingKey: null,
+  order: null,
+  note: null,
   web3: {
     isInjected: false,
     web3Instance: null,

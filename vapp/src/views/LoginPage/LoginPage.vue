@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div style="text-align: center;">
     <h1>ZK-DEX</h1>
     <div>
       <meta-mask />
     </div>
     <div>
       <el-input placeholder="Please your viewing key"
+        style="width: 50%;"
         v-model="viewingKey"
         show-password>
       </el-input>

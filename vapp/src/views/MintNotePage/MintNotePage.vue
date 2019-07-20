@@ -1,53 +1,74 @@
 <template>
-  <div>
-    <el-button
-      @click="mint">
-      mint
-    </el-button>
-    {{ n }}
+  <div 
+    v-loading="loading"
+    style="height: 100%; text-align: center;"
+  >
+    <div>
+      <el-button
+        @click="makeProof">
+        make proof
+      </el-button>
+    </div>
+    <p>proof: {{ proof }}</p>
+    <div>
+      <el-button
+        @click="mintNote">
+        mint note
+      </el-button>
+    </div>
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import { fetchProof } from '../../../api/index';
 
 export default {
   data() {
     return {
-      n: 0
+      n: 0,
+      loading: false,
+      proof: ''
     }
   },
   computed: mapState({
     coinbase: state => state.web3.coinbase,
     web3: state => state.web3.web3Instance,
-    contract: state => state.contract()
+    contract: state => state.contract(),
+    order: state => state.order,
+    note: state => state.note
   }),
   methods: {
-    mint() {
+    makeProof() {
+      this.loading = true
+      fetchProof()
+        .then(
+          proof => {
+            this.loading = false
+            this.proof = JSON.stringify(proof.data.proof, null, 2)
+          }
+        )
+        .catch()
+    },
+    mintNote() {
       this.contract.methods.setN(this.n).send({
         from: this.coinbase,
-        gas: 100000
+        gasPrice: '1000',
+        gas: 300000
       })
       .on('transactionHash', (hash) => {
         console.log('hash', hash)
         this.n++;
       })
       .on('receipt', (receipt) => {
-        console.log(receipt)
       })
       .on('confirmation', (confirmationNumber, receipt) => {
-        console.log(confirmationNumber, receipt)
       })
-      .on('error', console.error);
-      // this.contract.setN(this.n, {
-      //   gas: 300000,
-      //   from: this.coinbase
-      // }, (err, result) => {
-      //   // hash
-      //   console.log('result', result);
-      
-      // });
-    }
+      .on('error', console.error)
+    },
+  },
+  created () {
+    console.log('order', this.order, 'note', this.note);
   },
 }
 </script>

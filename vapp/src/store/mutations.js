@@ -7,6 +7,12 @@ export default {
   SET_SECRET_KEY: (state, key) => {
     state.secretKey = key
   },
+  SET_ORDER: (state, order) => {
+    state.order = order
+  },
+  SET_NOTE: (state, note) => {
+    state.note = note
+  },
 
   async REGISTER_WEB3 (state, web3) {
     const web3Copy = state.web3
@@ -24,7 +30,7 @@ export default {
     state.web3.coinbase = payload.coinbase
     state.web3.balance = payload.balance
   },
-  REGISTER_CONTRACT (state, payload) {
-    state.contract = () => payload
+  REGISTER_CONTRACT (state, contract) {
+    state.contract = () => contract
   }
 }
