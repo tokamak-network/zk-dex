@@ -1,11 +1,11 @@
 <template>
   <div style="text-align: center; margin-top: 120px">
     <h1>ZK-DEX</h1>
-      <zk-dex-contract />
-      <div
-        style="height: 10px;">
-      </div>
-      <meta-mask />
+    <zk-dex-contract />
+    <div
+      style="height: 10px;">
+    </div>
+    <meta-mask />
     <div>
       <el-input placeholder="Enter your viewing key"
         style="width: 50%;"
