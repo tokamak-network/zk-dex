@@ -7,8 +7,8 @@ zokrates
 .idea
 node_modules/
 
-circuit/*/out
-circuit/*/out.code
-circuit/*/witness
+circuits/*/out
+circuits/*/out.code
+circuits/*/witness
 
 .secret

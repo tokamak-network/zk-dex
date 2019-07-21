@@ -46,7 +46,7 @@ function test1(){
   // takerNoteToMakerNote's variables
   // hash(takerNoteToMakerNote) : "cbb0f25efa51213a96d54ffee7fba8969b909045ac10c4da610e9f5821b53cf8"
   // makerNote --> (newNoteToTakerNote, ChangeNote)
-  taker2MakerNoteOwner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+  taker2MakerNoteOwner = "ef17beaef3f11a36a7e22d4d6e03cee6bd059ec8fa9553d16223a1859f22b48b";
   taker2MakerNoteValue = '4';
   taker2MakerNoteType = '0';
   taker2MakerNoteViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
@@ -56,7 +56,7 @@ function test1(){
   // takerNoteToMakerNote's variables
   // hash(newNoteToTakerNote) :
   // newNoteToTakerNote's variables
-  newNote2TakerOwner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+  newNote2TakerOwner = "2aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   newNote2TakerValue = '4'; // takerNoteToMakerNote.value == newNoteToTakerNote.value
   newNote2TakerType = '0';
   newNote2TakerViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
@@ -72,7 +72,7 @@ function test1(){
   newNote2MakerIsSmart = '1'; // It is smartNote
 
   //changeNote's variables
-  changeNoteOwner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+  changeNoteOwner = "ef17beaef3f11a36a7e22d4d6e03cee6bd059ec8fa9553d16223a1859f22b48b";
   changeNoteValue = '3';
   changeNoteType = '0';
   changeNoteViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
