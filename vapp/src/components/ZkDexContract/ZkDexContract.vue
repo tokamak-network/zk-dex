@@ -8,7 +8,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
-import Wallet from '../../../../scripts/lib/Wallet'
+import { Wallet } from '../../../../scripts/lib/Wallet'
 
 export default {
   data() {
@@ -20,12 +20,12 @@ export default {
     this.$store.dispatch('setContract')
   },
   created () {
-    this.dexContract.deployed().then(dexContractInstance => {
-      this.setDexContractInstance(dexContractInstance)
-      this.address = dexContractInstance.address
+    this.dexContract.deployed().then(async (dexContractInstance) => {
+      this.setDexContractInstance(dexContractInstance);
+      this.address = dexContractInstance.address;
 
-      const wallet = new Wallet()
-      wallet.init(this.dexContract, dexContractInstance.address)
+      const wallet = new Wallet();
+      await wallet.init(this.address);
       this.setWallet(wallet)
 
       dexContractInstance.dai().then(daiAddress => {

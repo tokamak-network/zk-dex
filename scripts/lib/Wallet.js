@@ -8,6 +8,7 @@ const {
 let ZkDex;
 if (typeof artifacts === 'undefined') {
   ZkDex = require('truffle-contract')(require("../../build/contracts/ZkDex.json"));
+  ZkDex.setProvider(web3.currentProvider);
 } else {
   ZkDex = artifacts.require('ZkDex');
 }
