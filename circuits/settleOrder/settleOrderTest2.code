@@ -1,0 +1,71 @@
+import "./settleOrder.code" as settleOrder
+
+// Settle Order Test Data
+
+// v1 - v2/price < 0, makerNote --> (newNoteToTaker), takerNoteToMaker --> (newNoteToMaker, Change)
+// price == 1
+// all note type == 0
+// taker tried to buy some of makerNote's amount
+
+// makerNote's variables
+// hash(makerNote) : 'ef17beaef3f11a36a7e22d4d6e03cee6bd059ec8fa9553d16223a1859f22b48b'
+// makerNote --> (newNoteToTakerNote, ChangeNote)
+
+//makerNoteOwner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+//makerNoteValue = '7';
+//makerNoteType = '0';
+//makerNoteViewKey = "1111111111111111111111111111111111111111111111111111111111111111";
+//makerNoteSalt = "c517f646255d5492089b881965cbd3da";
+//makerNoteIsSmart = '0';
+
+// takerNoteToMakerNote's variables
+// hash(takerNoteToMakerNote) : "cbb0f25efa51213a96d54ffee7fba8969b909045ac10c4da610e9f5821b53cf8"
+// makerNote --> (newNoteToTakerNote, ChangeNote)
+
+//taker2MakerNoteOwner = "ef17beaef3f11a36a7e22d4d6e03cee6bd059ec8fa9553d16223a1859f22b48b"; // It automatically calculated
+//taker2MakerNoteValue = '8';
+//taker2MakerNoteType = '0';
+//taker2MakerNoteViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
+//taker2MakerNoteSalt = "c517f646255d5492089b881965cbd3da";
+//taker2MakerNoteIsSmart = '1';
+
+// takerNoteToMakerNote's variables
+// hash(newNoteToTakerNote) :
+// newNoteToTakerNote's variables
+
+//newNote2TakerOwner = "2aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61"; //taker2MakerNote.parent
+//newNote2TakerValue = '7'; // takerNoteToMakerNote.value == newNoteToTakerNote.value
+//newNote2TakerType = '0';
+//newNote2TakerViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
+//newNote2TakerSalt = "c517f646255d5492089b881965cbd3da";
+//newNote2TakerIsSmart = '1'; // It is smartNote
+
+// newNoteToMakerNote's variables
+
+//newNote2MakerOwner = "ef17beaef3f11a36a7e22d4d6e03cee6bd059ec8fa9553d16223a1859f22b48b"; // It automatically calculated
+//newNote2MakerValue = '7';
+//newNote2MakerType = '0';
+//newNote2MakerViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
+//newNote2MakerSalt = 'c517f646255d5492089b881965cbd3da';
+//newNote2MakerIsSmart = '1'; // It is smartNote
+
+// changeNote's variables
+
+//changeNoteOwner = "2aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61"; // It automatically calculated
+//changeNoteValue = '1';
+//changeNoteType = '0';
+//changeNoteViewKey = '1111111111111111111111111111111111111111111111111111111111111111';
+//changeNoteSalt = 'c517f646255d5492089b881965cbd3da';
+//changeNoteIsSmart = '1';
+
+// price
+
+//price = '1'
+
+def settleOrderTester(field[51] inputs) -> (field):
+  return settleOrder(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14], inputs[15], inputs[16], inputs[17], inputs[18], inputs[19], inputs[20], inputs[21], inputs[22], inputs[23], inputs[24], inputs[25], inputs[26], inputs[27], inputs[28], inputs[29], inputs[30], inputs[31], inputs[32], inputs[33], inputs[34], inputs[35], inputs[36], inputs[37], inputs[38], inputs[39], inputs[40], inputs[41], inputs[42], inputs[43], inputs[44], inputs[45], inputs[46], inputs[47], inputs[48], inputs[49], inputs[50])
+
+def main() -> (field):
+  field[51] testData = [317808781339362498257705373358935494374, 251253273231543432155074799198374376587, 0, 35527165818681367460734522247605632578, 33316299488818974410722173859617164385, 7, 22685491128062564230891640495451214097, 22685491128062564230891640495451214097, 261982333027672377144177477746906878938, 0, 20160597840455114205643074624038914845, 73789427645926920504597386265839041694, 0, 317808781339362498257705373358935494374, 251253273231543432155074799198374376587, 8, 22685491128062564230891640495451214097, 22685491128062564230891640495451214097, 261982333027672377144177477746906878938, 1, 21092358281768660381707182608691682508, 216488359197669899541255092080315662532, 0, 56794813751240021427195435212091145794, 33316299488818974410722173859617164385, 7, 22685491128062564230891640495451214097, 22685491128062564230891640495451214097, 261982333027672377144177477746906878938, 1, 215418472675230588558242087166151836020, 99693245819301096918552933685903269043, 0, 317808781339362498257705373358935494374, 251253273231543432155074799198374376587, 7, 22685491128062564230891640495451214097, 22685491128062564230891640495451214097, 261982333027672377144177477746906878938, 1, 13327893483959383221745953386734006516, 64142762815648885242925245262495731829, 0, 56794813751240021427195435212091145794, 33316299488818974410722173859617164385, 1, 22685491128062564230891640495451214097, 22685491128062564230891640495451214097, 261982333027672377144177477746906878938, 1, 1]
+  1 == settleOrderTester(testData)
+  return 1

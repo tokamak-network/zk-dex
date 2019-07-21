@@ -104,8 +104,6 @@ function test1(){
     changeNoteOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart, //changeNote's variables
     price // price
   );
-
-  console.log("cmd", command);
 }
 
 // v1 - v2/price < 0, makerNote --> (newNoteToTaker), takerNoteToMaker --> (newNoteToMaker, Change)
@@ -173,7 +171,7 @@ function test2(){
 }
 
 // test1();
-test2();
+// test2();
 
 module.exports = {
   getSettleOrderCommand,
