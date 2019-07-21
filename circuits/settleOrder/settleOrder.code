@@ -100,13 +100,7 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   //check (hash(takerToMakerNote.parentNote) == newNoteToTaker.owner)
   //Don't need to
 
-  field check = o0Val - o1Val/price
-
-  field bit = if check <= o0Val then 1 else 0 fi
-  // o1Val/price should be positive integer
-  // if check <= o0Val - o1Val/price, then o0Val >= o1Val/price
-  // if bit == 1, then makerNote.value >= takerNoteToMaker.value/price
-  // if bit == 0, then makerNote.value < takerNoteToMaker.value/price
+  field bit = if o0Val < o1Val/price then 0 else 1 fi
 
   field n0ValT = if bit == 1 then o1Val/price else o0Val fi
   field n1ValT = if bit == 1 then o1Val else o0Val*price fi
