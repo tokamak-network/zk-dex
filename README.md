@@ -35,18 +35,17 @@ $ npx truffle test ./test/ZkDex.test.js
 
 ## Vue App Instalation (macOS)
 ```bash
-# install socat
-$ brew install socat
-
 # TODO: what need to do before run vue app
 $ cd vapp && npm install && cd ..
 ```
 
 ## Run Vue App
 ```bash
-# expose docker api to TCP to use docker in vue app
-$ socat TCP-LISTEN:3000,reuseaddr,fork UNIX-CONNECT:/var/run/docker.sock &
+$ cd vapp
 
-# TODO: how to run vue app
+# run wallet server
+$ node app.js
+
+# run vapp server
 $ cd vapp && npm run serve
 ```

@@ -22,8 +22,6 @@ async function execute(circuitName, cmd) {
   // set generated proof file when compute is complate.
   const workingDir = `/home/zokrates/circuits/${circuitName}`; // zokerates container Path
 
-  console.log('cmd', cmd);
-
   const exec = await c.exec({
     //  Cmd: ['bash', '-c', "ls -al"],
     Cmd: cmd.split(' '),
@@ -66,7 +64,6 @@ async function execute(circuitName, cmd) {
 
       stream.on('data', (data) => {
         chunks.push(data.toString());
-        console.log(data.toString());
       });
     });
   });
@@ -199,6 +196,7 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
 (async () => {
   try {
     const containers = await docker.listContainers();
+
     c = containers
       .filter(c => c.Names[0].includes(cName))[0];
 
