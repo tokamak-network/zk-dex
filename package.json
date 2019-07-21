@@ -27,15 +27,14 @@
     "truffle": "^5.0.27"
   },
   "dependencies": {
-    "eccrypto": "^1.1.0",
-    "secp256k1": "^3.6.1",
     "bn.js": "^5.0.0",
     "child-process-promise": "^2.2.1",
     "dockerode": "^2.5.8",
     "dockerode-promise": "^0.1.0",
+    "eccrypto": "^1.1.0",
     "ethlint": "^1.2.2",
-    "jsonic": "^0.3.1",
     "node-docker-api": "^1.1.22",
+    "secp256k1": "^3.6.1",
     "truffle": "^5.0.0-beta.1"
   }
 }

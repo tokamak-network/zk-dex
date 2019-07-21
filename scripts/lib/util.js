@@ -53,6 +53,20 @@ function calcHash(h0, h1) {
   return marshal(unmarshal(h0) + unmarshal(h1));
 }
 
+function split32BytesTo16BytesArr(b) {
+  const v = web3.utils.toBN(b).toString(16);
+  return [
+    marshal(v.slice(0, 32)),
+    marshal(v.slice(32)),
+  ];
+}
+
+function reduceParams(params) {
+  return params
+    .map(p => web3.utils.toBN(p, 16).toString(10))
+    .reduce((a, b) => `${a} ${b}`, "").trim();
+}
+
 module.exports = {
   sleep,
   parseProof,
@@ -60,4 +74,6 @@ module.exports = {
   calcHash,
   marshal,
   unmarshal,
+  split32BytesTo16BytesArr,
+  reduceParams,
 }

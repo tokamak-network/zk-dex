@@ -73,7 +73,7 @@ contract ZkDex is ZkDai {
     uint256[2] calldata k,
     uint256[4] calldata input
   ) external {
-    // TODO: verify circuit:makeOrder
+    require(development || makeOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify make order circuit");
 
     bytes32 makerNote = calcHash(input[0], input[1]);
 
@@ -124,7 +124,7 @@ contract ZkDex is ZkDai {
     uint256[9] calldata input,
     bytes calldata encryptedStakingNote
   ) external {
-    // TODO: verify circuit:takerOrder
+    require(development || takeOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify take order circuit");
 
     Order storage order = orders[orderId];
 
@@ -191,7 +191,7 @@ contract ZkDex is ZkDai {
 
     bytes calldata encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
   ) external {
-    // TODO: verify circuit:settleOrder
+    require(development || settleOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify settle order circuit");
 
     Order storage order = orders[orderId];
 

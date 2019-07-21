@@ -3,7 +3,12 @@ const BN = require('bn.js');
 const crypto = require('crypto');
 
 const noteHelper = require('./noteHelper.js');
-const zokratesHelper = require('./zokratesHelper.js');
+
+function reduceParams(params) {
+  return params
+    .map(p => new BN(p, 16).toString(10))
+    .reduce((a, b) => `${a} ${b}`, "").trim();
+}
 
 function getTakeOrderCommand(
   parentOwner, parentValue, parentType, parentViewKey, parentSalt, parentIsSmart, //parent note's variables
@@ -19,8 +24,7 @@ function getTakeOrderCommand(
   );
 
   let params = parentNoteParams.concat(maker2TakerNoteParams);
-
-  zokratesHelper.printZokratesCommand(params);
+  return reduceParams(params);
 }
 
 // It pass because maker2TakerIsSmart = '1';

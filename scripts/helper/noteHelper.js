@@ -4,6 +4,23 @@ const crypto = require('crypto');
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
+function getNoteHash(owner, amount, type, viewKey, salt, isSmart) {
+  let paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  let noteOwner = paddedO["noteOwner"];
+  let splittedNoteOwner = paddedO["splittedNoteOwner"];
+  let noteValue =  paddedO["noteValue"];
+  let noteType = paddedO["noteType"];
+  let noteViewKey = paddedO["noteViewKey"];
+  let splittedNoteViewKey = paddedO["splittedNoteViewKey"];
+  let noteSalt = paddedO["noteSalt"];
+  let noteIsSmart = paddedO["noteIsSmart"];
+
+  let note = splittedNoteOwner.join("") + noteValue + noteType + splittedNoteViewKey.join("") + noteSalt + noteIsSmart;
+
+  let hashArr = toHashed(note);
+  return hashArr[0] + hashArr[1];
+}
+
 // Example Params
 // owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
 // value = '6'
@@ -31,7 +48,8 @@ function getNoteParams(owner, amount, type, viewKey, salt, isSmart){
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(noteValue, noteType, splittedNoteOwner, splittedNoteViewKey, noteSalt, noteIsSmart);
-  console.log(noteParams); //for check parameters
+
+  // console.log(noteParams); //for check parameters
   return noteParams;
 }
 
@@ -53,7 +71,8 @@ function getNoteParamsForTransfer(owner, amount, type, viewKey, salt, isSmart){
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(splittedNoteOwner, noteValue, noteType, splittedNoteViewKey, noteSalt, noteIsSmart);
-  console.log(noteViewKey, noteParams); //for check parameters
+
+  // console.log(noteViewKey, noteParams); //for check parameters
   return noteParams;
 }
 
@@ -75,6 +94,7 @@ function getNoteParamsForMakeOrder(owner, amount, type, viewKey, salt, isSmart){
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
   // console.log(noteParams); //for check parameters
   return noteParams;
 }
@@ -97,6 +117,7 @@ function getNoteParamsForTakeOrder(owner, amount, type, viewKey, salt, isSmart){
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
   // console.log(noteParams); //for check parameters
   return noteParams;
 }
@@ -119,6 +140,7 @@ function getNoteParamsForSettleOrder(owner, amount, type, viewKey, salt, isSmart
   let noteHash = toHashed(note);
 
   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
   // console.log(noteParams); //for check parameters
   return noteParams;
 }
@@ -179,6 +201,7 @@ function toHashed(encodedValue){
 }
 
 module.exports = {
+  getNoteHash,
   getNoteParams,
   getNoteParamsForTransfer,
   getNoteParamsForMakeOrder,

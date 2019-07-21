@@ -3,7 +3,13 @@ const BN = require('bn.js');
 const crypto = require('crypto');
 
 const noteHelper = require('./noteHelper.js');
-const zokratesHelper = require('./zokratesHelper.js');
+
+function reduceParams(params) {
+  return params
+    .map(p => new BN(p, 16).toString(10))
+    .reduce((a, b) => `${a} ${b}`, "").trim();
+}
+
 
 function getTransferParams(
     fromOwner, fromValue, fromType, fromViewKey, fromSalt, fromIsSmart, // from's note
@@ -17,9 +23,7 @@ function getTransferParams(
   let originOwnerParams = noteHelper.getNoteParamsForTransfer(originOwner, originValue, originType, originViewKey, originSalt, originIsSmart);
 
   let transferParams = fromParams.concat(to1Params, to2Params, originOwnerParams);
-  let command = zokratesHelper.printZokratesCommand(transferParams);
-
-  return command;
+  return reduceParams(transferParams);
 }
 
 function test(){

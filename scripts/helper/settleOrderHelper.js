@@ -5,6 +5,12 @@ const crypto = require('crypto');
 const noteHelper = require('./noteHelper.js');
 const zokratesHelper = require('./zokratesHelper.js');
 
+function reduceParams(params) {
+  return params
+    .map(p => new BN(p, 16).toString(10))
+    .reduce((a, b) => `${a} ${b}`, "").trim();
+}
+
 function getSettleOrderCommand(
   makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart, //makerNote's variables
   taker2MakerNoteOwner, taker2MakerNoteValue, taker2MakerNoteType, taker2MakerNoteViewKey, taker2MakerNoteSalt, taker2MakerNoteIsSmart, //takerNoteToMakerNote's variables
@@ -21,10 +27,7 @@ function getSettleOrderCommand(
 
   let params = makerNoteParams.concat(taker2MakerNoteParams, newNote2TakerParams, newNote2MakerParams, changeNoteParams).concat(price);
 
-  console.log(params);
-
-  let command = zokratesHelper.printZokratesCommand(params);
-  return command;
+  return reduceParams(params);
 }
 
 
@@ -90,6 +93,8 @@ function test1(){
     changeNoteOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart, //changeNote's variables
     price // price
   );
+
+  console.log("cmd", command);
 }
 
 test1();

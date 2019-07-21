@@ -39,20 +39,19 @@ async function execute(container, circuitName, cmd) {
     });
     let message = cmd;
     await exec.start({hijack:true, stdin: true}, (err, stream) => {
-        console.log('err', err); //err null
-        stream.on('end', (err) => {
-        console.log('on end', err) // called once with empty arg
-        })
-        stream.on('data', (data) => {
-        console.log('on data', message + data.toString()); // not called
+      console.log('err', err); //err null
+      stream.on('end', (err) => {
+      console.log('on end', err) // called once with empty arg
+      })
+      stream.on('data', (data) => {
+      console.log('on data', message + data.toString()); // not called
 
-            // After 'compute-witness' process stream data out, then read proofFile.
-            Proof = fs.readFileSync(fileName, 'utf8');
-            // TODO : return Proof to Vuejs App
-            console.log(JSON.parse(Proof));
-          });
-        });
-
+        // After 'compute-witness' process stream data out, then read proofFile.
+        Proof = fs.readFileSync(fileName, 'utf8');
+        // TODO : return Proof to Vuejs App
+        console.log(JSON.parse(Proof));
+      });
+    });
 };
 
 async function runGenProof(owner, value, type, viewKey, salt, isSmart) {

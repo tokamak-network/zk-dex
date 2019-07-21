@@ -7,7 +7,7 @@ import "./ZkDaiBase.sol";
 contract SpendNotes is ZkDaiBase {
   uint8 internal constant NUM_PUBLIC_INPUTS = 9;
 
-  bytes32 public constant EMPTY_NOTE_HASH = 0xbecedd494a23f6178d5b0fbd7aa6698b218367c9810c013e41649ad9d375a63a;
+  bytes32 public constant EMPTY_NOTE_HASH = 0x38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca;
 
   SpendNoteVerifier public spendNoteVerifier;
 

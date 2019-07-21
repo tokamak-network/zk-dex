@@ -1,9 +1,15 @@
 const crypto = require('crypto');
 const util = require('./util');
+const noteHelper =  require('../helper/noteHelper');
+
 const mode = 'aes-256-cbc';
 
-const ETH_TOKEN_TYPE = web3.utils.padLeft('0x0', 64);
-const DAI_TOKEN_TYPE = web3.utils.padLeft('0x1', 64);
+const ETH_TOKEN_TYPE = web3.utils.padLeft('0x0', 32);
+const DAI_TOKEN_TYPE = web3.utils.padLeft('0x1', 32);
+
+const BN = web3.utils.BN;
+const SCALING_FACTOR = new BN('1000000000000000000');
+
 
 const sampleProof = `{
   "proof": {
@@ -42,11 +48,11 @@ const NoteState = {
 class Note {
   constructor(owner, value, token, viewingKey, salt, isSmart = false) {
     this.owner = web3.utils.padLeft(web3.utils.toHex(owner), 64);
-    this.value = web3.utils.padLeft(web3.utils.toHex(value), 64);
-    this.token = web3.utils.padLeft(web3.utils.toHex(token), 64);
+    this.value = web3.utils.padLeft(web3.utils.toHex(value), 32);
+    this.token = web3.utils.padLeft(web3.utils.toHex(token), 32);
     this.viewingKey = web3.utils.padLeft(web3.utils.toHex(viewingKey), 64);
-    this.salt = web3.utils.padLeft(web3.utils.toHex(salt), 64);
-    this.isSmart = web3.utils.padLeft(isSmart ? '0x1' : '0x0', 64);
+    this.salt = web3.utils.padLeft(web3.utils.toHex(salt), 32);
+    this.isSmart = web3.utils.padLeft(isSmart ? '0x1' : '0x0', 32);
   }
 
   getOwner() {
@@ -58,21 +64,18 @@ class Note {
   }
 
   hash() {
-    const args = [this.owner, this.value, this.token, this.viewingKey, this.salt, this.isSmart];
-    const v = args
-      .map(v => web3.utils.padLeft(v, 64)) // double check
-      .map(util.unmarshal)
-      .join('');
-
-    const buf = Buffer.from(util.unmarshal(v), 'hex')
-    const hash = crypto.createHash('sha256').update(buf).digest('hex');
-
-    return util.marshal(hash);
+    return util.marshal(noteHelper.getNoteHash(
+      util.unmarshal(this.owner),
+      util.unmarshal(this.value),
+      util.unmarshal(this.token),
+      util.unmarshal(this.viewingKey),
+      util.unmarshal(this.salt),
+      util.unmarshal(this.isSmart),
+    ));
   }
 
   hashArr() {
-    const h = util.unmarshal(this.hash());
-    return [util.marshal(h.slice(0, 32)), util.marshal(h.slice(32))];
+    return util.split32BytesTo16BytesArr(this.hash());
   }
 
   toString() {
@@ -189,7 +192,7 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
   return util.parseProofObj(proof);
 }
 
-const EMPTY_NOTE = new Note('0x1111111111111111111111111111111111111111111111111111111111111111', '0', '0', '0x1111111111111111111111111111111111111111111111111111111111111111', '0', false);
+const EMPTY_NOTE = new Note('0', '0', '0', '0', '0', false);
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
 console.log("EMPTY_NOTE_HASH", EMPTY_NOTE_HASH)
@@ -199,6 +202,7 @@ module.exports = {
     ETH_TOKEN_TYPE,
     DAI_TOKEN_TYPE,
     EMPTY_NOTE_HASH,
+    EMPTY_NOTE,
   },
   NoteState,
   Note,

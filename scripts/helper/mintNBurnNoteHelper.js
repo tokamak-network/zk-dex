@@ -6,13 +6,18 @@ var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 
 const noteHelper = require('./noteHelper.js');
-const zokratesHelper = require('./zokratesHelper.js');
+
+function reduceParams(params) {
+  return params
+    .map(p => new BN(p, 16).toString(10))
+    .reduce((a, b) => `${a} ${b}`, "").trim();
+}
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
 function getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart){
   let params = noteHelper.getNoteParams(owner, value, type, viewKey, salt, isSmart);
-  zokratesHelper.printZokratesCommand(params);
+  return reduceParams(params);
 }
 
 function genProof(container, noteParams) {
