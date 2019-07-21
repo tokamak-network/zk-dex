@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors')
+const Web3 = require('web3');
+
+global.web3 = new Web3("http://localhost:8545");
 
 const {
   getMintNBurnProof,
@@ -12,7 +15,6 @@ const {
 const app = express();
 app.use(cors());
 
-
 const generators = {
   mintNBurnNote: getMintNBurnProof,
   transferNote: getTransferProof,
@@ -21,11 +23,20 @@ const generators = {
   settleOrder: getSettleOrderProof,
 }
 
-app.get('/', async function (req, res) {
+app.get('/:circuit', async function (req, res) {
   const {
-    circuit,
-    params,
-  } = req.query;
+    circuit
+  } = req.params;
+
+  let params;
+
+  try {
+    params = JSON.parse(req.query.params);
+  } catch (e) {
+    return res.status(400).json({
+      message: 'Failed to parse JSON: '+ e.message,
+    });
+  }
 
   const generator = generators[circuit];
   if (!generator) {
@@ -46,6 +57,14 @@ app.get('/', async function (req, res) {
   }
 
 });
+
+app.use(function(err, req, res, next) {
+  console.error(err.stack);
+  res.status(400).json({
+    message: err.message,
+  });
+});
+
 
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
