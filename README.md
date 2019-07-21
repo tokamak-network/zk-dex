@@ -7,8 +7,8 @@
 - SmartContract
 
 ## Documents
-- [Architecture Presentation](https://docs.google.com/presentation/d/1j7oluYl4r9W-ybOwrfmAuU8s7QM74hXAotucHQ2AMNw/edit?usp=sharing)
-- [Architecture Memo](https://www.notion.so/onther/zk-dex-48afbac555c34255a2c567bf0a8490dd)
+- [Presentation](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
+- [Demo](https://youtu.be/QvKaqMH_5lk)
 
 ## Requirement
 - docker
