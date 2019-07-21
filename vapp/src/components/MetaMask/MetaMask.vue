@@ -2,7 +2,7 @@
   <div>
     <p>Network: {{ network }}</p>
     <p>Account: {{ coinbase }}</p>
-    <p>Balance: {{ balance }} Eth</p>
+    <p>Balance: {{ balance }} wei</p>
   </div>
 </template>
 
