@@ -1,6 +1,6 @@
 <template>
   <div style="text-align: center;">
-    <h1>ORDER BOOK</h1>
+    <h2 style="margin-bottom: 40px;">ORDER BOOK</h2>
     <el-table
       :data="orders"
       highlight-current-row
@@ -25,22 +25,26 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 
+const dummyOrders = [
+  {
+    orderId: '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b',
+    price: '14'
+  }, {
+    orderId: 'd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35',
+    price: '13'
+  }, {
+    orderId: '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce',
+    price: '12'
+  }, {
+    orderId: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
+    price: '11'
+  }
+]
+
 export default {
   data() {
     return {
-      orders: [{
-        orderId: 'Tom',
-        price: 'No. 189, Grove St, Los Angeles'
-      }, {
-        orderId: 'Tom',
-        price: 'No. 189, Grove St, Los Angeles'
-      }, {
-        orderId: 'Tom',
-        price: 'No. 189, Grove St, Los Angeles'
-      }, {
-        orderId: 'Tom',
-        price: 'No. 189, Grove St, Los Angeles'
-      }],
+      orders: dummyOrders,
       selectedOrder: null,
       web3WS: null
     }
@@ -48,11 +52,12 @@ export default {
   computed: mapState({
     coinbase: state => state.web3.coinbase,
     contract: state => state.contractInstance(),
-    web3: state => state.web3.web3Instance,
+    web3: state => state.web3.web3Instance
   }),
   methods: {
     ...mapActions([
-      'setOrder'
+      'setOrder',
+      'setOrders'
     ]),
     selectOrder(order) {
       this.selectedOrder = order
@@ -70,6 +75,9 @@ export default {
     // })
     // filter.watch(function(error, result) {
     // });
+  },
+  created () {
+    this.setOrders(this.orders)
   },
   mounted () {
     // this.$store.dispatch('getContract')
