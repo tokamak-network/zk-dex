@@ -24,7 +24,6 @@ const { Wallet } = require('../scripts/lib/Wallet');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
-
 const OrderState = {
   Created: web3.utils.toBN('0'),
   Taken: web3.utils.toBN('1'),

@@ -1,3 +1,5 @@
+const Web3Utils = require('web3-utils');
+
 const {
   constants,
   Note,
@@ -24,7 +26,7 @@ class Wallet {
     if (this._vks[addr]) {
       throw new Error(`${addr} has already vk ${this._vks[addr]}`);
     }
-    this._vks[addr] = web3.utils.padLeft(vk, 64);
+    this._vks[addr] = Web3Utils.padLeft(vk, 64);
   }
 
   getVk(addr) {

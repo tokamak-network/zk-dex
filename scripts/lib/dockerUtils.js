@@ -1,5 +1,6 @@
 const Docker = require('dockerode');
 const BN = require('bn.js');
+const Web3Utils = require('web3-utils');
 const util = require('./util');
 
 const { constants } = require('./Note');
@@ -69,7 +70,7 @@ async function execute(circuitName, cmd) {
   });
 }
 
-const convert = v => new BN(v, 16);
+const convert = v => Web3Utils.toBN(v, 16);
 
 async function getMintNBurnProof(note) {
   const cmdArgs = getMintAndBurnCommand(

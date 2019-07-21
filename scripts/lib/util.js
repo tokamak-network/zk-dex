@@ -1,5 +1,6 @@
 const fs = require('fs');
 const BN = require('bn.js');
+const Web3Utils = require('web3-utils');
 
 function sleep(t) {
   return new Promise((resolve) => {
@@ -54,7 +55,7 @@ function calcHash(h0, h1) {
 }
 
 function split32BytesTo16BytesArr(b) {
-  const v = web3.utils.toBN(b).toString(16);
+  const v = Web3Utils.toBN(b).toString(16);
   return [
     marshal(v.slice(0, 32)),
     marshal(v.slice(32)),
