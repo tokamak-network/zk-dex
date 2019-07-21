@@ -19,7 +19,7 @@ function test1(){
   owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   value = '6'
   type = '0'
-  viewKey = "1aba488300a9d72s97a315d127837be4219107c62c61966ecdf7a75431d75cc6";
+  viewKey = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
   salt = "c517f646255d5492089b881965cbd3da";
   isSmart = '0';
 

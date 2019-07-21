@@ -1,0 +1,17 @@
+import "./makeOrder.code" as makeOrder
+
+// makeOrder Test Data Info
+// owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+// value = '6'
+// type = '0'
+// viewKey = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+// salt = "c517f646255d5492089b881965cbd3da";
+// isSmart = '0';
+
+def makeOrderTester(field[10] inputs) -> (field):
+  return makeOrder(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9])
+
+def main() -> (field):
+  field[10] testData = [28438254119279180143054153302986539534, 216363634539208029509085300953461217659, 0, 35527165818681367460734522247605632578, 33316299488818974410722173859617164385, 6, 35527165818681367460734522247605632578, 33316299488818974410722173859617164385, 261982333027672377144177477746906878938, 0]
+  1 == makeOrderTester(testData)
+  return 1

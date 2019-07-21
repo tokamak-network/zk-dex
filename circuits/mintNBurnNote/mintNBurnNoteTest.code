@@ -1,0 +1,19 @@
+import "./mintNBurnNote.code" as check
+
+// mintNBurn Test Data Info
+// owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+// value = '6'
+// type = '0'
+// viewKey = '0';
+// salt = "1111111111111111111111111111";
+// salt = "c517f646255d5492089b881965cbd3da";
+// isSmart = '0';
+
+def noteTester(field[10] inputs) -> (field):
+  return check(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9])
+
+def main() -> (field):
+  field[10] testNoteData = [208635504851692039925105741959873504955, 183624346768375210281639838810832473847, 6, 0, 35527165818681367460734522247605632578, 33316299488818974410722173859617164385, 0, 0, 261982333027672377144177477746906878938, 0]
+  field h = noteTester(testNoteData)
+  h == 1
+  return 1

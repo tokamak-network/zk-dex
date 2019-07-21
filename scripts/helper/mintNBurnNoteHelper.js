@@ -142,13 +142,7 @@ function test5(){
 
 // test1();
 // test2();
-
-//It fails
 // test3();
-
-// it works
-// test4();
-// test5();
 
 module.exports = {
   getMintAndBurnCommand,
