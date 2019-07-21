@@ -19,19 +19,26 @@ function getSettleOrderCommand(
   changeNoteOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart, //changeNote's variables
   price // price
 ){
-  let makerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart);
-  let taker2MakerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteParams[0]+makerNoteParams[1], taker2MakerNoteValue, taker2MakerNoteType, taker2MakerNoteViewKey, taker2MakerNoteSalt, taker2MakerNoteIsSmart);
-  let newNote2TakerParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, newNote2TakerValue, newNote2TakerType, newNote2TakerViewKey, newNote2TakerSalt, newNote2TakerIsSmart);
-  let newNote2MakerParams = noteHelper.getNoteParamsForSettleOrder(makerNoteParams[0]+makerNoteParams[1], newNote2MakerValue, newNote2MakerType, newNote2MakerViewKey, newNote2MakerSalt, newNote2MakerIsSmart);
+  const makerNoteHash = noteHelper.getNoteHash(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart);
+
+  const makerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart);
+
+  const taker2MakerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, taker2MakerNoteValue, taker2MakerNoteType, taker2MakerNoteViewKey, taker2MakerNoteSalt, taker2MakerNoteIsSmart);
+  const newNote2TakerParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, newNote2TakerValue, newNote2TakerType, newNote2TakerViewKey, newNote2TakerSalt, newNote2TakerIsSmart);
+  const newNote2MakerParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, newNote2MakerValue, newNote2MakerType, newNote2MakerViewKey, newNote2MakerSalt, newNote2MakerIsSmart);
+
   let changeNoteParams;
 
-  if(makerNoteValue - taker2MakerNoteValue >= 0){
-    //if takerAmount >= makerAmount
-    //change is given to "hash(makerNote)"
-    changeNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteParams[0]+makerNoteParams[1], changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
-  } else {
+  const makerAmount = new BN(makerNoteValue, 16);
+  const takerAmount = new BN(taker2MakerNoteValue, 16).div(new BN(price, 16));
+
+  if (makerAmount.cmp(takerAmount) >= 0) {
     //if takerAmount < makerAmount
     //change is given to "hash(taker2MakerNoteOwner.parent) => newNote2TakerOwner"
+    changeNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
+  } else {
+    //if takerAmount >= makerAmount
+    //change is given to "hash(makerNote)"
     changeNoteParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
   }
 
@@ -40,6 +47,7 @@ function getSettleOrderCommand(
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);
   }
+
   return reduceParams(params);
 }
 

@@ -345,7 +345,7 @@ contract('ZkDex', function(accounts) {
               paymentNote,
               changeNote,
               price)
-            : await  dockerUtils.getSettleOrderProof(
+            : await dockerUtils.getSettleOrderProof(
               makerNote,
               stakeNote,
               rewardNote,
