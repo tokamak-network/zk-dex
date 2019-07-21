@@ -36,10 +36,18 @@ function getSettleOrderCommand(
     //if takerAmount < makerAmount
     //change is given to "hash(taker2MakerNoteOwner.parent) => newNote2TakerOwner"
     changeNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
+
+    if (new BN(makerNoteHash, 16).cmp(new BN(changeNoteOwner, 16))) {
+      throw new Error("change note owner should be maker note");
+    }
   } else {
     //if takerAmount >= makerAmount
     //change is given to "hash(makerNote)"
     changeNoteParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
+
+    if (new BN(newNote2TakerOwner, 16).cmp(new BN(changeNoteOwner, 16))) {
+      throw new Error("change note owner should be parent note");
+    }
   }
 
   let params = makerNoteParams.concat(taker2MakerNoteParams, newNote2TakerParams, newNote2MakerParams, changeNoteParams).concat(price);
