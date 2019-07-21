@@ -6,6 +6,9 @@ Vue.use(Router)
 import LoginPage from '../views/LoginPage'
 import MainPage from '../views/MainPage'
 import MintNotePage from '../views/MintNotePage'
+import MakeOrderPage from '../views/MakeOrderPage'
+import TakeOrderPage from '../views/TakeOrderPage'
+import SettleOrderPage from '../views/SettleOrderPage'
 
 const routes = [
   {
@@ -19,6 +22,18 @@ const routes = [
   {
     path: '/mint',
     component: MintNotePage
+  },
+  {
+    path: '/make',
+    component: MakeOrderPage
+  },
+  {
+    path: '/take',
+    component: TakeOrderPage
+  },
+  {
+    path: '/settle',
+    component: SettleOrderPage
   }
 ]
 

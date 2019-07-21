@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { NETWORKS } from '../../utils/constants/networks.js'
+import { NETWORKS } from '../../services/web3/constants/networks'
 import { mapState } from 'vuex'
 
 export default {
