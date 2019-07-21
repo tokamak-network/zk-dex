@@ -37,7 +37,9 @@ function getSettleOrderCommand(
 
   let params = makerNoteParams.concat(taker2MakerNoteParams, newNote2TakerParams, newNote2MakerParams, changeNoteParams).concat(price);
 
-  zokratesHelper.printZokratesCommand(params);
+  if (require.main === module) {
+    zokratesHelper.printZokratesCommand(params);
+  }
   return reduceParams(params);
 }
 

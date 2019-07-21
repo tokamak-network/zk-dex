@@ -3,6 +3,7 @@ const BN = require('bn.js');
 const crypto = require('crypto');
 
 const noteHelper = require('./noteHelper.js');
+const zokratesHelper = require('./zokratesHelper.js');
 
 function reduceParams(params) {
   return params
@@ -12,6 +13,9 @@ function reduceParams(params) {
 
 function getMakeOrderCommand(owner, value, type, viewKey, salt, isSmart){
   let params = noteHelper.getNoteParamsForMakeOrder(owner, value, type, viewKey, salt, isSmart);
+  if (require.main === module) {
+    zokratesHelper.printZokratesCommand(params);
+  }
   return reduceParams(params);
 }
 

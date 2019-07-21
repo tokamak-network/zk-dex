@@ -6,6 +6,7 @@ var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 
 const noteHelper = require('./noteHelper.js');
+const zokratesHelper = require('./zokratesHelper.js');
 
 function reduceParams(params) {
   return params
@@ -17,6 +18,9 @@ const SCALING_FACTOR = new BN('1000000000000000000');
 
 function getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart){
   let params = noteHelper.getNoteParams(owner, value, type, viewKey, salt, isSmart);
+  if (require.main === module) {
+    zokratesHelper.printZokratesCommand(params);
+  }
   return reduceParams(params);
 }
 
