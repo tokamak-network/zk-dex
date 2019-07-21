@@ -23,40 +23,23 @@ const generators = {
   settleOrder: getSettleOrderProof,
 }
 
-app.get('/:circuit', async function (req, res) {
+app.get('/:circuit', asyncWrap(async function (req, res) {
   const {
     circuit
   } = req.params;
 
-  let params;
-
-  try {
-    params = JSON.parse(req.query.params);
-  } catch (e) {
-    return res.status(400).json({
-      message: 'Failed to parse JSON: '+ e.message,
-    });
-  }
+  const params = JSON.parse(req.query.params);
 
   const generator = generators[circuit];
   if (!generator) {
-    return res.status(400).json({
-      message: "Unknown circuit " + circuit
-    });
+    throw new Error("Unknown circuit " + circuit);
   }
 
-  try {
-    const proof = await generator(...params);
-    return res.status(200).json({
-      proof: proof
-    })
-  } catch (e) {
-    return res.status(400).json({
-      message: `Failed to generate proof: ${e.message}`
-    })
-  }
-
-});
+  const proof = await generator(...params);
+  return res.status(200).json({
+    proof: proof
+  });
+}));
 
 app.use(function(err, req, res, next) {
   console.error(err.stack);
@@ -69,3 +52,9 @@ app.use(function(err, req, res, next) {
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
+
+function asyncWrap(f) {
+  return function (res, req, next) {
+    f(res, req, next).catch(next);
+  }
+}
