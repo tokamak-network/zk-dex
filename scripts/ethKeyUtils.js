@@ -1,7 +1,8 @@
-const eccrypto = require("eccrypto");
-const crypto = require("crypto");
-const secp256k1 = require('secp256k1')
+const eccrypto = require('eccrypto');
+const crypto = require('crypto');
+const secp256k1 = require('secp256k1');
 const BN = require('bn.js');
+
 function privateToPublicCompressed(privKey) {
   return secp256k1.publicKeyCreate(privKey, true /* compress */);
 }
@@ -10,10 +11,10 @@ function decompressPublicKey(pubKey) {
   return secp256k1.publicKeyConvert(pubKey, false /* compress */);
 }
 
-var privateKey = crypto.randomBytes(32);
-var pubKeyCompressed = privateToPublicCompressed(privateKey);
-console.log('pubKeyCompressed', pubKeyCompressed.toString('hex'))
-console.log('decompressPublicKey', decompressPublicKey(pubKeyCompressed).toString('hex'))
+const privateKey = crypto.randomBytes(32);
+const pubKeyCompressed = privateToPublicCompressed(privateKey);
+console.log('pubKeyCompressed', pubKeyCompressed.toString('hex'));
+console.log('decompressPublicKey', decompressPublicKey(pubKeyCompressed).toString('hex'));
 
 console.log('pubKey', eccrypto.getPublic(privateKey).toString('hex'));
 

@@ -27,7 +27,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import { Note, dummyProofCreateNote } from '../../services/web3/Note'
+import { Note, dummyProofCreateNote } from '../../../../scripts/lib/Note'
 import Web3Utils from 'web3-utils'
 
 export default {

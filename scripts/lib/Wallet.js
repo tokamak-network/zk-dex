@@ -2,17 +2,21 @@ const {
   constants,
   Note,
   NoteState,
-  decrypt
+  decrypt,
 } = require('./Note');
 
-const ZkDex = artifacts.require("ZkDex");
+let ZkDex;
+if (typeof artifacts === 'undefined') {
+  ZkDex = require('truffle-contract')(require("../../build/contracts/ZkDex.json"));
+} else {
+  ZkDex = artifacts.require('ZkDex');
+}
 
 class Wallet {
   constructor() {
     this._vks = {};
     this._notes = {};
     this._transactions = {};
-
   }
 
   setVk(addr, vk) {
@@ -92,7 +96,7 @@ class Wallet {
   _listen() {
     this.zkdex.NoteStateChange(async (err, res) => {
       if (err !== null) {
-        console.error("Failed to listen NoteStateChange event", err)
+        console.error('Failed to listen NoteStateChange event', err);
         return;
       }
 
@@ -106,7 +110,7 @@ class Wallet {
         return;
       }
 
-      Object.keys(this._vks).forEach(account => {
+      Object.keys(this._vks).forEach((account) => {
         const vk = this._vks[account];
 
         let decryptedNote;
@@ -119,11 +123,10 @@ class Wallet {
 
         this.addNote(account, decryptedNote);
       });
-
     });
   }
 }
 
 module.exports = {
   Wallet,
-}
+};

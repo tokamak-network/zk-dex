@@ -57,8 +57,8 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
-import Wallet from '../../services/web3/Wallet'
-import util from '../../services/web3/util'
+import Wallet from '../../../../scripts/lib/Wallet'
+import util from '../../../../scripts/lib/util'
 import Web3Utils from 'web3-utils'
 
 const dummyNotes = [

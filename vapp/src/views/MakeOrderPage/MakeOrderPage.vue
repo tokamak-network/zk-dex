@@ -36,7 +36,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import { Note, dummyProofCreateNote } from '../../services/web3/Note'
+import { Note, dummyProofCreateNote } from '../../../../scripts/lib/Note'
 import Web3Utils from 'web3-utils'
 
 export default {
@@ -52,7 +52,7 @@ export default {
     viewingKey: state => state.viewingKey,
     secretKey: state => state.secretKey,
     dai: state => state.daiContractInstance,
-    
+
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase
   }),

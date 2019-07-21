@@ -31,7 +31,7 @@
 import { mapState } from 'vuex'
 import { fetchProof } from '../../api/index';
 import Web3Utils from 'web3-utils'
-import { Note, dummyProofCreateNote } from '../../services/web3/Note'
+import { Note, dummyProofCreateNote } from '../../../../scripts/lib/Note'
 
 const ether = (n) => Web3Utils.toBN(n).mul(Web3Utils.toBN(1e18.toString(10)));
 

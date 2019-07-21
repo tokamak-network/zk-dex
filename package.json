@@ -27,7 +27,8 @@
     "openzeppelin-solidity": "^2.3.0",
     "openzeppelin-test-helpers": "^0.4.0",
     "rlp": "^2.2.3",
-    "truffle": "^5.0.27"
+    "truffle": "^5.0.27",
+    "truffle-contract": "^4.0.25"
   },
   "dependencies": {
     "bn.js": "^5.0.0",

@@ -19,7 +19,8 @@ const getWeb3 = () => {
     else {
       console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
     }
-    
+
+    console.log("web3 loaded", web3);
     resolve(window.web3)
   })
 }

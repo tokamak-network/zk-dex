@@ -30,7 +30,7 @@
 import { mapState, mapActions } from 'vuex'
 import MetaMask from '../../components/MetaMask';
 import ZkDexContract from '../../components/ZkDexContract';
-import util from '../../services/web3/util'
+import util from '../../../../scripts/lib/util'
 import Web3Utils from 'web3-utils'
 
 export default {

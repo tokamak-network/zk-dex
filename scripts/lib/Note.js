@@ -1,13 +1,15 @@
 const crypto = require('crypto');
 const util = require('./util');
-const noteHelper =  require('../helper/noteHelper');
+const noteHelper = require('../helper/noteHelper');
 
 const mode = 'aes-256-cbc';
+
+console.log("web3", web3);
 
 const ETH_TOKEN_TYPE = web3.utils.padLeft('0x0', 32);
 const DAI_TOKEN_TYPE = web3.utils.padLeft('0x1', 32);
 
-const BN = web3.utils.BN;
+const { BN } = web3.utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
 
 
@@ -35,14 +37,14 @@ const NoteState = {
   Traiding: web3.utils.toBN('2'),
   Spent: web3.utils.toBN('3'),
 
-  toString: function(s) {
-    if (this.Invalid.cmp(s) === 0) { return "Invalid"; }
-    if (this.Valid.cmp(s) === 0) { return "Valid"; }
-    if (this.Traiding.cmp(s) === 0) { return "Traiding"; }
-    if (this.Spent.cmp(s) === 0) { return "Spent"; }
+  toString(s) {
+    if (this.Invalid.cmp(s) === 0) { return 'Invalid'; }
+    if (this.Valid.cmp(s) === 0) { return 'Valid'; }
+    if (this.Traiding.cmp(s) === 0) { return 'Traiding'; }
+    if (this.Spent.cmp(s) === 0) { return 'Spent'; }
 
-    throw new Error(`Undefined state: ${s}`)
-  }
+    throw new Error(`Undefined state: ${s}`);
+  },
 };
 
 class Note {
@@ -89,7 +91,7 @@ class Note {
     const r2 = cipher.final('base64');
 
     return util.marshal(
-      web3.utils.fromAscii(r1 + r2)
+      web3.utils.fromAscii(r1 + r2),
     );
   }
 }
@@ -195,7 +197,7 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
 const EMPTY_NOTE = new Note('0', '0', '0', '0', '0', false);
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
-console.log("EMPTY_NOTE_HASH", EMPTY_NOTE_HASH)
+console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);
 
 module.exports = {
   constants: {
