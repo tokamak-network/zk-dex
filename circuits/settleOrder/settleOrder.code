@@ -92,6 +92,14 @@ import "../sha/1024bitPacked.code" as sha256
 // n2IsSmart : change isSmart, 0 if is not smart note
 
 def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
+
+  //check (hash(makerNote) == newNoteToMaker.owner)
+  o0h0 == o1pk0
+  o0h1 == o1pk1
+
+  //check (hash(takerToMakerNote.parentNote) == newNoteToTaker.owner)
+  //Don't need to
+
   field check = o0Val - o1Val/price
 
   field bit = if check <= o0Val then 1 else 0 fi
@@ -109,12 +117,12 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   n1Val == n1ValT
   n2Val == n2ValT
 
-  // check owner of n2(change)
-  field n2rpk0T = if bit == 1 then o0pk0 else n0rpk0 fi
-  field n2rpk1T = if bit == 1 then o0pk1 else n0rpk1 fi
+  // check owner of n2(change --> hash(takerNotetoMaker) or parent(takerToMakerNote).hash)
+  field n2rpk0T = if bit == 1 then o0h0 else n0rpk0 fi
+  field n2rpk1T = if bit == 1 then o0h1 else n0rpk1 fi
 
   n2rpk0 == n2rpk0T
-  n2rpk1 == n2rpk1T
+  //n2rpk1 == n2rpk1T
 
   // check all new notes are smartNote
   n0IsSmart == 1
