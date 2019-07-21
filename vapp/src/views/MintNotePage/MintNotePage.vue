@@ -51,11 +51,6 @@ export default {
     }
   },
   computed: mapState({
-<<<<<<< HEAD
-      coinbase: state => state.web3.coinbase,
-      web3: state => state.web3.web3Instance,
-      contract: state => state.contractInstance()
-=======
     myNotes: state => state.myNotes,
     viewingKey: state => state.viewingKey,
     wallet: state => state.wallet,
@@ -64,24 +59,12 @@ export default {
 
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase
->>>>>>> ea2946e1f936141b756063e917dfb63eb9451f9b
   }),
   created () {
     this.value = 3000
     this.salt = Web3Utils.randomHex(16)
   },
   methods: {
-<<<<<<< HEAD
-    mintNBurn() {
-        // console.log("Clicked MintNBurn!!");
-        // TODO : get input data from web form
-        runGenProof("1111111111111121111111111111111111111111111111111111111111111111",
-                    "0",
-                    "0",
-                    "1111111111111111111111111111111111111111111111111111111111111111",
-                    "0",
-                    "0");
-=======
     generateProof() {
       this.loading = true
       // fetchProof()
@@ -128,7 +111,6 @@ export default {
         })
         this.$router.push({ path: '/main' })
       })
->>>>>>> ea2946e1f936141b756063e917dfb63eb9451f9b
     }
     // mintNote() {
     //   const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64)
