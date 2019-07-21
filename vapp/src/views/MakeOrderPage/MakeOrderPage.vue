@@ -3,25 +3,32 @@
     v-loading="loading"
     style="height: 100%; text-align: center; margin-top: 150px;"
   >
-    <div>
+    <div style="margin-bottom: 40px;">
+      <p>viewing key: {{ viewingKey }}</p>
+      <p>target token: dai</p>
+      <el-input
+        type="number"
+        min="0"
+        style="width: 20%;"
+        size="medium"
+        placeholder="Enter price"
+        v-model="price">
+      </el-input>
+      <p>price: {{ price }}</p>
+    </div>
+    <div style="margin-bottom: 40px;">
       <el-button
+        v-bind:disabled="price == ''"
         @click="generateProof">
         generate proof
       </el-button>
-    </div>
-    <div>
       <p>proof: {{ proof }}</p>
-      <p>account: {{ this.coinbase }}</p>
-      <p>value: {{ value }}</p>
-      <p>token type: dai</p>
-      <p>viewing key: {{ viewingKey }}</p>
-      <p>salt: {{ salt }}</p>
     </div>
     <div>
       <el-button
-        v-bind:disabled="proof === ''"
-        @click="mintNote">
-        mint note
+        v-bind:disabled="proof === '' || price == ''"
+        @click="makeOrder">
+        make order
       </el-button>
     </div>
   </div>
@@ -29,35 +36,26 @@
 
 <script>
 import { mapState } from 'vuex'
-import { fetchProof } from '../../api/index';
-import Web3Utils from 'web3-utils'
 import { Note, dummyProofCreateNote } from '../../services/web3/Note'
-
-const ether = (n) => Web3Utils.toBN(n).mul(Web3Utils.toBN(1e18.toString(10)));
+import Web3Utils from 'web3-utils'
 
 export default {
   data() {
     return {
+      price: '',
       loading: false,
-      proof: '',
-      value: null,
-      salt: null
+      proof: ''
     }
   },
   computed: mapState({
-    myNotes: state => state.myNotes,
+    orders: state => state.orders,
     viewingKey: state => state.viewingKey,
-    wallet: state => state.wallet,
-    dex: state => state.dexContractInstance,
+    secretKey: state => state.secretKey,
     dai: state => state.daiContractInstance,
-
+    
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase
   }),
-  created () {
-    this.value = 3000
-    this.salt = Web3Utils.randomHex(16)
-  },
   methods: {
     generateProof() {
       this.loading = true
@@ -91,55 +89,20 @@ export default {
 }`
       }, 3000)
     },
-    mintNote() {
+    makeOrder() {
       this.web3.eth.sendTransaction({
         from: this.coinbase,
         to: this.coinbase,
         value: 0,
         gas: 7000000
       }, () => {
-        this.myNotes.push({
-          token: 'dai',
-          value: '3000',
-          status: 'valid'
+        this.orders.push({
+          orderId: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
+          price: this.price
         })
         this.$router.push({ path: '/main' })
       })
     }
-    // mintNote() {
-    //   const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64)
-      
-    //   const note = new Note(this.coinbase, this.value, DAI_TOKEN_TYPE, this.viewingKey, this.salt);
-    //   const vk = this.wallet.getVk(this.coinbase)
-
-    //   this.dai.approve(this.dex.address, this.value, { from: this.coinbase, gas: 7000000 })
-    //     .then(tx => {
-    //       console.log('tx', tx)
-    //     })
-    //     .then(() => {
-    //       // this.dex.mint(
-    //       //   ...(
-    //       //     dummyProofCreateNote(note)
-    //       //   ),
-    //       //   note.encrypt(),
-    //       //   {
-    //       //     from: this.coinbase
-    //       //   }
-    //       // )
-    //       this.myNotes.push({
-    //         token: 'dai',
-    //         value: '3000',
-    //         status: 'valid'
-    //       })
-    //     })
-    //     .then(() => {
-    //       console.log('test', this.wallet.getNotes(this.coinbase))
-    //       this.$router.push({ path: '/main' })
-    //     })
-    //     .catch(error => {
-    //       console.log('error', error)
-    //     })
-    // },
-  }
+  },
 }
 </script>

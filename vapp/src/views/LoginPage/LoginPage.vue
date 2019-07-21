@@ -1,11 +1,13 @@
 <template>
-  <div style="text-align: center;">
+  <div style="text-align: center; margin-top: 120px">
     <h1>ZK-DEX</h1>
-    <div>
+      <zk-dex-contract />
+      <div
+        style="height: 10px;">
+      </div>
       <meta-mask />
-    </div>
     <div>
-      <el-input placeholder="Please your viewing key"
+      <el-input placeholder="Enter your viewing key"
         style="width: 50%;"
         v-model="viewingKey"
         show-password>
@@ -15,9 +17,10 @@
      <p>secretKey: {{ `${coinbase}${viewingKey}` }}</p>
     <div>
       <el-button
+        style="margin-top: 20px;"
         v-bind:disabled="viewingKey === '' || !isInjected"
         @click="moveToMainPage">
-      SIGN IN
+        START
       </el-button>
     </div>
   </div>
@@ -26,10 +29,14 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import MetaMask from '../../components/MetaMask';
+import ZkDexContract from '../../components/ZkDexContract';
+import util from '../../services/web3/util'
+import Web3Utils from 'web3-utils'
 
 export default {
   components: {
     MetaMask,
+    ZkDexContract
   },
   data() {
     return {
@@ -38,7 +45,8 @@ export default {
   },
   computed: mapState({
     isInjected: state => state.web3.isInjected,
-    coinbase: state => state.web3.coinbase
+    coinbase: state => state.web3.coinbase,
+    wallet: state => state.wallet
   }),
   methods: {
     ...mapActions([
@@ -48,7 +56,15 @@ export default {
     moveToMainPage() {
       this.setViewingKey(this.viewingKey)
       this.setSecretKey(`${this.coinbase}${this.viewingKey}`)
+
+      // const vk = a + util.unmarshal(web3.utils.fromAscii('vitalik'));
+      const vk = this.coinbase + util.unmarshal(Web3Utils.fromAscii('vitalik'))
+      this.wallet.setVk(this.coinbase, vk)
+      const salt = Web3Utils.randomHex(32);
+
       this.$router.push({ path: '/main' })
+    },
+    test() {
     }
   },
 }

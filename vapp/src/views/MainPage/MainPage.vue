@@ -1,15 +1,15 @@
 <template>
-  <div>
+  <div style="margin-top: 40px;">
     <el-row :gutter="10">
       <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
         <div class="grid-content">
         </div>
       </el-col>
       <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
-        <order-book />
+        <order-book style="margin-right: 20px;"/>
       </el-col>
       <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
-        <my-notes />
+        <my-notes style="margin-left: 20px;"/>
       </el-col>
       <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
         <div class="grid-content">
@@ -17,9 +17,9 @@
       </el-col>
     </el-row>
     <!-- <div style="height: 40px;"></div> -->
-    <div style="width: 100%; text-align: center;">
+    <div style="margin-top: 60px; width: 100%; text-align: center;">
       <div>
-        <p>viewing key: {{ viewingKey}}</p>
+        <p>viewing key: {{ viewingKey }}</p>
       </div>
       <div>
         <p>secret key: {{ secretKey }}</p>
