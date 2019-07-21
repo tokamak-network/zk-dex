@@ -17,7 +17,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     MintNotes(_mintNoteVerifier)
     SpendNotes(_spendNoteVerifier)
     LiquidateNotes(_mintNoteVerifier)
-    ZkDaiBase(_development, _dai)
+    ZkDaiBase(_development, _dai, _mintNoteVerifier)
   {}
 
   /**
