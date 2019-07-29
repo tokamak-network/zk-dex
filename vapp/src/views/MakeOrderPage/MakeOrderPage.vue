@@ -36,7 +36,8 @@
 
 <script>
 import { mapState } from 'vuex'
-import { Note, dummyProofCreateNote } from '../../../../scripts/lib/Note'
+import { Note, constants } from '../../../../scripts/lib/Note'
+import dockerUtils from '../../../../scripts/lib/dockerUtils'
 import Web3Utils from 'web3-utils'
 
 export default {
@@ -47,11 +48,12 @@ export default {
       proof: ''
     }
   },
+  created () {
+    this.viewingKey = this.wallet.getVk(this.coinbase)
+  },
   computed: mapState({
-    orders: state => state.orders,
-    viewingKey: state => state.viewingKey,
-    secretKey: state => state.secretKey,
-    dai: state => state.daiContractInstance,
+    wallet: state => state.wallet,
+    dex: state => state.dexContractInstance,
 
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase
@@ -59,49 +61,17 @@ export default {
   methods: {
     generateProof() {
       this.loading = true
-      // fetchProof()
-      //   .then(
-      //     proof => {
-      //       this.loading = false
-      //       this.proof = JSON.stringify(proof.data.proof, null, 2)
-      //     }
-      //   )
-      //   .catch()
-      setTimeout(() => {
-        this.loading = false
-        this.proof =
-`{
-  "proof": {
-    "A": ["0x1ebd3ba93ae1f0a7cb61c4c0223b2d3f593cd9ea7976cd5e5b47c6761456c847", "0x2044c32f4c51c765693a20c65217290d7b3e2ad6ead397f9390b673a17e96079"],
-    "A_p": ["0x1df310dc80836414fb0332d06628eca5b172b56a4e6892a09f8a01069f47cc5a", "0x180361828a69a9b3165ef17661447d7b5b4061df0e1b2366e33e4b9765f0cfcc"],
-    "B": [
-      ["0x17a7b64179ee2c86f962a09a25ea39253401d0b054f159605118ce8ed83e22e5", "0x28c8b5151c180db95e9eb1ccba363fb798931f01d38591d3a6081328ce45c94c"],
-      ["0x194a069c0a2b7c0f198a3d2a6c7753de5d9abe8956348a07d611bc782ffb0146", "0x6800507968aa736f3ee6b10c8ea7f5fcfd157858f11d36ca800becf7a96e525"]
-    ],
-
-    "B_p": ["0x2886bcd342c57300ac74e2a3ec3870bd6d82b13a66ab2bd3425a8a423e28df6d", "0x1445d5c9b234318356cd23d5889f12704529b05a3777b67a2a468d4f05c4d853"],
-    "C": ["0x230a584beb0fcab0bfcde7ac17d4fe7b7399115018e1dffb2e3a42d68f84c90c", "0x24052feb5111e81d06043638d33a5d90bcc755ae22bafcef551d3ea8946b6ec7"],
-    "C_p": ["0x6e7f7364bea9aef0f94b9a7695be1f4860d9e952ba12c988c12ee502665563f", "0x88053e7a885b8b2a052d2db836a20f0e1da7c3e7e4da9007fafc70baf0513b"],
-    "H": ["0x2de3d197c35b71922e5f28d740f618e754c3385602ac096489c0d1cf0591b604", "0x11068548997da3e4631e1f8557fddc182ceab9b360e32377290d0d952367e624"],
-    "K": ["0x219fd00e97e37d2ebfa37c5a42766c3af1b855d702839df857bf907af66e39be", "0x9ded2a2660333cd94bea038de71504c76a5b5b28837ac9ce0a02b4f19f29f1a"]
-  },
-  "input": []
-}`
-      }, 3000)
+      const makeNote = {} // dummy
+      dockerUtils.getMakeOrderProof(makeOrder)
+        .then(p => {
+          this.proof = p
+          this.loading = false
+        })
     },
     makeOrder() {
-      this.web3.eth.sendTransaction({
-        from: this.coinbase,
-        to: this.coinbase,
-        value: 0,
-        gas: 7000000
-      }, () => {
-        this.orders.push({
-          orderId: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
-          price: this.price
-        })
-        this.$router.push({ path: '/main' })
-      })
+      this.dex.makeOrder(
+        this.viewingKey, constants.ETH_TOKEN_TYPE, this.price, ...this.proof, { from: this.coinbase }
+      )
     }
   },
 }

@@ -20,22 +20,23 @@ export default {
     this.$store.dispatch('setContract')
   },
   created () {
-    this.dexContract.deployed().then(async (dexContractInstance) => {
-      this.setDexContractInstance(dexContractInstance);
-      this.address = dexContractInstance.address;
+    this.dexContract.deployed()
+      .then(dexContractInstance => {
+        this.address = dexContractInstance.address; // view
+        this.setDexContractInstance(dexContractInstance); // action
 
-      const wallet = new Wallet();
-      await wallet.init(this.address);
-      this.setWallet(wallet)
-
-      dexContractInstance.dai().then(daiAddress => {
-        this.daiContract.at(daiAddress).then(daiContractInstance => {
-          this.setDaiContractInstance(daiContractInstance)
-        })
+        return dexContractInstance.dai();
       })
-    })
+      .then(daiAddress => {
+        return this.daiContract.at(daiAddress);
+      })
+      .then(daiContractInstance => {
+        this.setDaiContractInstance(daiContractInstance); // action
+      });
   },
   computed: mapState({
+    coinbase: state => state.web3.coinbase,
+    viewingKey: state => state.viewingKey,
     dexContract: state => state.dexContract,
     daiContract: state => state.daiContract
   }),

@@ -27,11 +27,11 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
 import MetaMask from '../../components/MetaMask';
 import ZkDexContract from '../../components/ZkDexContract';
-import util from '../../../../scripts/lib/util'
-import Web3Utils from 'web3-utils'
+
+import { mapState, mapActions } from 'vuex'
+import { Wallet } from '../../../../scripts/lib/Wallet'
 
 export default {
   components: {
@@ -44,31 +44,33 @@ export default {
     }
   },
   computed: mapState({
-    isInjected: state => state.web3.isInjected,
     coinbase: state => state.web3.coinbase,
-    wallet: state => state.wallet
+    isInjected: state => state.web3.isInjected,
+    dexContractInstance: state => state.dexContractInstance
   }),
   methods: {
     ...mapActions([
       'setViewingKey',
-      'setSecretKey'
+      'setSecretKey',
+      'setWallet'
     ]),
     moveToMainPage() {
+      this.setKeys()
+      this.initWallet().then(() => {
+        this.$router.push({ path: '/main' })
+      })
+    },
+    async initWallet() {
+      const wallet = new Wallet()
+      wallet.setVk(this.coinbase, this.viewingKey)
+      await wallet.init(this.dexContractInstance.address)
+
+      this.setWallet(wallet)
+    },
+    setKeys() {
       this.setViewingKey(this.viewingKey)
       this.setSecretKey(`${this.coinbase}${this.viewingKey}`)
-
-      // const vk = a + util.unmarshal(web3.utils.fromAscii('vitalik'));
-      const vk = this.coinbase + util.unmarshal(Web3Utils.fromAscii('vitalik'))
-      this.wallet.setVk(this.coinbase, vk)
-      const salt = Web3Utils.randomHex(32);
-
-      this.$router.push({ path: '/main' })
-    },
-    test() {
     }
   },
 }
 </script>
-
-<style scoped>
-</style>
