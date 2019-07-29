@@ -1,15 +1,15 @@
-import axios from 'axios'
+import axios from 'axios';
 
 function createInstance() {
-  return axios.create({
-    baseURL: 'http://127.0.0.1:3000'
-  })
+	return axios.create({
+		baseURL: 'http://127.0.0.1:3000',
+	});
 }
 
 const instance = createInstance();
 
-function fetchProof () {
-  return instance.get('/')
+function generateProof(params) {
+	return instance.post('/circuit', params);
 }
 
-export { fetchProof }
+export { generateProof };
