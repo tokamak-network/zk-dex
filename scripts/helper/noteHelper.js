@@ -177,7 +177,7 @@ function _checkLenAndReturn(targetHex) {
   if (targetHex == '0') {
     splittedData = ['0'.repeat(32), '0'.repeat(32)];
   } else if (targetLen < 32) {
-    splittedData = ['0'.repeat(32), '0'.repeat(32 - noteOwnerLen).concat(noteOwner.slice(0, 32))];
+    splittedData = ['0'.repeat(32), '0'.repeat(32 - targetLen).concat(targetHex.slice(0, 32))];
   } else if (targetLen > 32 && targetLen < 64) {
     splittedData = ['0'.repeat(remainLen).concat(targetHex.slice(0, 32 - remainLen)), targetHex.slice(32 - remainLen)];
   } else {
@@ -194,6 +194,14 @@ function toHashed(encodedValue) {
   // split into 128 bits each
   return [digest.slice(0, 32), digest.slice(32)];
 }
+
+function test1(){
+  var tHex = "005";
+  var result = _checkLenAndReturn(tHex);
+  console.log(result);
+}
+
+// test1();
 
 module.exports = {
   getNoteHash,
