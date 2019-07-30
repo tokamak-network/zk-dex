@@ -20,8 +20,9 @@ const routes = [
 		component: MainPage,
 	},
 	{
-		path: '/mint',
+		path: '/mint/:token',
 		component: MintNotePage,
+		props: true,
 	},
 	{
 		path: '/make',

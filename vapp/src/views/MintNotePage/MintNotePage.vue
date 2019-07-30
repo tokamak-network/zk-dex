@@ -2,7 +2,7 @@
 	<div v-loading="loading" style="text-align: center;">
 		<div>
 			<p>account: {{ coinbase }}</p>
-			<p>token type: dai</p>
+			<p>token type: {{ token }}</p>
 			<p>value: {{ value }}</p>
 			<p>viewing key: {{ viewingKey }}</p>
 			<p>salt: {{ salt }}</p>
@@ -20,19 +20,10 @@
 <script>
 import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
-import dockerUtils from '../../../../scripts/lib/dockerUtils';
 import { Note, constants } from '../../../../scripts/lib/Note';
-import { Wallet } from '../../../../scripts/lib/Wallet';
-import { error } from 'util';
 import { generateProof } from '../../api/index';
 
 const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
-
-const fs = require('fs');
-const BN = require('bn.js');
-const crypto = require('crypto');
-const Docker = require('dockerode');
-const SCALING_FACTOR = new BN('1000000000000000000');
 
 export default {
 	data() {
@@ -42,11 +33,17 @@ export default {
 			value: null,
 			salt: null,
 			note: null,
-			viewingKey: null,
 		};
+	},
+	props: {
+		token: {
+			type: String,
+			default: '',
+		},
 	},
 	computed: mapState({
 		myNotes: state => state.myNotes,
+		viewingKey: state => state.viewingKey,
 		wallet: state => state.wallet,
 		dex: state => state.dexContractInstance,
 		dai: state => state.daiContractInstance,
@@ -56,17 +53,58 @@ export default {
 	created() {
 		this.value = ether(5);
 		this.salt = Web3Utils.randomHex(16);
-		this.viewingKey = this.wallet.getVk(this.coinbase);
-		this.note = new Note(
-			this.coinbase,
-			this.value,
-			constants.DAI_TOKEN_TYPE,
-			this.viewingKey,
-			this.salt,
-			false,
-		);
+		if (this.token == 'eth') {
+			this.createEthNote();
+			console.log('eth');
+		} else {
+			this.createDaiNote();
+			console.log('dai');
+		}
 	},
 	methods: {
+		createEthNote() {
+			this.note = new Note(
+				this.coinbase,
+				this.value,
+				constants.ETH_TOKEN_TYPE,
+				this.viewingKey,
+				this.salt,
+				false,
+			);
+		},
+		createDaiNote() {
+			this.note = new Note(
+				this.coinbase,
+				this.value,
+				constants.DAI_TOKEN_TYPE,
+				this.viewingKey,
+				this.salt,
+				false,
+			);
+		},
+		async mintEthNote() {
+			this.loading = true;
+
+			await this.dex.mint(...this.proof, this.note.encrypt(), {
+				from: this.coinbase,
+				value: this.value,
+			});
+
+			setTimeout(() => {
+				this.loading = false;
+				this.$router.push({ path: '/main' });
+			}, 3000);
+		},
+		async mintDaiNote() {
+			this.loading = true;
+
+			await this.dai.approve(this.dex.address, this.value, {
+				from: this.coinbase,
+			});
+			await this.dex.mint(...this.proof, this.note.encrypt(), {
+				from: this.coinbase,
+			});
+		},
 		getProof() {
 			this.loading = true;
 
@@ -75,17 +113,26 @@ export default {
 				params: this.note,
 			};
 			generateProof(params)
-				.then(p => (this.proof = p))
+				.then(res => (this.proof = res.data.proof))
 				.catch(e => console.log(e))
 				.finally(() => (this.loading = false));
 		},
-		async mintNote() {
-			await this.dai.approve(this.dex.address, this.value, {
-				from: this.coinbase,
-			});
-
-			const p = await dockerUtils.getMintNBurnProof(this.note);
-			const mintTx = await this.dex.mint(...p, this.note.encrypt());
+		mintNote() {
+			if (this.token == 'eth') {
+				this.mintEthNote().then(() => {
+					setTimeout(() => {
+						this.loading = false;
+						this.$router.push({ path: '/main' });
+					}, 3000);
+				});
+			} else {
+				this.mintDaiNote().then(() => {
+					setTimeout(() => {
+						this.loading = false;
+						this.$router.push({ path: '/main' });
+					}, 3000);
+				});
+			}
 		},
 	},
 };

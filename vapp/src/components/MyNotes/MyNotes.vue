@@ -17,11 +17,6 @@
 				label="VALUE"
 				align="center"
 			></el-table-column>
-			<el-table-column
-				property="status"
-				label="STATUS"
-				align="center"
-			></el-table-column>
 			<el-table-column align="right">
 				<template slot-scope="scope">
 					<div v-if="scope.row.status === 'trading'">
@@ -53,64 +48,49 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import Wallet from '../../../../scripts/lib/Wallet';
-import util from '../../../../scripts/lib/util';
-import Web3Utils from 'web3-utils';
-
-const dummyNotes = [
-	{
-		token: 'eth',
-		value: '10',
-		status: 'valid',
-	},
-	{
-		token: 'dai',
-		value: '2500',
-		status: 'valid',
-	},
-	{
-		token: 'eth',
-		value: '500',
-		status: 'trading',
-	},
-];
+import { constants } from '../../../../scripts/lib/Note';
 
 export default {
 	data() {
 		return {
-			notes: dummyNotes,
+			notes: [],
 			selectedNote: null,
 		};
 	},
-	computed: mapState({}),
+	computed: mapState({
+		coinbase: state => state.web3.coinbase,
+		wallet: state => state.wallet,
+	}),
 	methods: {
 		...mapActions(['setNote', 'setMyNotes']),
 		selectNote(note) {
 			this.selectedNote = note;
 		},
+		mappedNotes(notes) {
+			return notes.map(note => {
+				const n = {};
+				n.token = note.token == constants.ETH_TOKEN_TYPE ? 'eth' : 'dai';
+				n.value = parseInt(note.value);
+
+				return n;
+			});
+		},
 		handleNoteToMakeOrder(index, note) {
-			this.setNote(note);
+			this.setNote(this.notes[index]);
 			this.$router.push({ path: '/make' });
 		},
 		handleNoteToTakeOrder(index, note) {
-			this.setNote(note);
+			this.setNote(this.notes[index]);
 			this.$router.push({ path: '/take' });
 		},
 		handleNoteToSettleOrder(index, note) {
-			this.setNote(note);
+			this.setNote(this.notes[index]);
 			this.$router.push({ path: '/settle' });
 		},
 	},
-	beforeCreate() {
-		const coinbase = this.$store.state.web3.coinbase;
-		const wallet = this.$store.state.wallet;
-		console.log('getNotes', wallet.getNotes(coinbase));
-	},
 	created() {
-		this.setMyNotes(this.notes);
-	},
-	mounted() {
-		this.$store.dispatch('getContract');
+		this.notes = this.wallet.getNotes(this.coinbase);
+		// this.notes = this.mappedNotes(notes);
 	},
 };
 </script>

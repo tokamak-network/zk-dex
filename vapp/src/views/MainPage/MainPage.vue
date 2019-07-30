@@ -14,7 +14,6 @@
 				<div class="grid-content"></div>
 			</el-col>
 		</el-row>
-		<!-- <div style="height: 40px;"></div> -->
 		<div style="margin-top: 60px; width: 100%; text-align: center;">
 			<div>
 				<p>viewing key: {{ viewingKey }}</p>
@@ -22,9 +21,8 @@
 			<div>
 				<p>secret key: {{ secretKey }}</p>
 			</div>
-			<el-button tag="router-link" to="/mint" @click="moveMintNotePage()"
-				>mint note</el-button
-			>
+			<el-button @click="moveMintNotePage('eth')">mint eth note</el-button>
+			<el-button @click="moveMintNotePage('dai')">mint dai note</el-button>
 		</div>
 	</div>
 </template>
@@ -45,21 +43,10 @@ export default {
 	}),
 	methods: {
 		mintNote() {},
-		moveMintNotePage() {
-			this.$router.push({ path: '/mint' });
+		moveMintNotePage(token) {
+			this.$router.push({ path: `/mint/${token}` });
 		},
 	},
-	// TODO: 참고하기
-	// created() {
-	//   axios.get(this.url)
-	//     .then(response => {
-	//       this.response = response.data;
-	//       this.loading = false;
-	//     })
-	//     .catch(error => {
-	//       alert('[ERROR] fetching the data', error);
-	//       console.log(error);
-	//     });
 };
 </script>
 

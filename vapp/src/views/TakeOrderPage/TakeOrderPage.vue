@@ -25,7 +25,7 @@
 
 <script>
 import { mapState } from 'vuex';
-import { Note, constants } from '../../../../scripts/lib/Note';
+import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../../scripts/lib/dockerUtils';
 
@@ -38,6 +38,8 @@ export default {
 		};
 	},
 	computed: mapState({
+		order: state => state.order,
+		note: state => state.note,
 		myNotes: state => state.myNotes,
 		viewingKey: state => state.viewingKey,
 		secretKey: state => state.secretKey,
@@ -46,6 +48,13 @@ export default {
 		web3: state => state.web3.web3Instance,
 		coinbase: state => state.web3.coinbase,
 	}),
+	created() {
+		console.log(this.order.makerViewingKey);
+		console.log(this.viewingKey);
+		console.log(this.order.makerNote);
+		const makerNote = decrypt(this.order.makerNote, this.order.makerViewingKey);
+		console.log(makerNote);
+	},
 	methods: {
 		makeStakeNote() {
 			const makerNote = {}; // note to take

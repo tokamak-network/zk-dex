@@ -31,6 +31,7 @@ import ZkDexContract from '../../components/ZkDexContract';
 
 import { mapState, mapActions } from 'vuex';
 import { Wallet } from '../../../../scripts/lib/Wallet';
+import Web3Utils from 'web3-utils';
 
 export default {
 	components: {
@@ -42,11 +43,16 @@ export default {
 			viewingKey: '',
 		};
 	},
-	computed: mapState({
-		coinbase: state => state.web3.coinbase,
-		isInjected: state => state.web3.isInjected,
-		dexContractInstance: state => state.dexContractInstance,
-	}),
+	computed: {
+		...mapState({
+			coinbase: state => state.web3.coinbase,
+			isInjected: state => state.web3.isInjected,
+			dexContractInstance: state => state.dexContractInstance,
+		}),
+		paddedViewingKey() {
+			return Web3Utils.padLeft(Web3Utils.toHex(this.viewingKey), 64);
+		},
+	},
 	methods: {
 		...mapActions(['setViewingKey', 'setSecretKey', 'setWallet']),
 		moveToMainPage() {
@@ -57,13 +63,13 @@ export default {
 		},
 		async initWallet() {
 			const wallet = new Wallet();
-			wallet.setVk(this.coinbase, this.viewingKey);
+			wallet.setVk(this.coinbase, this.paddedViewingKey);
 			await wallet.init(this.dexContractInstance.address);
 
 			this.setWallet(wallet);
 		},
 		setKeys() {
-			this.setViewingKey(this.viewingKey);
+			this.setViewingKey(this.paddedViewingKey);
 			this.setSecretKey(`${this.coinbase}${this.viewingKey}`);
 		},
 	},

@@ -12,6 +12,16 @@
 				label="ORDER ID"
 			></el-table-column>
 			<el-table-column
+				property="sourceToken"
+				align="center"
+				label="SOURCE"
+			></el-table-column>
+			<el-table-column
+				property="targetToken"
+				align="center"
+				label="TARGET"
+			></el-table-column>
+			<el-table-column
 				property="price"
 				align="center"
 				label="PRICE"
@@ -24,37 +34,18 @@
 <script>
 import { mapState, mapActions } from 'vuex';
 
-const dummyOrders = [
-	{
-		orderId: '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b',
-		price: '14',
-	},
-	{
-		orderId: 'd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35',
-		price: '13',
-	},
-	{
-		orderId: '4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce',
-		price: '12',
-	},
-	{
-		orderId: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
-		price: '11',
-	},
-];
-
 export default {
 	data() {
 		return {
-			orders: dummyOrders,
+			orders: [],
 			selectedOrder: null,
-			web3WS: null,
 		};
 	},
 	computed: mapState({
 		coinbase: state => state.web3.coinbase,
 		contract: state => state.contractInstance(),
 		web3: state => state.web3.web3Instance,
+		dex: state => state.dexContractInstance,
 	}),
 	methods: {
 		...mapActions(['setOrder', 'setOrders']),
@@ -62,24 +53,14 @@ export default {
 			this.selectedOrder = order;
 			this.setOrder(order);
 		},
-	},
-	beforeCreate() {
-		// const options = {
-		//   fromBlock: 0,
-		//   toBlock: 'latest'
-		// }
-		// const filter = this.web3WS.eth.filter(options, (error, result) => {
-		//   if (error) console.log('error', error)
-		//   console.log('result', result)
-		// })
-		// filter.watch(function(error, result) {
-		// });
+		getOrder(id) {
+			return this.dex.orders(id);
+		},
 	},
 	created() {
-		this.setOrders(this.orders);
-	},
-	mounted() {
-		// this.$store.dispatch('getContract')
+		this.getOrder(0).then(order => {
+			this.orders.push(order);
+		});
 	},
 };
 </script>

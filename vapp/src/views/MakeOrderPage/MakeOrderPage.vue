@@ -5,7 +5,7 @@
 	>
 		<div style="margin-bottom: 40px;">
 			<p>viewing key: {{ viewingKey }}</p>
-			<p>target token: dai</p>
+			<p>source token type: {{ note.token }}</p>
 			<el-input
 				type="number"
 				min="0"
@@ -17,7 +17,7 @@
 			<p>price: {{ price }}</p>
 		</div>
 		<div style="margin-bottom: 40px;">
-			<el-button v-bind:disabled="price == ''" @click="generateProof"
+			<el-button v-bind:disabled="price == ''" @click="getProof"
 				>generate proof</el-button
 			>
 			<p>proof: {{ proof }}</p>
@@ -34,45 +34,60 @@
 
 <script>
 import { mapState } from 'vuex';
-import { Note, constants } from '../../../../scripts/lib/Note';
-import dockerUtils from '../../../../scripts/lib/dockerUtils';
+import { constants } from '../../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
+import { generateProof } from '../../api/index';
 
 export default {
 	data() {
 		return {
-			price: '',
 			loading: false,
+			price: '',
 			proof: '',
 		};
 	},
-	created() {
-		this.viewingKey = this.wallet.getVk(this.coinbase);
-	},
 	computed: mapState({
-		wallet: state => state.wallet,
-		dex: state => state.dexContractInstance,
-
-		web3: state => state.web3.web3Instance,
 		coinbase: state => state.web3.coinbase,
+		wallet: state => state.wallet,
+		viewingKey: state => state.viewingKey,
+		note: state => state.note,
+		dex: state => state.dexContractInstance,
 	}),
 	methods: {
-		generateProof() {
+		getProof() {
 			this.loading = true;
-			const makeNote = {}; // dummy
-			dockerUtils.getMakeOrderProof(makeOrder).then(p => {
-				this.proof = p;
-				this.loading = false;
-			});
+
+			const params = {
+				circuit: 'makeOrder',
+				params: this.note,
+			};
+			generateProof(params)
+				.then(res => (this.proof = res.data.proof))
+				.catch(e => console.log(e))
+				.finally(() => (this.loading = false));
 		},
-		makeOrder() {
-			this.dex.makeOrder(
+		async makeOrder() {
+			this.loading = true;
+
+			await this.dex.makeOrder(
 				this.viewingKey,
-				constants.ETH_TOKEN_TYPE,
-				this.price,
+				this.note.token == constants.ETH_TOKEN_TYPE
+					? constants.DAI_TOKEN_TYPE
+					: constants.ETH_TOKEN_TYPE,
+				Web3Utils.toBN(this.price),
 				...this.proof,
-				{ from: this.coinbase },
+				{
+					from: this.coinbase,
+				},
 			);
+
+			// TODO:
+			// note status change (valid -> trading)
+			// order made -> first order id is 0
+			setTimeout(() => {
+				this.loading = false;
+				this.$router.push({ path: '/main' });
+			}, 3000);
 		},
 	},
 };
