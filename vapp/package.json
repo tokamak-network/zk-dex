@@ -24,6 +24,7 @@
     "truffle-contract": "^4.0.25",
     "vue": "^2.6.10",
     "vue-router": "^3.0.7",
+    "vue-template-compiler": "^2.6.10",
     "vuex": "^3.1.1",
     "web3": "^1.0.0-beta.37"
   },
@@ -34,10 +35,8 @@
     "@vue/cli-service": "^3.9.0",
     "babel-eslint": "^10.0.1",
     "eslint": "^5.16.0",
-    "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-es-beautifier": "^1.0.1",
     "eslint-plugin-vue": "^5.2.3",
-    "vue-template-compiler": "^2.6.10",
     "web3-utils": "^1.0.0"
   },
   "postcss": {
