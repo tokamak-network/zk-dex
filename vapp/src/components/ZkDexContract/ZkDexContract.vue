@@ -8,7 +8,6 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import { Wallet } from '../../../../scripts/lib/Wallet';
 
 export default {
 	data() {

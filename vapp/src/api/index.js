@@ -12,4 +12,6 @@ function generateProof(params) {
 	return instance.post('/circuit', params);
 }
 
-export { generateProof };
+export {
+	generateProof
+};
