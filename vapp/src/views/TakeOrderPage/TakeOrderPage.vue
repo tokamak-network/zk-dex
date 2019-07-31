@@ -1,16 +1,13 @@
 <template>
   <div v-loading="loading" style="height: 100%; text-align: center; margin-top: 150px;">
     <div>
-      <el-button @click="generateProof">generate proof</el-button>
+      <el-button @click="getProof">generate proof</el-button>
     </div>
     <div>
       <p>proof: {{ proof }}</p>
-      <p>
-        maker note hash:
-        4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5
-      </p>
-      <p>taker note value: {{ 10 }}</p>
-      <p>target token: dai</p>
+      <p>maker note hash: {{ makerNote.hash() }}</p>
+      <p>taker note value: {{ takerNote.value }}</p>
+      <p>salt: {{ salt }}</p>
     </div>
     <div>
       <el-button v-bind:disabled="proof === ''" @click="takeOrder">take order</el-button>
@@ -23,6 +20,7 @@ import { mapState } from 'vuex';
 import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../../scripts/lib/dockerUtils';
+import { generateProof } from '../../api/index';
 
 export default {
   data () {
@@ -30,55 +28,61 @@ export default {
       price: '',
       loading: false,
       proof: '',
+      makerNote: {},
+      stakeNote: {},
+      salt: null,
     };
   },
   computed: mapState({
     order: state => state.order,
-    note: state => state.note,
-    myNotes: state => state.myNotes,
-    viewingKey: state => state.viewingKey,
-    secretKey: state => state.secretKey,
+    takerNote: state => state.note,
     dex: state => state.dexContractInstance,
-
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase,
   }),
   created () {
-    console.log(this.order.makerViewingKey);
-    console.log(this.viewingKey);
-    console.log(this.order.makerNote);
-    const makerNote = decrypt(this.order.makerNote, this.order.makerViewingKey);
-    console.log(makerNote);
+    this.salt = Web3Utils.randomHex(16);
+    this.dex.encryptedNotes(this.order.makerNote).then((encryptedNote) => {
+      this.makerNote = decrypt(encryptedNote, this.order.makerViewingKey);
+    });
   },
   methods: {
     makeStakeNote () {
-      const makerNote = {}; // note to take
-      const takeNote = {}; // note to be taken
-
-      const salt = Web3Utils.randomHex(16);
-      const stakeNote = new Note(
-        makerNote.hash(),
-        takerNote.value,
+      const makerViewingKey = this.order.makerViewingKey;
+      this.stakeNote = new Note(
+        this.makerNote.hash(),
+        this.takerNote.value,
         constants.ETH_TOKEN_TYPE,
-        this.viewingKey,
-        salt,
+        makerViewingKey,
+        this.salt,
         true
       );
-
-      return stakeNote;
     },
-    generateProof () {
+    getProof () {
       this.loading = true;
+      this.makeStakeNote();
 
-      const stakeNote = makeStakeNote();
-      dockerUtils.getTakeOrderProof(makerNote, takerNote, stakeNote).then((p) => {
-        this.proof = p;
-        this.loading = false;
-      });
+      const params = {
+        circuit: 'takeOrder',
+        params: [this.makerNote, this.takerNote, this.stakeNote],
+      };
+      generateProof(params)
+        .then(res => (this.proof = res.data.proof))
+        .catch(e => console.log(e))
+        .finally(() => (this.loading = false));
     },
     takeOrder () {
-      const order = {};
-      this.dex.takeOrder(order.id, ...this.proof, stakeNote.encrypt()); // promise
+      this.loading = true;
+      this.dex
+        .takeOrder(0, ...this.proof, this.stakeNote.encrypt(), {
+          from: this.coinbase,
+        })
+        .then(() => {
+          setTimeout(() => {
+            this.loading = false;
+            this.$router.push({ path: '/main' });
+          }, 3000);
+        });
     },
   },
 };

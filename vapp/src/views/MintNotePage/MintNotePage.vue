@@ -51,14 +51,13 @@ export default {
     coinbase: state => state.web3.coinbase,
   }),
   created () {
-    this.value = ether(5);
     this.salt = Web3Utils.randomHex(16);
     if (this.token === 'eth') {
+      this.value = ether(1);
       this.createEthNote();
-      console.log('eth');
     } else {
+      this.value = ether(10);
       this.createDaiNote();
-      console.log('dai');
     }
   },
   methods: {
@@ -110,7 +109,7 @@ export default {
 
       const params = {
         circuit: 'mintNBurnNote',
-        params: this.note,
+        params: [this.note],
       };
       generateProof(params)
         .then(res => (this.proof = res.data.proof))

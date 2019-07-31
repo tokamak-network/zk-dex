@@ -1,31 +1,11 @@
 <template>
   <div v-loading="loading" style="height: 100%; text-align: center; margin-top: 150px;">
     <div>
-      <el-button @click="generateProof">generate proof</el-button>
+      <el-button @click="getProof">generate proof</el-button>
     </div>
     <div>
       <p>proof: {{ proof }}</p>
-      <p>
-        order id:
-        d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35
-      </p>
-      <p>
-        maker note:
-        4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8
-      </p>
-      <p>
-        taker note:
-        6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918
-      </p>
-      <p>
-        payment note:
-        3fdba35f04dc8c462986c992bcf875546257113072a909c162f7e470e581e278
-      </p>
-      <p>
-        change note:
-        8527a891e224136950ff32ca212b45bc93f69fbb801c3b1ebedac52775f99e61
-      </p>
-      <p>price: 13</p>
+      <p>price: {{ order.price }}</p>
     </div>
     <div>
       <el-button v-bind:disabled="proof === ''" @click="settleOrder">settle order</el-button>
@@ -34,82 +14,110 @@
 </template>
 
 <script>
-import rlp from 'rlp';
 import { mapState } from 'vuex';
-import { Note, constants } from '../../../../scripts/lib/Note';
+import rlp from 'rlp';
+import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../../scripts/lib/dockerUtils';
+import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
+import { generateProof } from '../../api/index';
+
+const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
 
 export default {
   data () {
     return {
-      price: '',
       loading: false,
+      price: '',
       proof: '',
+      makerNote: null,
+      stakeNote: null,
       rewardNote: null,
       paymentNote: null,
       changeNote: null,
     };
   },
   computed: mapState({
-    orders: state => state.orders,
-    myNotes: state => state.myNotes,
-    viewingKey: state => state.viewingKey,
-    secretKey: state => state.secretKey,
     dex: state => state.dexContractInstance,
-
+    order: state => state.order,
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase,
   }),
   methods: {
-    makeNotesForSettle () {
+    async makeNotes () {
+      const makerNote = await this.dex.encryptedNotes(this.order.makerNote);
+      const stakeNote = await this.dex.encryptedNotes(
+        this.order.takerNoteToMaker
+      );
+      this.makerNote = decrypt(makerNote, this.order.makerViewingKey);
+      this.stakeNote = decrypt(stakeNote, this.order.makerViewingKey);
       this.rewardNote = new Note(
-        takerNote.hash(),
-        makerNote.value,
+        this.order.parentNote,
+        this.makerNote.value,
         constants.DAI_TOKEN_TYPE,
-        takerVk,
-        web3Utils.randomHex(16),
+        this.order.makerViewingKey,
+        Web3Utils.randomHex(16),
         true
       );
       this.paymentNote = new Note(
-        makerNote.hash(),
-        takerNote.value,
+        this.makerNote.hash(),
+        this.stakeNote.value,
         constants.ETH_TOKEN_TYPE,
-        takerVk,
-        web3Utils.randomHex(16),
+        this.order.makerViewingKey,
+        Web3Utils.randomHex(16),
         true
       );
       this.changeNote = new Note(
-        makerNote.hash(),
+        this.makerNote.hash(),
         ether('0'),
-        constants.ETH_TOKEN_TYPE,
-        makerVk,
-        web3Utils.randomHex(16),
+        constants.DAI_TOKEN_TYPE,
+        this.order.makerViewingKey,
+        Web3Utils.randomHex(16),
         true
       );
     },
-    generateProof () {
+    getProof () {
       this.loading = true;
-      dockerUtils
-        .getSettleOrderProof(
-          makerNote,
-          stakeNote,
-          this.rewardNote,
-          this.paymentNote,
-          this.changeNote,
-          this.price
-        )
-        .then((p) => {
-          this.proof = p;
-          this.loading = false;
-        });
+      const price = Web3Utils.toBN(parseInt(this.order.price).toString());
+      console.log(price);
+      this.makeNotes().then(() => {
+        const params = {
+          circuit: 'settleOrder',
+          params: [
+            this.makerNote,
+            this.stakeNote,
+            this.rewardNote,
+            this.paymentNote,
+            this.changeNote,
+            price,
+          ],
+        };
+        generateProof(params)
+          .then(res => (this.proof = res.data.proof))
+          .catch(e => console.log(e))
+          .finally(() => (this.loading = false));
+      });
     },
     settleOrder () {
-      const e = rlp.encode([
-        this.rewardNote.encrypt(),
-        this.paymentNote.encrypt(),
-        this.changeNote.encrypt(),
-      ]);
-      this.dex.settleOrder(orderId, ...this.proof, e, { from: this.coinbase });
+      this.loading = true;
+      this.dex
+        .settleOrder(
+          0,
+          ...this.proof,
+          rlp.encode([
+            this.rewardNote.encrypt(),
+            this.paymentNote.encrypt(),
+            this.changeNote.encrypt(),
+          ]),
+          {
+            from: this.coinbase,
+          }
+        )
+        .then(() => {
+          setTimeout(() => {
+            this.loading = false;
+            this.$router.push({ path: '/main' });
+          }, 3000);
+        });
     },
   },
 };

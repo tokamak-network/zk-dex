@@ -41,7 +41,7 @@ app.post(
       throw new Error('Unknown circuit ' + circuit);
     }
 
-    const proof = await generator(params);
+    const proof = await generator(...params);
     return res.status(200).json({
       proof: proof,
     });

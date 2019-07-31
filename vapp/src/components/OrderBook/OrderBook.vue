@@ -6,6 +6,11 @@
       <el-table-column property="sourceToken" align="center" label="SOURCE"></el-table-column>
       <el-table-column property="targetToken" align="center" label="TARGET"></el-table-column>
       <el-table-column property="price" align="center" label="PRICE"></el-table-column>
+      <el-table-column align="right">
+        <template slot-scope="scope">
+          <el-button size="mini" @click="handleNoteToSettleOrder(scope.$index, scope.row)">settle order</el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <p>selected order: {{ selectedOrder }}</p>
   </div>
@@ -35,6 +40,10 @@ export default {
     },
     getOrder (id) {
       return this.dex.orders(id);
+    },
+    handleNoteToSettleOrder (index) {
+      this.selectOrder(this.orders[index]);
+      this.$router.push({ path: '/settle' });
     },
   },
   created () {

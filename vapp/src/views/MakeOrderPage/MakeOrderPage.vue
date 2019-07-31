@@ -43,7 +43,7 @@ export default {
 
       const params = {
         circuit: 'makeOrder',
-        params: this.note,
+        params: [this.note],
       };
       generateProof(params)
         .then(res => (this.proof = res.data.proof))
