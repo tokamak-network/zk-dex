@@ -7,9 +7,9 @@ import state from './state';
 Vue.use(Vuex);
 
 const store = new Vuex.Store({
-	actions,
-	mutations,
-	state,
+  actions,
+  mutations,
+  state,
 });
 
 export default store;

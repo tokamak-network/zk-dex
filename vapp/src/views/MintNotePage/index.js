@@ -1,1 +1,4 @@
-export { default } from './MintNotePage';
+export {
+  default,
+}
+  from './MintNotePage';

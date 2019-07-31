@@ -1,1 +1,4 @@
-export { default } from './TakeOrderPage';
+export {
+  default,
+}
+  from './TakeOrderPage';

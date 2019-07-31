@@ -10,41 +10,40 @@ import MakeOrderPage from '../views/MakeOrderPage';
 import TakeOrderPage from '../views/TakeOrderPage';
 import SettleOrderPage from '../views/SettleOrderPage';
 
-const routes = [
-	{
-		path: '/',
-		component: LoginPage,
-	},
-	{
-		path: '/main',
-		component: MainPage,
-	},
-	{
-		path: '/mint/:token',
-		component: MintNotePage,
-		props: true,
-	},
-	{
-		path: '/make',
-		component: MakeOrderPage,
-	},
-	{
-		path: '/take',
-		component: TakeOrderPage,
-	},
-	{
-		path: '/settle',
-		component: SettleOrderPage,
-	},
+const routes = [{
+  path: '/',
+  component: LoginPage,
+},
+{
+  path: '/main',
+  component: MainPage,
+},
+{
+  path: '/mint/:token',
+  component: MintNotePage,
+  props: true,
+},
+{
+  path: '/make',
+  component: MakeOrderPage,
+},
+{
+  path: '/take',
+  component: TakeOrderPage,
+},
+{
+  path: '/settle',
+  component: SettleOrderPage,
+},
 ];
 
 const createRouter = () =>
-	new Router({
-		scrollBehavior: () => ({
-			y: 0,
-		}),
-		routes,
-	});
+  new Router({
+    scrollBehavior: () => ({
+      y: 0,
+    }),
+    routes,
+  });
 
 const router = createRouter();
 

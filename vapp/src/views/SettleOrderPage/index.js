@@ -1,1 +1,4 @@
-export { default } from './SettleOrderPage';
+export {
+  default,
+}
+  from './SettleOrderPage';
