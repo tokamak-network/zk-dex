@@ -1,79 +1,70 @@
 <template>
-  <div>
-    <el-table
-      :data="notes"
-      highlight-current-row
-      @current-change="selectNote"
-      style="width: 100%">
-      <el-table-column
-        type="index"
-        width="50">
-      </el-table-column>
-      <el-table-column
-        property="date"
-        label="Date"
-        width="120">
-      </el-table-column>
-      <el-table-column
-        property="name"
-        label="Name"
-        width="120">
-      </el-table-column>
-      <el-table-column
-        property="address"
-        label="Address">
-      </el-table-column>
-      <el-table-column
-        align="right">
+  <div style="text-align: center;">
+    <h2 style="margin-bottom: 40px;">MY NOTES</h2>
+    <el-table :data="notes" highlight-current-row @current-change="selectNote" style="width: 100%">
+      <el-table-column property="token" label="TOKEN" align="center"></el-table-column>
+      <el-table-column property="value" label="VALUE" align="center"></el-table-column>
+      <el-table-column align="right">
         <template slot-scope="scope">
-          <el-button
-            size="mini"
-            @click="handleNoteToMakeOrder(scope.$index, scope.row)">Make</el-button>
-          <el-button
-            size="mini"
-            @click="handleNoteToTakeOrder(scope.$index, scope.row)">Take</el-button>
+          <div v-if="scope.row.status === 'trading'">
+            <el-button size="mini" @click="handleNoteToSettleOrder(scope.$index, scope.row)">settle order</el-button>
+          </div>
+          <div v-else>
+            <el-button style="margin-bottom: 10px;" size="mini" @click="handleNoteToMakeOrder(scope.$index, scope.row)">make order</el-button>
+            <el-button size="mini" @click="handleNoteToTakeOrder(scope.$index, scope.row)">take order</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
-    {{selectedNote}}
+    <p>selected note: {{ selectedNote }}</p>
   </div>
 </template>
 
 <script>
+import { mapState, mapActions } from 'vuex';
+import { constants } from '../../../../scripts/lib/Note';
+
 export default {
-  data() {
+  data () {
     return {
-      notes: [{
-        date: '2016-05-03',
-        name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
-      }, {
-        date: '2016-05-02',
-        name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
-      }, {
-        date: '2016-05-04',
-        name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
-      }, {
-        date: '2016-05-01',
-        name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
-      }],
-      selectedNote: null
-    }
+      notes: [],
+      selectedNote: null,
+    };
   },
+  computed: mapState({
+    coinbase: state => state.web3.coinbase,
+    wallet: state => state.wallet,
+  }),
   methods: {
+    ...mapActions(['setNote', 'setMyNotes']),
     selectNote (note) {
-      this.selectedNote = note
+      this.selectedNote = note;
     },
-    handleNoteToMakeOrder(index, note) {
+    mappedNotes (notes) {
+      return notes.map((note) => {
+        const n = {};
+        n.token = note.token === constants.ETH_TOKEN_TYPE ? 'eth' : 'dai';
+        n.value = parseInt(note.value);
+
+        return n;
+      });
     },
-    handleNoteToTakeOrder(index, note) {
+    handleNoteToMakeOrder (index, note) {
+      this.setNote(this.notes[index]);
+      this.$router.push({ path: '/make' });
+    },
+    handleNoteToTakeOrder (index, note) {
+      this.setNote(this.notes[index]);
+      this.$router.push({ path: '/take' });
+    },
+    handleNoteToSettleOrder (index, note) {
+      this.setNote(this.notes[index]);
+      this.$router.push({ path: '/settle' });
     },
   },
-  mounted () {
-    this.$store.dispatch('getContract')
+  created () {
+    this.notes = this.wallet.getNotes(this.coinbase);
+    // this.notes = this.mappedNotes(notes);
   },
-}
+};
 </script>

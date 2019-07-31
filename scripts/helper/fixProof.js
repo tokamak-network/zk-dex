@@ -4,9 +4,9 @@ const jsonic = require('jsonic');
 
 function fix(str) {
   const out = jsonic(str);
-  out.input = out.input.map(i => {
+  out.input = out.input.map((i) => {
     if (i.startsWith('0x')) return i;
-    return '0x' + i;
+    return `0x${i}`;
   });
   return out;
 }
@@ -22,4 +22,4 @@ function fixProofJson() {
 module.exports = {
   fix,
   fixProofJson,
-}
+};

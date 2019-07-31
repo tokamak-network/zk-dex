@@ -1,13 +1,15 @@
 const crypto = require('crypto');
+const Web3Utils = require('web3-utils');
+
 const util = require('./util');
-const noteHelper =  require('../helper/noteHelper');
+const noteHelper = require('../helper/noteHelper');
 
 const mode = 'aes-256-cbc';
 
-const ETH_TOKEN_TYPE = web3.utils.padLeft('0x0', 32);
-const DAI_TOKEN_TYPE = web3.utils.padLeft('0x1', 32);
+const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 32);
+const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 32);
 
-const BN = web3.utils.BN;
+const { BN } = Web3Utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
 
 
@@ -30,29 +32,29 @@ const sampleProof = `{
 }`;
 
 const NoteState = {
-  Invalid: web3.utils.toBN('0'),
-  Valid: web3.utils.toBN('1'),
-  Traiding: web3.utils.toBN('2'),
-  Spent: web3.utils.toBN('3'),
+  Invalid: Web3Utils.toBN('0'),
+  Valid: Web3Utils.toBN('1'),
+  Traiding: Web3Utils.toBN('2'),
+  Spent: Web3Utils.toBN('3'),
 
-  toString: function(s) {
-    if (this.Invalid.cmp(s) === 0) { return "Invalid"; }
-    if (this.Valid.cmp(s) === 0) { return "Valid"; }
-    if (this.Traiding.cmp(s) === 0) { return "Traiding"; }
-    if (this.Spent.cmp(s) === 0) { return "Spent"; }
+  toString(s) {
+    if (this.Invalid.cmp(s) === 0) { return 'Invalid'; }
+    if (this.Valid.cmp(s) === 0) { return 'Valid'; }
+    if (this.Traiding.cmp(s) === 0) { return 'Traiding'; }
+    if (this.Spent.cmp(s) === 0) { return 'Spent'; }
 
-    throw new Error(`Undefined state: ${s}`)
-  }
+    throw new Error(`Undefined state: ${s}`);
+  },
 };
 
 class Note {
   constructor(owner, value, token, viewingKey, salt, isSmart = false) {
-    this.owner = web3.utils.padLeft(web3.utils.toHex(owner), 64);
-    this.value = web3.utils.padLeft(web3.utils.toHex(value), 32);
-    this.token = web3.utils.padLeft(web3.utils.toHex(token), 32);
-    this.viewingKey = web3.utils.padLeft(web3.utils.toHex(viewingKey), 64);
-    this.salt = web3.utils.padLeft(web3.utils.toHex(salt), 32);
-    this.isSmart = web3.utils.padLeft(isSmart ? '0x1' : '0x0', 32);
+    this.owner = Web3Utils.padLeft(Web3Utils.toHex(owner), 64);
+    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 32);
+    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 32);
+    this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
+    this.isSmart = Web3Utils.padLeft(isSmart ? '0x1' : '0x0', 32);
   }
 
   getOwner() {
@@ -89,7 +91,7 @@ class Note {
     const r2 = cipher.final('base64');
 
     return util.marshal(
-      web3.utils.fromAscii(r1 + r2)
+      Web3Utils.fromAscii(r1 + r2),
     );
   }
 }
@@ -101,7 +103,7 @@ function decrypt(v, sk) {
 
   const decipher = crypto.createDecipher(mode, sk);
 
-  const r1 = decipher.update(web3.utils.toAscii(v), 'base64', 'utf8');
+  const r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
   const r2 = decipher.final('utf8');
 
   const note = JSON.parse(r1 + r2);
@@ -195,7 +197,7 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
 const EMPTY_NOTE = new Note('0', '0', '0', '0', '0', false);
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
-console.log("EMPTY_NOTE_HASH", EMPTY_NOTE_HASH)
+console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);
 
 module.exports = {
   constants: {

@@ -24,7 +24,6 @@ const { Wallet } = require('../scripts/lib/Wallet');
 
 const ether = (n) => web3.utils.toBN(n).mul(web3.utils.toBN(1e18.toString(10)));
 
-
 const OrderState = {
   Created: web3.utils.toBN('0'),
   Taken: web3.utils.toBN('1'),
@@ -191,84 +190,84 @@ contract('ZkDex', function(accounts) {
     await checkNote(note, NoteState.Spent);
   }
 
-  // describe("Wallet", async () => {
-  //   describe("create a note", () => {
-  //     it("should create a new note from DAI", async () => {
-  //       const vk = wallet.getVk(accounts[0]);
-  //       const salt = web3.utils.randomHex(16);
+  describe("Wallet", async () => {
+    describe("create a note", () => {
+      it("should create a new note from DAI", async () => {
+        const vk = wallet.getVk(accounts[0]);
+        const salt = web3.utils.randomHex(16);
 
-  //       await createDAINote(accounts[0], ether(5), vk, salt);
-  //     });
+        await createDAINote(accounts[0], ether(5), vk, salt);
+      });
 
-  //     it("should create a new note from ETH", async () => {
-  //       const vk = wallet.getVk(accounts[0]);
-  //       const salt = web3.utils.randomHex(16);
-  //       await createETHNote(accounts[0], ether(5), vk, salt);
-  //     });
-  //   });
+      it("should create a new note from ETH", async () => {
+        const vk = wallet.getVk(accounts[0]);
+        const salt = web3.utils.randomHex(16);
+        await createETHNote(accounts[0], ether(5), vk, salt);
+      });
+    });
 
-  //   describe("spend and liquidate a note", () => {
-  //     const oldNoteAmount = ether('5');
-  //     const newNote1Amount = ether('4');
-  //     const newNote2Amount = ether('1');
+    describe("spend and liquidate a note", () => {
+      const oldNoteAmount = ether('5');
+      const newNote1Amount = ether('4');
+      const newNote2Amount = ether('1');
 
-  //     const oldNoteOwner = accounts[0];
-  //     const newNote1Owner = accounts[1];
-  //     const newNote2Owner = accounts[2];
+      const oldNoteOwner = accounts[0];
+      const newNote1Owner = accounts[1];
+      const newNote2Owner = accounts[2];
 
-  //     let vk1, vk2, vk3;
+      let vk1, vk2, vk3;
 
-  //     let daiNote, ethNote;
+      let daiNote, ethNote;
 
-  //     beforeEach(async () => {
-  //       vk1 = wallet.getVk(oldNoteOwner);
-  //       vk2 = wallet.getVk(newNote1Owner);
-  //       vk3 = wallet.getVk(newNote2Owner);
+      beforeEach(async () => {
+        vk1 = wallet.getVk(oldNoteOwner);
+        vk2 = wallet.getVk(newNote1Owner);
+        vk3 = wallet.getVk(newNote2Owner);
 
-  //       daiNote = await createDAINote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(16));
-  //       ethNote = await createETHNote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(16));
-  //     });
+        daiNote = await createDAINote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(16));
+        ethNote = await createETHNote(oldNoteOwner, oldNoteAmount, vk1, web3.utils.randomHex(16));
+      });
 
-  //     it("should spend DAI note", async () => {
-  //       const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
-  //       const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
+      it("should spend DAI note", async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
 
-  //       await spendNote(daiNote, newNote1, newNote2);
-  //     });
+        await spendNote(daiNote, newNote1, newNote2);
+      });
 
-  //     it("should spend ETH note", async () => {
-  //       const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
-  //       const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
+      it("should spend ETH note", async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
 
-  //       await spendNote(ethNote, newNote1, newNote2);
-  //     });
+        await spendNote(ethNote, newNote1, newNote2);
+      });
 
-  //     it('should liquidate a note without spending', async () => {
-  //       await liquidateNote(daiNote);
-  //       await liquidateNote(ethNote);
-  //     });
+      it('should liquidate a note without spending', async () => {
+        await liquidateNote(daiNote);
+        await liquidateNote(ethNote);
+      });
 
-  //     it('should liquidate a DAI note after spending', async () => {
-  //       const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
-  //       const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
+      it('should liquidate a DAI note after spending', async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.DAI_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.DAI_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
 
-  //       await spendNote(daiNote, newNote1, newNote2);
+        await spendNote(daiNote, newNote1, newNote2);
 
-  //       await liquidateNote(newNote1);
-  //       await liquidateNote(newNote2);
-  //     });
+        await liquidateNote(newNote1);
+        await liquidateNote(newNote2);
+      });
 
-  //     it('should liquidate a ETH note after spending', async () => {
-  //       const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
-  //       const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
+      it('should liquidate a ETH note after spending', async () => {
+        const newNote1 = new Note(newNote1Owner, newNote1Amount, constants.ETH_TOKEN_TYPE, vk2, web3.utils.randomHex(16));
+        const newNote2 = new Note(newNote2Owner, newNote2Amount, constants.ETH_TOKEN_TYPE, vk3, web3.utils.randomHex(16));
 
-  //       await spendNote(ethNote, newNote1, newNote2);
+        await spendNote(ethNote, newNote1, newNote2);
 
-  //       await liquidateNote(newNote1);
-  //       await liquidateNote(newNote2);
-  //     });
-  //   });
-  // });
+        await liquidateNote(newNote1);
+        await liquidateNote(newNote2);
+      });
+    });
+  });
 
   describe("Market", () => {
     const sourceToken = constants.DAI_TOKEN_TYPE;
@@ -345,7 +344,7 @@ contract('ZkDex', function(accounts) {
               paymentNote,
               changeNote,
               price)
-            : await  dockerUtils.getSettleOrderProof(
+            : await dockerUtils.getSettleOrderProof(
               makerNote,
               stakeNote,
               rewardNote,
@@ -367,14 +366,14 @@ contract('ZkDex', function(accounts) {
       await checkOrderState(orderId, OrderState.Settled);
     }
 
-    // it("should make an order", async () => {
-    //   await makeOrder();
-    // });
+    it("should make an order", async () => {
+      await makeOrder();
+    });
 
-    // it("should take an order", async () => {
-    //   await makeOrder();
-    //   await takeOrder();
-    // });
+    it("should take an order", async () => {
+      await makeOrder();
+      await takeOrder();
+    });
 
     it('should settle an order', async () => {
       await makeOrder();

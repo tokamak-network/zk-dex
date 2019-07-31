@@ -1,25 +1,32 @@
+const Web3Utils = require('web3-utils');
+
 const {
   constants,
   Note,
   NoteState,
-  decrypt
+  decrypt,
 } = require('./Note');
 
-const ZkDex = artifacts.require("ZkDex");
+let ZkDex;
+if (typeof artifacts === 'undefined') {
+  ZkDex = require('truffle-contract')(require("../../build/contracts/ZkDex.json"));
+  ZkDex.setProvider(web3.currentProvider);
+} else {
+  ZkDex = artifacts.require('ZkDex');
+}
 
 class Wallet {
   constructor() {
     this._vks = {};
     this._notes = {};
     this._transactions = {};
-
   }
 
   setVk(addr, vk) {
     if (this._vks[addr]) {
       throw new Error(`${addr} has already vk ${this._vks[addr]}`);
     }
-    this._vks[addr] = web3.utils.padLeft(vk, 64);
+    this._vks[addr] = Web3Utils.padLeft(vk, 64);
   }
 
   getVk(addr) {
@@ -92,7 +99,7 @@ class Wallet {
   _listen() {
     this.zkdex.NoteStateChange(async (err, res) => {
       if (err !== null) {
-        console.error("Failed to listen NoteStateChange event", err)
+        console.error('Failed to listen NoteStateChange event', err);
         return;
       }
 
@@ -106,7 +113,7 @@ class Wallet {
         return;
       }
 
-      Object.keys(this._vks).forEach(account => {
+      Object.keys(this._vks).forEach((account) => {
         const vk = this._vks[account];
 
         let decryptedNote;
@@ -119,11 +126,10 @@ class Wallet {
 
         this.addNote(account, decryptedNote);
       });
-
     });
   }
 }
 
 module.exports = {
   Wallet,
-}
+};

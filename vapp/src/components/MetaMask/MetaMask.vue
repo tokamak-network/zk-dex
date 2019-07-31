@@ -2,13 +2,13 @@
   <div>
     <p>Network: {{ network }}</p>
     <p>Account: {{ coinbase }}</p>
-    <p>Balance: {{ balance }} Eth</p>
+    <p>Balance: {{ balance }} wei</p>
   </div>
 </template>
 
 <script>
-import { NETWORKS } from '../../utils/constants/networks.js'
-import { mapState } from 'vuex'
+import { NETWORKS } from '../../services/web3/constants/networks';
+import { mapState } from 'vuex';
 
 export default {
   name: 'metamask',
@@ -19,11 +19,9 @@ export default {
     balance: state => state.web3.balance,
   }),
   beforeCreate () {
-    this.$store.dispatch('registerWeb3')
-  }
-}
+    this.$store.dispatch('registerWeb3');
+  },
+};
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
