@@ -2,6 +2,7 @@ const Docker = require('dockerode');
 const BN = require('bn.js');
 const Web3Utils = require('web3-utils');
 const util = require('./util');
+const noteHelper = require('../helper/noteHelper');
 
 const { constants } = require('./Note');
 const { getMintAndBurnCommand } = require('../helper/mintNBurnNoteHelper');
@@ -143,7 +144,7 @@ async function getTakeOrderProof(makerNote, parentNote, stakeNote) {
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
     convert(parentNote.isSmart),
-    convert(makerNote.hash()),
+    convert(hash(makerNote)),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
@@ -192,6 +193,17 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
 
   const proof = await execute('settleOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
+}
+
+function hash(note) {
+  return util.marshal(noteHelper.getNoteHash(
+    util.unmarshal(note.owner),
+    util.unmarshal(note.value),
+    util.unmarshal(note.token),
+    util.unmarshal(note.viewingKey),
+    util.unmarshal(note.salt),
+    util.unmarshal(note.isSmart),
+  ));
 }
 
 (async () => {
