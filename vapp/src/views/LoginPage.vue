@@ -16,11 +16,11 @@
 </template>
 
 <script>
-import MetaMask from '../../components/MetaMask';
-import ZkDexContract from '../../components/ZkDexContract';
+import MetaMask from '../components/MetaMask.vue';
+import ZkDexContract from '../components/ZkDexContract.vue';
 
 import { mapState, mapActions } from 'vuex';
-import { Wallet } from '../../../../scripts/lib/Wallet';
+import { Wallet } from '../../../scripts/lib/Wallet';
 import Web3Utils from 'web3-utils';
 
 export default {

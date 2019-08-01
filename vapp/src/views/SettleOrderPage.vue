@@ -17,9 +17,9 @@
 import { mapState } from 'vuex';
 import rlp from 'rlp';
 import Web3Utils from 'web3-utils';
-import dockerUtils from '../../../../scripts/lib/dockerUtils';
-import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
-import { generateProof } from '../../api/index';
+import dockerUtils from '../../../scripts/lib/dockerUtils';
+import { Note, constants, decrypt } from '../../../scripts/lib/Note';
+import { generateProof } from '../api/index';
 
 const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
 

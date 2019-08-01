@@ -29,8 +29,8 @@
 
 <script>
 import { mapState } from 'vuex';
-import MyNotes from '../../components/MyNotes';
-import OrderBook from '../../components/OrderBook';
+import MyNotes from '../components/MyNotes.vue';
+import OrderBook from '../components/OrderBook.vue';
 
 export default {
   components: {

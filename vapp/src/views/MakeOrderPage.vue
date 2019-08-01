@@ -19,14 +19,14 @@
 
 <script>
 import { mapState } from 'vuex';
-import { constants } from '../../../../scripts/lib/Note';
+import { constants } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import {
   updateNoteState,
   addOrder,
   getOrderCount,
   generateProof,
-} from '../../api/index';
+} from '../api/index';
 
 export default {
   data () {

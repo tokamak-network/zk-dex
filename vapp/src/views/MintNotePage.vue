@@ -20,8 +20,8 @@
 <script>
 import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
-import { Note, constants } from '../../../../scripts/lib/Note';
-import { addNote, generateProof } from '../../api/index';
+import { Note, constants } from '../../../scripts/lib/Note';
+import { addNote, generateProof } from '../api/index';
 
 const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
 

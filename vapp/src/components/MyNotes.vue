@@ -4,15 +4,13 @@
     <el-table :data="notes" highlight-current-row @current-change="selectNote" style="width: 100%">
       <el-table-column property="token" label="TOKEN" align="center"></el-table-column>
       <el-table-column property="value" label="VALUE" align="center"></el-table-column>
+      <el-table-column property="state" label="STATE" align="center"></el-table-column>
+      <el-table-column property="isSmart" label="IS SMART" align="center"></el-table-column>
       <el-table-column align="right">
         <template slot-scope="scope">
-          <div v-if="scope.row.status === 'trading'">
-            <el-button size="mini" @click="handleNoteToSettleOrder(scope.$index, scope.row)">settle order</el-button>
-          </div>
-          <div v-else>
             <el-button style="margin-bottom: 10px;" size="mini" @click="handleNoteToMakeOrder(scope.$index, scope.row)">make order</el-button>
-            <el-button size="mini" @click="handleNoteToTakeOrder(scope.$index, scope.row)">take order</el-button>
-          </div>
+            <el-button style="margin-bottom: 10px;" size="mini" @click="handleNoteToTakeOrder(scope.$index, scope.row)">take order</el-button>
+            <el-button size="mini" @click="handleNoteToTransfer(scope.$index, scope.row)">transfer</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -22,8 +20,8 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import { constants } from '../../../../scripts/lib/Note';
-import { getNotes } from '../../api/index';
+import { constants } from '../../../scripts/lib/Note';
+import { getNotes } from '../api/index';
 
 export default {
   data () {
@@ -59,9 +57,9 @@ export default {
       this.setNote(this.notes[index]);
       this.$router.push({ path: '/take' });
     },
-    handleNoteToSettleOrder (index, note) {
+    handleNoteToTransfer (index, note) {
       this.setNote(this.notes[index]);
-      this.$router.push({ path: '/settle' });
+      this.$router.push({ path: '/transfer' });
     },
   },
   created () {

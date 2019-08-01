@@ -19,7 +19,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import { getOrderCount } from '../../api/index';
+import { getOrderCount } from '../api/index';
 
 export default {
   data () {

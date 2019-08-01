@@ -17,10 +17,10 @@
 
 <script>
 import { mapState } from 'vuex';
-import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
+import { Note, constants, decrypt } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
-import dockerUtils from '../../../../scripts/lib/dockerUtils';
-import { addNote, updateNoteState, generateProof } from '../../api/index';
+import dockerUtils from '../../../scripts/lib/dockerUtils';
+import { addNote, updateNoteState, generateProof } from '../api/index';
 
 export default {
   data () {
