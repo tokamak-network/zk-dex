@@ -20,7 +20,7 @@ import { mapState } from 'vuex';
 import { Note, constants, decrypt } from '../../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../../scripts/lib/dockerUtils';
-import { generateProof } from '../../api/index';
+import { addNote, updateNoteState, generateProof } from '../../api/index';
 
 export default {
   data () {
@@ -39,6 +39,7 @@ export default {
     dex: state => state.dexContractInstance,
     web3: state => state.web3.web3Instance,
     coinbase: state => state.web3.coinbase,
+    secretKey: state => state.secretKey,
   }),
   created () {
     this.salt = Web3Utils.randomHex(16);
@@ -71,18 +72,28 @@ export default {
         .catch(e => console.log(e))
         .finally(() => (this.loading = false));
     },
-    takeOrder () {
+    async takeOrder () {
       this.loading = true;
-      this.dex
-        .takeOrder(0, ...this.proof, this.stakeNote.encrypt(), {
-          from: this.coinbase,
-        })
-        .then(() => {
-          setTimeout(() => {
-            this.loading = false;
-            this.$router.push({ path: '/main' });
-          }, 3000);
-        });
+
+      const tx = await this.dex.takeOrder(this.order.orderId, ...this.proof, this.stakeNote.encrypt(), {
+        from: this.coinbase,
+      });
+
+      const hash = tx.logs[0].args.note;
+      const state = tx.logs[0].args.state;
+      await updateNoteState(this.secretKey, hash, state);
+
+      this.stakeNote.hash = tx.logs[1].args.note;
+      this.stakeNote.state = tx.logs[1].args.state;
+      await addNote(this.secretKey, this.stakeNote);
+
+      // const order = await this.dex.orders(this.orderId);
+      // await addOrder(order);
+
+      setTimeout(() => {
+        this.loading = false;
+        this.$router.push({ path: '/main' });
+      }, 3000);
     },
   },
 };

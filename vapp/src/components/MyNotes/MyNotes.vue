@@ -23,6 +23,7 @@
 <script>
 import { mapState, mapActions } from 'vuex';
 import { constants } from '../../../../scripts/lib/Note';
+import { getNotes } from '../../api/index';
 
 export default {
   data () {
@@ -33,6 +34,7 @@ export default {
   },
   computed: mapState({
     coinbase: state => state.web3.coinbase,
+    secretKey: state => state.secretKey,
     wallet: state => state.wallet,
   }),
   methods: {
@@ -63,8 +65,9 @@ export default {
     },
   },
   created () {
-    this.notes = this.wallet.getNotes(this.coinbase);
-    // this.notes = this.mappedNotes(notes);
+    getNotes(this.secretKey).then((notes) => {
+      this.notes = notes;
+    });
   },
 };
 </script>
