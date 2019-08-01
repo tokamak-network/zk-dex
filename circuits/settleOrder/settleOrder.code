@@ -1,4 +1,6 @@
 import "../sha/1024bitPacked.code" as sha256
+import "../utils/math/wmul.code" as wmul
+import "../utils/math/wdiv.code" as wdiv
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
@@ -97,14 +99,11 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   o0h0 == o1pk0
   o0h1 == o1pk1
 
-  //check (hash(takerToMakerNote.parentNote) == newNoteToTaker.owner)
-  //Don't need to
+  field bit = if o0Val < wdiv(o1Val, price) then 0 else 1 fi
 
-  field bit = if o0Val < o1Val/price then 0 else 1 fi
-
-  field n0ValT = if bit == 1 then o1Val/price else o0Val fi
-  field n1ValT = if bit == 1 then o1Val else o0Val*price fi
-  field n2ValT = if bit == 1 then o0Val - o1Val/price else o1Val - o0Val*price fi
+  field n0ValT = if bit == 1 then wdiv(o1Val, price) else o0Val fi
+  field n1ValT = if bit == 1 then o1Val else wmul(o0Val, price) fi
+  field n2ValT = if bit == 1 then o0Val - wdiv(o1Val, price) else o1Val - wmul(o0Val, price) fi
 
   // check value: o0Val + o1Val = n0Val + n1Val + n2Val
   n0Val == n0ValT
