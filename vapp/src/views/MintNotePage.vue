@@ -53,10 +53,10 @@ export default {
   created () {
     this.salt = Web3Utils.randomHex(16);
     if (this.token === 'eth') {
-      this.value = ether(1);
+      this.value = ether(10);
       this.createEthNote();
     } else {
-      this.value = ether(10);
+      this.value = ether(1);
       this.createDaiNote();
     }
   },

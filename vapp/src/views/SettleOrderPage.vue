@@ -8,14 +8,15 @@
       <p>price: {{ order.price }}</p>
     </div>
     <div>
-      <el-button v-bind:disabled="proof === ''" @click="settleOrder">settle order</el-button>
+      <!-- <el-button v-bind:disabled="proof === ''" @click="settleOrder">settle order</el-button> -->
+      <el-button @click="settleOrder">settle order</el-button>
     </div>
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex';
-import rlp from 'rlp';
+import { encode } from 'rlp';
 import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../scripts/lib/dockerUtils';
 import { Note, constants, decrypt } from '../../../scripts/lib/Note';
@@ -30,6 +31,7 @@ export default {
       price: '',
       proof: '',
       makerNote: null,
+      takerNote: null,
       stakeNote: null,
       rewardNote: null,
       paymentNote: null,
@@ -45,13 +47,14 @@ export default {
   methods: {
     async makeNotes () {
       const makerNote = await this.dex.encryptedNotes(this.order.makerNote);
-      const stakeNote = await this.dex.encryptedNotes(
-        this.order.takerNoteToMaker
-      );
+      const takerNote = await this.dex.encryptedNotes(this.order.parentNote);
+      const stakeNote = await this.dex.encryptedNotes(this.order.takerNoteToMaker);
       this.makerNote = decrypt(makerNote, this.order.makerViewingKey);
+      this.takerNote = decrypt(takerNote, this.order.makerViewingKey);
       this.stakeNote = decrypt(stakeNote, this.order.makerViewingKey);
+
       this.rewardNote = new Note(
-        this.order.parentNote,
+        this.takerNote.hash(),
         this.makerNote.value,
         constants.DAI_TOKEN_TYPE,
         this.order.makerViewingKey,
@@ -60,7 +63,7 @@ export default {
       );
       this.paymentNote = new Note(
         this.makerNote.hash(),
-        this.stakeNote.value,
+        this.takerNote.value,
         constants.ETH_TOKEN_TYPE,
         this.order.makerViewingKey,
         Web3Utils.randomHex(16),
@@ -78,7 +81,6 @@ export default {
     getProof () {
       this.loading = true;
       const price = Web3Utils.toBN(parseInt(this.order.price).toString());
-      console.log(price);
       this.makeNotes().then(() => {
         const params = {
           circuit: 'settleOrder',
@@ -99,25 +101,19 @@ export default {
     },
     settleOrder () {
       this.loading = true;
-      this.dex
-        .settleOrder(
-          0,
-          ...this.proof,
-          rlp.encode([
-            this.rewardNote.encrypt(),
-            this.paymentNote.encrypt(),
-            this.changeNote.encrypt(),
-          ]),
-          {
-            from: this.coinbase,
-          }
-        )
-        .then(() => {
-          setTimeout(() => {
-            this.loading = false;
-            this.$router.push({ path: '/main' });
-          }, 3000);
-        });
+      const encoded = encode([
+        this.rewardNote.encrypt(),
+        this.paymentNote.encrypt(),
+        this.changeNote.encrypt(),
+      ]);
+      this.dex.settleOrder(this.order.orderId, ...this.proof, encoded, {
+        from: this.coinbase,
+      }).then(() => {
+        setTimeout(() => {
+          this.loading = false;
+          this.$router.push({ path: '/main' });
+        }, 3000);
+      });
     },
   },
 };
