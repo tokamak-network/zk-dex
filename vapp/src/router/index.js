@@ -8,6 +8,7 @@ import MainPage from '../views/MainPage';
 import MintNotePage from '../views/MintNotePage';
 import MakeOrderPage from '../views/MakeOrderPage';
 import TakeOrderPage from '../views/TakeOrderPage';
+import TransferNotePage from '../views/TransferNotePage';
 import SettleOrderPage from '../views/SettleOrderPage';
 
 const routes = [{
@@ -30,6 +31,10 @@ const routes = [{
 {
   path: '/take',
   component: TakeOrderPage,
+},
+{
+  path: '/transfer',
+  component: TransferNotePage,
 },
 {
   path: '/settle',
