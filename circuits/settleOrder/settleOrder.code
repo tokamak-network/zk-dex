@@ -1,6 +1,7 @@
 import "../sha/1024bitPacked.code" as sha256
-import "../utils/math/wmul.code" as wmul
-import "../utils/math/wdiv.code" as wdiv
+import "../utils/math/add.code" as add
+import "../utils/math/mul.code" as mul
+
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
@@ -52,6 +53,11 @@ import "../utils/math/wdiv.code" as wdiv
 
 // (public) price : price of 1 sourceToken
 
+// (private) q0 : quotient of o0Val * price / 10**18
+// (private) r0 : o0Val * price % 10**18
+// (private) q1 : quotient of o1Val / price
+// (private) r1 : o1Val % price
+
 
 // Parameters
 // field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart,
@@ -60,6 +66,7 @@ import "../utils/math/wdiv.code" as wdiv
 // field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart,
 // field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart,
 // field price
+// private field q0, private field r0, private field q1, private field r1, 
 
 // o1h0 + o1h1 : takerNotetoMaker hash
 // o1Type : takerNotetoMaker type
@@ -93,17 +100,32 @@ import "../utils/math/wdiv.code" as wdiv
 // n2Salt : change salt
 // n2IsSmart : change isSmart, 0 if is not smart note
 
-def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
+def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price, private field q0, private field r0, private field q1, private field r1) -> (field):
 
-  //check (hash(makerNote) == newNoteToMaker.owner)
+  // check (hash(makerNote) == newNoteToMaker.owner)
   o0h0 == o1pk0
   o0h1 == o1pk1
 
-  field bit = if o0Val < wdiv(o1Val, price) then 0 else 1 fi
+  // check o0Val * price == q0 * 10**18 + r0
+  field o0ValxPrice = mul(o0Val, price)
+  field o0ValPriceT = add(mul(q0, 10**18), r0)
+  o0ValxPrice == o0ValPriceT
 
-  field n0ValT = if bit == 1 then wdiv(o1Val, price) else o0Val fi
-  field n1ValT = if bit == 1 then o1Val else wmul(o0Val, price) fi
-  field n2ValT = if bit == 1 then o0Val - wdiv(o1Val, price) else o1Val - wmul(o0Val, price) fi
+  // check o1Val == q1 * price + r1
+  field o1ValT = add(mul(q1, price), r1)
+  o1Val == o1ValT
+
+  // o0Val * price / 10**18 = q0
+  // o1Val / price = q1 * 10**18
+  field o0ValPrice = q0
+  field o1ValOverPrice = mul(q1, 10**18)
+  
+  field bit = if o0Val < o1ValOverPrice then 0 else 1 fi
+
+  // TODO: should check underflow
+  field n0ValT = if bit == 1 then o1ValOverPrice else o0Val fi
+  field n1ValT = if bit == 1 then o1Val else o0ValPrice fi
+  field n2ValT = if bit == 1 then o0Val - o1ValOverPrice else o1Val - o0ValPrice fi
 
   // check value: o0Val + o1Val = n0Val + n1Val + n2Val
   n0Val == n0ValT
@@ -115,7 +137,7 @@ def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private fiel
   field n2rpk1T = if bit == 1 then o0h1 else n0rpk1 fi
 
   n2rpk0 == n2rpk0T
-  //n2rpk1 == n2rpk1T
+  n2rpk1 == n2rpk1T
 
   // check all new notes are smartNote
   n0IsSmart == 1

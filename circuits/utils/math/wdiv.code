@@ -1,9 +1,0 @@
-import "./add.code" as add
-import "./mul.code" as mul
-
-def main(field x, field y) -> (field):
-  field WAD = 10 ** 18
-  field z = add(mul(x, WAD), y / 2)
-  z = z / y
-
-  return z
