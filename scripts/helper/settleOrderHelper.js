@@ -18,39 +18,43 @@ function getSettleOrderCommand(
   newNote2MakerOwner, newNote2MakerValue, newNote2MakerType, newNote2MakerViewKey, newNote2MakerSalt, newNote2MakerIsSmart, // newNoteToMakerNote's variables
   changeNoteOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart, // changeNote's variables
   price, // price
+  quotient0, remainder0, // // makerNote.Value * price / 10**18, makerNote.Value * price % 10**18
+  quotient1, remainder1 // stakeNote.Value / price, stakeNote.Value % price
 ) {
   const makerNoteHash = noteHelper.getNoteHash(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart);
 
   const makerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, makerNoteIsSmart);
-
   const taker2MakerNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, taker2MakerNoteValue, taker2MakerNoteType, taker2MakerNoteViewKey, taker2MakerNoteSalt, taker2MakerNoteIsSmart);
   const newNote2TakerParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, newNote2TakerValue, newNote2TakerType, newNote2TakerViewKey, newNote2TakerSalt, newNote2TakerIsSmart);
   const newNote2MakerParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, newNote2MakerValue, newNote2MakerType, newNote2MakerViewKey, newNote2MakerSalt, newNote2MakerIsSmart);
+  const changeNoteParams = noteHelper.getNoteParamsForSettleOrder(changeNoteOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
 
-  let changeNoteParams;
+  //TODO: we don't need to check owner of changeNote in here
 
-  const makerAmount = new BN(makerNoteValue, 16);
-  const takerAmount = new BN(taker2MakerNoteValue, 16).div(new BN(price, 16));
+  // let changeNoteParams;
 
-  if (makerAmount.cmp(takerAmount) >= 0) {
-    // if takerAmount < makerAmount
-    // change is given to "hash(taker2MakerNoteOwner.parent) => newNote2TakerOwner"
-    changeNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
+  // const makerAmount = new BN(makerNoteValue, 16);
+  // const takerAmount = new BN(taker2MakerNoteValue, 16).div(new BN(price, 16));
 
-    if (new BN(makerNoteHash, 16).cmp(new BN(changeNoteOwner, 16))) {
-      throw new Error('change note owner should be maker note');
-    }
-  } else {
-    // if takerAmount >= makerAmount
-    // change is given to "hash(makerNote)"
-    changeNoteParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
+  // if (makerAmount.cmp(takerAmount) >= 0) {
+  //   // if takerAmount < makerAmount
+  //   // change is given to "hash(taker2MakerNoteOwner.parent) => newNote2TakerOwner"
+  //   changeNoteParams = noteHelper.getNoteParamsForSettleOrder(makerNoteHash, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
 
-    if (new BN(newNote2TakerOwner, 16).cmp(new BN(changeNoteOwner, 16))) {
-      throw new Error('change note owner should be parent note');
-    }
-  }
+  //   if (new BN(makerNoteHash, 16).cmp(new BN(changeNoteOwner, 16))) {
+  //     throw new Error('change note owner should be maker note');
+  //   }
+  // } else {
+  //   // if takerAmount >= makerAmount
+  //   // change is given to "hash(makerNote)"
+  //   changeNoteParams = noteHelper.getNoteParamsForSettleOrder(newNote2TakerOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt, changeNoteIsSmart);
 
-  const params = makerNoteParams.concat(taker2MakerNoteParams, newNote2TakerParams, newNote2MakerParams, changeNoteParams).concat(price);
+  //   if (new BN(newNote2TakerOwner, 16).cmp(new BN(changeNoteOwner, 16))) {
+  //     throw new Error('change note owner should be parent note');
+  //   }
+  // }
+
+  const params = makerNoteParams.concat(taker2MakerNoteParams, newNote2TakerParams, newNote2MakerParams, changeNoteParams).concat(price, quotient0, remainder0, quotient1, remainder1);
 
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);

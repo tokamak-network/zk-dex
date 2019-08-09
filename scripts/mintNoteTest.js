@@ -15,6 +15,7 @@ let Proof // global Variable to store Proof.
 function getMintAndBurnCmd(owner, value, type, viewKey, salt, isSmart){
   let params = noteHelper.getNoteParams(owner, value, type, viewKey, salt, isSmart);
   let cmd = 'bash genProof.sh ';
+}
 
 function genProof(container, circuitName, noteParams) {
   var runCmd = "bash genProof.sh " + noteParams

@@ -135,7 +135,7 @@ async function getMakeOrderProof(makerNote) {
   return util.parseProofObj(proof);
 }
 
-async function getTakeOrderProof(makerNote, parentNote, stakeNote) {
+async function getTakeOrderProof(makerNoteHash, parentNote, stakeNote) {
   const cmdArgs = getTakeOrderCommand(
     convert(parentNote.owner),
     convert(parentNote.value),
@@ -143,7 +143,7 @@ async function getTakeOrderProof(makerNote, parentNote, stakeNote) {
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
     convert(parentNote.isSmart),
-    convert(makerNote.hash()),
+    convert(makerNoteHash),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
@@ -188,10 +188,26 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
     convert(changeNote.salt),
     convert(changeNote.isSmart),
     convert(price),
+    convert(getQuotient(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
+    convert(getRemainder(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
+    convert(getQuotient(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
+    convert(getRemainder(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
   );
+
+  console.log(cmdArgs);
 
   const proof = await execute('settleOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
+}
+
+function getQuotient(x, y) {
+  const q = (x.sub(x.mod(y))).div(y);
+  return Web3Utils.toHex(q)
+}
+
+function getRemainder(x, y) {
+  const r = x.mod(y)
+  return Web3Utils.toHex(r)
 }
 
 (async () => {
