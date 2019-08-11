@@ -1,16 +1,25 @@
 import "../sha/1024bitPacked.code" as sha256
+import "ecc/babyjubjubParams.code" as babyjubjubParams
+import "ecc/proofOfOwnership.code" as verifyOwnership
 
 // Note = (_owner, value, type, _senderViewingKey, _salt, _isSmart)
 
 // (public) nh0 + nh1 : new note hash
 // (public) value : new note value
 // (public) type : new note type
-// (private) pk0 + pk1 : new note's owner
+// (private) pk0 + pk1 : new note public key
 // (private) vk0 + vk1 : new note viewKey
 // (private) salt : new note salt, random value
-// (private) issSmart : new note isSmart, 0 if is not smart note
+// (private) isSmart : new note isSmart, 0 if is not smart note
+// (private) sk : secret key corresponding to pk0, pk1
 
-def main(field nh0, field nh1, field value, field type, private field pk0, private field pk1, private field vk0, private field vk1, private field salt, private field isSmart) -> (field):
+def main(field nh0, field nh1, field value, field type, private field pk0, private field pk1, private field vk0, private field vk1, private field salt, private field isSmart, private field sk) -> (field):
+  // check ownership of note
+  field[10] params = babyjubjubParams()
+  field[2] pk = [pk0, pk1]
+  field isOwner = verifyOwnership(pk, sk, params)
+  isOwner == 1
+
   h = sha256([pk0, pk1, value, type, vk0, vk1, salt, isSmart])
   h[0] == nh0
   h[1] == nh1

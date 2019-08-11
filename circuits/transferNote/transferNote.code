@@ -1,18 +1,22 @@
 import "../sha/1024bitPacked.code" as sha256
 import "../utils/math/add.code" as add
+import "ecc/babyjubjubParams.code" as babyjubjubParams
+import "ecc/proofOfOwnership.code" as verifyOwnership
+
 
 // Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
 // (public) oh0 + oh1 : old note hash
-// (private) pk0 + pk1 : old note's owner
+// (private) pk0 + pk1 : old note public key
 // (private) oVal : old note value
 // (private) oType : old note type
 // (private) ovk0 + ovk1 : old note viewKey
 // (private) oSalt : old note salt, random value
 // (private) oIsSmart : old note isSmart, 0 if is not smart note
+// (private) sk : secret key corresponding to pk0, pk1 or originPk0, originPk1
 
 // (public) n0h0 + n0h1 : new note 0 hash
-// (private) rpk0 + rpk1 : reciever(new note 0 owner)
+// (private) rpk0 + rpk1 : new note 0 public key
 // (private) n0Val : new note 0 value
 // (private) n0Type : new note 0 type
 // (private) n0vk0 + n0vk1 : new note 0 viewKey
@@ -20,7 +24,7 @@ import "../utils/math/add.code" as add
 // (private) n0IsSmart : new note 0 isSmart, 0 if is not smart note
 
 // (public) n1h0 + n1h1 : new note 1 hash
-// (private) n1rpk0 + n1rpk1 : reciever2(new note 2 owner)
+// (private) n1rpk0 + n1rpk1 : new note 1 public key
 // (private) n1Val : new note 1 value
 // (private) n1Type : new note 1 type
 // (private) n1vk0+ n1vk1 : new note 1 viewKey
@@ -28,7 +32,7 @@ import "../utils/math/add.code" as add
 // (private) n1IsSmart : new note 1 isSmart, 0 if is not smart note
 
 // (public) originH0 + originH1 : origin note hash
-// (private) originPk0 + originPk1 : origin note's owner
+// (private) originPk0 + originPk1 : origin note public key
 // (private) originVal : origin note value
 // (private) originType : origin note type
 // (private) originVk0 + originVk1 : origin note viewKey
@@ -36,7 +40,12 @@ import "../utils/math/add.code" as add
 // (private) originIsSmart : origin note isSmart, it should be 0. Note that you cannot make smartNote from smartNote
 
 
-def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oType, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field originH0, field originH1, private field originPk0, private field originPk1, private field originVal, private field originType, private field originVk0, private field originVk1, private field originSalt, private field originIsSmart) -> (field):
+def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oType, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, private field sk, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field originH0, field originH1, private field originPk0, private field originPk1, private field originVal, private field originType, private field originVk0, private field originVk1, private field originSalt, private field originIsSmart) -> (field):
+  // check ownership of old note
+  field[10] params = babyjubjubParams()
+  field[2] pk = if oIsSmart == 0 then [pk0, pk1] else [originPk0, originPk1] fi
+  field isOwner = verifyOwnership(pk, sk, params)
+  isOwner == 1
 
   oVal == add(n0Val, n1Val)
 
