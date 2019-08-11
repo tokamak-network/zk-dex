@@ -2,6 +2,7 @@ const Docker = require('dockerode');
 const BN = require('bn.js');
 const Web3Utils = require('web3-utils');
 const util = require('./util');
+const noteHelper = require('../helper/noteHelper');
 
 const { constants } = require('./Note');
 const { getMintAndBurnCommand } = require('../helper/mintNBurnNoteHelper');
@@ -143,7 +144,11 @@ async function getTakeOrderProof(makerNoteHash, parentNote, stakeNote) {
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
     convert(parentNote.isSmart),
+<<<<<<< HEAD
     convert(makerNoteHash),
+=======
+    convert(hash(makerNote)),
+>>>>>>> cbb0d4fc8db2870833548603591af91bba6d77a2
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
@@ -200,6 +205,7 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
   return util.parseProofObj(proof);
 }
 
+<<<<<<< HEAD
 function getQuotient(x, y) {
   const q = (x.sub(x.mod(y))).div(y);
   return Web3Utils.toHex(q)
@@ -208,6 +214,17 @@ function getQuotient(x, y) {
 function getRemainder(x, y) {
   const r = x.mod(y)
   return Web3Utils.toHex(r)
+=======
+function hash(note) {
+  return util.marshal(noteHelper.getNoteHash(
+    util.unmarshal(note.owner),
+    util.unmarshal(note.value),
+    util.unmarshal(note.token),
+    util.unmarshal(note.viewingKey),
+    util.unmarshal(note.salt),
+    util.unmarshal(note.isSmart),
+  ));
+>>>>>>> cbb0d4fc8db2870833548603591af91bba6d77a2
 }
 
 (async () => {

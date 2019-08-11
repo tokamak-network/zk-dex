@@ -20,8 +20,8 @@
 <script>
 import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
-import { Note, constants } from '../../../../scripts/lib/Note';
-import { generateProof } from '../../api/index';
+import { Note, constants } from '../../../scripts/lib/Note';
+import { addNote, generateProof } from '../api/index';
 
 const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
 
@@ -42,8 +42,8 @@ export default {
     },
   },
   computed: mapState({
-    myNotes: state => state.myNotes,
     viewingKey: state => state.viewingKey,
+    secretKey: state => state.secretKey,
     wallet: state => state.wallet,
     dex: state => state.dexContractInstance,
     dai: state => state.daiContractInstance,
@@ -51,14 +51,13 @@ export default {
     coinbase: state => state.web3.coinbase,
   }),
   created () {
-    this.value = ether(5);
     this.salt = Web3Utils.randomHex(16);
     if (this.token === 'eth') {
+      this.value = ether(10);
       this.createEthNote();
-      console.log('eth');
     } else {
+      this.value = ether(1);
       this.createDaiNote();
-      console.log('dai');
     }
   },
   methods: {
@@ -85,15 +84,14 @@ export default {
     async mintEthNote () {
       this.loading = true;
 
-      await this.dex.mint(...this.proof, this.note.encrypt(), {
+      const mintTx = await this.dex.mint(...this.proof, this.note.encrypt(), {
         from: this.coinbase,
         value: this.value,
       });
 
-      setTimeout(() => {
-        this.loading = false;
-        this.$router.push({ path: '/main' });
-      }, 3000);
+      this.note.hash = mintTx.logs[0].args.note;
+      this.note.state = mintTx.logs[0].args.state;
+      await addNote(this.secretKey, this.note);
     },
     async mintDaiNote () {
       this.loading = true;
@@ -101,16 +99,20 @@ export default {
       await this.dai.approve(this.dex.address, this.value, {
         from: this.coinbase,
       });
-      await this.dex.mint(...this.proof, this.note.encrypt(), {
+      const mintTx = await this.dex.mint(...this.proof, this.note.encrypt(), {
         from: this.coinbase,
       });
+
+      this.note.hash = mintTx.logs[0].args.note;
+      this.note.state = mintTx.logs[0].args.state;
+      await addNote(this.secretKey, this.note);
     },
     getProof () {
       this.loading = true;
 
       const params = {
         circuit: 'mintNBurnNote',
-        params: this.note,
+        params: [this.note],
       };
       generateProof(params)
         .then(res => (this.proof = res.data.proof))
