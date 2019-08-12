@@ -1,23 +1,25 @@
 const state = {
+  accounts: [],
   dexContract: null,
   daiContract: null,
   dexContractInstance: null,
   daiContractInstance: null,
-  secretKey: null,
+  key: null,
   viewingKey: null,
   order: null,
   orders: [],
   note: null,
   myNotes: [],
   web3: {
-    isInjected: false,
+    isListening: false,
     web3Instance: null,
     networkId: null,
-    coinbase: '',
+    account: '',
     balance: null,
     error: null,
   },
   contract: null,
+  path: '/wallet',
 };
 
 export default state;

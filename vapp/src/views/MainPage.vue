@@ -1,58 +1,82 @@
 <template>
-  <div style="margin-top: 40px;">
-    <el-row :gutter="10">
-      <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
-        <div class="grid-content"></div>
-      </el-col>
-      <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
-        <order-book style="margin-right: 20px;" />
-      </el-col>
-      <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
-        <my-notes style="margin-left: 20px;" />
-      </el-col>
-      <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
-        <div class="grid-content"></div>
-      </el-col>
-    </el-row>
-    <div style="margin-top: 60px; width: 100%; text-align: center;">
-      <div>
-        <p>viewing key: {{ viewingKey }}</p>
-      </div>
-      <div>
-        <p>secret key: {{ secretKey }}</p>
-      </div>
-      <el-button @click="moveMintNotePage('eth')">mint eth note</el-button>
-      <el-button @click="moveMintNotePage('dai')">mint dai note</el-button>
+  <div>
+    <div id="wrapper">
+      <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="container">
+          <div class="navbar-brand">
+            <a class="navbar-item logo" @click="$router.push('/login')">
+              <img src="../../public/zk-dex.png">
+            </a>
+          </div>
+          <div class="navbar-start" style="margin-left: 20px;">
+            <router-link class="navbar-item" to="/wallet">Wallet</router-link>
+            <router-link class="navbar-item" to="/market">Market</router-link>
+          </div>
+          <div class="navbar-end">
+            <div class="navbar-item">
+              <!-- <div class="buttons">
+                <a class="button is-primary">
+                  <strong>Sign up</strong>
+                </a>
+                <a class="button is-light">
+                  Log in
+                </a>
+              </div> -->
+            </div>
+          </div>
+        </div>
+      </nav>
     </div>
+    <router-view />
+    <footer class="footer">
+      <div class="content has-text-centered">
+        <meta-mask />
+        <zk-dex-contract />
+      </div>
+    </footer>
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex';
-import MyNotes from '../components/MyNotes.vue';
-import OrderBook from '../components/OrderBook.vue';
+
+import MetaMask from '../components/MetaMask.vue';
+import ZkDexContract from '../components/ZkDexContract.vue';
 
 export default {
   components: {
-    MyNotes,
-    OrderBook,
+    MetaMask,
+    ZkDexContract,
   },
-  computed: mapState({
-    viewingKey: state => state.viewingKey,
-    secretKey: state => state.secretKey,
-  }),
-  methods: {
-    mintNote () {},
-    moveMintNotePage (token) {
-      this.$router.push({ path: `/mint/${token}` });
-    },
+  beforeCreate () {
+    if (this.$route.path === '/') {
+      this.$router.push({ path: '/wallet' });
+    }
   },
 };
 </script>
 
-<style>
-.grid-content {
-  border-radius: 4px;
-  min-height: 1px;
+<style scoped>
+.navbar {
+  z-index: 10;
+}
+@media all and (max-width: 1088px) {
+  .logo {
+    padding: 0;
+  }
+  .logo img {
+    max-height: 3rem;
+  }
+}
+@media all and (min-width: 1088px) {
+  .navbar {
+    padding: 1rem 0;
+  }
+  .logo {
+    padding: 0 0 0 12px;
+  }
+  .logo img {
+    max-height: 2.5rem;
+  }
 }
 </style>

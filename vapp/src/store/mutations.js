@@ -1,5 +1,3 @@
-import pollingWeb3 from '../services/web3/pollingWeb3';
-
 export default {
   SET_DEX_CONTRACT: (state, contract) => {
     state.dexContract = contract;
@@ -14,9 +12,6 @@ export default {
     state.daiContractInstance = contractInstance;
   },
 
-  SET_WALLET: (state, wallet) => {
-    state.wallet = wallet;
-  },
   SET_DAI_ADDRESS: (state, daiAddress) => {
     state.daiAddress = daiAddress;
   },
@@ -41,23 +36,35 @@ export default {
     state.myNotes = notes;
   },
 
-  async REGISTER_WEB3 (state, web3) {
-    const web3Copy = state.web3;
-    const accounts = await web3.eth.getAccounts();
-    const account = accounts[0];
-    web3Copy.coinbase = account;
-    web3Copy.networkId = await web3.eth.net.getId();
-    web3Copy.balance = await web3.eth.getBalance(account);
-    web3Copy.isInjected = await web3.eth.net.isListening();
-    web3Copy.web3Instance = web3;
+  SET_WEB3: (state, web3) => {
+    state.web3 = web3;
+  },
 
-    pollingWeb3(web3);
+  UPDATE_WALLET (state, account) {
+    state.web3.coinbase = account.coinbase;
+    state.web3.balance = account.balance;
   },
-  POLL_WEB3 (state, payload) {
-    state.web3.coinbase = payload.coinbase;
-    state.web3.balance = payload.balance;
-  },
+
   REGISTER_CONTRACT (state, contract) {
     state.contract = () => contract;
+  },
+
+  SET_LAST_PATH (state, path) {
+    state.path = path;
+  },
+
+  SET_KEY (state, key) {
+    state.key = key;
+  },
+
+  SET_ACCOUNT (state, account) {
+    state.account = account;
+  },
+
+  MUTATE_ACCOUNTS (state, accounts) {
+    state.accounts = accounts;
+  },
+  ADD_ACCOUHNT (state, account) {
+    state.accounts.push(account);
   },
 };

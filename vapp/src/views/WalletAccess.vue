@@ -1,10 +1,6 @@
 <template>
   <div>
-    <p>Network: {{ network }}</p>
-    <div style="margin-top: 20px" />
-    <p>Account: {{ coinbase | abbreviate}}</p>
-    <div style="margin-top: 20px" />
-    <p>Balance: {{ balance }} wei</p>
+    {{ message }}
   </div>
 </template>
 
@@ -13,13 +9,14 @@ import { mapState, mapActions } from 'vuex';
 import Web3 from 'web3';
 
 export default {
-  name: 'metamask',
+  data () {
+    return {
+      message: 'accessing wallet',
+    };
+  },
   computed: {
     ...mapState({
-      isListening: state => state.web3.isListening,
-      network: state => NETWORKS[state.web3.networkId],
-      coinbase: state => state.web3.coinbase,
-      balance: state => state.web3.balance,
+      path: state => state.path,
     }),
   },
   methods: {
@@ -30,22 +27,12 @@ export default {
       .then((web3) => {
         this.setWeb3(web3);
         polling(this.$store);
+        this.$router.push({ path: '/wallet' });
       })
       .catch((e) => {
-        // this.message = `please refresh page, error: ${e}`;
+        this.message = `please refresh page, error: ${e}`;
       });
   },
-};
-
-const NETWORKS = {
-  '1': 'Main Net',
-  '2': 'Deprecated Morden test network',
-  '3': 'Ropsten test network',
-  '4': 'Rinkeby test network',
-  '42': 'Kovan test network',
-  '1337': 'Tokamak network',
-  '4447': 'Truffle Develop Network',
-  '5777': 'Ganache Blockchain',
 };
 
 const getWeb3 = () =>
@@ -63,7 +50,7 @@ const getWeb3 = () =>
         web3Object.web3Instance = window.web3;
         web3Object.coinbase = (await window.web3.eth.getAccounts())[0];
         web3Object.networkId = await window.web3.eth.net.getId();
-        web3Object.balance = await window.web3.eth.getBalance(web3Object.coinbase);
+        web3Object.balance = await window.web3.eth.getBalance(web3Object.account);
         web3Object.isListening = await window.web3.eth.net.isListening();
       } catch (e) {
         reject(e);
@@ -75,23 +62,22 @@ const getWeb3 = () =>
 const polling = (store) => {
   setInterval(async () => {
     const account = (await window.web3.eth.getAccounts())[0];
-    if (account !== store.state.web3.coinbase) {
-      const newBalance = await window.web3.eth.getBalance(account);
+    if (account !== store.state.web3.account) {
+      const newAccount = account;
+      const newBalance = await window.web3.eth.getBalance(newAccount);
       store.dispatch('updateWallet', {
-        coinbase: account,
+        coinbase: newAccount,
         balance: newBalance,
       });
     } else {
-      const balance = await window.web3.eth.getBalance(store.state.web3.coinbase);
+      const balance = await window.web3.eth.getBalance(store.state.web3.account);
       if (balance !== store.state.web3.balance) {
         store.dispatch('updateWallet', {
-          coinbase: store.state.web3.coinbase,
-          balance,
+          coinbase: store.state.web3.account,
+          balance: balance,
         });
       }
     }
   }, 500);
 };
 </script>
-
-<style scoped></style>

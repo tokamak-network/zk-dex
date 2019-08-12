@@ -1,16 +1,16 @@
 <template>
-  <div v-loading="loading" style="height: 100%; text-align: center; margin-top: 150px;">
+  <div style="height: 100%; text-align: center; margin-top: 150px;">
     <div>
-      <el-button @click="getProof">generate proof</el-button>
+      <a class="button is-link" v-bind:class="loading" @click="getProof">generate proof</a>
     </div>
     <div>
       <p>proof: {{ proof }}</p>
-      <p>maker note hash: {{ makerNote.hash() }}</p>
-      <p>taker note value: {{ takerNote.value }}</p>
+      <!-- <p>maker note hash: {{ makerNote.hash() }}</p> -->
+      <!-- <p>taker note value: {{ takerNote.value | hexToNumberString}}</p> -->
       <p>salt: {{ salt }}</p>
     </div>
     <div>
-      <el-button v-bind:disabled="proof === ''" @click="takeOrder">take order</el-button>
+      <a class="button is-link" @click="takeOrder">take order</a>
     </div>
   </div>
 </template>
@@ -20,34 +20,48 @@ import { mapState } from 'vuex';
 import { Note, constants, decrypt } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import dockerUtils from '../../../scripts/lib/dockerUtils';
-import { addNote, updateNoteState, generateProof } from '../api/index';
+import {
+  addNote,
+  addOrder,
+  updateNoteState,
+  generateProof,
+} from '../api/index';
 
 export default {
   data () {
     return {
       price: '',
-      loading: false,
+      loaded: false,
       proof: '',
       makerNote: {},
       stakeNote: {},
       salt: null,
     };
   },
-  computed: mapState({
-    order: state => state.order,
-    takerNote: state => state.note,
-    dex: state => state.dexContractInstance,
-    web3: state => state.web3.web3Instance,
-    coinbase: state => state.web3.coinbase,
-    secretKey: state => state.secretKey,
-  }),
+  computed: {
+    ...mapState({
+      order: state => state.order,
+      takerNote: state => state.note,
+      dex: state => state.dexContractInstance,
+      web3: state => state.web3.web3Instance,
+      coinbase: state => state.web3.coinbase,
+      secretKey: state => state.secretKey,
+    }),
+    loading: function () {
+      return {
+        'is-loading': this.loaded,
+      };
+    },
+  },
   created () {
     this.salt = Web3Utils.randomHex(16);
-    this.dex.encryptedNotes(this.order.makerNote).then((encryptedNote) => {
-      this.makerNote = decrypt(encryptedNote, this.order.makerViewingKey);
-    });
   },
   methods: {
+    async getMakerNoteInOrder (order) {
+      const encryptedNote = await this.dex.encryptedNotes(this.order.makerNote);
+      const makerNote = decrypt(encryptedNote, this.order.makerViewingKey);
+      return makerNote;
+    },
     makeStakeNote () {
       const makerViewingKey = this.order.makerViewingKey;
       this.stakeNote = new Note(
@@ -60,7 +74,7 @@ export default {
       );
     },
     getProof () {
-      this.loading = true;
+      this.loaded = true;
       this.makeStakeNote();
 
       const params = {
@@ -70,14 +84,17 @@ export default {
       generateProof(params)
         .then(res => (this.proof = res.data.proof))
         .catch(e => console.log(e))
-        .finally(() => (this.loading = false));
+        .finally(() => (this.loaded = false));
     },
     async takeOrder () {
-      this.loading = true;
-
-      const tx = await this.dex.takeOrder(this.order.orderId, ...this.proof, this.stakeNote.encrypt(), {
-        from: this.coinbase,
-      });
+      const tx = await this.dex.takeOrder(
+        this.order.orderId,
+        ...this.proof,
+        this.stakeNote.encrypt(),
+        {
+          from: this.account,
+        }
+      );
 
       const hash = tx.logs[0].args.note;
       const state = tx.logs[0].args.state;
@@ -91,7 +108,6 @@ export default {
       // await addOrder(order);
 
       setTimeout(() => {
-        this.loading = false;
         this.$router.push({ path: '/main' });
       }, 3000);
     },

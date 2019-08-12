@@ -1,12 +1,20 @@
 const LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./localstorage');
 
+function setViewingKey (key, viewingKey) {
+  localStorage.setItem(`${key}viewingkey`, viewingKey);
+}
+
+function getViewingKey (key) {
+  return localStorage.getItem(`${key}viewingkey`);
+}
+
 function _setNotes (key, notes) {
-  localStorage.setItem(key, notes);
+  localStorage.setItem(`${key}notes`, notes);
 }
 
 function getNotes (key) {
-  return localStorage.getItem(key);
+  return localStorage.getItem(`${key}notes`);
 }
 
 function addNote (key, note) {
@@ -16,26 +24,57 @@ function addNote (key, note) {
   } else {
     notes = JSON.parse(notes);
   }
-  notes.push(note);
-  _setNotes(key, JSON.stringify(notes));
-}
 
-function updateNoteState (key, hash, state) {
-  let notes = getNotes(key);
-  if (!notes) {
-    return;
-  } else {
-    notes = JSON.parse(notes);
-  }
-
-  for (const note in notes) {
-    if (notes[note].hash === hash) {
-      notes[note].state = state;
+  let modified = false;
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i].hash === note.hash) {
+      notes[i].state = note.state;
+      modified = true;
+      break;
     }
   }
 
+  if (!modified) {
+    notes.push(note);
+  }
   _setNotes(key, JSON.stringify(notes));
 }
+
+function _setAccounts (key, notes) {
+  localStorage.setItem(`${key}accounts`, notes);
+}
+
+function getAccounts (key) {
+  return localStorage.getItem(`${key}accounts`);
+}
+
+function addAccount (key, account) {
+  let accounts = getAccounts(key);
+  if (!accounts) {
+    accounts = [];
+  } else {
+    accounts = JSON.parse(accounts);
+  }
+  accounts.push(account);
+  _setAccounts(key, JSON.stringify(accounts));
+}
+
+// function updateNoteState (key, hash, state) {
+//   let notes = getNotes(key);
+//   if (!notes) {
+//     return;
+//   } else {
+//     notes = JSON.parse(notes);
+//   }
+
+//   for (const note in notes) {
+//     if (notes[note].hash === hash) {
+//       notes[note].state = state;
+//     }
+//   }
+
+//   _setNotes(key, JSON.stringify(notes));
+// }
 
 function getOrderCount () {
   const count = localStorage.getItem('orderCount');
@@ -75,12 +114,17 @@ function _initOrderStorage () {
 _initOrderStorage();
 
 module.exports = {
+  setViewingKey,
+  getViewingKey,
+
   getNotes,
   addNote,
-  updateNoteState,
+  // updateNoteState,
   getOrderCount,
   setOrderCount,
   setOrders,
   getOrders,
   addOrder,
+  addAccount,
+  getAccounts,
 };

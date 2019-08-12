@@ -48,7 +48,7 @@ export default {
   computed: mapState({
     note: state => state.note,
     coinbase: state => state.web3.coinbase,
-    wallet: state => state.wallet,
+    account: state => state.account,
     secretKey: state => state.secretKey,
     viewingKey: state => state.viewingKey,
     dex: state => state.dexContractInstance,
@@ -79,7 +79,7 @@ export default {
         Web3Utils.randomHex(16)
       );
       this.newNote2 = new Note(
-        this.coinbase,
+        this.account,
         Web3Utils.toBN(change),
         this.note.token,
         this.viewingKey,
@@ -101,7 +101,7 @@ export default {
         this.newNote1.encrypt(),
         this.newNote2.encrypt(),
         {
-          from: this.coinbase,
+          from: this.account,
         }
       );
 

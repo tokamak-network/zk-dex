@@ -1,18 +1,18 @@
 <template>
-  <div v-loading="loading" style="height: 100%; text-align: center; margin-top: 150px;">
+  <div style="height: 100%; text-align: center; margin-top: 150px;">
     <div style="margin-bottom: 40px;">
       <p>viewing key: {{ viewingKey }}</p>
-      <p>source token type: {{ note.token }}</p>
-      <el-input type="number" min="0" style="width: 20%;" size="medium" placeholder="Enter price" v-model="price"></el-input>
+      <!-- <p>source token type: {{ note.token | hexToNumberString | tokenType }}</p> -->
+      <p>TODO: targetToken</p>
+      <input class="input" style="width: 20%;" type="number" placeholder="price" v-model="price">
       <p>price: {{ price }}</p>
     </div>
     <div style="margin-bottom: 40px;">
-      <el-button v-bind:disabled="price == ''" @click="getProof">generate proof</el-button>
+      <a class="button is-link" v-bind:class="loading" @click="getProof">generate proof</a>
       <p>proof: {{ proof }}</p>
-      <p>orderId: {{ orderId }}</p>
     </div>
     <div>
-      <el-button v-bind:disabled="proof === '' || price == ''" @click="makeOrder">make order</el-button>
+      <a class="button is-link" @click="makeOrder">make order</a>
     </div>
   </div>
 </template>
@@ -31,7 +31,7 @@ import {
 export default {
   data () {
     return {
-      loading: false,
+      loaded: false,
       price: '',
       proof: '',
       orderId: null,
@@ -42,17 +42,24 @@ export default {
     //   this.orderId = count;
     // });
   },
-  computed: mapState({
-    coinbase: state => state.web3.coinbase,
-    wallet: state => state.wallet,
-    secretKey: state => state.secretKey,
-    viewingKey: state => state.viewingKey,
-    note: state => state.note,
-    dex: state => state.dexContractInstance,
-  }),
+  computed: {
+    ...mapState({
+      coinbase: state => state.web3.coinbase,
+      account: state => state.account,
+      secretKey: state => state.secretKey,
+      viewingKey: state => state.viewingKey,
+      note: state => state.note,
+      dex: state => state.dexContractInstance,
+    }),
+    loading: function () {
+      return {
+        'is-loading': this.loaded,
+      };
+    },
+  },
   methods: {
     getProof () {
-      this.loading = true;
+      this.loaded = true;
       const noteParam = this.noteParam(this.note);
 
       const params = {
@@ -62,7 +69,7 @@ export default {
       generateProof(params)
         .then(res => (this.proof = res.data.proof))
         .catch(e => console.log(e))
-        .finally(() => (this.loading = false));
+        .finally(() => (this.loaded = false));
     },
     noteParam (note) {
       const n = note;
@@ -71,8 +78,6 @@ export default {
       return n;
     },
     async makeOrder () {
-      this.loading = true;
-
       const tx = await this.dex.makeOrder(
         this.viewingKey,
         this.note.token === constants.ETH_TOKEN_TYPE
@@ -94,7 +99,6 @@ export default {
       // await addOrder(order);
 
       setTimeout(() => {
-        this.loading = false;
         this.$router.push({ path: '/main' });
       }, 3000);
     },

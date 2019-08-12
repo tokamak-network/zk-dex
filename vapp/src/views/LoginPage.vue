@@ -1,66 +1,48 @@
 <template>
-  <div style="text-align: center; margin-top: 120px">
-    <h1>ZK-DEX</h1>
-    <zk-dex-contract />
-    <div style="height: 10px;"></div>
-    <meta-mask />
-    <div>
-      <el-input placeholder="Enter your viewing key" style="width: 50%;" v-model="viewingKey" show-password></el-input>
-    </div>
-    <p>viewingKey: {{ viewingKey }}</p>
-    <p>secretKey: {{ `${coinbase}${viewingKey}` }}</p>
-    <div>
-      <el-button style="margin-top: 20px;" v-bind:disabled="viewingKey === '' || !isInjected" @click="moveToMainPage">START</el-button>
-    </div>
+  <div style="padding: 50px;">
+    <input class="input" style="width: 20%; margin-right: 10px;" placeholder="key" v-model="userKey">
+    <a class="button is-link" :class="{ 'is-static': userKey === '' }" @click="login">login</a>
   </div>
 </template>
 
 <script>
-import MetaMask from '../components/MetaMask.vue';
-import ZkDexContract from '../components/ZkDexContract.vue';
-
-import { mapState, mapActions } from 'vuex';
-import { Wallet } from '../../../scripts/lib/Wallet';
+import { mapState, mapMutations } from 'vuex';
+import { getViewingKey, setViewingKey } from '../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {
-  components: {
-    MetaMask,
-    ZkDexContract,
-  },
   data () {
     return {
-      viewingKey: '',
+      userKey: '',
     };
   },
   computed: {
     ...mapState({
-      coinbase: state => state.web3.coinbase,
-      isInjected: state => state.web3.isInjected,
-      dexContractInstance: state => state.dexContractInstance,
+      key: state => state.key,
     }),
-    paddedViewingKey () {
-      return Web3Utils.padLeft(Web3Utils.toHex(this.viewingKey), 64);
-    },
+  },
+  mounted () {
+    if (this.key !== null) {
+      this.$router.push({ path: '/wallet' });
+    }
   },
   methods: {
-    ...mapActions(['setViewingKey', 'setSecretKey', 'setWallet']),
-    moveToMainPage () {
-      this.setKeys();
-      this.initWallet().then(() => {
-        this.$router.push({ path: '/main' });
-      });
-    },
-    async initWallet () {
-      const wallet = new Wallet();
-      wallet.setVk(this.coinbase, this.paddedViewingKey);
-      await wallet.init(this.dexContractInstance.address);
-
-      this.setWallet(wallet);
-    },
-    setKeys () {
-      this.setViewingKey(this.paddedViewingKey);
-      this.setSecretKey(`${this.coinbase}${this.viewingKey}`);
+    ...mapMutations([
+      'SET_KEY',
+      'SET_VIEWING_KEY',
+    ]),
+    login () {
+      getViewingKey(this.userKey)
+        .then((vk) => {
+          if (vk === null) {
+            // NOTE: viewing key must less than 64 bits
+            vk = Web3Utils.randomHex(8);
+            setViewingKey(this.userKey, vk);
+          }
+          this.SET_KEY(this.userKey);
+          this.SET_VIEWING_KEY(vk);
+          this.$router.push({ path: '/wallet' });
+        });
     },
   },
 };

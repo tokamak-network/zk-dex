@@ -1,69 +1,117 @@
 <template>
-  <div v-loading="loading" style="text-align: center;">
-    <div>
-      <p>account: {{ coinbase }}</p>
-      <p>token type: {{ token }}</p>
-      <p>value: {{ value }}</p>
-      <p>viewing key: {{ viewingKey }}</p>
-      <p>salt: {{ salt }}</p>
-      <p>proof: {{ proof }}</p>
-      <div>
-        <el-button @click="getProof">generate proof</el-button>
+  <section class="section">
+    <div class="container">
+      <div style="text-align: center; margin-top: 150px;">
+        <p style="margin-bottom: 40px;">metamask address: {{ coinbase }}</p>
+        <div class="columns">
+          <div class="column is-half">
+            <p>accounts: </p>
+          </div>
+          <div class="column is-half">
+            <div class="select">
+              <select v-model="account">
+                <option v-for="(account, index) in accounts">{{ account.address }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column is-half">
+            <p>value: {{ value }}</p>
+          </div>
+          <div class="column is-half">
+            <input class="input" style="width: 20%;" type="number" placeholder="amount" v-model="value">
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column is-half">
+            <p>ETH: {{ balance }}</p>
+          </div>
+          <div class="column is-half">
+            <button class="button" @click="createEthNote">Make Note(ETH)</button>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column is-half">
+            <p>DAI: {{ daiAmount }}</p>
+          </div>
+          <div class="column is-half">
+            <button class="button" @click="createDaiNote">Make Note(DAI)</button>
+          </div>
+        </div>
+        <div>
+          <p>viewing key: {{ viewingKey }}</p>
+          <p>note: {{ JSON.stringify(note, null, 2) }}</p>
+          <p>proof: {{ proof }}</p>
+        </div>
+        <div>
+          <a class="button is-link" v-bind:class="loading" @click="getProof">generate proof</a>
+        </div>
+        <div>
+          <a class="button is-link" @click="mintNote">mint note</a>
+        </div>
       </div>
     </div>
-    <div>
-      <el-button @click="mintNote">mint note</el-button>
-    </div>
-  </div>
+  </section>
 </template>
 
 <script>
 import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
 import { Note, constants } from '../../../scripts/lib/Note';
-import { addNote, generateProof } from '../api/index';
+import { getAccounts, addNote, generateProof } from '../api/index';
 
 const ether = n => Web3Utils.toBN(n).mul(Web3Utils.toBN((1e18).toString(10)));
 
 export default {
   data () {
     return {
-      loading: false,
+      account: null,
+      accounts: [],
+      loaded: false,
       proof: '',
       value: null,
       salt: null,
       note: null,
+      daiAmount: null,
     };
   },
-  props: {
-    token: {
-      type: String,
-      default: '',
+  computed: {
+    ...mapState({
+      key: state => state.key,
+      coinbase: state => state.web3.coinbase,
+      balance: state => state.web3.balance,
+      viewingKey: state => state.viewingKey,
+      dex: state => state.dexContractInstance,
+      dai: state => state.daiContractInstance,
+      web3: state => state.web3.web3Instance,
+    }),
+    loading: function () {
+      return {
+        'is-loading': this.loaded,
+      };
     },
   },
-  computed: mapState({
-    viewingKey: state => state.viewingKey,
-    secretKey: state => state.secretKey,
-    wallet: state => state.wallet,
-    dex: state => state.dexContractInstance,
-    dai: state => state.daiContractInstance,
-    web3: state => state.web3.web3Instance,
-    coinbase: state => state.web3.coinbase,
-  }),
   created () {
     this.salt = Web3Utils.randomHex(16);
-    if (this.token === 'eth') {
-      this.value = ether(10);
-      this.createEthNote();
-    } else {
-      this.value = ether(1);
-      this.createDaiNote();
-    }
+    this.getDaiAmount().then((b) => {
+      this.daiAmount = b.toString();
+    });
+  },
+  beforeMount () {
+    getAccounts(this.key).then((accounts) => {
+      if (accounts !== null) {
+        this.accounts = accounts;
+      }
+    });
   },
   methods: {
+    getDaiAmount () {
+      return this.dai.balanceOf(this.coinbase);
+    },
     createEthNote () {
       this.note = new Note(
-        this.coinbase,
+        this.account,
         this.value,
         constants.ETH_TOKEN_TYPE,
         this.viewingKey,
@@ -73,7 +121,7 @@ export default {
     },
     createDaiNote () {
       this.note = new Note(
-        this.coinbase,
+        this.account,
         this.value,
         constants.DAI_TOKEN_TYPE,
         this.viewingKey,
@@ -82,8 +130,6 @@ export default {
       );
     },
     async mintEthNote () {
-      this.loading = true;
-
       const mintTx = await this.dex.mint(...this.proof, this.note.encrypt(), {
         from: this.coinbase,
         value: this.value,
@@ -91,11 +137,9 @@ export default {
 
       this.note.hash = mintTx.logs[0].args.note;
       this.note.state = mintTx.logs[0].args.state;
-      await addNote(this.secretKey, this.note);
+      await addNote(this.account, this.note);
     },
     async mintDaiNote () {
-      this.loading = true;
-
       await this.dai.approve(this.dex.address, this.value, {
         from: this.coinbase,
       });
@@ -105,11 +149,10 @@ export default {
 
       this.note.hash = mintTx.logs[0].args.note;
       this.note.state = mintTx.logs[0].args.state;
-      await addNote(this.secretKey, this.note);
+      await addNote(this.account, this.note);
     },
     getProof () {
-      this.loading = true;
-
+      this.loaded = true;
       const params = {
         circuit: 'mintNBurnNote',
         params: [this.note],
@@ -117,22 +160,16 @@ export default {
       generateProof(params)
         .then(res => (this.proof = res.data.proof))
         .catch(e => console.log(e))
-        .finally(() => (this.loading = false));
+        .finally(() => (this.loaded = false));
     },
     mintNote () {
-      if (this.token === 'eth') {
+      if (this.note.token === constants.ETH_TOKEN_TYPE) {
         this.mintEthNote().then(() => {
-          setTimeout(() => {
-            this.loading = false;
-            this.$router.push({ path: '/main' });
-          }, 3000);
+          this.$router.push({ path: '/wallet' });
         });
       } else {
         this.mintDaiNote().then(() => {
-          setTimeout(() => {
-            this.loading = false;
-            this.$router.push({ path: '/main' });
-          }, 3000);
+          this.$router.push({ path: '/wallet' });
         });
       }
     },

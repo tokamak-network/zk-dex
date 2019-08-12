@@ -22,14 +22,14 @@ export default {
     this.dexContract
       .deployed()
       .then((dexContractInstance) => {
-        this.address = dexContractInstance.address; // view
-        this.setDexContractInstance(dexContractInstance); // action
+        this.address = dexContractInstance.address;
+        this.setDexContractInstance(dexContractInstance);
 
         return dexContractInstance.dai();
       })
       .then(daiAddress => this.daiContract.at(daiAddress))
       .then((daiContractInstance) => {
-        this.setDaiContractInstance(daiContractInstance); // action
+        this.setDaiContractInstance(daiContractInstance);
       });
   },
   computed: mapState({
@@ -42,7 +42,7 @@ export default {
     ...mapActions([
       'setDexContractInstance',
       'setDaiContractInstance',
-      'setWallet',
+      'setaccount',
     ]),
   },
 };

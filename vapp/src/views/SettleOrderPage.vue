@@ -107,7 +107,7 @@ export default {
         this.changeNote.encrypt(),
       ]);
       this.dex.settleOrder(this.order.orderId, ...this.proof, encoded, {
-        from: this.coinbase,
+        from: this.account,
       }).then(() => {
         setTimeout(() => {
           this.loading = false;

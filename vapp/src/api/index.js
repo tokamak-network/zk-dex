@@ -8,9 +8,19 @@ function createInstance () {
 
 const instance = createInstance();
 
+async function getViewingKey (key) {
+  const res = await instance.get(`/vk/${key}`);
+  return res.data.vk;
+}
+
 async function getNotes (key) {
   const res = await instance.get(`/notes/${key}`);
   return JSON.parse(res.data.notes);
+}
+
+async function getAccounts (key) {
+  const res = await instance.get(`/accounts/${key}`);
+  return JSON.parse(res.data.accounts);
 }
 
 async function getOrders () {
@@ -23,10 +33,24 @@ async function getOrderCount () {
   return res.data.count;
 }
 
-function addNote (key, note) {
-  return instance.post('/notes', {
+async function setViewingKey (key, vk) {
+  return instance.post('/vk', {
     key,
+    vk,
+  });
+}
+
+function addNote (account, note) {
+  return instance.post('/notes', {
+    account,
     note,
+  });
+}
+
+function addAccount (key, account) {
+  return instance.post('/accounts', {
+    key,
+    account,
   });
 }
 
@@ -48,7 +72,13 @@ function generateProof (params) {
   return instance.post('/circuit', params);
 }
 
+function createAccount () {
+  return instance.post('/account');
+}
+
 export {
+  getViewingKey,
+  setViewingKey,
   getNotes,
   getOrders,
   getOrderCount,
@@ -56,4 +86,7 @@ export {
   updateNoteState,
   addOrder,
   generateProof,
+  createAccount,
+  addAccount,
+  getAccounts,
 };
