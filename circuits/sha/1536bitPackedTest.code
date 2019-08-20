@@ -1,40 +1,10 @@
-import "utils/pack/pack128.code" as pack128
-import "utils/pack/unpack128.code" as unpack128
-import "utils/pack/nonStrictUnpack256.code" as unpack256
-import "./1536bitPadded.code" as sha256
+import "./1536bitPacked.code" as sha256
 
 def main() -> (field):
-  a = unpack128(0)
-  b = unpack128(0)
-  c = unpack128(0)
-  d = unpack128(0)
-  e = unpack128(0)
-  f = unpack128(0)
-  g = unpack128(0)
-  h = unpack128(0)
-  i = unpack128(0)
-  j = unpack128(0)
-  k = unpack128(0)
-  l = unpack128(0)
-
-
-  field[256] lhs1 = [...a, ...b]
-  field[256] lhs2 = [...c, ...d]
-  field[256] lhs3 = [...e, ...f]
-  field[256] rhs1 = [...g, ...h]
-  field[256] rhs2 = [...i, ...j]
-  field[256] rhs3 = [...k, ...l]
-
-  field[256] r = sha256(lhs1, lhs2, lhs3, rhs1, rhs2, rhs3)
-
-  res0 = pack128(r[..128])
-  res1 = pack128(r[128..])
+  h = sha256([0, 0, 0, 0, 0, 0, 0])
 
   field[2] result = [124334422911111396289769072584791590702, 3487650632839358898875693501852664245]
-  result[0] == res0
-  result[1] == res1
+  result[0] == h[0]
+  result[1] == h[1]
 
   return 1
-
-  
-  
