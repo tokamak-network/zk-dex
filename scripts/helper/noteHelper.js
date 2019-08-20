@@ -4,20 +4,26 @@ const crypto = require('crypto');
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
-function getNoteHash(owner, amount, type, viewKey, salt, isSmart) {
-  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
-  const { noteOwner } = paddedO;
-  const { splittedNoteOwner } = paddedO;
+function getNoteHash(pk0, pk1, value, type, viewKey, salt) {
+  const paddedO = _toPadedObject(pk0, pk1, value, type, viewKey, salt);
+  const { notePk0 } = paddedO;
+  const { notePk1 } = paddedO;
   const { noteValue } = paddedO;
   const { noteType } = paddedO;
-  const { noteViewKey } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
-  const { noteIsSmart } = paddedO;
 
-  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
-
+  const note = notePk0 + notePk1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
+  console.log("Pk0", notePk0);
+  console.log("Pk1", notePk1);
+  console.log("value", noteValue);
+  console.log("type", noteType);
+  console.log("viewKey", splittedNoteViewKey.join(''));
+  console.log("salt", noteSalt);
+  console.log("note", note)
+  
   const hashArr = toHashed(note);
+  
   return hashArr[0] + hashArr[1];
 }
 
@@ -140,30 +146,28 @@ function getNoteParamsForSettleOrder(owner, amount, type, viewKey, salt, isSmart
   return noteParams;
 }
 
-function _toPadedObject(owner, amount, type, viewKey, salt, isSmart) {
+function _toPadedObject(pk0, pk1, value, type, viewKey, salt) {
   // all params should look like this "0001"(o), "0x0001"(x)
-  const noteOwner = new BN(owner, 16).toString(16); // 32 bytes = 256 bits
-  const splittedNoteOwner = _checkLenAndReturn(noteOwner);
+  const notePk0 = new BN(pk0, 16).toString(16, 64); // 256bits
+  const notePk1 = new BN(pk1, 16).toString(16, 64); // 256bits
 
-  const noteValue = new BN(amount, 16).toString(16, 32); // 16 bytes = 128 bits
-  const noteType = new BN(type, 16).toString(16, 32); // 16 bytes = 128 bits
+  const noteValue = new BN(value, 16).toString(16, 64); // 256bits
+  const noteType = new BN(type, 16).toString(16, 64); // 256bits
 
-  const noteViewKey = new BN(viewKey, 16).toString(16); // 32 bytes = 256 bits
+  const noteViewKey = new BN(viewKey, 16).toString(16, 64); // 256bits
 
   const splittedNoteViewKey = _checkLenAndReturn(noteViewKey);
 
-  const noteSalt = new BN(salt, 16).toString(16, 32); // 16 bytes = 128 bits
-  const noteIsSmart = new BN(isSmart, 16).toString(16, 32); // 16 bytes = 128 bits
+  const noteSalt = new BN(salt, 16).toString(16, 64); // 256bits
 
   const result = {
-    noteOwner,
-    splittedNoteOwner,
+    notePk0,
+    notePk1,
     noteValue,
     noteType,
     noteViewKey,
     splittedNoteViewKey,
     noteSalt,
-    noteIsSmart,
   };
 
   return result;

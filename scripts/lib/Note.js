@@ -6,12 +6,12 @@ const noteHelper = require('../helper/noteHelper');
 
 const mode = 'aes-256-cbc';
 
-const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 32);
-const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 32);
+const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
+const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
 
 const { BN } = Web3Utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
-
+const MAX_FIELD_VALUE = new BN('21888242871839275222246405745257275088548364400416034343698204186575808495616')
 
 const sampleProof = `{
   "proof": {
@@ -48,31 +48,39 @@ const NoteState = {
 };
 
 class Note {
-  constructor(owner, value, token, viewingKey, salt, isSmart = false) {
-    this.owner = Web3Utils.padLeft(Web3Utils.toHex(owner), 64);
-    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 32);
-    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 32);
-    this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
-    this.isSmart = Web3Utils.padLeft(isSmart ? '0x1' : '0x0', 32);
+  constructor(pk0, pk1, value, token, viewingKey, salt) {
+    this.pk0 = Web3Utils.padLeft(Web3Utils.toHex(pk0), 64);
+    this.pk1 = Web3Utils.padLeft(Web3Utils.toHex(pk1), 64);
+    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
+    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
+    this.viewKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
   }
 
-  getOwner() {
-    if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
-      return this.owner;
-    }
+  // getOwner() {
+  //   if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
+  //     return this.owner;
+  //   }
 
-    return util.marshal(this.owner.slice(-40));
+  //   return util.marshal(this.owner.slice(-40));
+  // }
+
+  getPk0() {
+    return pk0
+  }
+
+  getPk1() {
+    return pk1
   }
 
   hash() {
     return util.marshal(noteHelper.getNoteHash(
-      util.unmarshal(this.owner),
+      util.unmarshal(this.pk0),
+      util.unmarshal(this.pk1),
       util.unmarshal(this.value),
       util.unmarshal(this.token),
-      util.unmarshal(this.viewingKey),
-      util.unmarshal(this.salt),
-      util.unmarshal(this.isSmart),
+      util.unmarshal(this.viewKey),
+      util.unmarshal(this.salt)
     ));
   }
 
@@ -201,6 +209,7 @@ console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);
 
 module.exports = {
   constants: {
+    MAX_FIELD_VALUE,
     ETH_TOKEN_TYPE,
     DAI_TOKEN_TYPE,
     EMPTY_NOTE_HASH,
