@@ -1,7 +1,14 @@
 <template>
-  <div class="zone" style="text-align: center;">
-    <h2 style="margin-bottom: 20px;">Accounts</h2>
-    <table class="table">
+  <div class="box">
+    <div class="columns is-vcentered">
+      <div class="column" style="float: left;">
+        <p style="margin-left: 10px;">Accounts</p>
+      </div>
+      <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="$route.path === '/'">
+        <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
+      </div>
+    </div>
+    <table class="table fixed_header">
       <thead>
         <tr>
           <th>Index</th>
@@ -11,16 +18,14 @@
         </tr>
       </thead>
       <tbody>
-        <!-- <tr v-for="(account, index) in accounts" @click="selectAccount(account)" :class="{ 'is-selected': account == selectedAccount }"> -->
         <tr v-for="(account, index) in accounts">
           <td>{{index}}</td>
-          <td>{{account.address}}</td>
+          <td>{{account.address | abbreviate}}</td>
           <td>{{account.name}}</td>
           <td>{{account.numberOfNotes}}</td>
         </tr>
       </tbody>
     </table>
-    <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE</button>
   </div>
 </template>
 
@@ -31,20 +36,10 @@ import { createAccount, addAccount, getAccounts } from '../api/index';
 export default {
   data () {
     return {
-      accounts: [],
       done: true,
     };
   },
-  mounted () {
-    getAccounts(this.key).then((accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-        this.MUTATE_ACCOUNTS(accounts);
-      } else {
-        alert('you have to make account!');
-      }
-    });
-  },
+  props: ['accounts'],
   computed: {
     ...mapState({
       key: state => state.key,
@@ -57,12 +52,13 @@ export default {
       createAccount().then((res) => {
         const account = {
           address: res.data.address,
-          name: 'main',
-          numberOfNotes: 10,
+          name: '',
+          numberOfNotes: 0,
         };
-        this.accounts.push(account);
-        addAccount(this.key, account);
-        this.done = true;
+        addAccount(this.key, account).then(() => {
+          this.$emit('addNewAccount', account);
+          this.done = true;
+        });
       });
     },
   },

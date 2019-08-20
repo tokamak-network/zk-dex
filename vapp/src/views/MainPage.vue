@@ -9,8 +9,8 @@
             </a>
           </div>
           <div class="navbar-start" style="margin-left: 20px;">
-            <router-link class="navbar-item" to="/wallet">Wallet</router-link>
-            <router-link class="navbar-item" to="/market">Market</router-link>
+            <router-link class="navbar-item" to="/">Dashboard</router-link>
+            <router-link class="navbar-item" to="/exchange">Exchange</router-link>
           </div>
           <div class="navbar-end">
             <div class="navbar-item">
@@ -47,11 +47,6 @@ export default {
   components: {
     MetaMask,
     ZkDexContract,
-  },
-  beforeCreate () {
-    if (this.$route.path === '/') {
-      this.$router.push({ path: '/wallet' });
-    }
   },
 };
 </script>

@@ -6,9 +6,15 @@ Vue.use(Router);
 
 import LoginPage from '../views/LoginPage.vue';
 import MainPage from '../views/MainPage.vue';
-import WalletPage from '../views/WalletPage.vue';
-import MarketPage from '../views/MarketPage.vue';
-import MintNotePage from '../views/MintNotePage.vue';
+import DashboardPage from '../views/DashboardPage.vue';
+import DashboardSummaryPage from '../views/DashboardSummaryPage.vue';
+import ExchangePage from '../views/ExchangePage.vue';
+import NotePage from '../views/NotePage.vue';
+import NoteTransferPage from '../views/NoteTransferPage.vue';
+import NoteWalletPage from '../views/NoteWalletPage.vue';
+import NoteCombinePage from '../views/NoteCombinePage.vue';
+import HistoryNoteTransferPage from '../views/HistoryNoteTransferPage.vue';
+import HistoryOrderPage from '../views/HistoryOrderPage.vue';
 
 const routes = [
   {
@@ -20,16 +26,42 @@ const routes = [
     component: MainPage,
     children: [
       {
-        path: 'wallet',
-        component: WalletPage,
+        path: '',
+        component: DashboardPage,
+        children: [
+          {
+            path: '',
+            component: DashboardSummaryPage,
+          },
+          {
+            path: 'note',
+            component: NotePage,
+          },
+          {
+            path: 'transfer',
+            component: NoteTransferPage,
+          },
+          {
+            path: 'wallet',
+            component: NoteWalletPage,
+          },
+          {
+            path: 'combine',
+            component: NoteCombinePage,
+          },
+          {
+            path: 'note/transfer',
+            component: HistoryNoteTransferPage,
+          },
+          {
+            path: 'order',
+            component: HistoryOrderPage,
+          },
+        ],
       },
       {
-        path: 'market',
-        component: MarketPage,
-      },
-      {
-        path: 'mint',
-        component: MintNotePage,
+        path: 'exchange',
+        component: ExchangePage,
       },
     ],
   },

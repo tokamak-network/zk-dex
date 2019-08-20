@@ -1,51 +1,44 @@
 const LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./localstorage');
 
-function setViewingKey (key, viewingKey) {
-  localStorage.setItem(`${key}viewingkey`, viewingKey);
-}
-
 function getViewingKey (key) {
   return localStorage.getItem(`${key}viewingkey`);
 }
 
-function _setNotes (key, notes) {
-  localStorage.setItem(`${key}notes`, notes);
-}
-
-function getNotes (key) {
-  return localStorage.getItem(`${key}notes`);
-}
-
-function addNote (key, note) {
-  let notes = getNotes(key);
-  if (!notes) {
-    notes = [];
-  } else {
-    notes = JSON.parse(notes);
-  }
-
-  let modified = false;
-  for (let i = 0; i < notes.length; i++) {
-    if (notes[i].hash === note.hash) {
-      notes[i].state = note.state;
-      modified = true;
-      break;
-    }
-  }
-
-  if (!modified) {
-    notes.push(note);
-  }
-  _setNotes(key, JSON.stringify(notes));
-}
-
-function _setAccounts (key, notes) {
-  localStorage.setItem(`${key}accounts`, notes);
-}
-
 function getAccounts (key) {
   return localStorage.getItem(`${key}accounts`);
+}
+
+function getNotes (account) {
+  return localStorage.getItem(`${account}notes`);
+}
+
+function getTransferNotes (account) {
+  return localStorage.getItem(`${account}transfernotes`);
+}
+
+function getOrder (id) {
+  let orders = getOrders();
+  if (!orders) {
+    return;
+  } else {
+    orders = JSON.parse(orders);
+  }
+
+  for (let i = 0; i < orders.length; i++) {
+    if (orders[i].orderId.toString() === id) {
+      return orders[i];
+    }
+  }
+  return null;
+}
+
+function getOrdersByAccount (account) {
+  return localStorage.getItem(`${account}orders`);
+}
+
+function getOrders () {
+  return localStorage.getItem('orders');
 }
 
 function addAccount (key, account) {
@@ -59,72 +52,143 @@ function addAccount (key, account) {
   _setAccounts(key, JSON.stringify(accounts));
 }
 
-// function updateNoteState (key, hash, state) {
-//   let notes = getNotes(key);
-//   if (!notes) {
-//     return;
-//   } else {
-//     notes = JSON.parse(notes);
-//   }
-
-//   for (const note in notes) {
-//     if (notes[note].hash === hash) {
-//       notes[note].state = state;
-//     }
-//   }
-
-//   _setNotes(key, JSON.stringify(notes));
-// }
-
-function getOrderCount () {
-  const count = localStorage.getItem('orderCount');
-  return parseInt(count);
+function addNote (account, note) {
+  let notes = getNotes(account);
+  if (!notes) {
+    notes = [];
+  } else {
+    notes = JSON.parse(notes);
+  }
+  notes.push(note);
+  _setNotes(account, JSON.stringify(notes));
 }
 
-function setOrderCount (count) {
-  localStorage.setItem('orderCount', count);
+function addTransferNote (account, note) {
+  let notes = getTransferNotes(account);
+  if (!notes) {
+    notes = [];
+  } else {
+    notes = JSON.parse(notes);
+  }
+  notes.push(note);
+  _setTransferNotes(account, JSON.stringify(notes));
 }
 
-function setOrders (orders) {
-  localStorage.setItem('orders', orders);
-}
-
-function getOrders () {
-  return localStorage.getItem('orders');
+function addOrderByAccount (account, order) {
+  let orders = getOrdersByAccount(account);
+  if (!orders) {
+    orders = [];
+  } else {
+    orders = JSON.parse(orders);
+  }
+  orders.push(order);
+  _setOrdersByAccount(account, JSON.stringify(orders));
 }
 
 function addOrder (order) {
-  const count = getOrderCount() + 1;
-  const orders = JSON.parse(getOrders());
-
-  order.id = count;
+  let orders = getOrders('orders');
+  if (!orders) {
+    orders = [];
+  } else {
+    orders = JSON.parse(orders);
+  }
   orders.push(order);
-
-  setOrders(JSON.stringify(orders));
-  setOrderCount(count);
+  _setOrders(JSON.stringify(orders));
 }
 
-function _initOrderStorage () {
-  // NOTE: if server restarts, all the datas reset.
-  const orders = [];
-  setOrders(JSON.stringify(orders));
-  setOrderCount(0);
+function setViewingKey (key, viewingKey) {
+  localStorage.setItem(`${key}viewingkey`, viewingKey);
 }
 
-_initOrderStorage();
+function _setAccounts (key, notes) {
+  localStorage.setItem(`${key}accounts`, notes);
+}
+
+function _setNotes (key, notes) {
+  localStorage.setItem(`${key}notes`, notes);
+}
+
+function _setTransferNotes (key, notes) {
+  localStorage.setItem(`${key}transfernotes`, notes);
+}
+
+function _setOrders (orders) {
+  localStorage.setItem('orders', orders);
+}
+
+function _setOrdersByAccount (account, orders) {
+  localStorage.setItem(`${account}orders`, orders);
+}
+
+function updateNote (account, note) {
+  let notes = getNotes(account);
+  if (!notes) {
+    return;
+  } else {
+    notes = JSON.parse(notes);
+  }
+
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i].hash === note.hash) {
+      notes.splice(i, 1, note);
+      break;
+    }
+  }
+
+  _setNotes(account, JSON.stringify(notes));
+}
+
+function updateOrderByAccount (account, order) {
+  let orders = getOrdersByAccount(account);
+  if (!orders) {
+    return;
+  } else {
+    orders = JSON.parse(orders);
+  }
+
+  for (let i = 0; i < orders.length; i++) {
+    if (orders[i].orderId === order.orderId) {
+      orders.splice(i, 1, order);
+      break;
+    }
+  }
+
+  _setOrdersByAccount(account, JSON.stringify(orders));
+}
+
+function updateOrder (order) {
+  let orders = getOrders();
+  if (!orders) {
+    return;
+  } else {
+    orders = JSON.parse(orders);
+  }
+
+  for (let i = 0; i < orders.length; i++) {
+    if (orders[i].orderId === order.orderId) {
+      orders.splice(i, 1, order);
+      break;
+    }
+  }
+
+  _setOrders(JSON.stringify(orders));
+}
 
 module.exports = {
-  setViewingKey,
   getViewingKey,
-
-  getNotes,
-  addNote,
-  // updateNoteState,
-  getOrderCount,
-  setOrderCount,
-  setOrders,
-  getOrders,
-  addOrder,
-  addAccount,
   getAccounts,
+  getNotes,
+  getTransferNotes,
+  getOrdersByAccount,
+  getOrder,
+  getOrders,
+  addAccount,
+  addNote,
+  addTransferNote,
+  addOrderByAccount,
+  addOrder,
+  setViewingKey,
+  updateNote,
+  updateOrderByAccount,
+  updateOrder,
 };

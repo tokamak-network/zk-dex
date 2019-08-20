@@ -1,7 +1,9 @@
 <template>
-  <div style="text-align: center;">
-    <h2 style="margin-bottom: 20px;">MY NOTES</h2>
-    <table class="table">
+  <div class="box" style="text-align: center;">
+    <div style="float: left;">
+      <p style="margin-left: 10px; margin-bottom: 20px;">All Notes</p>
+    </div>
+    <table class="table fixed_header">
       <thead>
         <tr>
           <th>Note Hash</th>
@@ -9,20 +11,18 @@
           <th>Token</th>
           <th>VALUE</th>
           <th>STATE</th>
-          <!-- <th>IS SMART</th> -->
         </tr>
       </thead>
       <tbody>
-        <tr v-for="note in notes" @click="selectNote(note)" :class="{ 'is-selected': note == selectedNote }">
+        <tr v-for="note in notes" @click="selectNote(note)">
           <td>{{ note.hash | abbreviate }}</td>
-          <td>{{ note.owner | abbreviate }}</td>
+          <td>{{ note.owner | address | abbreviate }}</td>
           <td>{{ note.token | hexToNumberString | tokenType }}</td>
           <td>{{ note.value | hexToNumberString }}</td>
           <td>{{ note.state | noteState }}</td>
         </tr>
       </tbody>
     </table>
-    <!-- <p>selected note: {{ selectedNote }}</p> -->
   </div>
 </template>
 
@@ -34,10 +34,10 @@ import { getNotes } from '../api/index';
 export default {
   data () {
     return {
-      notes: [],
       selectedNote: null,
     };
   },
+  props: ['notes'],
   computed: {
     ...mapState({
       accounts: state => state.accounts,
@@ -58,37 +58,6 @@ export default {
         return n;
       });
     },
-    async getNotes () {
-      this.notes = [];
-      for (let i = 0; i < this.accounts.length; i++) {
-        const notes = await getNotes(this.accounts[i].address);
-        if (notes != null) {
-          this.notes.push(...notes);
-        }
-      }
-    },
-
-    // handleNoteToMakeOrder (index, note) {
-    //   this.setNote(this.notes[index]);
-    //   this.$router.push({ path: '/make' });
-    // },
-    // handleNoteToTakeOrder (index, note) {
-    //   this.setNote(this.notes[index]);
-    //   this.$router.push({ path: '/take' });
-    // },
-    // handleNoteToTransfer (index, note) {
-    //   this.setNote(this.notes[index]);
-    //   this.$router.push({ path: '/transfer' });
-    // },
-  },
-  mounted () {
-    this.getNotes();
-    this.$store.watch(
-      (state, getters) => getters.accounts,
-      () => {
-        this.getNotes();
-      }
-    );
   },
 };
 </script>

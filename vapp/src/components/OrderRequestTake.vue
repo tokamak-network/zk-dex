@@ -8,7 +8,7 @@
       </p>
       <p class="control is-expanded">
         <a class="button is-static" style="width: 100%;">
-          {{ selectedOrderId }}
+          {{ orderId }}
         </a>
       </p>
     </div>
@@ -18,9 +18,9 @@
           Price
         </a>
       </p>
-       <p class="control is-expanded">
+      <p class="control is-expanded">
         <a class="button is-static" style="width: 100%;">
-          {{ selectedOrderPrice }}
+          {{ orderPrice | hexToNumberString }}
         </a>
       </p>
     </div>
@@ -44,13 +44,12 @@
       </p>
       <p class="control is-expanded">
         <a class="button is-static" style="width: 100%;">
-          {{ noteValue }}
+          {{ noteValue | hexToNumberString }}
         </a>
       </p>
     </div>
-    <div style="float: right; margin-top: 10px;">
-      <button class="button" style="margin-right: 10px;" v-bind:class="loading" @click="getProof">Generate Proof</button>
-      <button class="button" @click="takeOrder">Take Order</button>
+    <div style="margin-top: 10px; display: flex; justify-content: flex-end">
+      <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Take Order</button>
     </div>
   </div>
 </template>
@@ -60,132 +59,151 @@ import { mapState } from 'vuex';
 import { constants, decrypt, Note } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import {
+  getOrder,
   addNote,
+  addOrderByAccount,
   addOrder,
-  getOrderCount,
   generateProof,
+  updateNote,
+  updateOrderByAccount,
+  updateOrder,
 } from '../api/index';
 
 export default {
   data () {
     return {
-      price: '',
-      proof: '',
-      loaded: false,
-      activeTab: 0,
-      selectedNote: null,
-      noteHash: null,
-      noteValue: null,
-      selectedOrderId: null,
-      selectedOrderPrice: null,
-      makerNote: null,
-      stakeNote: null,
+      loading: false,
+      orderId: '',
+      orderPrice: '',
+      noteHash: '',
+      noteValue: '',
+      salt: null,
     };
+  },
+  computed: {
+    ...mapState({
+      coinbase: state => state.web3.coinbase,
+      viewingKey: state => state.viewingKey,
+      note: state => state.note,
+      order: state => state.order,
+      dex: state => state.dexContractInstance,
+    }),
+  },
+  created () {
+    this.salt = Web3Utils.randomHex(16);
   },
   mounted () {
     this.$store.watch(
       (state, getters) => getters.note,
       () => {
-        this.proof = '';
-        this.selectedNote = this.note;
-        this.noteHash = this.selectedNote.hash;
-        this.noteValue = this.selectedNote.value;
+        this.noteHash = this.note.hash;
+        this.noteValue = this.note.value;
       }
     );
     this.$store.watch(
       (state, getters) => getters.order,
       () => {
-        this.selectedOrderId = this.order.orderId;
-        this.selectedOrderPrice = this.order.price;
+        this.orderId = this.order.orderId;
+        this.orderPrice = this.order.price;
       }
     );
-    if (this.order) {
-      this.selectedOrderId = this.order.orderId;
-      this.selectedOrderPrice = this.order.price;
-    }
-  },
-  computed: {
-    ...mapState({
-      order: state => state.order,
-      note: state => state.note,
-      account: state => state.account,
-      coinbase: state => state.web3.coinbase,
-      dex: state => state.dexContractInstance,
-      viewingKey: state => state.viewingKey,
-    }),
-    loading: function () {
-      return {
-        'is-loading': this.loaded,
-      };
-    },
   },
   methods: {
-    async setMakerNoteInOrder () {
-      // TODO: 안됨.
-      const encryptedNote = await this.dex.encryptedNotes(this.order.makerNote);
-      this.makerNote = decrypt(encryptedNote, this.order.makerViewingKey);
-    },
-    async makeStakeNote () {
-      await this.setMakerNoteInOrder();
-
-      const makerViewingKey = this.order.makerViewingKey;
-      const salt = Web3Utils.randomHex(16);
-
-      // note -> takerNote
-      // constants.ETH_TOKEN_TYPE
-
-      // 오더안에 있음 maker note
-      this.stakeNote = new Note(
-        this.makerNote.hash(),
+    stakeNote () {
+      const stakeNote = new Note(
+        this.order.makerNote,
         this.note.value,
-        constants.ETH_TOKEN_TYPE,
-        makerViewingKey,
-        salt,
+        this.order.targetToken,
+        this.order.makerViewingKey,
+        this.salt,
         true
       );
+      return stakeNote;
     },
-    // TDOO: modify logic
-    noteParam (note) {
-      const n = note;
-      delete n.hash;
-      delete n.state;
-      return n;
+    takerNote () {
+      const note = this.note;
+      delete note.hash;
+      delete note.state;
+
+      return note;
     },
-    getProof () {
-      const takerNote = this.noteParam(this.note);
-      this.loaded = true;
-      this.makeStakeNote().then(() => {
-        const params = {
-          circuit: 'takeOrder',
-          params: [this.makerNote, takerNote, this.stakeNote],
-        };
-        generateProof(params)
-          .then(res => (this.proof = res.data.proof))
-          .catch(e => console.log(e))
-          .finally(() => (this.loaded = false));
-      });
+    async proof () {
+      const takerNote = this.takerNote();
+      const stakeNote = this.stakeNote();
+      const params = {
+        circuit: 'takeOrder',
+        params: [this.order.makerNote, takerNote, stakeNote],
+      };
+      const res = await generateProof(params);
+
+      return res.data.proof;
     },
     async takeOrder () {
-      const tx = await this.dex.takeOrder(this.order.orderId, ...this.proof, this.stakeNote.encrypt(), {
-        from: this.coinbase,
-      });
+      this.loading = true;
 
-      const note = {
-        hash: tx.logs[0].args.note,
-        state: tx.logs[0].args.state,
-      };
-      await addNote(this.account, note);
+      const takerNote = this.takerNote();
+      const stakeNote = this.stakeNote();
+      const proof = await this.proof();
+      const tx = await this.dex.takeOrder(
+        this.order.orderId,
+        ...proof,
+        stakeNote.encrypt(),
+        {
+          from: this.coinbase,
+        }
+      );
 
-      this.stakeNote.hash = tx.logs[1].args.note;
-      this.stakeNote.state = tx.logs[1].args.state;
-      await addNote(this.account, this.stakeNote);
+      if (tx.receipt.status) {
+        const taker = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(takerNote.owner)),
+          20
+        );
+        const maker = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(this.order.orderMaker)),
+          20
+        );
 
-      // const order = await this.dex.orders(this.orderId);
-      // await addOrder(order);
+        const hash1 = tx.logs[0].args.note;
+        const state1 = Web3Utils.hexToNumberString(
+          Web3Utils.toHex(tx.logs[0].args.state)
+        );
+        takerNote.hash = hash1;
+        takerNote.state = state1;
+        await updateNote(taker, takerNote);
+        this.$parent.$emit('updateNote', takerNote);
 
-      setTimeout(() => {
-        this.$router.push({ path: '/main' });
-      }, 3000);
+        const hash2 = tx.logs[1].args.note;
+        const state2 = Web3Utils.hexToNumberString(
+          Web3Utils.toHex(tx.logs[1].args.state)
+        );
+        stakeNote.hash = hash2;
+        stakeNote.state = state2;
+        await addNote(maker, stakeNote);
+        this.$parent.$emit('addNote', stakeNote);
+        // TODO: if taking order occurs between same accounts, it is not reflect view.
+
+        const order = await getOrder(this.order.orderId);
+        order.state = '1';
+        await updateOrderByAccount(maker, order);
+
+        order.type = 'Buy';
+        order.orderTaker = taker;
+        order.receivedNote = takerNote.hash;
+        order.receivedAmount = takerNote.value;
+        order.timestamp = new Date().getTime();
+        await updateOrder(order);
+        await addOrderByAccount(taker, order);
+        this.$parent.$emit('updateOrder', order);
+      } else {}
+
+      this.loading = false;
+      this.clear();
+    },
+    clear () {
+      this.orderId = '';
+      this.orderPrice = '';
+      this.noteHash = '';
+      this.noteValue = '';
     },
   },
 };

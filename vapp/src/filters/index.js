@@ -1,9 +1,14 @@
 // eg. num | padLeft(32)
+import Web3Utils from 'web3-utils';
 export { padLeft, hexToNumberString } from 'web3-utils';
 
 // BN to number string
 export function toNumberString (value) {
   return value.toString();
+}
+
+export function address (a) {
+  return Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(a)), 20);
 }
 
 export function orderState (value) {
@@ -34,8 +39,8 @@ export function noteState (value) {
   }
 }
 
-export function tokenType (value) {
-  switch (value) {
+export function tokenType (type) {
+  switch (type) {
   case '0':
     return 'ETH';
   case '1':

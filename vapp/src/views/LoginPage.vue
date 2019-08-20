@@ -23,7 +23,7 @@ export default {
   },
   mounted () {
     if (this.key !== null) {
-      this.$router.push({ path: '/wallet' });
+      this.$router.push({ path: '/' });
     }
   },
   methods: {
@@ -41,7 +41,7 @@ export default {
           }
           this.SET_KEY(this.userKey);
           this.SET_VIEWING_KEY(vk);
-          this.$router.push({ path: '/wallet' });
+          this.$router.push({ path: '/' });
         });
     },
   },

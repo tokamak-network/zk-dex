@@ -37,9 +37,28 @@ body,
   width: 100%;
 }
 
-.zone {
-  border: 2px solid #f3f3f3;
-  padding: 10px;
-  border-radius: 25px;
+html CSS Result EDIT ON .fixed_header {
+  width: 400px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.fixed_header tbody {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  height: 200px;
+  cursor: pointer;
+}
+
+.fixed_header thead tr {
+  display: block;
+}
+
+.fixed_header th,
+.fixed_header td {
+  padding: 5px;
+  text-align: left;
+  width: 200px;
 }
 </style>

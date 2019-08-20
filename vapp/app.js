@@ -11,16 +11,22 @@ const {
 } = require('../scripts/lib/dockerUtils');
 
 const {
-  addAccount,
-  setViewingKey,
   getViewingKey,
-  addNote,
-  updateNoteState,
-  getAccounts,
   getNotes,
-  addOrder,
+  getTransferNotes,
+  getAccounts,
+  getOrder,
   getOrders,
-  getOrderCount,
+  getOrdersByAccount,
+  addAccount,
+  addNote,
+  addTransferNote,
+  addOrder,
+  addOrderByAccount,
+  setViewingKey,
+  updateNote,
+  updateOrder,
+  updateOrderByAccount,
 } = require('./localstorage');
 
 const generators = {
@@ -40,6 +46,7 @@ app.use(
   })
 );
 
+// get
 app.get(
   '/vk/:key',
   function (req, res) {
@@ -47,38 +54,6 @@ app.get(
     const vk = getViewingKey(key);
     return res.status(200).json({
       vk,
-    });
-  }
-);
-
-app.get(
-  '/orders/count',
-  function (_, res) {
-    const count = getOrderCount();
-    return res.status(200).json({
-      count,
-    });
-  }
-);
-
-app.get(
-  '/orders',
-  function (req, res) {
-    const orders = getOrders();
-    return res.status(200).json({
-      orders,
-    });
-  }
-);
-
-// TODO: key -> account
-app.get(
-  '/notes/:account',
-  function (req, res) {
-    const account = req.params.account;
-    const notes = getNotes(account);
-    return res.status(200).json({
-      notes,
     });
   }
 );
@@ -94,6 +69,61 @@ app.get(
   }
 );
 
+app.get(
+  '/notes/:account',
+  function (req, res) {
+    const account = req.params.account;
+    const notes = getNotes(account);
+    return res.status(200).json({
+      notes,
+    });
+  }
+);
+
+app.get(
+  '/notes/transfer/:account',
+  function (req, res) {
+    const account = req.params.account;
+    const notes = getTransferNotes(account);
+    return res.status(200).json({
+      notes,
+    });
+  }
+);
+
+app.get(
+  '/order/:id',
+  function (req, res) {
+    const id = req.params.id;
+    const order = getOrder(id);
+    return res.status(200).json({
+      order,
+    });
+  }
+);
+
+app.get(
+  '/orders/:account',
+  function (req, res) {
+    const account = req.params.account;
+    const orders = getOrdersByAccount(account);
+    return res.status(200).json({
+      orders,
+    });
+  }
+);
+
+app.get(
+  '/orders',
+  function (req, res) {
+    const orders = getOrders();
+    return res.status(200).json({
+      orders,
+    });
+  }
+);
+
+// post
 app.post(
   '/account',
   function (req, res) {
@@ -101,25 +131,6 @@ app.post(
     return res.status(200).json({
       address,
     });
-  }
-);
-
-app.post(
-  '/vk',
-  function (req, res) {
-    const key = req.body.key;
-    const vk = req.body.vk;
-    setViewingKey(key, vk);
-    return res.status(200).json({});
-  }
-);
-
-app.post(
-  '/orders',
-  function (req, res) {
-    const order = req.body.order;
-    addOrder(order);
-    return res.status(200).json({});
   }
 );
 
@@ -134,6 +145,45 @@ app.post(
 );
 
 app.post(
+  '/notes/transfer',
+  function (req, res) {
+    const account = req.body.account;
+    const note = req.body.note;
+    addTransferNote(account, note);
+    return res.status(200).json({});
+  }
+);
+
+app.post(
+  '/orders/:account',
+  function (req, res) {
+    const account = req.params.account;
+    const order = req.body.order;
+    addOrderByAccount(account, order);
+    return res.status(200).json({});
+  }
+);
+
+app.post(
+  '/orders',
+  function (req, res) {
+    const order = req.body.order;
+    addOrder(order);
+    return res.status(200).json({});
+  }
+);
+
+app.post(
+  '/vk',
+  function (req, res) {
+    const key = req.body.key;
+    const vk = req.body.vk;
+    setViewingKey(key, vk);
+    return res.status(200).json({});
+  }
+);
+
+app.post(
   '/accounts',
   function (req, res) {
     const key = req.body.key;
@@ -142,17 +192,6 @@ app.post(
     return res.status(200).json({});
   }
 );
-
-// app.put(
-//   '/notes',
-//   function (req, res) {
-//     const key = req.body.key;
-//     const hash = req.body.hash;
-//     const state = req.body.state;
-//     updateNoteState(key, hash, state);
-//     return res.status(200).json({});
-//   }
-// );
 
 app.post(
   '/circuit',
@@ -170,6 +209,35 @@ app.post(
       proof,
     });
   })
+);
+
+app.put(
+  '/notes',
+  function (req, res) {
+    const account = req.body.account;
+    const note = req.body.note;
+    updateNote(account, note);
+    return res.status(200).json({});
+  }
+);
+
+app.put(
+  '/orders/:account',
+  function (req, res) {
+    const account = req.params.account;
+    const order = req.body.order;
+    updateOrderByAccount(account, order);
+    return res.status(200).json({});
+  }
+);
+
+app.put(
+  '/orders',
+  function (req, res) {
+    const order = req.body.order;
+    updateOrder(order);
+    return res.status(200).json({});
+  }
 );
 
 const Web3 = require('web3');

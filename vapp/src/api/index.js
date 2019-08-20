@@ -8,14 +8,10 @@ function createInstance () {
 
 const instance = createInstance();
 
+// get
 async function getViewingKey (key) {
   const res = await instance.get(`/vk/${key}`);
   return res.data.vk;
-}
-
-async function getNotes (key) {
-  const res = await instance.get(`/notes/${key}`);
-  return JSON.parse(res.data.notes);
 }
 
 async function getAccounts (key) {
@@ -23,20 +19,48 @@ async function getAccounts (key) {
   return JSON.parse(res.data.accounts);
 }
 
+async function getNotes (account) {
+  const res = await instance.get(`/notes/${account}`);
+  return JSON.parse(res.data.notes);
+}
+
+async function getTransferNotes (account) {
+  const res = await instance.get(`/notes/transfer/${account}`);
+  return JSON.parse(res.data.notes);
+}
+
+async function getOrdersByAccount (account) {
+  const res = await instance.get(`/orders/${account}`);
+  if (res.data === null) {
+    return [];
+  } else {
+    return JSON.parse(res.data.orders);
+  }
+}
+
+async function getOrder (id) {
+  const res = await instance.get(`/order/${id}`);
+  if (res.data === null) {
+    return null;
+  } else {
+    return res.data.order;
+  }
+}
+
 async function getOrders () {
   const res = await instance.get('/orders');
-  return JSON.parse(res.data.orders);
+  if (res.data === null) {
+    return [];
+  } else {
+    return JSON.parse(res.data.orders);
+  }
 }
 
-async function getOrderCount () {
-  const res = await instance.get('/orders/count');
-  return res.data.count;
-}
-
-async function setViewingKey (key, vk) {
-  return instance.post('/vk', {
+// post
+function addAccount (key, account) {
+  return instance.post('/accounts', {
     key,
-    vk,
+    account,
   });
 }
 
@@ -47,18 +71,16 @@ function addNote (account, note) {
   });
 }
 
-function addAccount (key, account) {
-  return instance.post('/accounts', {
-    key,
+function addTransferNote (account, note) {
+  return instance.post('/notes/transfer', {
     account,
+    note,
   });
 }
 
-function updateNoteState (key, hash, state) {
-  return instance.put('/notes', {
-    key,
-    hash,
-    state,
+function addOrderByAccount (account, order) {
+  return instance.post(`/orders/${account}`, {
+    order,
   });
 }
 
@@ -68,25 +90,59 @@ function addOrder (order) {
   });
 }
 
-function generateProof (params) {
-  return instance.post('/circuit', params);
+
+async function setViewingKey (key, vk) {
+  return instance.post('/vk', {
+    key,
+    vk,
+  });
 }
 
 function createAccount () {
   return instance.post('/account');
 }
 
+function generateProof (params) {
+  return instance.post('/circuit', params);
+}
+
+// put
+function updateNote (account, note) {
+  return instance.put('/notes', {
+    account,
+    note,
+  });
+}
+
+function updateOrderByAccount (account, order) {
+  return instance.put(`/orders/${account}`, {
+    order,
+  });
+}
+
+function updateOrder (order) {
+  return instance.put('/orders', {
+    order,
+  });
+}
+
 export {
   getViewingKey,
-  setViewingKey,
-  getNotes,
-  getOrders,
-  getOrderCount,
-  addNote,
-  updateNoteState,
-  addOrder,
-  generateProof,
-  createAccount,
-  addAccount,
   getAccounts,
+  getNotes,
+  getTransferNotes,
+  getOrder,
+  getOrdersByAccount,
+  getOrders,
+  addAccount,
+  addNote,
+  addTransferNote,
+  addOrderByAccount,
+  addOrder,
+  setViewingKey,
+  createAccount,
+  generateProof,
+  updateNote,
+  updateOrderByAccount,
+  updateOrder,
 };

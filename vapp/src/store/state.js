@@ -19,7 +19,7 @@ const state = {
     error: null,
   },
   contract: null,
-  path: '/wallet',
+  path: '/dashboard',
 };
 
 export default state;

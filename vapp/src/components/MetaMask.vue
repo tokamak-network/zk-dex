@@ -1,9 +1,7 @@
 <template>
   <div>
     <p>Network: {{ network }}</p>
-    <div style="margin-top: 20px" />
     <p>Account: {{ coinbase | abbreviate}}</p>
-    <div style="margin-top: 20px" />
     <p>Balance: {{ balance }} wei</p>
   </div>
 </template>
