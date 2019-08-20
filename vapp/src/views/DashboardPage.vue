@@ -11,9 +11,15 @@
           Accounts
         </p>
         <ul class="menu-list">
-          <li><a>Import</a></li>
-          <li><a>Export</a></li>
-          <li><a>Delete</a></li>
+          <li>
+            <router-link to="/account/import">Import</router-link>
+          </li>
+          <li>
+            <router-link to="/account/export">Export</router-link>
+          </li>
+          <li>
+            <router-link to="/account/delete">Delete</router-link>
+          </li>
         </ul>
         <p class="menu-label" style="margin-top: 30px;">
           Wallets

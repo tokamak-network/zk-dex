@@ -15,6 +15,9 @@ import NoteWalletPage from '../views/NoteWalletPage.vue';
 import NoteCombinePage from '../views/NoteCombinePage.vue';
 import HistoryNoteTransferPage from '../views/HistoryNoteTransferPage.vue';
 import HistoryOrderPage from '../views/HistoryOrderPage.vue';
+import AccountImportPage from '../views/AccountImportPage.vue';
+import AccountExportPage from '../views/AccountExportPage.vue';
+import AccountDeletePage from '../views/AccountDeletePage.vue';
 
 const routes = [
   {
@@ -56,6 +59,18 @@ const routes = [
           {
             path: 'order',
             component: HistoryOrderPage,
+          },
+          {
+            path: 'account/import',
+            component: AccountImportPage,
+          },
+          {
+            path: 'account/export',
+            component: AccountExportPage,
+          },
+          {
+            path: 'account/delete',
+            component: AccountDeletePage,
           },
         ],
       },
