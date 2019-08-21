@@ -51,8 +51,8 @@ export default {
           const notes = [];
           for (let i = 0; i < accounts.length; i++) {
             const n = await getNotes(accounts[i].address);
-            const f = n.filter(note => Web3Utils.hexToNumberString(note.token) === type);
             if (n != null) {
+              const f = n.filter(note => Web3Utils.hexToNumberString(note.token) === type);
               notes.push(...f);
             }
           }
