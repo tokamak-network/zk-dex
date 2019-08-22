@@ -52,6 +52,7 @@ export default {
           for (let i = 0; i < accounts.length; i++) {
             const n = await getNotes(accounts[i].address);
             if (n != null) {
+              // TODO: only 'valid' state's note can liquidate.
               const f = n.filter(note => Web3Utils.hexToNumberString(note.token) === type);
               notes.push(...f);
             }

@@ -185,6 +185,7 @@ export default {
         const order = await getOrder(this.order.orderId);
         order.state = '1';
         await updateOrderByAccount(maker, order);
+        this.$parent.$emit('updateOrder', order);
 
         order.type = 'Buy';
         order.orderTaker = taker;
@@ -193,7 +194,7 @@ export default {
         order.timestamp = new Date().getTime();
         await updateOrder(order);
         await addOrderByAccount(taker, order);
-        this.$parent.$emit('updateOrder', order);
+        this.$parent.$emit('addNewOrderOngoingHistory', order);
       } else {}
 
       this.loading = false;

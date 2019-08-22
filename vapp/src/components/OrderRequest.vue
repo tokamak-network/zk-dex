@@ -36,17 +36,22 @@ export default {
   },
   created () {
     this.$on('addNewOrder', this.addNewOrder);
+    this.$on('addNewOrderOngoingHistory', this.addNewOrderOngoingHistory);
     this.$on('updateNote', this.updateNote);
     this.$on('updateOrder', this.updateOrder);
   },
   beforeDestroy () {
     this.$off('addNewOrder', this.addNewOrder);
+    this.$off('addNewOrderOngoingHistory', this.addNewOrderOngoingHistory);
     this.$off('updateNote', this.updateNote);
     this.$off('updateOrder', this.updateOrder);
   },
   methods: {
     addNewOrder (order) {
       this.$parent.$emit('addNewOrder', order);
+    },
+    addNewOrderOngoingHistory (order) {
+      this.$parent.$emit('addNewOrderOngoingHistory', order);
     },
     updateNote (note) {
       this.$parent.$emit('updateNote', note);

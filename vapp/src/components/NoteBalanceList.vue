@@ -1,7 +1,7 @@
 <template>
   <div class="box" style="text-align: center;">
     <div style="float: left;">
-      <p style="margin-left: 10px; margin-bottom: 20px;">Total Balance</p>
+      <p style="margin-left: 10px;">Total Balance</p>
     </div>
     <div style="float: right;" v-if="$route.path === '/combine'">
       <section>

@@ -3,12 +3,12 @@
     <div class="columns">
       <div class="column is-three-fifths">
         <div>
-          <order-request />
+          <order-request style="margin-top: 10px"/>
           <note-list :notes="notes" />
         </div>
       </div>
       <div class="column">
-        <order-list :orders="orders" />
+        <order-list :orders="orders" style="margin-top: 10px;" />
       </div>
     </div>
     <div class="container">
@@ -69,6 +69,9 @@ export default {
     addNewOrder (order) {
       this.orders.push(order);
     },
+    addNewOrderOngoingHistory (order) {
+      this.personalOrders.push(order);
+    },
     updateNote (note) {
       for (let i = 0; i < this.notes.length; i++) {
         if (this.notes[i].hash === note.hash) {
@@ -111,11 +114,13 @@ export default {
       }
     });
     this.$on('addNewOrder', this.addNewOrder);
+    this.$on('addNewOrderOngoingHistory', this.addNewOrderOngoingHistory);
     this.$on('updateNote', this.updateNote);
     this.$on('updateOrder', this.updateOrder);
   },
   beforeDestroy () {
     this.$off('addNewOrder', this.addNewOrder);
+    this.$off('addNewOrderOngoingHistory', this.addNewOrderOngoingHistory);
     this.$off('updateNote', this.updateNote);
     this.$off('updateOrder', this.updateOrder);
   },

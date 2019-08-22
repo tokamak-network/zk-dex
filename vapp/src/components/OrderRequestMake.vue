@@ -125,6 +125,9 @@ export default {
 
         const orderId = (await this.dex.getOrderCount()) - 1;
         const order = await this.dex.orders(orderId);
+        order.sourceToken = Web3Utils.hexToNumberString(Web3Utils.toHex(order.sourceToken));
+        order.targetToken = Web3Utils.hexToNumberString(Web3Utils.toHex(order.targetToken));
+        order.state = Web3Utils.hexToNumberString(Web3Utils.toHex(order.state));
         order.orderId = orderId;
         order.orderMaker = noteOwner;
         order.type = 'Sell';
@@ -133,6 +136,7 @@ export default {
         await addOrder(order);
         await addOrderByAccount(noteOwner, order);
         this.$parent.$emit('addNewOrder', order);
+        this.$parent.$emit('addNewOrderOngoingHistory', order);
       } else {}
 
       this.loading = false;

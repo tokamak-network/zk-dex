@@ -240,31 +240,6 @@ app.put(
   }
 );
 
-const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.WebsocketProvider('http://127.0.0.1:8545'));
-
-let ZkDex;
-if (typeof artifacts === 'undefined') {
-  ZkDex = require('truffle-contract')(require('../build/contracts/ZkDex.json'));
-  ZkDex.setProvider(web3.currentProvider);
-} else {
-  ZkDex = artifacts.require('ZkDex');
-}
-
-(async () => {
-  const dexAddress = process.argv.slice(2)[0];
-
-  const zkdex = await ZkDex.at(dexAddress);
-  zkdex.NoteStateChange(async (err, res) => {
-    if (err !== null) {
-      console.error('Failed to listen NoteStateChange event', err);
-      return;
-    }
-
-    // const { note, state } = res.args;
-  });
-})();
-
 const keythereum = require('keythereum');
 
 function createAccount () {

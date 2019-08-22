@@ -3,40 +3,40 @@
     <div style="float: left;">
       <p style="margin-left: 10px; margin-bottom: 20px;">Ongoing Orders</p>
     </div>
-      <table class="table fixed_header">
-        <thead>
-          <tr>
-            <th>Market</th>
-            <th>Order</th>
-            <th>Type</th>
-            <th>Price</th>
-            <th>Note</th>
-            <th>Amount</th>
-            <th>Note(Received)</th>
-            <th>Amount(Received)</th>
-            <th>State</th>
-            <th>Timestamp</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="order in ongoingOrder">
-            <td>{{ order.sourceToken | tokenType }}-{{ order.targetToken | tokenType }}</td>
-            <td>{{ order.orderId }}</td>
-            <td>{{ order.type }}</td>
-            <td>{{ order.price | hexToNumberString }}</td>
-            <td>{{ order.makerNote | abbreviate }}</td>
-            <td>{{ order.amount | hexToNumberString }}</td>
-            <td>{{ order.receivedNote | abbreviate }}</td>
-            <td>{{ order.receivedAmount | hexToNumberString }}</td>
-            <td>{{ order.state | orderState }}</td>
-            <td>{{ order.timestamp }}</td>
-            <td v-if="$route.path === '/exchange'">
-              <button class="button" @click="settleOrder(order)">Settle</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <table class="table fixed_header">
+      <thead>
+        <tr>
+          <th>Market</th>
+          <th>Order</th>
+          <th>Type</th>
+          <th>Price</th>
+          <th>Note</th>
+          <th>Amount</th>
+          <th>Note(Received)</th>
+          <th>Amount(Received)</th>
+          <th>State</th>
+          <th>Timestamp</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="order in ongoingOrder">
+          <td>{{ order.sourceToken | tokenType }}-{{ order.targetToken | tokenType }}</td>
+          <td>{{ order.orderId }}</td>
+          <td>{{ order.type }}</td>
+          <td>{{ order.price | hexToNumberString }}</td>
+          <td>{{ order.makerNote | abbreviate }}</td>
+          <td>{{ order.amount | hexToNumberString }}</td>
+          <td>{{ order.receivedNote | abbreviate }}</td>
+          <td>{{ order.receivedAmount | hexToNumberString }}</td>
+          <td>{{ order.state | orderState }}</td>
+          <td>{{ order.timestamp }}</td>
+          <td v-if="$route.path === '/exchange' && order.type === 'Sell' && order.state === '1'">
+            <button class="button" @click="settleOrder(order)">Settle</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -58,9 +58,18 @@ export default {
   },
   methods: {
     async notes (order) {
-      const makerNote = decrypt((await this.dex.encryptedNotes(order.makerNote)), order.makerViewingKey);
-      const takerNote = decrypt((await this.dex.encryptedNotes(order.parentNote)), order.makerViewingKey);
-      const stakeNote = decrypt((await this.dex.encryptedNotes(order.takerNoteToMaker)), order.makerViewingKey);
+      const makerNote = decrypt(
+        await this.dex.encryptedNotes(order.makerNote),
+        order.makerViewingKey
+      );
+      const takerNote = decrypt(
+        await this.dex.encryptedNotes(order.parentNote),
+        order.makerViewingKey
+      );
+      const stakeNote = decrypt(
+        await this.dex.encryptedNotes(order.takerNoteToMaker),
+        order.makerViewingKey
+      );
 
       const change = this.change(makerNote.value, takerNote.value);
 
