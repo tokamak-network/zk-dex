@@ -27,6 +27,7 @@ const {
   updateNote,
   updateOrder,
   updateOrderByAccount,
+  deleteAccount,
 } = require('./localstorage');
 
 const generators = {
@@ -127,9 +128,22 @@ app.get(
 app.post(
   '/account',
   function (req, res) {
-    const address = createAccount();
+    const passphrase = req.body.passphrase;
+    const address = createAccount(passphrase);
     return res.status(200).json({
       address,
+    });
+  }
+);
+
+app.post(
+  '/account/unlock',
+  function (req, res) {
+    const passphrase = req.body.passphrase;
+    const keystore = req.body.keystore;
+    const privateKey = unlockAccount(passphrase, keystore);
+    return res.status(200).json({
+      privateKey,
     });
   }
 );
@@ -240,11 +254,19 @@ app.put(
   }
 );
 
+app.put(
+  '/accounts/delete',
+  function (req, res) {
+    const key = req.body.key;
+    const address = req.body.address;
+    deleteAccount(key, address);
+    return res.status(200).json({});
+  }
+);
+
 const keythereum = require('keythereum');
 
-function createAccount () {
-  const password = '1234';
-
+function createAccount (passphrase) {
   const params = { keyBytes: 32, ivBytes: 16 };
   const dk = keythereum.create(params);
 
@@ -254,14 +276,24 @@ function createAccount () {
     kdfparams: { c: 262144, dklen: 32, prf: 'hmac-sha256' },
   };
   const keyObject = keythereum.dump(
-    password,
+    passphrase,
     dk.privateKey,
     dk.salt,
     dk.iv,
     options
   );
 
-  return '0x' + keyObject.address;
+  return keyObject;
+}
+
+function unlockAccount (passphrase, keystore) {
+  let privateKey;
+  try {
+    privateKey = keythereum.recover(passphrase, keystore);
+  } catch (err) {
+    privateKey = null;
+  }
+  return privateKey;
 }
 
 app.use(function (err, req, res, next) {

@@ -174,6 +174,22 @@ function updateOrder (order) {
   _setOrders(JSON.stringify(orders));
 }
 
+function deleteAccount (key, address) {
+  let accounts = getAccounts(key);
+  if (!accounts) {
+    return;
+  } else {
+    accounts = JSON.parse(accounts);
+  }
+  for (let i = 0; i < accounts.length; i++) {
+    if (accounts[i].address === address) {
+      accounts.splice(i, 1);
+      break;
+    }
+  }
+  _setAccounts(key, JSON.stringify(accounts));
+}
+
 module.exports = {
   getViewingKey,
   getAccounts,
@@ -191,4 +207,5 @@ module.exports = {
   updateNote,
   updateOrderByAccount,
   updateOrder,
+  deleteAccount,
 };

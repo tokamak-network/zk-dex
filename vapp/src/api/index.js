@@ -90,7 +90,6 @@ function addOrder (order) {
   });
 }
 
-
 async function setViewingKey (key, vk) {
   return instance.post('/vk', {
     key,
@@ -98,8 +97,17 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount () {
-  return instance.post('/account');
+function createAccount (passphrase) {
+  return instance.post('/account', {
+    passphrase,
+  });
+}
+
+function unlockAccount (passphrase, keystore) {
+  return instance.post('/account/unlock', {
+    passphrase,
+    keystore,
+  });
 }
 
 function generateProof (params) {
@@ -126,6 +134,13 @@ function updateOrder (order) {
   });
 }
 
+function deleteAccount (key, address) {
+  return instance.put('/accounts/delete', {
+    key,
+    address,
+  });
+}
+
 export {
   getViewingKey,
   getAccounts,
@@ -135,6 +150,7 @@ export {
   getOrdersByAccount,
   getOrders,
   addAccount,
+  unlockAccount,
   addNote,
   addTransferNote,
   addOrderByAccount,
@@ -145,4 +161,5 @@ export {
   updateNote,
   updateOrderByAccount,
   updateOrder,
+  deleteAccount,
 };

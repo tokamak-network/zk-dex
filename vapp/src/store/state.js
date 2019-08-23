@@ -1,4 +1,5 @@
 const state = {
+  account: null,
   accounts: [],
   dexContract: null,
   daiContract: null,

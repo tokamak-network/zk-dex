@@ -5,7 +5,7 @@
         <p style="margin-left: 10px;">Accounts</p>
       </div>
       <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="$route.path === '/'">
-        <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
+        <button class="button" @click="activeModal" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
       </div>
     </div>
     <table class="table fixed_header">
@@ -18,25 +18,45 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(account, index) in accounts">
-          <td>{{index}}</td>
-          <td>{{account.address | abbreviate}}</td>
-          <td>{{account.name}}</td>
-          <td>{{account.numberOfNotes}}</td>
+        <tr v-for="(account, index) in accounts" @click="selectAccount(account)">
+          <td>{{ index }}</td>
+          <td>{{ account.address }}</td>
+          <td>{{ account.name }}</td>
+          <td>{{ account.numberOfNotes }}</td>
         </tr>
       </tbody>
     </table>
+    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
+      <form action="">
+        <div class="modal-card" style="width: auto">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Create New Account</p>
+          </header>
+          <section class="modal-card-body">
+            <b-field label="Passphrase">
+              <b-input type="password" v-model="passphrase" password-reveal placeholder="Your password" required>
+              </b-input>
+            </b-field>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button" :class="{ 'is-static': passphrase === ''}" @click="createNewAccount">Create</button>
+          </footer>
+        </div>
+      </form>
+    </b-modal>
   </div>
 </template>
 
 <script>
-import { mapActions, mapMutations, mapState } from 'vuex';
+import { mapMutations, mapState } from 'vuex';
 import { createAccount, addAccount, getAccounts } from '../api/index';
 
 export default {
   data () {
     return {
       done: true,
+      createAccountModalActive: false,
+      passphrase: '',
     };
   },
   props: ['accounts'],
@@ -46,20 +66,31 @@ export default {
     }),
   },
   methods: {
-    ...mapMutations(['MUTATE_ACCOUNTS']),
+    ...mapMutations(['SET_ACCOUNT']),
+    selectAccount (account) {
+      this.SET_ACCOUNT(account);
+    },
     createNewAccount () {
       this.done = false;
-      createAccount().then((res) => {
-        const account = {
-          address: res.data.address,
-          name: '',
-          numberOfNotes: 0,
-        };
+      createAccount(this.passphrase).then((res) => {
+        const keystore = res.data.address;
+        const account = { };
+        account.keystore = keystore;
+        account.address = `0x${keystore.address}`;
+        account.name = '';
+        account.numberOfNotes = 0;
+
         addAccount(this.key, account).then(() => {
           this.$emit('addNewAccount', account);
           this.done = true;
         });
+        this.createAccountModalActive = false;
+        this.done = true;
+        this.passphrase = '';
       });
+    },
+    activeModal () {
+      this.createAccountModalActive = true;
     },
   },
 };
