@@ -11,8 +11,8 @@ function reduceParams(params) {
     .reduce((a, b) => `${a} ${b}`, '').trim();
 }
 
-function getMakeOrderCommand(owner, value, type, viewKey, salt, isSmart) {
-  const params = noteHelper.getNoteParamsForMakeOrder(owner, value, type, viewKey, salt, isSmart);
+function getMakeOrderCommand(pk0, pk1, value, type, viewKey, salt, sk) {
+  const params = noteHelper.getNoteParams(pk0, pk1, value, type, viewKey, salt);
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);
   }

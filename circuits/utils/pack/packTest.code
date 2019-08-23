@@ -1,0 +1,33 @@
+import "./unpack160.code" as unpack160
+import "./pack160.code" as pack160
+
+def main() -> (field):
+  field v0 = 248304133474667121178108093811581440926387306067
+  field v1 = 491813171138178780216770540422766799308480776401
+  field v2 = 1071884179390912349122621075355950910112101537385
+  field v3 = 576304136581641215052934876198110490478475603919
+  field v4 = 1444582512901321347014396814839648996742829834966
+  
+  unpacked0 = unpack160(v0)
+  field packed0 = pack160(unpacked0)
+  packed0 == v0
+  
+  unpacked1 = unpack160(v1)
+  field packed1 = pack160(unpacked1)
+  packed1 == v1
+
+  unpacked2 = unpack160(v2)
+  field packed2 = pack160(unpacked2)
+  packed2 == v2
+
+  unpacked3 = unpack160(v3)
+  field packed3 = pack160(unpacked3)
+  packed3 == v3
+
+  unpacked4 = unpack160(v4)
+  field packed4 = pack160(unpacked4)
+  packed4 == v4
+
+
+
+  return 1

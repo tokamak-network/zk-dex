@@ -4,12 +4,13 @@ const Web3Utils = require('web3-utils');
 const util = require('./util');
 
 const { constants } = require('./Note');
-const { getMintAndBurnCommand } = require('../helper/mintNBurnNoteHelper');
-const { getTransferParams } = require('../helper/transferNoteHelper');
-const { getMakeOrderCommand } = require('../helper/makeOrderHelper');
-const { getTakeOrderCommand } = require('../helper/takeOrderHelper');
-const { getSettleOrderCommand } = require('../helper/settleOrderHelper');
-
+const { 
+  getMintAndBurnCmd,
+  getTransferCmd,
+  getMakeOrderCmd,
+  getTakeOrderCmd,
+  getSettleOrderCmd,
+} = require('../helper/cmdHelper');
 
 const docker = new Docker();
 
@@ -72,126 +73,124 @@ async function execute(circuitName, cmd) {
 
 const convert = v => Web3Utils.toBN(v, 16);
 
-async function getMintNBurnProof(note) {
-  const cmdArgs = getMintAndBurnCommand(
+async function getMintNBurnProof(note, sk) {
+  const cmdArgs = getMintAndBurnCmd(
     convert(note.owner),
     convert(note.value),
     convert(note.token),
-    convert(note.viewingKey),
+    convert(note.viewKey),
     convert(note.salt),
-    convert(note.isSmart),
+    convert(sk),
   );
 
   const proof = await execute('mintNBurnNote', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
 
-async function getTransferProof(oldNote, newNote1, newNote2, originalNote = null) {
+async function getTransferProof(oldNote, sk, newNote1, newNote2, originalNote = null) {
   if (!originalNote) {
     originalNote = constants.EMPTY_NOTE;
   }
-  const cmdArgs = getTransferParams(
+  const cmdArgs = getTransferCmd(
     convert(oldNote.owner),
     convert(oldNote.value),
     convert(oldNote.token),
-    convert(oldNote.viewingKey),
+    convert(oldNote.viewKey),
     convert(oldNote.salt),
-    convert(oldNote.isSmart),
+    convert(sk),
     convert(newNote1.owner),
     convert(newNote1.value),
     convert(newNote1.token),
-    convert(newNote1.viewingKey),
+    convert(newNote1.viewKey),
     convert(newNote1.salt),
-    convert(newNote1.isSmart),
     convert(newNote2.owner),
     convert(newNote2.value),
     convert(newNote2.token),
-    convert(newNote2.viewingKey),
+    convert(newNote2.viewKey),
     convert(newNote2.salt),
-    convert(newNote2.isSmart),
     convert(originalNote.owner),
     convert(originalNote.value),
     convert(originalNote.token),
-    convert(originalNote.viewingKey),
+    convert(originalNote.viewKey),
     convert(originalNote.salt),
-    convert(originalNote.isSmart),
   );
+
+  console.log(cmdArgs);
 
   const proof = await execute('transferNote', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
 
-async function getMakeOrderProof(makerNote) {
-  const cmdArgs = getMakeOrderCommand(
+async function getMakeOrderProof(makerNote, sk) {
+  const cmdArgs = getMakeOrderCmd(
     convert(makerNote.owner),
     convert(makerNote.value),
     convert(makerNote.token),
-    convert(makerNote.viewingKey),
+    convert(makerNote.viewKey),
     convert(makerNote.salt),
-    convert(makerNote.isSmart),
+    convert(sk),
   );
+
+  console.log(cmdArgs);
 
   const proof = await execute('makeOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
 
-async function getTakeOrderProof(makerNoteHash, parentNote, stakeNote) {
-  const cmdArgs = getTakeOrderCommand(
+async function getTakeOrderProof(makerNoteHash, parentNote, sk, stakeNote) {
+  const cmdArgs = getTakeOrderCmd(
     convert(parentNote.owner),
     convert(parentNote.value),
     convert(parentNote.token),
-    convert(parentNote.viewingKey),
+    convert(parentNote.viewKey),
     convert(parentNote.salt),
-    convert(parentNote.isSmart),
+    convert(sk),
     convert(makerNoteHash),
     convert(stakeNote.value),
     convert(stakeNote.token),
-    convert(stakeNote.viewingKey),
+    convert(stakeNote.viewKey),
     convert(stakeNote.salt),
-    convert(stakeNote.isSmart),
   );
+
+  console.log(cmdArgs);
 
   const proof = await execute('takeOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
 
-async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
-  const cmdArgs = getSettleOrderCommand(
+async function getSettleOrderProof(makerNote, sk, stakeNote, rewardNote, paymentNote, changeNote, price) {
+  const cmdArgs = getSettleOrderCmd(
     convert(makerNote.owner),
     convert(makerNote.value),
     convert(makerNote.token),
-    convert(makerNote.viewingKey),
+    convert(makerNote.viewKey),
     convert(makerNote.salt),
-    convert(makerNote.isSmart),
+    convert(sk),
     convert(stakeNote.owner),
     convert(stakeNote.value),
     convert(stakeNote.token),
-    convert(stakeNote.viewingKey),
+    convert(stakeNote.viewKey),
     convert(stakeNote.salt),
-    convert(stakeNote.isSmart),
     convert(rewardNote.owner),
     convert(rewardNote.value),
     convert(rewardNote.token),
-    convert(rewardNote.viewingKey),
+    convert(rewardNote.viewKey),
     convert(rewardNote.salt),
-    convert(rewardNote.isSmart),
     convert(paymentNote.owner),
     convert(paymentNote.value),
     convert(paymentNote.token),
-    convert(paymentNote.viewingKey),
+    convert(paymentNote.viewKey),
     convert(paymentNote.salt),
-    convert(paymentNote.isSmart),
     convert(changeNote.owner),
     convert(changeNote.value),
     convert(changeNote.token),
-    convert(changeNote.viewingKey),
+    convert(changeNote.viewKey),
     convert(changeNote.salt),
-    convert(changeNote.isSmart),
     convert(price),
-    convert(getQuotient(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
-    convert(getRemainder(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
-    convert(getQuotient(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
-    convert(getRemainder(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
+    convert(util.getQuotient(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
+    convert(util.getRemainder(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
+    convert(util.getQuotient(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
+    convert(util.getRemainder(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
   );
 
   console.log(cmdArgs);
@@ -199,16 +198,6 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
   const proof = await execute('settleOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
-
-function getQuotient(x, y) {
-  const q = (x.sub(x.mod(y))).div(y);
-  return Web3Utils.toHex(q)
-}
-
-function getRemainder(x, y) {
-  const r = x.mod(y)
-  return Web3Utils.toHex(r)
-} 
 
 (async () => {
   try {

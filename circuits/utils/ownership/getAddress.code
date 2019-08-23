@@ -1,0 +1,19 @@
+import "../pack/pack160.code" as pack160
+import "utils/pack/nonStrictUnpack256.code" as unpack256
+import "utils/pack/pack128.code" as pack128
+import "hashes/sha256/512bitPadded.code" as sha256
+
+def main(field[2] pubKey) -> (field):
+
+    a = unpack256(pubKey[0])
+    b = unpack256(pubKey[1])
+   
+    field[256] lhs = a
+    field[256] rhs = b
+    
+    field[256] r = sha256(lhs, rhs)
+    
+    address = pack160(r[96..])
+
+    return address
+

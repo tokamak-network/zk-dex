@@ -15,7 +15,6 @@ def main(field[7] preimage) -> (field[2]):
   viewKey1 = unpack128(preimage[5])
   salt = unpack256(preimage[6])
 
-
   field[256] lhs1 = pk0
   field[256] lhs2 = pk1
   field[256] lhs3 = value

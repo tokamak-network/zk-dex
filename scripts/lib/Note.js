@@ -48,35 +48,25 @@ const NoteState = {
 };
 
 class Note {
-  constructor(pk0, pk1, value, token, viewingKey, salt) {
-    this.pk0 = Web3Utils.padLeft(Web3Utils.toHex(pk0), 64);
-    this.pk1 = Web3Utils.padLeft(Web3Utils.toHex(pk1), 64);
+  constructor(owner, value, token, viewingKey, salt) {
+    this.owner = Web3Utils.padLeft(Web3Utils.toHex(owner), 64);
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
-    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
+    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 32);
     this.viewKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
   }
 
-  // getOwner() {
-  //   if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
-  //     return this.owner;
-  //   }
+  getOwner() {
+    if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
+      return this.owner;
+    }
 
-  //   return util.marshal(this.owner.slice(-40));
-  // }
-
-  getPk0() {
-    return pk0
-  }
-
-  getPk1() {
-    return pk1
+    return util.marshal(this.owner.slice(-40));
   }
 
   hash() {
     return util.marshal(noteHelper.getNoteHash(
-      util.unmarshal(this.pk0),
-      util.unmarshal(this.pk1),
+      util.unmarshal(this.owner),
       util.unmarshal(this.value),
       util.unmarshal(this.token),
       util.unmarshal(this.viewKey),

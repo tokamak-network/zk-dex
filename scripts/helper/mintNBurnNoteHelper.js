@@ -17,8 +17,8 @@ function reduceParams(params) {
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
-function getMintAndBurnCommand(owner, value, type, viewKey, salt, isSmart) {
-  const params = noteHelper.getNoteParams(owner, value, type, viewKey, salt, isSmart);
+function getMintAndBurnCommand(pk0, pk1, value, type, viewKey, salt, isSmart) {
+  const params = noteHelper.getNoteParams(pk0, pk1, value, type, viewKey, salt, isSmart);
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);
   }

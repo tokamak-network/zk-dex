@@ -12,17 +12,17 @@ function reduceParams(params) {
 }
 
 function getTransferParams(
-  fromOwner, fromValue, fromType, fromViewKey, fromSalt, fromIsSmart, // from's note
-  to1Owner, to1Value, to1Type, to1ViewKey, to1Salt, to1IsSmart, // to1's note
-  to2Owner, to2Value, to2Type, to2ViewKey, to2Salt, to2IsSmart, // to2's note
-  originOwner, originValue, originType, originViewKey, originSalt, originIsSmart, // if from note is smartNote, then it is smartNote's owner
+  fromPk0, fromPk1, fromValue, fromType, fromViewKey, fromSalt, fromSk, // from's note
+  to1Pk0, to1Pk1, to1Value, to1Type, to1ViewKey, to1Salt, // to1's note
+  to2Pk0, to1Pk1, to2Value, to2Type, to2ViewKey, to2Salt, // to2's note
+  originPk0, originPk1, originValue, originType, originViewKey, originSalt, // if from note is smartNote, then it is smartNote's owner
 ) {
-  const fromParams = noteHelper.getNoteParamsForTransfer(fromOwner, fromValue, fromType, fromViewKey, fromSalt, fromIsSmart);
-  const to1Params = noteHelper.getNoteParamsForTransfer(to1Owner, to1Value, to1Type, to1ViewKey, to1Salt, to1IsSmart);
-  const to2Params = noteHelper.getNoteParamsForTransfer(to2Owner, to2Value, to2Type, to2ViewKey, to2Salt, to2IsSmart);
-  const originOwnerParams = noteHelper.getNoteParamsForTransfer(originOwner, originValue, originType, originViewKey, originSalt, originIsSmart);
+  const fromParams = noteHelper.getNoteParams(fromPk0, fromPk1, fromValue, fromType, fromViewKey, fromSalt);
+  const to1Params = noteHelper.getNoteParams(to1Owner, to1Value, to1Type, to1ViewKey, to1Salt);
+  const to2Params = noteHelper.getNoteParams(to2Owner, to2Value, to2Type, to2ViewKey, to2Salt);
+  const originParams = noteHelper.getNoteParams(originPk0, originPk1, originValue, originType, originViewKey, originSalt);
 
-  const transferParams = fromParams.concat(to1Params, to2Params, originOwnerParams);
+  const transferParams = fromParams.concat(to1Params, to2Params, originParams);
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(transferParams);
   }
