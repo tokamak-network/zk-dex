@@ -12,13 +12,13 @@
         </p>
         <ul class="menu-list">
           <li>
-            <router-link to="/account/import">Import</router-link>
+            <router-link to="/accounts/import">Import</router-link>
           </li>
           <li>
-            <router-link to="/account/export">Export</router-link>
+            <router-link to="/accounts/export">Export</router-link>
           </li>
           <li>
-            <router-link to="/account/delete">Delete</router-link>
+            <router-link to="/accounts/delete">Delete</router-link>
           </li>
         </ul>
         <p class="menu-label" style="margin-top: 30px;">
@@ -40,12 +40,12 @@
         </p>
         <ul class="menu-list">
           <li>
-            <router-link to="/note/transfer">Note Transfer</router-link>
+            <router-link to="/notes/transfer">Note Transfer</router-link>
           </li>
         </ul>
         <ul class="menu-list">
           <li>
-            <router-link to="/order">Order</router-link>
+            <router-link to="/orders">Order</router-link>
           </li>
         </ul>
       </aside>
