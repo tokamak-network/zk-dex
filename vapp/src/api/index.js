@@ -58,7 +58,7 @@ async function getOrders () {
 
 // post
 function addAccount (key, account) {
-  return instance.post('/accounts', {
+  return instance.post('/accounts/import', {
     key,
     account,
   });
