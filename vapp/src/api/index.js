@@ -136,8 +136,10 @@ function updateOrder (order) {
 
 function deleteAccount (key, address) {
   return instance.delete('/accounts', {
-    key,
-    address,
+    data: {
+      key,
+      address,
+    },
   });
 }
 
