@@ -64,7 +64,7 @@ field n2h0, field n2h1, private field n2owner0, private field n2owner1, private 
 field price, private field q0, private field r0, private field q1, private field r1) -> (field):
 
   // check ownership of makerNote
-  field isOwner = verifyOwnership(sk, o1owner1)
+  field isOwner = verifyOwnership(sk, o0owner1)
   isOwner == 1
 
   // check (hash(makerNote) == newNoteToMaker.owner)

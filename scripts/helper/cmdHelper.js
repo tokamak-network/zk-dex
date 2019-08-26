@@ -62,13 +62,11 @@ function getSettleOrderCmd(
   quotient0, remainder0, // // makerNote.Value * price / 10**18, makerNote.Value * price % 10**18
   quotient1, remainder1 // stakeNote.Value / price, stakeNote.Value % price
 ) {
-  const makerNoteHash = noteHelper.getNoteHash(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt);
-
-  const makerNoteParams = noteHelper.getNoteParams(makerNoteOwner, makerNotePk1, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt).concat(makerNoteSk);
-  const takerToMakerNoteParams = noteHelper.getNoteParams(takerToMakerOwner, taker2MakerNoteValue, taker2MakerNoteType, taker2MakerNoteViewKey, taker2MakerNoteSalt);
-  const newNoteToTakerParams = noteHelper.getNoteParams(newNoteToTakerOwner, newNote2TakerValue, newNote2TakerType, newNote2TakerViewKey, newNote2TakerSalt);
-  const newNoteToMakerParams = noteHelper.getNoteParams(newNoteToMakerOwner, newNote2MakerValue, newNote2MakerType, newNote2MakerViewKey, newNote2MakerSalt);
-  const changeNoteParams = noteHelper.getNoteParams(changeOwner, changeNoteValue, changeNoteType, changeNoteViewKey, changeNoteSalt);
+  const makerNoteParams = noteHelper.getNoteParams(makerNoteOwner, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt).concat(makerNoteSk);
+  const takerToMakerNoteParams = noteHelper.getNoteParams(takerToMakerOwner, takerToMakerValue, takerToMakerType, takerToMakerViewKey, takerToMakerSalt);
+  const newNoteToTakerParams = noteHelper.getNoteParams(newNoteToTakerOwner, newNoteToTakerValue, newNoteToTakerType, newNoteToTakerViewKey, newNoteToTakerSalt);
+  const newNoteToMakerParams = noteHelper.getNoteParams(newNoteToMakerOwner, newNoteToMakerValue, newNoteToMakerType, newNoteToMakerViewKey, newNoteToMakerSalt);
+  const changeNoteParams = noteHelper.getNoteParams(changeOwner, changeValue, changeType, changeViewKey, changeSalt);
 
   const params = makerNoteParams.concat(takerToMakerNoteParams, newNoteToTakerParams, newNoteToMakerParams, changeNoteParams).concat(price, quotient0, remainder0, quotient1, remainder1);
 
