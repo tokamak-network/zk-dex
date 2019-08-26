@@ -39,7 +39,7 @@ async function getOrdersByAccount (account) {
 }
 
 async function getOrder (id) {
-  const res = await instance.get(`/order/${id}`);
+  const res = await instance.get(`/orders/${id}`);
   if (res.data === null) {
     return null;
   } else {
@@ -98,20 +98,20 @@ async function setViewingKey (key, vk) {
 }
 
 function createAccount (passphrase) {
-  return instance.post('/account', {
+  return instance.post('/accounts', {
     passphrase,
   });
 }
 
 function unlockAccount (passphrase, keystore) {
-  return instance.post('/account/unlock', {
+  return instance.post('/accounts/unlock', {
     passphrase,
     keystore,
   });
 }
 
 function generateProof (params) {
-  return instance.post('/circuit', params);
+  return instance.post('/circuits', params);
 }
 
 // put
@@ -135,7 +135,7 @@ function updateOrder (order) {
 }
 
 function deleteAccount (key, address) {
-  return instance.put('/accounts/delete', {
+  return instance.delete('/accounts', {
     key,
     address,
   });

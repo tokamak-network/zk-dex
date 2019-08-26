@@ -11,6 +11,7 @@
           Accounts
         </p>
         <ul class="menu-list">
+          <!-- TODO: change to accounts -->
           <li>
             <router-link to="/account/import">Import</router-link>
           </li>
@@ -40,11 +41,13 @@
         </p>
         <ul class="menu-list">
           <li>
+            <!-- TODO: change to notes -->
             <router-link to="/note/transfer">Note Transfer</router-link>
           </li>
         </ul>
         <ul class="menu-list">
           <li>
+            <!-- TODO: change to orders -->
             <router-link to="/order">Order</router-link>
           </li>
         </ul>
