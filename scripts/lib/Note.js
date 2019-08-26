@@ -84,8 +84,8 @@ class Note {
     return JSON.stringify(this);
   }
 
-  encrypt() {
-    const cipher = crypto.createCipher(mode, this.viewingKey);
+  encrypt(encKey) {
+    const cipher = crypto.createCipher(mode, encKey);
 
     const r1 = cipher.update(this.toString(), 'utf8', 'base64');
     const r2 = cipher.final('base64');
@@ -96,12 +96,12 @@ class Note {
   }
 }
 
-function decrypt(v, sk) {
+function decrypt(v, decKey) {
   if (!v) {
     throw new Error(`invalid value to decrypt: ${v}`);
   }
 
-  const decipher = crypto.createDecipher(mode, sk);
+  const decipher = crypto.createDecipher(mode, decKey);
 
   const r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
   const r2 = decipher.final('utf8');
