@@ -1,22 +1,109 @@
 const LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./localstorage');
 
+// Vk
 function getViewingKey (key) {
-  return localStorage.getItem(`${key}viewingkey`);
+  return localStorage.getItem(`${key}-viewingkey`);
 }
 
+function setViewingKey (key, viewingKey) {
+  localStorage.setItem(`${key}-viewingkey`, viewingKey);
+}
+
+// Accounts
 function getAccounts (key) {
-  return localStorage.getItem(`${key}accounts`);
+  return localStorage.getItem(`${key}-accounts`);
 }
 
+function addAccount (key, account) {
+  let accounts = getAccounts(key);
+  if (!accounts) {
+    accounts = [];
+  } else {
+    accounts = JSON.parse(accounts);
+  }
+  accounts.push(account);
+  _setAccounts(key, JSON.stringify(accounts));
+}
+
+function deleteAccount (key, address) {
+  let accounts = getAccounts(key);
+  if (!accounts) {
+    return;
+  } else {
+    accounts = JSON.parse(accounts);
+  }
+  for (let i = 0; i < accounts.length; i++) {
+    if (accounts[i].address === address) {
+      accounts.splice(i, 1);
+      break;
+    }
+  }
+  _setAccounts(key, JSON.stringify(accounts));
+}
+
+function _setAccounts (key, notes) {
+  localStorage.setItem(`${key}-accounts`, notes);
+}
+
+// Notes
 function getNotes (account) {
-  return localStorage.getItem(`${account}notes`);
+  return localStorage.getItem(`${account}-notes`);
+}
+
+function addNote (account, note) {
+  let notes = getNotes(account);
+  if (!notes) {
+    notes = [];
+  } else {
+    notes = JSON.parse(notes);
+  }
+  notes.push(note);
+  _setNotes(account, JSON.stringify(notes));
 }
 
 function getTransferNotes (account) {
-  return localStorage.getItem(`${account}transfernotes`);
+  return localStorage.getItem(`${account}-transfernotes`);
 }
 
+function addTransferNote (account, note) {
+  let notes = getTransferNotes(account);
+  if (!notes) {
+    notes = [];
+  } else {
+    notes = JSON.parse(notes);
+  }
+  notes.push(note);
+  _setTransferNotes(account, JSON.stringify(notes));
+}
+
+function updateNote (account, note) {
+  let notes = getNotes(account);
+  if (!notes) {
+    return;
+  } else {
+    notes = JSON.parse(notes);
+  }
+
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i].hash === note.hash) {
+      notes.splice(i, 1, note);
+      break;
+    }
+  }
+
+  _setNotes(account, JSON.stringify(notes));
+}
+
+function _setNotes (key, notes) {
+  localStorage.setItem(`${key}-notes`, notes);
+}
+
+function _setTransferNotes (key, notes) {
+  localStorage.setItem(`${key}-transfernotes`, notes);
+}
+
+// Orders
 function getOrder (id) {
   let orders = getOrders();
   if (!orders) {
@@ -34,44 +121,11 @@ function getOrder (id) {
 }
 
 function getOrdersByAccount (account) {
-  return localStorage.getItem(`${account}orders`);
+  return localStorage.getItem(`${account}-orders`);
 }
 
 function getOrders () {
   return localStorage.getItem('orders');
-}
-
-function addAccount (key, account) {
-  let accounts = getAccounts(key);
-  if (!accounts) {
-    accounts = [];
-  } else {
-    accounts = JSON.parse(accounts);
-  }
-  accounts.push(account);
-  _setAccounts(key, JSON.stringify(accounts));
-}
-
-function addNote (account, note) {
-  let notes = getNotes(account);
-  if (!notes) {
-    notes = [];
-  } else {
-    notes = JSON.parse(notes);
-  }
-  notes.push(note);
-  _setNotes(account, JSON.stringify(notes));
-}
-
-function addTransferNote (account, note) {
-  let notes = getTransferNotes(account);
-  if (!notes) {
-    notes = [];
-  } else {
-    notes = JSON.parse(notes);
-  }
-  notes.push(note);
-  _setTransferNotes(account, JSON.stringify(notes));
 }
 
 function addOrderByAccount (account, order) {
@@ -94,48 +148,6 @@ function addOrder (order) {
   }
   orders.push(order);
   _setOrders(JSON.stringify(orders));
-}
-
-function setViewingKey (key, viewingKey) {
-  localStorage.setItem(`${key}viewingkey`, viewingKey);
-}
-
-function _setAccounts (key, notes) {
-  localStorage.setItem(`${key}accounts`, notes);
-}
-
-function _setNotes (key, notes) {
-  localStorage.setItem(`${key}notes`, notes);
-}
-
-function _setTransferNotes (key, notes) {
-  localStorage.setItem(`${key}transfernotes`, notes);
-}
-
-function _setOrders (orders) {
-  localStorage.setItem('orders', orders);
-}
-
-function _setOrdersByAccount (account, orders) {
-  localStorage.setItem(`${account}orders`, orders);
-}
-
-function updateNote (account, note) {
-  let notes = getNotes(account);
-  if (!notes) {
-    return;
-  } else {
-    notes = JSON.parse(notes);
-  }
-
-  for (let i = 0; i < notes.length; i++) {
-    if (notes[i].hash === note.hash) {
-      notes.splice(i, 1, note);
-      break;
-    }
-  }
-
-  _setNotes(account, JSON.stringify(notes));
 }
 
 function updateOrderByAccount (account, order) {
@@ -174,23 +186,16 @@ function updateOrder (order) {
   _setOrders(JSON.stringify(orders));
 }
 
-function deleteAccount (key, address) {
-  let accounts = getAccounts(key);
-  if (!accounts) {
-    return;
-  } else {
-    accounts = JSON.parse(accounts);
-  }
-  for (let i = 0; i < accounts.length; i++) {
-    if (accounts[i].address === address) {
-      accounts.splice(i, 1);
-      break;
-    }
-  }
-  _setAccounts(key, JSON.stringify(accounts));
+function _setOrders (orders) {
+  localStorage.setItem('orders', orders);
+}
+
+function _setOrdersByAccount (account, orders) {
+  localStorage.setItem(`${account}-orders`, orders);
 }
 
 module.exports = {
+  localStorage,
   getViewingKey,
   getAccounts,
   getNotes,
