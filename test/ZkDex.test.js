@@ -281,7 +281,6 @@ contract('ZkDex', function([_, ...accounts]) {
 
     const makerDAIAmount = ether('10');
     const takerETHAmount = ether('100');
-    const price = web3.utils.toBN('10');
 
     const maker = accounts[0];
     const taker = accounts[1];
@@ -302,7 +301,7 @@ contract('ZkDex', function([_, ...accounts]) {
       takerNote = await createETHNote(taker, takerETHAmount, takerVk, takerVk);
     });
 
-    async function makeOrder() {
+    async function makeOrder(price) {
       await market.makeOrder(
         makerVk,
         targetToken,
@@ -336,13 +335,39 @@ contract('ZkDex', function([_, ...accounts]) {
     }
 
     // TODO: add more tests in cse of change to maker and taker.
-    async function settleOrder() {
-      rewardNote = new Note(takerNote.hash(), makerNote.value, sourceToken, '0x00', getSalt(), true);
-      paymentNote = new Note(makerNote.hash(), takerNote.value, targetToken, '0x00', getSalt(), true);
-      // 0-value change note goes to maker
-      changeNote = new Note(makerNote.hash(), ether('0'), sourceToken, "0x00", getSalt(), true);
+    async function settleOrder(price) {
+      const maxTakerAmount = makerDAIAmount.mul(price);
+      const isOverPayment = maxTakerAmount.cmp(takerETHAmount) < 0;
 
-      const changeVk = makerVk;
+      let rewardAmount;   // DAI amount to taker
+      let paymentAmount;  // ETH amount to maker
+      let changeAmount;   // DAI amount to maker or ETH amount to taker
+
+      let changeNoteOwner;
+      let changeTokenType;
+      let changeEncKey;
+
+      if (!isOverPayment) {
+        rewardAmount = takerETHAmount.div(price);
+        paymentAmount = takerETHAmount;
+        changeAmount = makerDAIAmount.sub(rewardAmount);
+
+        changeNoteOwner = makerNote.hash();
+        changeTokenType = sourceToken;
+        changeEncKey = makerVk;
+      } else {
+        rewardAmount = makerDAIAmount;
+        paymentAmount = makerDAIAmount.mul(price);
+        changeAmount = takerETHAmount.sub(paymentAmount);
+
+        changeNoteOwner = takerNote.hash();
+        changeTokenType = targetToken;
+        changeEncKey = takerVk;
+      }
+
+      rewardNote = new Note(takerNote.hash(), rewardAmount, sourceToken, '0x00', getSalt(), true);
+      paymentNote = new Note(makerNote.hash(), paymentAmount, targetToken, '0x00', getSalt(), true);
+      changeNote = new Note(changeNoteOwner, changeAmount, changeTokenType, '0x00', getSalt(), true);
 
       await market.settleOrder(
         orderId,
@@ -367,7 +392,7 @@ contract('ZkDex', function([_, ...accounts]) {
         rlp.encode([
           rewardNote.encrypt(takerVk),
           paymentNote.encrypt(makerVk),
-          changeNote.encrypt(changeVk)
+          changeNote.encrypt(changeEncKey)
         ]),
       );
 
@@ -382,35 +407,52 @@ contract('ZkDex', function([_, ...accounts]) {
       await checkOrderState(orderId, OrderState.Settled);
     }
 
-    it("should make an order", async () => {
-      await makeOrder();
+    const testMarket = (price) => {
+      it("should make an order", async () => {
+        await makeOrder(price);
+      });
+
+      it("should take an order", async () => {
+        await makeOrder(price);
+        await takeOrder();
+      });
+
+      it('should settle an order', async () => {
+        await makeOrder(price);
+        await takeOrder();
+        await settleOrder(price);
+      });
+
+      it('should redeem payment note and reward note', async () => {
+        await makeOrder(price);
+        await takeOrder();
+        await settleOrder(price);
+
+        const redeemedRewardNote1 = new Note(taker, rewardNote.value, rewardNote.token, takerVk, getSalt());
+        const redeemedRewardNote2 = new Note(taker, ether('0'), rewardNote.token, takerVk, getSalt());
+
+        await spendNote(takerNote, rewardNote, redeemedRewardNote1, redeemedRewardNote2, takerVk, takerVk, takerVk, takerVk);
+
+        const redeemedPaymentNote1 = new Note(maker, paymentNote.value, paymentNote.token, makerVk, getSalt());
+        const redeemedPaymentNote2 = new Note(maker, ether('0'), paymentNote.token, makerVk, getSalt());
+
+        await spendNote(makerNote, paymentNote, redeemedPaymentNote1, redeemedPaymentNote2, makerVk, makerVk, makerVk, makerVk);
+      });
+    }
+
+    describe("over payment (change to taker)", () => {
+      const price = web3.utils.toBN('5');
+      testMarket(price);
     });
 
-    it("should take an order", async () => {
-      await makeOrder();
-      await takeOrder();
+    describe("equal payment (no change", () => {
+      const price = web3.utils.toBN('10');
+      testMarket(price);
     });
 
-    it('should settle an order', async () => {
-      await makeOrder();
-      await takeOrder();
-      await settleOrder();
-    });
-
-    it('should redeem payment note and reward note', async () => {
-      await makeOrder();
-      await takeOrder();
-      await settleOrder();
-
-      const redeemedRewardNote1 = new Note(taker, rewardNote.value, rewardNote.token, takerVk, getSalt());
-      const redeemedRewardNote2 = new Note(taker, ether('0'), rewardNote.token, takerVk, getSalt());
-
-      await spendNote(takerNote, rewardNote, redeemedRewardNote1, redeemedRewardNote2, takerVk, takerVk, takerVk, takerVk);
-
-      const redeemedPaymentNote1 = new Note(maker, paymentNote.value, paymentNote.token, makerVk, getSalt());
-      const redeemedPaymentNote2 = new Note(maker, ether('0'), paymentNote.token, makerVk, getSalt());
-
-      await spendNote(makerNote, paymentNote, redeemedPaymentNote1, redeemedPaymentNote2, makerVk, makerVk, makerVk, makerVk);
+    describe("under payment (change to maker)", () => {
+      const price = web3.utils.toBN('20');
+      testMarket(price);
     });
   });
 });
