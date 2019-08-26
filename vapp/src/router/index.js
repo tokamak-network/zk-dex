@@ -37,7 +37,7 @@ const routes = [
             component: DashboardSummaryPage,
           },
           {
-            path: 'note',
+            path: 'notes',
             component: NotePage,
           },
           {
@@ -53,23 +53,23 @@ const routes = [
             component: NoteCombinePage,
           },
           {
-            path: 'note/transfer',
+            path: 'notes/transfer',
             component: HistoryNoteTransferPage,
           },
           {
-            path: 'order',
+            path: 'orders',
             component: HistoryOrderPage,
           },
           {
-            path: 'account/import',
+            path: 'accounts/import',
             component: AccountImportPage,
           },
           {
-            path: 'account/export',
+            path: 'accounts/export',
             component: AccountExportPage,
           },
           {
-            path: 'account/delete',
+            path: 'accounts/delete',
             component: AccountDeletePage,
           },
         ],
