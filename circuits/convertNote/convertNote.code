@@ -1,0 +1,59 @@
+import "../sha/1024bitPacked.code" as sha256
+import "../utils/isSmart.code" as isSmart
+import "../utils/ownership/verifyOwnership.code" as verifyOwnership
+
+// Note = (owner, value, type, viewKey, salt)
+
+// (public) smartH0 + smartH1 : smartNote hash
+// (private) smartOwner0, smartOwner1 : smartNote owner address
+// (private) smartValue : smartNote value
+// (public) smartType : smartNote type
+// (private) smartVk0 + smartVk1 : smartNote viewKey
+// (private) smartSalt : smartNote salt, random value
+// (private) sk : secret key corresponding to originOwner
+
+// (public) originH0 + originH1 : originNote hash
+// (private) originOwner0, originOwner1 : originNote owner address
+// (private) originValue : originNote value
+// (public) originType : originNote type
+// (private) originVk0 + originVk1 : originNote viewKey
+// (private) originSalt : originNote salt, random value
+
+// (public) nh0 + nh1 : note hash
+// (private) nOwner0, nOwner1 : note owner address
+// (private) nValue : note value
+// (public) nType : note type
+// (private) nVk0 + nVk1 : note viewKey
+// (private) nSalt : note salt, random value
+
+// smartNote is converted to common note
+
+def main(\
+field smartH0, field smartH1, private field smartOwner0, private field smartOwner1, private field smartValue, field smartType, private field smartVk0, private field smartVk1, private field smartSalt, private field sk, \
+field originH0, field originH1, private field originOwner0, private field originOwner1, private field originValue, field originType, private field originVk0, private field originVk1, private field originSalt, \
+field nh0, field nh1, private field nOwner0, private field nOwner1, private field nValue, field nType, private field nVk0, private field nVk1, private field nSalt) -> (field):
+  // smartNote should be smartNote
+  field isSmartNote = isSmart(smartOwner0)
+  isSmartNote == 1
+  
+  // check ownership of note
+  field isOwner = verifyOwnership(sk, originOwner1)
+  isOwner == 1
+  smartOwner0 == originH0
+  smartOwner1 == originH1
+
+  smartValue == nValue
+
+  h = sha256([smartOwner0, smartOwner1, smartValue, smartType, smartVk0, smartVk1, smartSalt])
+  h[0] == smartH0
+  h[1] == smartH1
+
+  h = sha256([originOwner0, originOwner1, originValue, originType, originVk0, originVk1, originSalt])
+  h[0] == originH0
+  h[1] == originH1
+
+  h = sha256([nOwner0, nOwner1, nValue, nType, nVk0, nVk1, nSalt])
+  h[0] == nh0
+  h[1] == nh1
+
+  return 1

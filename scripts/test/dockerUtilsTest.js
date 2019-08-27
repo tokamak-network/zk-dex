@@ -16,6 +16,7 @@ const {
 const {
   getMintNBurnProof,
   getTransferProof,
+  getConvertProof,
   getMakeOrderProof,
   getTakeOrderProof,
   getSettleOrderProof,
@@ -30,8 +31,9 @@ let viewingKey;
 let salt;
 
 let oldDAINote;
-let newDAINote1;
-let newDAINote2;
+let oldDAINote1;
+let newDAINote;
+let changeNote;
 
 let makerNoteValue;
 let parentNoteValue;
@@ -45,7 +47,6 @@ let parentNote;
 let stakeNote;
 let rewardNote;
 let paymentNote;
-let changeNote;
 let price;
 
 
@@ -58,14 +59,23 @@ describe('dockerUtils', function() {
     viewingKey = Web3Utils.randomHex(32);
     salt = Web3Utils.randomHex(16);
 
-    let oldDAIValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
-    let newDAIValue1 = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
-    let newDAIValue2 = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
+    let oldDAIValue = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
+    let oldDAIValue1 = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
+    let newDAIValue = Web3Utils.toHex(new BN(7000).mul(SCALING_FACTOR));
+    let changeValue = Web3Utils.toHex(new BN(3000).mul(SCALING_FACTOR));
 
-    emptyNote = new Note(0, 0, 0, 0, 0)
     oldDAINote = new Note(address, oldDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    newDAINote1 = new Note(address, newDAIValue1, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    newDAINote2 = new Note(address, newDAIValue2, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    oldDAINote1 = new Note(address, oldDAIValue1, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    newDAINote = new Note(address, newDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    changeNote = new Note(address, changeValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+
+    let smartValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
+    let originValue = Web3Utils.toHex(new BN(50000).mul(SCALING_FACTOR));
+    let noteValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
+
+    originNote = new Note(address, originValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    smartNote = new Note(originNote.hash(), smartValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    note = new Note(address, noteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     parentNoteValue = Web3Utils.toHex(new BN(20000).mul(SCALING_FACTOR));
     parentNote = new Note(address, parentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
@@ -86,7 +96,12 @@ describe('dockerUtils', function() {
   });
 
   it('should get proof of trasnfer', async () => {
-    proof = await getTransferProof(oldDAINote, sk_hex, newDAINote1, newDAINote2)
+    proof = await getTransferProof(oldDAINote, sk_hex, oldDAINote1, newDAINote, changeNote)
+    console.log(proof);
+  });
+
+  it('should get proof of convert', async () => {
+    proof = await getConvertProof(smartNote, sk_hex, originNote, note)
     console.log(proof);
   });
   

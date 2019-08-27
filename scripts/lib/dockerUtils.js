@@ -7,6 +7,7 @@ const { constants } = require('./Note');
 const { 
   getMintAndBurnCmd,
   getTransferCmd,
+  getConvertCmd,
   getMakeOrderCmd,
   getTakeOrderCmd,
   getSettleOrderCmd,
@@ -21,7 +22,7 @@ const cName = 'zokrates';
 const cmdBase = './genProof.sh';
 
 async function execute(circuitName, cmd) {
-  // set generated proof file when compute is complate.
+  // set generated proof file when compute is complete.
   const workingDir = `/home/zokrates/circuits/${circuitName}`; // zokerates container Path
 
   const exec = await c.exec({
@@ -65,6 +66,7 @@ async function execute(circuitName, cmd) {
       });
 
       stream.on('data', (data) => {
+        // console.log(data.toString());
         chunks.push(data.toString());
       });
     });
@@ -87,37 +89,56 @@ async function getMintNBurnProof(note, sk) {
   return util.parseProofObj(proof);
 }
 
-async function getTransferProof(oldNote, sk, newNote1, newNote2, originalNote = null) {
-  if (!originalNote) {
-    originalNote = constants.EMPTY_NOTE;
-  }
+async function getTransferProof(oldNote0, sk, oldNote1, newNote, changeNote) {
   const cmdArgs = getTransferCmd(
-    convert(oldNote.owner),
-    convert(oldNote.value),
-    convert(oldNote.token),
-    convert(oldNote.viewKey),
-    convert(oldNote.salt),
+    convert(oldNote0.owner),
+    convert(oldNote0.value),
+    convert(oldNote0.token),
+    convert(oldNote0.viewKey),
+    convert(oldNote0.salt),
     convert(sk),
-    convert(newNote1.owner),
-    convert(newNote1.value),
-    convert(newNote1.token),
-    convert(newNote1.viewKey),
-    convert(newNote1.salt),
-    convert(newNote2.owner),
-    convert(newNote2.value),
-    convert(newNote2.token),
-    convert(newNote2.viewKey),
-    convert(newNote2.salt),
-    convert(originalNote.owner),
-    convert(originalNote.value),
-    convert(originalNote.token),
-    convert(originalNote.viewKey),
-    convert(originalNote.salt),
+    convert(oldNote1.owner),
+    convert(oldNote1.value),
+    convert(oldNote1.token),
+    convert(oldNote1.viewKey),
+    convert(oldNote1.salt),
+    convert(newNote.owner),
+    convert(newNote.value),
+    convert(newNote.token),
+    convert(newNote.viewKey),
+    convert(newNote.salt),
+    convert(changeNote.owner),
+    convert(changeNote.value),
+    convert(changeNote.token),
+    convert(changeNote.viewKey),
+    convert(changeNote.salt),
   );
 
-  console.log(cmdArgs);
-
   const proof = await execute('transferNote', `${cmdBase} ${cmdArgs}`);
+  return util.parseProofObj(proof);
+}
+
+async function getConvertProof(smartNote, sk, originNote, note) {
+  const cmdArgs = getConvertCmd(
+    convert(smartNote.owner),
+    convert(smartNote.value),
+    convert(smartNote.token),
+    convert(smartNote.viewKey),
+    convert(smartNote.salt),
+    convert(sk),
+    convert(originNote.owner),
+    convert(originNote.value),
+    convert(originNote.token),
+    convert(originNote.viewKey),
+    convert(originNote.salt),
+    convert(note.owner),
+    convert(note.value),
+    convert(note.token),
+    convert(note.viewKey),
+    convert(note.salt),
+  );
+
+  const proof = await execute('convertNote', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
 
@@ -130,8 +151,6 @@ async function getMakeOrderProof(makerNote, sk) {
     convert(makerNote.salt),
     convert(sk),
   );
-
-  console.log(cmdArgs);
 
   const proof = await execute('makeOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
@@ -151,8 +170,6 @@ async function getTakeOrderProof(parentNote, sk, stakeNote, makerNoteHash) {
     convert(stakeNote.viewKey),
     convert(stakeNote.salt),
   );
-
-  console.log(cmdArgs);
 
   const proof = await execute('takeOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
@@ -193,8 +210,6 @@ async function getSettleOrderProof(makerNote, sk, stakeNote, rewardNote, payment
     convert(util.getRemainder(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),
   );
 
-  console.log(cmdArgs);
-
   const proof = await execute('settleOrder', `${cmdBase} ${cmdArgs}`);
   return util.parseProofObj(proof);
 }
@@ -217,6 +232,7 @@ async function getSettleOrderProof(makerNote, sk, stakeNote, rewardNote, payment
 module.exports = {
   getMintNBurnProof,
   getTransferProof,
+  getConvertProof,
   getMakeOrderProof,
   getTakeOrderProof,
   getSettleOrderProof,

@@ -13,12 +13,6 @@ function getNoteHash(owner, value, type, viewKey, salt) {
   const { noteSalt } = paddedO;
 
   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
-  console.log("owner", splittedNoteOwner.join(''));
-  console.log("value", noteValue);
-  console.log("type", noteType);
-  console.log("viewKey", splittedNoteViewKey.join(''));
-  console.log("salt", noteSalt);
-  console.log("note", note)
   
   const hashArr = toHashed(note);
   
@@ -32,11 +26,6 @@ function getNoteParams(owner, value, type, viewKey, salt) {
   const { noteType } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
-  console.log("splittedNoteOwner", splittedNoteOwner);
-  console.log("noteValue", noteValue);
-  console.log("noteType", noteType);
-  console.log("splittedNoteViewKey", splittedNoteViewKey);
-  console.log("noteSalt", noteSalt);
 
   // To be hashed, raw note info
   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
@@ -45,94 +34,6 @@ function getNoteParams(owner, value, type, viewKey, salt) {
 
   return noteParams;
 }
-
-// function getNoteParamsForTransfer(owner, amount, type, viewKey, salt, isSmart) {
-//   const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
-//   const { noteOwner } = paddedO;
-//   const { splittedNoteOwner } = paddedO;
-//   const { noteValue } = paddedO;
-//   const { noteType } = paddedO;
-//   const { noteViewKey } = paddedO;
-//   const { splittedNoteViewKey } = paddedO;
-//   const { noteSalt } = paddedO;
-//   const { noteIsSmart } = paddedO;
-
-//   // To be hashed, raw note info
-//   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
-
-//   const noteHash = toHashed(note);
-
-//   const noteParams = noteHash.concat(splittedNoteOwner, noteValue, noteType, splittedNoteViewKey, noteSalt, noteIsSmart);
-
-//   // console.log(noteViewKey, noteParams); //for check parameters
-//   return noteParams;
-// }
-
-// function getNoteParamsForMakeOrder(owner, amount, type, viewKey, salt, isSmart) {
-//   const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
-//   const { noteOwner } = paddedO;
-//   const { splittedNoteOwner } = paddedO;
-//   const { noteValue } = paddedO;
-//   const { noteType } = paddedO;
-//   const { noteViewKey } = paddedO;
-//   const { splittedNoteViewKey } = paddedO;
-//   const { noteSalt } = paddedO;
-//   const { noteIsSmart } = paddedO;
-
-//   // To be hashed, raw note info
-//   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
-
-//   const noteHash = toHashed(note);
-
-//   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
-
-//   // console.log(noteParams); //for check parameters
-//   return noteParams;
-// }
-
-// function getNoteParamsForTakeOrder(owner, amount, type, viewKey, salt, isSmart) {
-//   const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
-//   const { noteOwner } = paddedO;
-//   const { splittedNoteOwner } = paddedO;
-//   const { noteValue } = paddedO;
-//   const { noteType } = paddedO;
-//   const { noteViewKey } = paddedO;
-//   const { splittedNoteViewKey } = paddedO;
-//   const { noteSalt } = paddedO;
-//   const { noteIsSmart } = paddedO;
-
-//   // To be hashed, raw note info
-//   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
-
-//   const noteHash = toHashed(note);
-
-//   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
-
-//   // console.log(noteParams); //for check parameters
-//   return noteParams;
-// }
-
-// function getNoteParamsForSettleOrder(owner, amount, type, viewKey, salt, isSmart) {
-//   const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
-//   const { noteOwner } = paddedO;
-//   const { splittedNoteOwner } = paddedO;
-//   const { noteValue } = paddedO;
-//   const { noteType } = paddedO;
-//   const { noteViewKey } = paddedO;
-//   const { splittedNoteViewKey } = paddedO;
-//   const { noteSalt } = paddedO;
-//   const { noteIsSmart } = paddedO;
-
-//   // To be hashed, raw note info
-//   const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
-
-//   const noteHash = toHashed(note);
-
-//   const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
-
-//   // console.log(noteParams); //for check parameters
-//   return noteParams;
-// }
 
 function _toPadedObject(owner, value, type, viewKey, salt) {
   // all params should look like this "0001"(o), "0x0001"(x)

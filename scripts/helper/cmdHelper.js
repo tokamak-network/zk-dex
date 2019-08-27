@@ -13,21 +13,37 @@ function getMintAndBurnCmd(owner, value, type, viewKey, salt, sk) {
 }
 
 function getTransferCmd(
-  fromOwner, fromValue, fromType, fromViewKey, fromSalt, fromSk,
+  from0Owner, from0Value, from0Type, from0ViewKey, from0Salt, from0Sk,
+  from1Owner, from1Value, from1Type, from1ViewKey, from1Salt,
   toOwner, toValue, toType, toViewKey, toSalt,
   changeOwner, changeValue, changeType, changeViewKey, changeSalt,
-  originOwner, originValue, originType, originViewKey, originSalt, 
 ) {
-  const fromParams = noteHelper.getNoteParams(fromOwner, fromValue, fromType, fromViewKey, fromSalt).concat(fromSk);
+  const from0Params = noteHelper.getNoteParams(from0Owner, from0Value, from0Type, from0ViewKey, from0Salt).concat(from0Sk);
+  const from1Params = noteHelper.getNoteParams(from1Owner, from1Value, from1Type, from1ViewKey, from1Salt);
   const toParams = noteHelper.getNoteParams(toOwner, toValue, toType, toViewKey, toSalt);
   const changeParams = noteHelper.getNoteParams(changeOwner, changeValue, changeType, changeViewKey, changeSalt);
-  const originParams = noteHelper.getNoteParams(originOwner, originValue, originType, originViewKey, originSalt);
 
-  const transferParams = fromParams.concat(toParams, changeParams, originParams);
+  const transferParams = from0Params.concat(from1Params, toParams, changeParams);
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(transferParams);
   }
   return reduceParams(transferParams);
+}
+
+function getConvertCmd(
+  smartOwner, smartValue, smartType, smartViewKey, smartSalt, sk,
+  originOwner, originValue, originType, originViewKey, originSalt,
+  noteOwner, noteValue, noteType, noteViewKey, noteSalt,
+) {
+  const smartParams = noteHelper.getNoteParams(smartOwner, smartValue, smartType, smartViewKey, smartSalt).concat(sk);
+  const originParams = noteHelper.getNoteParams(originOwner, originValue, originType, originViewKey, originSalt);
+  const noteParams = noteHelper.getNoteParams(noteOwner, noteValue, noteType, noteViewKey, noteSalt);
+
+  const convertParams = smartParams.concat(originParams, noteParams);
+  if (require.main === module) {
+    zokratesHelper.printZokratesCommand(convertParams);
+  }
+  return reduceParams(convertParams);
 }
 
 function getMakeOrderCmd(owner, value, type, viewKey, salt, sk) {
@@ -86,6 +102,7 @@ function reduceParams(params) {
 module.exports = {
   getMintAndBurnCmd,
   getTransferCmd,
+  getConvertCmd,
   getMakeOrderCmd,
   getTakeOrderCmd,
   getSettleOrderCmd,
