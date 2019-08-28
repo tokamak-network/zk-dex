@@ -11,6 +11,24 @@ const getters = {
     }
     return count;
   },
+  orderList: (state) => {
+    const list = {};
+    if (state.orders !== null && typeof state.orders !== 'undefined') {
+      state.orders.forEach((o) => {
+        // only valid order
+        if (o.state === '0x0') {
+          list[o.price] = (list[o.price] || 0) + 1;
+        }
+      });
+    }
+    return list;
+  },
+  smartNotes: (state) => {
+    if (state.notes !== null && typeof state.notes !== 'undefined') {
+      return state.notes.filter(note => note.isSmart === '0x1');
+    }
+    return [];
+  },
   ongoingOrderHistory: (state) => {
     if (state.orderHistory !== null) {
       return state.orderHistory.filter(order => parseInt(order.state) <= 1);

@@ -186,8 +186,8 @@ export default {
 
       const tx = await this.dex.spend(
         ...proof,
-        notes.note1.encrypt(),
-        notes.note2.encrypt(),
+        notes.note1.encrypt(notes.note1.owner),
+        notes.note2.encrypt(notes.note2.owner),
         { from: this.coinbase }
       );
 

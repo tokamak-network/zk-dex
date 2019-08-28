@@ -58,7 +58,7 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import { constants, decrypt, Note } from '../../../scripts/lib/Note';
+import { constants, Note } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import {
   getNotes,
@@ -71,6 +71,7 @@ import {
   updateNoteState,
   updateOrderHistory,
   updateOrderState,
+  updateOrderTaker,
 } from '../api/index';
 
 export default {
@@ -131,7 +132,7 @@ export default {
         this.order.makerNote,
         this.note.value,
         this.order.targetToken,
-        this.order.makerViewingKey,
+        this.viewingKey,
         this.salt,
         true
       );
@@ -164,7 +165,7 @@ export default {
       const tx = await this.dex.takeOrder(
         this.order.orderId,
         ...proof,
-        stakeNote.encrypt(),
+        stakeNote.encrypt(this.order.makerViewingKey),
         {
           from: this.coinbase,
         }
@@ -211,9 +212,13 @@ export default {
 
         // 3. order state update
         const order = await this.dex.orders(Web3Utils.toBN(this.order.orderId));
-        const orders = await updateOrderState(
+        await updateOrderState(
           this.order.orderId,
           Web3Utils.toHex(order.state)
+        );
+        const orders = await updateOrderTaker(
+          this.order.orderId,
+          noteOwner,
         );
         this.SET_ORDERS(orders);
 

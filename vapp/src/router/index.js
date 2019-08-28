@@ -13,6 +13,7 @@ import NotePage from '../views/NotePage.vue';
 import NoteTransferPage from '../views/NoteTransferPage.vue';
 import NoteWalletPage from '../views/NoteWalletPage.vue';
 import NoteCombinePage from '../views/NoteCombinePage.vue';
+import NoteConvertPage from '../views/NoteConvertPage.vue';
 import HistoryNoteTransferPage from '../views/HistoryNoteTransferPage.vue';
 import HistoryOrderPage from '../views/HistoryOrderPage.vue';
 import AccountImportPage from '../views/AccountImportPage.vue';
@@ -51,6 +52,10 @@ const routes = [
           {
             path: 'combine',
             component: NoteCombinePage,
+          },
+          {
+            path: 'convert',
+            component: NoteConvertPage,
           },
           {
             path: 'notes/transfer',

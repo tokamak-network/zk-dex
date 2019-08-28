@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import { getOrders } from '../api/index';
 
 export default {
@@ -30,19 +30,11 @@ export default {
   },
   props: ['orders'],
   computed: {
-    orderList () {
-      const list = {};
-      if (this.orders !== null) {
-        this.orders.forEach((o) => {
-          list[o.price] = (list[o.price] || 0) + 1;
-        });
-      }
-      return list;
-    },
+    ...mapGetters(['orderList']),
   },
   methods: {
     selectOrders (price) {
-      const orders = this.orders.filter(o => o.price === price);
+      const orders = this.orders.filter(o => (o.price === price && o.state === '0x0'));
       this.$bus.$emit('select-orders', orders);
     },
   },

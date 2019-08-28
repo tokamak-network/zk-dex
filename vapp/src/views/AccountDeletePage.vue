@@ -45,15 +45,6 @@ export default {
   beforeDestroy () {
     this.$bus.$off('select-account');
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.account,
-      () => {
-        this.accountToDelete = this.account;
-        this.addressToDelete = this.account.address;
-      }
-    );
-  },
   methods: {
     ...mapMutations(['SET_ACCOUNTS', 'DELETE_ACCOUNT']),
     selectAccount (account) {

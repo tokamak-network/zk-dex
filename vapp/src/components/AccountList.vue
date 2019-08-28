@@ -8,12 +8,12 @@
         <button class="button" @click="activeModal" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
       </div>
     </div>
-    <table class="table fixed_header">
+    <table class="table">
       <thead>
         <tr>
           <th>Index</th>
           <th>Address</th>
-          <th>Name</th>
+          <!-- <th>Name</th> -->
           <th>Total Notes</th>
         </tr>
       </thead>
@@ -21,7 +21,7 @@
         <tr v-for="(account, index) in accounts" @click="selectAccount(account)">
           <td>{{ index }}</td>
           <td>{{ account.address }}</td>
-          <td>{{ account.name }}</td>
+          <!-- <td>{{ account.name }}</td> -->
           <td>{{ getNumberOfNotesInAccount(account) }}</td>
         </tr>
       </tbody>

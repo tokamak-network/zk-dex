@@ -64,9 +64,8 @@ export default {
         this.account,
         this.amount,
         constants.DAI_TOKEN_TYPE,
-        this.viewingKey,
+        '0x0',
         salt,
-        false
       );
       return note;
     },
@@ -76,9 +75,8 @@ export default {
         this.account,
         this.amount,
         constants.ETH_TOKEN_TYPE,
-        this.viewingKey,
+        '0x0',
         salt,
-        false
       );
       return note;
     },
@@ -111,11 +109,11 @@ export default {
         await this.dai.approve(this.dex.address, this.amount, {
           from: this.coinbase,
         });
-        tx = await this.dex.mint(...proof, note.encrypt(), {
+        tx = await this.dex.mint(...proof, note.encrypt(note.owner), {
           from: this.coinbase,
         });
       } else if (this.token === 'ETH') {
-        tx = await this.dex.mint(...proof, note.encrypt(), {
+        tx = await this.dex.mint(...proof, note.encrypt(note.owner), {
           from: this.coinbase,
           value: this.amount,
         });

@@ -11,6 +11,7 @@
           <th>Token</th>
           <th>VALUE</th>
           <th>STATE</th>
+          <th>SMART NOTE</th>
         </tr>
       </thead>
       <tbody>
@@ -20,6 +21,7 @@
           <td>{{ note.token | tokenType }}</td>
           <td>{{ note.value | hexToNumberString }}</td>
           <td>{{ note.state | noteState }}</td>
+          <td>{{ note.isSmart | isSmartNote }}</td>
         </tr>
       </tbody>
     </table>

@@ -8,7 +8,9 @@ const {
   getOrderHistory,
   addOrder,
   addOrderHistory,
+  updateOrderHistoryState,
   updateOrderState,
+  updateOrderTaker,
   updateOrderHistory,
 } = require('../localstorage');
 
@@ -84,6 +86,29 @@ router.put('/', asyncWrap(
     const orders = updateOrderState(orderId, orderState);
     return res.status(200).json({
       orders,
+    });
+  }
+));
+
+router.put('/taker', asyncWrap(
+  async function (req, res) {
+    const orderId = req.body.orderId;
+    const orderTaker = req.body.orderTaker;
+    const orders = updateOrderTaker(orderId, orderTaker);
+    return res.status(200).json({
+      orders,
+    });
+  }
+));
+
+router.put('/state/:account', asyncWrap(
+  async function (req, res) {
+    const account = req.params.account;
+    const orderId = req.body.orderId;
+    const orderState = req.body.orderState;
+    const history = updateOrderHistoryState(account, orderId, orderState);
+    return res.status(200).json({
+      history,
     });
   }
 ));

@@ -178,6 +178,25 @@ function updateOrderHistory (account, orderHistory) {
   return getOrderHistory(account);
 }
 
+function updateOrderHistoryState (account, orderId, state) {
+  let history = getOrderHistory(account);
+  if (!history) {
+    return;
+  } else {
+    history = JSON.parse(history);
+  }
+
+  for (let i = 0; i < history.length; i++) {
+    if (history[i].orderId === orderId) {
+      history[i].state = state;
+      break;
+    }
+  }
+
+  _setOrderHistory(account, JSON.stringify(history));
+  return getOrderHistory(account);
+}
+
 function updateOrderState (orderId, orderState) {
   let orders = getOrders();
   if (!orders) {
@@ -189,6 +208,25 @@ function updateOrderState (orderId, orderState) {
   for (let i = 0; i < orders.length; i++) {
     if (orders[i].orderId === orderId) {
       orders[i].state = orderState;
+      break;
+    }
+  }
+
+  _setOrders(JSON.stringify(orders));
+  return orders;
+}
+
+function updateOrderTaker (orderId, orderTaker) {
+  let orders = getOrders();
+  if (!orders) {
+    return;
+  } else {
+    orders = JSON.parse(orders);
+  }
+
+  for (let i = 0; i < orders.length; i++) {
+    if (orders[i].orderId === orderId) {
+      orders[i].orderTaker = orderTaker;
       break;
     }
   }
@@ -231,6 +269,8 @@ module.exports = {
   setViewingKey,
   updateNoteState,
   updateOrderHistory,
+  updateOrderHistoryState,
   updateOrderState,
+  updateOrderTaker,
   deleteAccount,
 };

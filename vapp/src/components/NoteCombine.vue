@@ -67,6 +67,12 @@ export default {
       selectedNotes: [],
     };
   },
+  created () {
+    this.$bus.$on('select-note', this.selectNote);
+  },
+  beforeDestroy () {
+    this.$bus.$off('select-note');
+  },
   props: ['account'],
   computed: {
     ...mapState({

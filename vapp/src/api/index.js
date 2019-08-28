@@ -141,10 +141,26 @@ async function updateOrderHistory (account, order) {
   return res.data.history;
 }
 
+async function updateOrderHistoryState (account, orderId, orderState) {
+  const res = await instance.put(`/orders/state/${account}`, {
+    orderId,
+    orderState,
+  });
+  return res.data.history;
+}
+
 async function updateOrderState (orderId, orderState) {
   const res = await instance.put('/orders', {
     orderId,
     orderState,
+  });
+  return res.data.orders;
+}
+
+async function updateOrderTaker (orderId, orderTaker) {
+  const res = await instance.put('/orders/taker', {
+    orderId,
+    orderTaker,
   });
   return res.data.orders;
 }
@@ -179,6 +195,8 @@ export {
   generateProof,
   updateNoteState,
   updateOrderHistory,
+  updateOrderHistoryState,
   updateOrderState,
+  updateOrderTaker,
   deleteAccount,
 };

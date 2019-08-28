@@ -18,12 +18,12 @@
         </thead>
         <tbody>
           <tr v-for="order in completedOrderHistory">
-            <td>{{ order.orderId }}</td>
-            <td>{{ order.type }}</td>
+            <td>{{ order.orderId | hexToNumberString }}</td>
+            <td>{{ order.type | orderType }}</td>
             <td>{{ order.price | hexToNumberString }}</td>
-            <td>{{ order.amount | hexToNumberString }}</td>
-            <td>{{ order.receiveAmount | abbreviate }}</td>
-            <td>{{ order.change }}</td>
+            <td>{{ order.makerNoteAmount | hexToNumberString }}</td>
+            <td>{{ order.takerNoteAmount | hexToNumberString }}</td>
+            <td>{{ change(order) | hexToNumberString }}</td>
             <td>{{ order.state | orderState }}</td>
             <td>{{ order.timestamp }}</td>
           </tr>
@@ -33,7 +33,21 @@
 </template>
 
 <script>
+import Web3Utils from 'web3-utils';
+
 export default {
   props: ['completedOrderHistory'],
+  methods: {
+    change (order) {
+      const makerNoteAmount = Web3Utils.toBN(order.makerNoteAmount);
+      const takerNoteAmount = Web3Utils.toBN(order.takerNoteAmount);
+
+      if (makerNoteAmount.cmp(takerNoteAmount) >= 0) {
+        return Web3Utils.toHex(makerNoteAmount.sub(takerNoteAmount));
+      } else {
+        return Web3Utils.toHex(takerNoteAmount.sub(makerNoteAmount));
+      }
+    },
+  },
 };
 </script>
