@@ -11,7 +11,6 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) o0type : old note 0 type
 // (private) o0vk0 + o0vk1 : old note 0 viewKey
 // (private) o0salt : old note 0 salt, random value
-// (private) sk : secret key corresponding to address
 
 // (public) o1h0 + o1h1 : old note 1 hash
 // (private) o1owner0 + o1owner1 : old note 1 address
@@ -34,11 +33,13 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) changeVk0+ changeVk1 : change note viewKey
 // (private) changeSalt : change note salt
 
+// (private) sk : secret key corresponding to address of old notes
 
-def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0val, private field o0type, private field o0vk0, private field o0vk1, private field o0salt, private field sk, \
+
+def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0val, private field o0type, private field o0vk0, private field o0vk1, private field o0salt, \
 field o1h0, field o1h1, private field o1owner0, private field o1owner1, private field o1val, private field o1type, private field o1vk0, private field o1vk1, private field o1salt, \
 field nh0, field nh1, private field nOwner0, private field nOwner1, private field nVal, private field nType, private field nVk0, private field nVk1, private field nSalt, \
-field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt) -> (field):
+field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt, private field sk) -> (field):
   
   // check ownership of old note
   field isOwner = verifyOwnership(sk, o0owner1)

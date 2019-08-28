@@ -10,7 +10,6 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (public) smartType : smartNote type
 // (private) smartVk0 + smartVk1 : smartNote viewKey
 // (private) smartSalt : smartNote salt, random value
-// (private) sk : secret key corresponding to originOwner
 
 // (public) originH0 + originH1 : originNote hash
 // (private) originOwner0, originOwner1 : originNote owner address
@@ -26,12 +25,14 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) nVk0 + nVk1 : note viewKey
 // (private) nSalt : note salt, random value
 
+// (private) sk : secret key corresponding to originOwner
+
 // smartNote is converted to common note
 
 def main(\
-field smartH0, field smartH1, private field smartOwner0, private field smartOwner1, private field smartValue, field smartType, private field smartVk0, private field smartVk1, private field smartSalt, private field sk, \
+field smartH0, field smartH1, private field smartOwner0, private field smartOwner1, private field smartValue, field smartType, private field smartVk0, private field smartVk1, private field smartSalt, \
 field originH0, field originH1, private field originOwner0, private field originOwner1, private field originValue, field originType, private field originVk0, private field originVk1, private field originSalt, \
-field nh0, field nh1, private field nOwner0, private field nOwner1, private field nValue, field nType, private field nVk0, private field nVk1, private field nSalt) -> (field):
+field nh0, field nh1, private field nOwner0, private field nOwner1, private field nValue, field nType, private field nVk0, private field nVk1, private field nSalt, private field sk) -> (field):
   // smartNote should be smartNote
   field isSmartNote = isSmart(smartOwner0)
   isSmartNote == 1

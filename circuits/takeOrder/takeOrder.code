@@ -13,7 +13,6 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (public) oType : old note type
 // (private) ovk0 + ovk1 : old note viewKey
 // (private) oSalt : old note salt
-// (private) sk : secret key corresponding to address
 
 // (public) nh + nh : new note hash
 // (public) nOwner0 + nOwner1 : new owner address (should be makerNote.hash)
@@ -22,8 +21,10 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) nvk0 + nvk1 : new note viewKey
 // (private) nSalt : new note salt
 
-def main(field oh0, field oh1, private field owner0, private field owner1, private field oVal, field oType, private field ovk0, private field ovk1, private field oSalt, private field sk, \
-field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nType, private field nvk0, private field nvk1, private field nSalt) -> (field):
+// (private) sk : secret key corresponding to address of old note
+
+def main(field oh0, field oh1, private field owner0, private field owner1, private field oVal, field oType, private field ovk0, private field ovk1, private field oSalt, \
+field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nType, private field nvk0, private field nvk1, private field nSalt, private field sk) -> (field):
   // check ownership of note
   field isOwner = verifyOwnership(sk, owner1)
   isOwner == 1

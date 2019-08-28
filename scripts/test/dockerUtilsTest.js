@@ -20,6 +20,7 @@ const {
   getMakeOrderProof,
   getTakeOrderProof,
   getSettleOrderProof,
+  initialized,
 } = require('../lib/dockerUtils');
 
 
@@ -86,7 +87,7 @@ describe('dockerUtils', function() {
     makerNote = new Note(address, makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
     stakeNote = new Note(makerNote.hash(), stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
-    await util.sleep(3);
+    await initialized();
     
   });
 
@@ -96,12 +97,12 @@ describe('dockerUtils', function() {
   });
 
   it('should get proof of trasnfer', async () => {
-    proof = await getTransferProof(oldDAINote, sk_hex, oldDAINote1, newDAINote, changeNote)
+    proof = await getTransferProof(oldDAINote, oldDAINote1, newDAINote, changeNote, sk_hex)
     console.log(proof);
   });
 
   it('should get proof of convert', async () => {
-    proof = await getConvertProof(smartNote, sk_hex, originNote, note)
+    proof = await getConvertProof(smartNote, originNote, note, sk_hex)
     console.log(proof);
   });
   
@@ -111,7 +112,7 @@ describe('dockerUtils', function() {
   });
 
   it('should get proof of takeOrder', async () => {
-    proof = await getTakeOrderProof(parentNote, sk_hex, stakeNote, makerNote.hash())
+    proof = await getTakeOrderProof(parentNote, stakeNote, makerNote.hash(), sk_hex)
     console.log(proof);
   });
 
@@ -133,7 +134,7 @@ describe('dockerUtils', function() {
     })
     
     it('should get proof of settleOrder when makerNote.value >= stakeNote.value * price', async () => {
-      proof = await getSettleOrderProof(makerNote, sk_hex, stakeNote, rewardNote, paymentNote, changeNote, price)
+      proof = await getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, sk_hex)
       console.log(proof);
     });
   })
@@ -156,7 +157,7 @@ describe('dockerUtils', function() {
     })
 
     it('should get proof of settleOrder when makerNote.value < stakeNote.value * price', async () => {
-      proof = await getSettleOrderProof(makerNote, sk_hex, stakeNote, rewardNote, paymentNote, changeNote, price)
+      proof = await getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, sk_hex)
       console.log(proof);
     });
   })

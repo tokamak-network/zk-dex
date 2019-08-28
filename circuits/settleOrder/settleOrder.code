@@ -18,7 +18,6 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (public) o0Type : makerNote type
 // (private) o0vk0 + o0vk1 : makerNote viewKey
 // (private) o0Salt : makerNote salt
-// (private) sk : secret key corresponding to address
 
 // (public) o1h0 + o1h1 : takerNotetoMaker hash
 // (private) o1owner0 + o1owner1 : takerNotetoMaker address
@@ -55,13 +54,15 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) q1 : quotient of o1Val / price
 // (private) r1 : o1Val % price
 
+// (private) sk : secret key corresponding to address of makerNote
 
-def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0Val, field o0Type, private field o0vk0, private field o0vk1, private field o0Salt, private field sk, \
+
+def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0Val, field o0Type, private field o0vk0, private field o0vk1, private field o0Salt, \
 field o1h0, field o1h1, private field o1owner0, private field o1owner1, private field o1Val, field o1Type, private field o1vk0, private field o1vk1, private field o1Salt, \
 field n0h0, field n0h1, field n0owner0, field n0owner1, private field n0Val, field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, \
 field n1h0, field n1h1, field n1owner0, field n1owner1, private field n1Val, field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, \
 field n2h0, field n2h1, private field n2owner0, private field n2owner1, private field n2Val, field n2Type, private field n2vk0, private field n2vk1, private field n2Salt, \
-field price, private field q0, private field r0, private field q1, private field r1) -> (field):
+field price, private field q0, private field r0, private field q1, private field r1, private field sk) -> (field):
 
   // check ownership of makerNote
   field isOwner = verifyOwnership(sk, o0owner1)
