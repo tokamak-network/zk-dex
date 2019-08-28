@@ -19,6 +19,11 @@ async function getAccounts (key) {
   return JSON.parse(res.data.accounts);
 }
 
+async function getNoteByNoteHash (account, hash) {
+  const res = await instance.get(`/notes/${account}/${hash}`);
+  return res.data.note;
+}
+
 async function getNotes (account) {
   const res = await instance.get(`/notes/${account}`);
   return JSON.parse(res.data.notes);
@@ -29,10 +34,10 @@ async function getTransferNotes (account) {
   return JSON.parse(res.data.notes);
 }
 
-async function getOrdersByAccount (account) {
-  const res = await instance.get(`/orders/${account}`);
+async function getOrderHistory (account) {
+  const res = await instance.get(`/orders/history/${account}`);
   if (res.data === null) {
-    return [];
+    return null;
   } else {
     return JSON.parse(res.data.orders);
   }
@@ -50,44 +55,49 @@ async function getOrder (id) {
 async function getOrders () {
   const res = await instance.get('/orders');
   if (res.data === null) {
-    return [];
+    return null;
   } else {
     return JSON.parse(res.data.orders);
   }
 }
 
 // post
-function addAccount (key, account) {
-  return instance.post('/accounts/import', {
+async function addAccount (key, account) {
+  const res = await instance.post('/accounts/import', {
     key,
     account,
   });
+  return res.data.accounts;
 }
 
-function addNote (account, note) {
-  return instance.post('/notes', {
+async function addNote (account, note) {
+  const res = await instance.post('/notes', {
     account,
     note,
   });
+  return res.data.notes;
 }
 
-function addTransferNote (account, note) {
-  return instance.post('/notes/transfer', {
+async function addTransferNote (account, note) {
+  const res = await instance.post('/notes/transfer', {
     account,
     note,
   });
+  return res.data.notes;
 }
 
-function addOrderByAccount (account, order) {
-  return instance.post(`/orders/${account}`, {
-    order,
+async function addOrderHistory (account, history) {
+  const res = await instance.post(`/orders/history/${account}`, {
+    history,
   });
+  return res.data.history;
 }
 
-function addOrder (order) {
-  return instance.post('/orders', {
+async function addOrder (order) {
+  const res = await instance.post('/orders', {
     order,
   });
+  return res.data.orders;
 }
 
 async function setViewingKey (key, vk) {
@@ -115,53 +125,60 @@ function generateProof (params) {
 }
 
 // put
-function updateNote (account, note) {
-  return instance.put('/notes', {
-    account,
-    note,
+async function updateNoteState (noteOwner, noteHash, noteState) {
+  const res = await instance.put('/notes', {
+    noteOwner,
+    noteHash,
+    noteState,
   });
+  return res.data.notes;
 }
 
-function updateOrderByAccount (account, order) {
-  return instance.put(`/orders/${account}`, {
+async function updateOrderHistory (account, order) {
+  const res = await instance.put(`/orders/${account}`, {
     order,
   });
+  return res.data.history;
 }
 
-function updateOrder (order) {
-  return instance.put('/orders', {
-    order,
+async function updateOrderState (orderId, orderState) {
+  const res = await instance.put('/orders', {
+    orderId,
+    orderState,
   });
+  return res.data.orders;
 }
 
-function deleteAccount (key, address) {
-  return instance.delete('/accounts', {
+async function deleteAccount (key, address) {
+  const res = await instance.delete('/accounts', {
     data: {
       key,
       address,
     },
   });
+  return res.data.accounts;
 }
 
 export {
   getViewingKey,
   getAccounts,
+  getNoteByNoteHash,
   getNotes,
   getTransferNotes,
   getOrder,
-  getOrdersByAccount,
+  getOrderHistory,
   getOrders,
   addAccount,
   unlockAccount,
   addNote,
   addTransferNote,
-  addOrderByAccount,
+  addOrderHistory,
   addOrder,
   setViewingKey,
   createAccount,
   generateProof,
-  updateNote,
-  updateOrderByAccount,
-  updateOrder,
+  updateNoteState,
+  updateOrderHistory,
+  updateOrderState,
   deleteAccount,
 };

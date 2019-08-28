@@ -9,6 +9,21 @@ function getAccounts (key) {
   return localStorage.getItem(`${key}accounts`);
 }
 
+function getNoteByNoteHash (account, hash) {
+  let notes = getNotes(account);
+  if (!notes) {
+    return null;
+  } else {
+    notes = JSON.parse(notes);
+    for (let i = 0; i < notes.length; i++) {
+      if (notes[i].hash === hash) {
+        return notes[i];
+      }
+    }
+  }
+  return null;
+}
+
 function getNotes (account) {
   return localStorage.getItem(`${account}notes`);
 }
@@ -33,7 +48,7 @@ function getOrder (id) {
   return null;
 }
 
-function getOrdersByAccount (account) {
+function getOrderHistory (account) {
   return localStorage.getItem(`${account}orders`);
 }
 
@@ -50,6 +65,7 @@ function addAccount (key, account) {
   }
   accounts.push(account);
   _setAccounts(key, JSON.stringify(accounts));
+  return accounts;
 }
 
 function addNote (account, note) {
@@ -61,6 +77,7 @@ function addNote (account, note) {
   }
   notes.push(note);
   _setNotes(account, JSON.stringify(notes));
+  return notes;
 }
 
 function addTransferNote (account, note) {
@@ -72,17 +89,19 @@ function addTransferNote (account, note) {
   }
   notes.push(note);
   _setTransferNotes(account, JSON.stringify(notes));
+  return notes;
 }
 
-function addOrderByAccount (account, order) {
-  let orders = getOrdersByAccount(account);
-  if (!orders) {
-    orders = [];
+function addOrderHistory (account, orderHistory) {
+  let history = getOrderHistory(account);
+  if (!history) {
+    history = [];
   } else {
-    orders = JSON.parse(orders);
+    history = JSON.parse(history);
   }
-  orders.push(order);
-  _setOrdersByAccount(account, JSON.stringify(orders));
+  history.push(orderHistory);
+  _setOrderHistory(account, JSON.stringify(history));
+  return history;
 }
 
 function addOrder (order) {
@@ -94,6 +113,7 @@ function addOrder (order) {
   }
   orders.push(order);
   _setOrders(JSON.stringify(orders));
+  return orders;
 }
 
 function setViewingKey (key, viewingKey) {
@@ -116,12 +136,12 @@ function _setOrders (orders) {
   localStorage.setItem('orders', orders);
 }
 
-function _setOrdersByAccount (account, orders) {
+function _setOrderHistory (account, orders) {
   localStorage.setItem(`${account}orders`, orders);
 }
 
-function updateNote (account, note) {
-  let notes = getNotes(account);
+function updateNoteState (noteOwner, noteHash, noteState) {
+  let notes = getNotes(noteOwner);
   if (!notes) {
     return;
   } else {
@@ -129,34 +149,36 @@ function updateNote (account, note) {
   }
 
   for (let i = 0; i < notes.length; i++) {
-    if (notes[i].hash === note.hash) {
-      notes.splice(i, 1, note);
+    if (notes[i].hash === noteHash) {
+      notes[i].state = noteState;
       break;
     }
   }
 
-  _setNotes(account, JSON.stringify(notes));
+  _setNotes(noteOwner, JSON.stringify(notes));
+  return notes;
 }
 
-function updateOrderByAccount (account, order) {
-  let orders = getOrdersByAccount(account);
-  if (!orders) {
+function updateOrderHistory (account, orderHistory) {
+  let history = getOrderHistory(account);
+  if (!history) {
     return;
   } else {
-    orders = JSON.parse(orders);
+    history = JSON.parse(history);
   }
 
-  for (let i = 0; i < orders.length; i++) {
-    if (orders[i].orderId === order.orderId) {
-      orders.splice(i, 1, order);
+  for (let i = 0; i < history.length; i++) {
+    if (history[i].orderId === orderHistory.orderId) {
+      history.splice(i, 1, orderHistory);
       break;
     }
   }
 
-  _setOrdersByAccount(account, JSON.stringify(orders));
+  _setOrderHistory(account, JSON.stringify(history));
+  return getOrderHistory(account);
 }
 
-function updateOrder (order) {
+function updateOrderState (orderId, orderState) {
   let orders = getOrders();
   if (!orders) {
     return;
@@ -165,13 +187,14 @@ function updateOrder (order) {
   }
 
   for (let i = 0; i < orders.length; i++) {
-    if (orders[i].orderId === order.orderId) {
-      orders.splice(i, 1, order);
+    if (orders[i].orderId === orderId) {
+      orders[i].state = orderState;
       break;
     }
   }
 
   _setOrders(JSON.stringify(orders));
+  return orders;
 }
 
 function deleteAccount (key, address) {
@@ -188,24 +211,26 @@ function deleteAccount (key, address) {
     }
   }
   _setAccounts(key, JSON.stringify(accounts));
+  return accounts;
 }
 
 module.exports = {
   getViewingKey,
   getAccounts,
+  getNoteByNoteHash,
   getNotes,
   getTransferNotes,
-  getOrdersByAccount,
+  getOrderHistory,
   getOrder,
   getOrders,
   addAccount,
   addNote,
   addTransferNote,
-  addOrderByAccount,
+  addOrderHistory,
   addOrder,
   setViewingKey,
-  updateNote,
-  updateOrderByAccount,
-  updateOrder,
+  updateNoteState,
+  updateOrderHistory,
+  updateOrderState,
   deleteAccount,
 };

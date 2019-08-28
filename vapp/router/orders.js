@@ -5,11 +5,11 @@ const asyncWrap = require('../lib/asyncWrap');
 const {
   getOrder,
   getOrders,
-  getOrdersByAccount,
+  getOrderHistory,
   addOrder,
-  addOrderByAccount,
-  updateOrder,
-  updateOrderByAccount,
+  addOrderHistory,
+  updateOrderState,
+  updateOrderHistory,
 } = require('../localstorage');
 
 const router = express.Router();
@@ -23,6 +23,7 @@ router.get('/', asyncWrap(
   }
 ));
 
+// TODO: fix duplicate ('/:account') path
 router.get('/:id', asyncWrap(
   async function (req, res) {
     const id = req.params.id;
@@ -33,10 +34,10 @@ router.get('/:id', asyncWrap(
   }
 ));
 
-router.get('/:account', asyncWrap(
+router.get('/history/:account', asyncWrap(
   async function (req, res) {
     const account = req.params.account;
-    const orders = getOrdersByAccount(account);
+    const orders = getOrderHistory(account);
     return res.status(200).json({
       orders,
     });
@@ -46,17 +47,21 @@ router.get('/:account', asyncWrap(
 router.post('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
-    addOrder(order);
-    return res.status(200).json({});
+    const orders = addOrder(order);
+    return res.status(200).json({
+      orders,
+    });
   }
 ));
 
-router.post('/:account', asyncWrap(
+router.post('/history/:account', asyncWrap(
   async function (req, res) {
     const account = req.params.account;
-    const order = req.body.order;
-    addOrderByAccount(account, order);
-    return res.status(200).json({});
+    const orderHistory = req.body.history;
+    const history = addOrderHistory(account, orderHistory);
+    return res.status(200).json({
+      history,
+    });
   }
 ));
 
@@ -65,16 +70,21 @@ router.put('/:account', asyncWrap(
   async function (req, res) {
     const account = req.params.account;
     const order = req.body.order;
-    updateOrderByAccount(account, order);
-    return res.status(200).json({});
+    const orders = updateOrderHistory(account, order);
+    return res.status(200).json({
+      orders,
+    });
   }
 ));
 
 router.put('/', asyncWrap(
   async function (req, res) {
-    const order = req.body.order;
-    updateOrder(order);
-    return res.status(200).json({});
+    const orderId = req.body.orderId;
+    const orderState = req.body.orderState;
+    const orders = updateOrderState(orderId, orderState);
+    return res.status(200).json({
+      orders,
+    });
   }
 ));
 

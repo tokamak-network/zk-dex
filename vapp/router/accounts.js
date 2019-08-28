@@ -52,8 +52,10 @@ router.post('/import', asyncWrap(
   async function (req, res) {
     const key = req.body.key;
     const account = req.body.account;
-    addAccount(key, account);
-    return res.status(200).json({});
+    const accounts = addAccount(key, account);
+    return res.status(200).json({
+      accounts,
+    });
   }
 ));
 
@@ -61,8 +63,10 @@ router.delete('/', asyncWrap(
   async function (req, res) {
     const key = req.body.key;
     const address = req.body.address;
-    deleteAccount(key, address);
-    return res.status(200).json({});
+    const accounts = deleteAccount(key, address);
+    return res.status(200).json({
+      accounts,
+    });
   }
 ));
 
