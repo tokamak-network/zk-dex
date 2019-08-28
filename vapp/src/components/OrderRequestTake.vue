@@ -6,10 +6,12 @@
           Order id
         </a>
       </p>
-      <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ orderId }}
-        </a>
+      <p class="control is-expanded" style="width: 100%;">
+          <b-select placeholder="Select Order" style="width: 100%;" v-model="selectedOrder">
+            <option v-for="order in orders">
+              {{ order.orderId | hexToNumberString }}
+            </option>
+          </b-select>
       </p>
     </div>
     <div class="field has-addons">
@@ -55,26 +57,32 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import { constants, decrypt, Note } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import {
+  getNotes,
   getOrder,
+  getOrderHistory,
   addNote,
-  addOrderByAccount,
+  addOrderHistory,
   addOrder,
   generateProof,
-  updateNote,
-  updateOrderByAccount,
-  updateOrder,
+  updateNoteState,
+  updateOrderHistory,
+  updateOrderState,
 } from '../api/index';
 
 export default {
   data () {
     return {
       loading: false,
+      selectedOrder: null,
       orderId: '',
       orderPrice: '',
+      order: null,
+      orders: [],
+      note: null,
       noteHash: '',
       noteValue: '',
       salt: null,
@@ -82,33 +90,42 @@ export default {
   },
   computed: {
     ...mapState({
+      accounts: state => state.accounts,
       coinbase: state => state.web3.coinbase,
       viewingKey: state => state.viewingKey,
-      note: state => state.note,
-      order: state => state.order,
       dex: state => state.dexContractInstance,
     }),
   },
   created () {
+    this.$bus.$on('select-note', this.selectNote);
+    this.$bus.$on('select-orders', this.selectOrders);
     this.salt = Web3Utils.randomHex(16);
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.note,
-      () => {
-        this.noteHash = this.note.hash;
-        this.noteValue = this.note.value;
-      }
-    );
-    this.$store.watch(
-      (state, getters) => getters.order,
-      () => {
-        this.orderId = this.order.orderId;
-        this.orderPrice = this.order.price;
-      }
-    );
+  beforeDestroy () {
+    // TODO: research
+    // this.$bus.$off('select-note');
+  },
+  watch: {
+    selectedOrder (id) {
+      const orderId = Web3Utils.toHex(id);
+      const order = this.orders.find(function (o) {
+        return o.orderId === orderId;
+      });
+      this.order = order;
+      this.orderId = order.orderId;
+      this.orderPrice = order.price;
+    },
   },
   methods: {
+    ...mapMutations(['SET_ORDERS', 'SET_ORDER_HISTORY', 'SET_NOTES']),
+    selectNote (note) {
+      this.note = note;
+      this.noteHash = note.hash;
+      this.noteValue = note.value;
+    },
+    selectOrders (orders) {
+      this.orders = orders;
+    },
     stakeNote () {
       const stakeNote = new Note(
         this.order.makerNote,
@@ -154,49 +171,90 @@ export default {
       );
 
       if (tx.receipt.status) {
-        const taker = Web3Utils.padLeft(
+        // 1. taker note state update
+        const noteOwner = Web3Utils.padLeft(
           Web3Utils.toHex(Web3Utils.toBN(takerNote.owner)),
-          20
+          40
         );
-        const maker = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(this.order.orderMaker)),
-          20
+        const noteHash = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
+          64
         );
+        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
+        await updateNoteState(noteOwner, noteHash, noteState);
 
-        const hash1 = tx.logs[0].args.note;
-        const state1 = Web3Utils.hexToNumberString(
-          Web3Utils.toHex(tx.logs[0].args.state)
+        // 2. stake note create
+        const hash = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
+          64
         );
-        takerNote.hash = hash1;
-        takerNote.state = state1;
-        await updateNote(taker, takerNote);
-        this.$parent.$emit('updateNote', takerNote);
-
-        const hash2 = tx.logs[1].args.note;
-        const state2 = Web3Utils.hexToNumberString(
-          Web3Utils.toHex(tx.logs[1].args.state)
+        const state = Web3Utils.toHex(tx.logs[1].args.state);
+        const noteObject = {};
+        noteObject.owner = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(stakeNote.owner)),
+          40
         );
-        stakeNote.hash = hash2;
-        stakeNote.state = state2;
-        await addNote(maker, stakeNote);
-        this.$parent.$emit('addNote', stakeNote);
-        // TODO: if taking order occurs between same accounts, it is not reflect view.
+        noteObject.value = Web3Utils.toHex(Web3Utils.toBN(stakeNote.value));
+        noteObject.token = Web3Utils.toHex(Web3Utils.toBN(stakeNote.token));
+        noteObject.viewingKey = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(stakeNote.viewingKey)),
+          16
+        );
+        noteObject.salt = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(stakeNote.salt)),
+          32
+        );
+        noteObject.isSmart = Web3Utils.toHex(Web3Utils.toBN(stakeNote.isSmart));
+        noteObject.hash = hash;
+        noteObject.state = state;
+        await addNote(this.order.orderMaker, noteObject);
 
-        const order = await getOrder(this.order.orderId);
-        order.state = '1';
-        await updateOrderByAccount(maker, order);
-        this.$parent.$emit('updateOrder', order);
+        // 3. order state update
+        const order = await this.dex.orders(Web3Utils.toBN(this.order.orderId));
+        const orders = await updateOrderState(
+          this.order.orderId,
+          Web3Utils.toHex(order.state)
+        );
+        this.SET_ORDERS(orders);
 
-        order.type = 'Buy';
-        order.orderTaker = taker;
-        order.receivedNote = takerNote.hash;
-        order.receivedAmount = takerNote.value;
-        order.timestamp = new Date().getTime();
-        await updateOrder(order);
-        await addOrderByAccount(taker, order);
-        this.$parent.$emit('addNewOrderOngoingHistory', order);
-      } else {}
+        // 4. update order history state
+        this.order.parentNote = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(order.parentNote)),
+          64
+        );
+        this.order.takerNoteToMaker = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(order.takerNoteToMaker)),
+          64
+        );
+        this.order.state = Web3Utils.toHex(order.state);
+        const orderHistory = this.order;
+        orderHistory.takerNote = noteObject.hash;
+        orderHistory.takerNoteAmount = noteObject.value;
+        await updateOrderHistory(this.order.orderMaker, orderHistory);
 
+        // 5. create order history (buy)
+        orderHistory.timestamp = new Date().getTime();
+        orderHistory.type = '0x1';
+        await addOrderHistory(takerNote.owner, orderHistory);
+
+        const newNotes = [];
+        for (let i = 0; i < this.accounts.length; i++) {
+          const n = await getNotes(this.accounts[i].address);
+          if (n !== null) {
+            newNotes.push(...n);
+          }
+        }
+        this.SET_NOTES(newNotes);
+
+        const newOrderHistory = [];
+        for (let i = 0; i < this.accounts.length; i++) {
+          const h = await getOrderHistory(this.accounts[i].address);
+          if (h !== null) {
+            newOrderHistory.push(...h);
+          }
+        }
+        this.SET_ORDER_HISTORY(newOrderHistory);
+      }
       this.loading = false;
       this.clear();
     },

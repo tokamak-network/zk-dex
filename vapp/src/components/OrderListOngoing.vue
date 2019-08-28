@@ -20,18 +20,18 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="order in ongoingOrder">
+        <tr v-for="order in ongoingOrderHistory">
           <td>{{ order.sourceToken | tokenType }}-{{ order.targetToken | tokenType }}</td>
-          <td>{{ order.orderId }}</td>
-          <td>{{ order.type }}</td>
+          <td>{{ order.orderId | hexToNumberString }}</td>
+          <td>{{ order.type | orderType }}</td>
           <td>{{ order.price | hexToNumberString }}</td>
           <td>{{ order.makerNote | abbreviate }}</td>
-          <td>{{ order.amount | hexToNumberString }}</td>
-          <td>{{ order.receivedNote | abbreviate }}</td>
-          <td>{{ order.receivedAmount | hexToNumberString }}</td>
+          <td>{{ order.makerNoteAmount | hexToNumberString }}</td>
+          <td>{{ order.takerNote | abbreviate }}</td>
+          <td>{{ order.takerNoteAmount | hexToNumberString }}</td>
           <td>{{ order.state | orderState }}</td>
           <td>{{ order.timestamp }}</td>
-          <td v-if="$route.path === '/exchange' && order.type === 'Sell' && order.state === '1'">
+          <td v-if="$route.path === '/exchange' && order.type === '0x0' && order.state === '0x1'">
             <button class="button" @click="settleOrder(order)">Settle</button>
           </td>
         </tr>
@@ -45,11 +45,16 @@ import { mapState } from 'vuex';
 
 import { Note, constants, decrypt } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
-import { generateProof } from '../api/index';
+import { generateProof, getNoteByNoteHash, updateNoteState } from '../api/index';
 import { encode } from 'rlp';
 
 export default {
-  props: ['ongoingOrder'],
+  data () {
+    return {
+      order: null,
+    };
+  },
+  props: ['ongoingOrderHistory'],
   computed: {
     ...mapState({
       coinbase: state => state.web3.coinbase,
@@ -57,66 +62,87 @@ export default {
     }),
   },
   methods: {
-    async notes (order) {
-      const makerNote = decrypt(
-        await this.dex.encryptedNotes(order.makerNote),
-        order.makerViewingKey
-      );
-      const takerNote = decrypt(
-        await this.dex.encryptedNotes(order.parentNote),
-        order.makerViewingKey
-      );
-      const stakeNote = decrypt(
-        await this.dex.encryptedNotes(order.takerNoteToMaker),
-        order.makerViewingKey
-      );
+    async notes () {
+      const makerNote = await getNoteByNoteHash(this.order.orderMaker, this.order.makerNote);
+      const stakeNote = await getNoteByNoteHash(this.order.orderMaker, this.order.takerNoteToMaker);
 
-      const change = this.change(makerNote.value, takerNote.value);
+      const makerNoteValue = Web3Utils.toBN(makerNote.value);
+      const stakeNoteValue = Web3Utils.toBN(stakeNote.value);
+      const price = Web3Utils.toBN(this.order.price);
 
-      const rewardNote = new Note(
-        takerNote.hash(),
-        makerNote.value,
-        order.sourceToken,
-        order.makerViewingKey,
-        Web3Utils.randomHex(16),
-        true
-      );
-      const paymentNote = new Note(
-        makerNote.hash(),
-        takerNote.value,
-        order.targetToken,
-        order.makerViewingKey,
-        Web3Utils.randomHex(16),
-        true
-      );
-      const changeNote = new Note(
-        makerNote.hash(),
-        change,
-        order.sourceToken,
-        order.makerViewingKey,
-        Web3Utils.randomHex(16),
-        true
-      );
+      let rewardNote;
+      let paymentNote;
+      let changeNote;
 
+      if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
+        rewardNote = new Note(
+          this.order.parentNote,
+          stakeNoteValue.div(price),
+          this.order.sourceToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+        paymentNote = new Note(
+          makerNote.hash,
+          stakeNote.value,
+          this.order.targetToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+        changeNote = new Note(
+          makerNote.hash,
+          makerNoteValue.sub(stakeNoteValue.div(price)),
+          this.order.sourceToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+      } else {
+        rewardNote = new Note(
+          this.order.parentNote,
+          makerNoteValue,
+          this.order.sourceToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+        paymentNote = new Note(
+          makerNote.hash,
+          makerNoteValue.mul(price),
+          this.order.targetToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+        changeNote = new Note(
+          this.order.parentNote,
+          stakeNoteValue.sub(makerNoteValue.mul(price)),
+          this.order.targetToken,
+          '0x0',
+          Web3Utils.randomHex(16),
+          true
+        );
+      }
       return {
         makerNote,
-        takerNote,
         stakeNote,
         rewardNote,
         paymentNote,
         changeNote,
       };
     },
-    async proof (order, notes) {
+    async proof (makerNote, stakeNote, rewardNote, paymentNote, changeNote) {
       const params = {
         circuit: 'settleOrder',
         params: [
-          notes.makerNote,
-          notes.stakeNote,
-          notes.rewardNote,
-          notes.paymentNote,
-          notes.changeNote,
-          order.price,
+          makerNote,
+          stakeNote,
+          rewardNote,
+          paymentNote,
+          changeNote,
+          this.order.price,
         ],
       };
 
@@ -124,20 +150,48 @@ export default {
       return res.data.proof;
     },
     async settleOrder (order) {
-      const notes = await this.notes(order);
-      const proof = this.proof(order, notes);
+      this.order = order;
 
+      const { makerNote, stakeNote, rewardNote, paymentNote, changeNote } = await this.notes();
+      const proof = await this.proof(makerNote, stakeNote, rewardNote, paymentNote, changeNote);
       const encoded = encode([
-        notes.rewardNote.encrypt(),
-        notes.paymentNote.encrypt(),
-        notes.changeNote.encrypt(),
+        rewardNote.encrypt(),
+        paymentNote.encrypt(),
+        changeNote.encrypt(),
       ]);
       const tx = await this.dex.settleOrder(order.orderId, ...proof, encoded, {
         from: this.coinbase,
       });
-    },
-    change (s, d) {
-      return Web3Utils.toBN(d).sub(Web3Utils.toBN(s));
+
+      if (tx.receipt.status) {
+        alert('success');
+        let noteHash;
+        let noteState;
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[0].args.state);
+        // await addNote(orderMaker, noteObject);
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[1].args.state);
+        // await addNote(orderMaker, noteObject);
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[2].args.state);
+        // await addNote(orderMaker, noteObject);
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[3].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[3].args.state);
+        // await updateNoteState(noteOwner, noteHash, noteState);
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[4].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[4].args.state);
+        // await updateNoteState(noteOwner, noteHash, noteState);
+
+        // noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[5].args.note)), 64);
+        // noteState = Web3Utils.toHex(tx.logs[5].args.state);
+        // await updateNoteState(noteOwner, noteHash, noteState);
+      }
     },
   },
 };

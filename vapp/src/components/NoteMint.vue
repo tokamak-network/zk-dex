@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import { Note, constants } from '../../../scripts/lib/Note';
 import { addNote, generateProof } from '../api/index';
 import Web3Utils from 'web3-utils';
@@ -57,6 +57,7 @@ export default {
   },
   props: ['accounts', 'token'],
   methods: {
+    ...mapMutations(['SET_NOTES']),
     daiNote () {
       const salt = Web3Utils.randomHex(16);
       const note = new Note(
@@ -120,15 +121,23 @@ export default {
         });
       }
 
-      const hash = tx.logs[0].args.note;
-      const state = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[0].args.state)
-      );
-      note.hash = hash;
-      note.state = state;
-      await addNote(this.account, note);
-      this.$emit('addNewNote', note);
+      if (tx.receipt.status) {
+        const hash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+        const state = Web3Utils.toHex(tx.logs[0].args.state);
 
+        const noteObject = {};
+        noteObject.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.owner)), 40);
+        noteObject.value = Web3Utils.toHex(Web3Utils.toBN(note.value));
+        noteObject.token = Web3Utils.toHex(Web3Utils.toBN(note.token));
+        noteObject.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.viewingKey)), 16);
+        noteObject.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.salt)), 32);
+        noteObject.isSmart = Web3Utils.toHex(Web3Utils.toBN(note.isSmart));
+        noteObject.hash = hash;
+        noteObject.state = state;
+
+        const notes = await addNote(this.account, noteObject);
+        this.SET_NOTES(notes);
+      }
       this.loading = false;
       this.$router.push({ path: '/' });
     },

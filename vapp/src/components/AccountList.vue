@@ -22,7 +22,7 @@
           <td>{{ index }}</td>
           <td>{{ account.address }}</td>
           <td>{{ account.name }}</td>
-          <td>{{ account.numberOfNotes }}</td>
+          <td>{{ getNumberOfNotesInAccount(account) }}</td>
         </tr>
       </tbody>
     </table>
@@ -48,8 +48,8 @@
 </template>
 
 <script>
-import { mapMutations, mapState } from 'vuex';
-import { createAccount, addAccount, getAccounts } from '../api/index';
+import { mapMutations, mapState, mapGetters } from 'vuex';
+import { createAccount, addAccount } from '../api/index';
 
 export default {
   data () {
@@ -64,29 +64,33 @@ export default {
     ...mapState({
       key: state => state.key,
     }),
+    ...mapGetters(['numberOfNotesInAccount']),
   },
   methods: {
-    ...mapMutations(['SET_ACCOUNT']),
-    selectAccount (account) {
-      this.SET_ACCOUNT(account);
+    ...mapMutations(['ADD_ACCOUNT']),
+    getNumberOfNotesInAccount (account) {
+      return this.numberOfNotesInAccount(account);
     },
+    selectAccount (account) {
+      this.$bus.$emit('select-account', account);
+    },
+    // TODO: refactoring
     createNewAccount () {
       this.done = false;
       createAccount(this.passphrase).then((res) => {
         const keystore = res.data.address;
-        const account = { };
+        const account = {};
         account.keystore = keystore;
         account.address = `0x${keystore.address}`;
         account.name = '';
         account.numberOfNotes = 0;
 
         addAccount(this.key, account).then(() => {
-          this.$emit('addNewAccount', account);
+          this.ADD_ACCOUNT(account);
+          this.createAccountModalActive = false;
           this.done = true;
+          this.passphrase = '';
         });
-        this.createAccountModalActive = false;
-        this.done = true;
-        this.passphrase = '';
       });
     },
     activeModal () {

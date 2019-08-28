@@ -15,9 +15,9 @@
       </thead>
       <tbody>
         <tr v-for="note in notes" @click="selectNote(note)">
-          <td>{{ note.hash | abbreviate }}</td>
-          <td>{{ note.owner | address | abbreviate }}</td>
-          <td>{{ note.token | hexToNumberString | tokenType }}</td>
+          <td>{{ note.hash | abbreviate}}</td>
+          <td>{{ note.owner | abbreviate }}</td>
+          <td>{{ note.token | tokenType }}</td>
           <td>{{ note.value | hexToNumberString }}</td>
           <td>{{ note.state | noteState }}</td>
         </tr>
@@ -32,11 +32,6 @@ import { constants } from '../../../scripts/lib/Note';
 import { getNotes } from '../api/index';
 
 export default {
-  data () {
-    return {
-      selectedNote: null,
-    };
-  },
   props: ['notes'],
   computed: {
     ...mapState({
@@ -44,10 +39,8 @@ export default {
     }),
   },
   methods: {
-    ...mapActions(['setNote']),
     selectNote (note) {
-      this.selectedNote = note;
-      this.setNote(note);
+      this.$bus.$emit('select-note', note);
     },
     mappedNotes (notes) {
       return notes.map((note) => {

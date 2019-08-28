@@ -5,13 +5,13 @@
       <thead>
         <tr>
           <th>PRICE(DAI)</th>
-          <th>STATE</th>
+          <th>Orders</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="order in orders" @click="selectOrder(order)">
-          <td>{{ order.price | hexToNumberString }}</td>
-          <td>{{ order.state | toNumberString | orderState }}</td>
+        <tr v-for="(count, price) in orderList" @click="selectOrders(price)">
+          <td>{{ price | hexToNumberString }} </td>
+          <td>{{ count }}</td>
         </tr>
       </tbody>
     </table>
@@ -29,12 +29,29 @@ export default {
     };
   },
   props: ['orders'],
+  computed: {
+    orderList () {
+      const list = {};
+      if (this.orders !== null) {
+        this.orders.forEach((o) => {
+          list[o.price] = (list[o.price] || 0) + 1;
+        });
+      }
+      return list;
+    },
+  },
   methods: {
-    ...mapActions(['setOrder']),
-    selectOrder (order) {
-      this.selectedOrder = order;
-      this.setOrder(order);
+    selectOrders (price) {
+      const orders = this.orders.filter(o => o.price === price);
+      this.$bus.$emit('select-orders', orders);
     },
   },
 };
+
+
+const a = {
+  'a': 10,
+  'b': 20,
+};
+
 </script>

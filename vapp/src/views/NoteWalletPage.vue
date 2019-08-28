@@ -9,7 +9,7 @@
 import NoteBalanceList from '../components/NoteBalanceList';
 import NoteList from '../components/NoteList';
 
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import { getAccounts, getNotes } from '../api/index';
 
 export default {
@@ -17,29 +17,35 @@ export default {
     NoteBalanceList,
     NoteList,
   },
-  data () {
-    return {
-      notes: [],
-    };
-  },
   computed: {
     ...mapState({
       key: state => state.key,
+      accounts: state => state.accounts,
+      notes: state => state.notes,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
         const notes = [];
-        for (let i = 0; i < accounts.length; i++) {
-          const n = await getNotes(accounts[i].address);
-          if (n != null) {
-            notes.push(...n);
+
+        if (a !== null) {
+          accounts.push(...a);
+          for (let i = 0; i < accounts.length; i++) {
+            const n = await getNotes(accounts[i].address);
+            if (n !== null) {
+              notes.push(...n);
+            }
           }
         }
-        this.notes = notes;
-      }
-    });
+        this.SET_ACCOUNTS(accounts);
+        this.SET_NOTES(notes);
+      });
+    }
+  },
+  methods: {
+    ...mapMutations(['SET_ACCOUNTS', 'SET_NOTES']),
   },
 };
 </script>

@@ -49,7 +49,12 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" v-model="account">
+        <input v-if="!isSelfTransfer" style="width: 100%; text-align: right;" class="input" type="text" v-model="account">
+        <b-select v-else placeholder="Select Account" v-model="account">
+          <option v-for="account in accounts">
+            {{ account.address }} {{ account.name }}
+          </option>
+        </b-select>
       </p>
     </div>
     <div class="field has-addons">
@@ -69,14 +74,16 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 import Web3Utils from 'web3-utils';
 import { Note } from '../../../scripts/lib/Note';
 import {
+  getNotes,
+  getTransferNotes,
   addNote,
   addTransferNote,
-  updateNote,
+  updateNoteState,
   generateProof,
 } from '../api/index';
 
@@ -84,6 +91,7 @@ export default {
   data () {
     return {
       loading: false,
+      note: '',
       noteOwner: '',
       noteHash: '',
       noteValue: '',
@@ -94,31 +102,39 @@ export default {
   },
   computed: {
     ...mapState({
+      accounts: state => state.accounts,
       coinbase: state => state.web3.coinbase,
-      note: state => state.note,
       dex: state => state.dexContractInstance,
       viewingKey: state => state.viewingKey,
     }),
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.note,
-      () => {
-        this.noteOwner = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
-          20
-        );
-        this.noteHash = this.note.hash;
-        this.noteValue = this.note.value;
-        if (this.isSelfTransfer) {
-          this.account = this.noteOwner;
-        }
-      }
-    );
+  created () {
+    this.$bus.$on('select-note', this.selectNote);
+  },
+  beforeDestroy () {
+    this.$bus.$off('select-note');
   },
   methods: {
+    ...mapMutations([
+      'SET_NOTES',
+      'SET_TRANSFER_NOTES',
+    ]),
+    selectNote (note) {
+      this.note = note;
+      this.noteOwner = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(note.owner)),
+        40
+      );
+      this.noteHash = note.hash;
+      this.noteValue = note.value;
+      if (this.isSelfTransfer) {
+        this.account = this.noteOwner;
+      } else {
+        this.account = '';
+      }
+    },
     notes () {
-      if (this.note.state !== '1') {
+      if (this.note.state !== '0x1') {
         alert('invalid note');
         return null;
       }
@@ -135,14 +151,14 @@ export default {
         this.account,
         this.amount,
         type,
-        this.viewingKey,
+        '0x0',
         Web3Utils.randomHex(16)
       );
       const note2 = new Note(
         this.note.owner,
         change,
         type,
-        this.viewingKey,
+        '0x0',
         Web3Utils.randomHex(16)
       );
 
@@ -175,51 +191,77 @@ export default {
         { from: this.coinbase }
       );
 
-      const hash1 = tx.logs[0].args.note;
-      const state1 = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[0].args.state)
-      );
-      this.note.hash = hash1;
-      this.note.state = state1;
-      const noteOwner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
-        20
-      );
-      await updateNote(noteOwner, this.note);
+      // 1. update note
+      const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
+      const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+      const noteState = Web3Utils.toHex(tx.logs[0].args.state);
+      await updateNoteState(noteOwner, noteHash, noteState);
 
-      const hash2 = tx.logs[1].args.note;
-      const state2 = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[1].args.state)
-      );
-      notes.note1.hash = hash2;
-      notes.note1.state = state2;
-      await addNote(this.account, notes.note1);
+      // 2. add note1
+      const noteHash1 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)), 64);
+      const noteState1 = Web3Utils.toHex(tx.logs[1].args.state);
+      const noteObject1 = {};
+      noteObject1.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.owner)), 40);
+      noteObject1.value = Web3Utils.toHex(Web3Utils.toBN(notes.note1.value));
+      noteObject1.token = Web3Utils.toHex(Web3Utils.toBN(notes.note1.token));
+      noteObject1.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.viewingKey)), 16);
+      noteObject1.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.salt)), 32);
+      noteObject1.isSmart = Web3Utils.toHex(Web3Utils.toBN(notes.note1.isSmart));
+      noteObject1.hash = noteHash1;
+      noteObject1.state = noteState1;
+      await addNote(noteObject1.owner, noteObject1);
 
-      const hash3 = tx.logs[2].args.note;
-      const state3 = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[2].args.state)
-      );
-      notes.note2.hash = hash3;
-      notes.note2.state = state3;
-      await addNote(noteOwner, notes.note2);
+      // 3. add note2
+      const noteHash2 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)), 64);
+      const noteState2 = Web3Utils.toHex(tx.logs[2].args.state);
+      const noteObject2 = {};
+      noteObject2.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.owner)), 40);
+      noteObject2.value = Web3Utils.toHex(Web3Utils.toBN(notes.note2.value));
+      noteObject2.token = Web3Utils.toHex(Web3Utils.toBN(notes.note2.token));
+      noteObject2.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.viewingKey)), 16);
+      noteObject2.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.salt)), 32);
+      noteObject2.isSmart = Web3Utils.toHex(Web3Utils.toBN(notes.note2.isSmart));
+      noteObject2.hash = noteHash2;
+      noteObject2.state = noteState2;
+      await addNote(noteObject2.owner, noteObject2);
 
+      // transfer note1
       const transferNote1 = this.note;
-      transferNote1.type = 'Send';
+      transferNote1.type = '0x0'; // 0x0: send, 0x1: receive
       transferNote1.from = noteOwner;
       transferNote1.to = this.account;
-      transferNote1.change = Web3Utils.hexToNumberString(Web3Utils.toHex(this.change(this.amount)));
-      transferNote1.value = Web3Utils.hexToNumberString(Web3Utils.toHex(this.amount));
+      transferNote1.change = Web3Utils.toHex(this.change(this.amount));
+      transferNote1.value = Web3Utils.toHex(this.amount);
       transferNote1.transactionHash = tx.receipt.transactionHash;
       await addTransferNote(noteOwner, transferNote1);
 
-      const transferNote2 = notes.note1;
-      transferNote2.type = 'Receive';
+      // transfer note2
+      const transferNote2 = noteObject1;
+      transferNote2.type = '0x1';
       transferNote2.from = '',
       transferNote2.to = this.account;
       transferNote2.change = '',
-      transferNote2.value = Web3Utils.hexToNumberString(Web3Utils.toHex(this.amount));
+      transferNote2.value = Web3Utils.toHex(this.amount);
       transferNote2.transactionHash = tx.receipt.transactionHash;
       await addTransferNote(this.account, transferNote2);
+
+      const newNotes = [];
+      for (let i = 0; i < this.accounts.length; i++) {
+        const n = await getNotes(this.accounts[i].address);
+        if (n !== null) {
+          newNotes.push(...n);
+        }
+      }
+      this.SET_NOTES(newNotes);
+
+      const newTransferNotes = [];
+      for (let i = 0; i < this.accounts.length; i++) {
+        const n = await getTransferNotes(this.accounts[i].address);
+        if (n !== null) {
+          newTransferNotes.push(...n);
+        }
+      }
+      this.SET_TRANSFER_NOTES(newTransferNotes);
 
       this.loading = false;
       this.$router.push({ path: '/' });

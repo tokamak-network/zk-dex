@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import AccountList from '../components/AccountList.vue';
 
 import { getAccounts, deleteAccount } from '../api/index';
@@ -17,7 +17,6 @@ import { getAccounts, deleteAccount } from '../api/index';
 export default {
   data () {
     return {
-      accounts: [],
       accountToDelete: null,
       addressToDelete: '',
     };
@@ -28,15 +27,23 @@ export default {
   computed: {
     ...mapState({
       key: state => state.key,
-      account: state => state.account,
+      accounts: state => state.accounts,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-      }
-    });
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
+        if (a !== null) {
+          accounts.push(...a);
+        }
+        this.SET_ACCOUNTS(accounts);
+      });
+    }
+    this.$bus.$on('select-account', this.selectAccount);
+  },
+  beforeDestroy () {
+    this.$bus.$off('select-account');
   },
   mounted () {
     this.$store.watch(
@@ -48,14 +55,14 @@ export default {
     );
   },
   methods: {
+    ...mapMutations(['SET_ACCOUNTS', 'DELETE_ACCOUNT']),
+    selectAccount (account) {
+      this.accountToDelete = account;
+      this.addressToDelete = account.address;
+    },
     deleteAccount () {
       deleteAccount(this.key, this.addressToDelete).then(() => {
-        for (let i = 0; i < this.accounts.length; i++) {
-          if (this.accounts[i].address === this.addressToDelete) {
-            this.accounts.splice(i, 1);
-            break;
-          }
-        }
+        this.DELETE_ACCOUNT(this.accountToDelete);
       });
     },
   },

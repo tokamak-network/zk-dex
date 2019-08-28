@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import AccountList from '../components/AccountList.vue';
 
 import { getAccounts, unlockAccount } from '../api/index';
@@ -29,7 +29,6 @@ import keythereum from 'keythereum';
 export default {
   data () {
     return {
-      accounts: [],
       accountToExport: null,
       addressToExport: '',
       passphrase: '',
@@ -43,26 +42,30 @@ export default {
   computed: {
     ...mapState({
       key: state => state.key,
-      account: state => state.account,
+      accounts: state => state.accounts,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-      }
-    });
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
+        if (a !== null) {
+          accounts.push(...a);
+        }
+        this.SET_ACCOUNTS(accounts);
+      });
+    }
+    this.$bus.$on('select-account', this.selectAccount);
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.account,
-      () => {
-        this.accountToExport = this.account;
-        this.addressToExport = this.account.address;
-      }
-    );
+  beforeDestroy () {
+    this.$bus.$off('select-account');
   },
   methods: {
+    ...mapMutations(['SET_ACCOUNTS']),
+    selectAccount (account) {
+      this.accountToExport = account;
+      this.addressToExport = account.address;
+    },
     async unlockAccount () {
       const res = await unlockAccount(
         this.passphrase,

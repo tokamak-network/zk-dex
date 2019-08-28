@@ -84,16 +84,6 @@ export default {
       return Web3Utils.hexToNumberString(Web3Utils.toHex(totalAmount));
     },
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.note,
-      () => {
-        if (!this.selectedNotes.includes(this.note)) {
-          this.selectedNotes.push(this.note);
-        }
-      }
-    );
-  },
   methods: {
     unselectNote (note) {
       const i = this.selectedNotes.indexOf(note);

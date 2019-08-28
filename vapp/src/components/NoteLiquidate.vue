@@ -46,14 +46,15 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import { updateNote, generateProof } from '../api/index';
+import { mapState, mapMutations } from 'vuex';
+import { updateNoteState, generateProof } from '../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {
   data () {
     return {
       loading: false,
+      note: null,
       noteOwner: '',
       noteHash: '',
       noteValue: '',
@@ -67,24 +68,28 @@ export default {
   computed: {
     ...mapState({
       coinbase: state => state.web3.coinbase,
-      note: state => state.note,
       dex: state => state.dexContractInstance,
     }),
   },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.note,
-      () => {
-        const note = this.$store.getters.note;
-        const owner = note.owner;
-
-        this.noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(owner)), 20);
-        this.noteHash = note.hash;
-        this.noteValue = note.value;
-      }
-    );
+  created () {
+    this.$bus.$on('select-note', this.selectNote);
+  },
+  beforeDestroy () {
+    this.$bus.$off('select-note');
   },
   methods: {
+    ...mapMutations([
+      'SET_NOTES',
+    ]),
+    selectNote (note) {
+      this.note = note;
+      this.noteOwner = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(note.owner)),
+        40
+      );
+      this.noteHash = note.hash;
+      this.noteValue = note.value;
+    },
     async proof () {
       const params = {
         circuit: 'mintNBurnNote',
@@ -102,15 +107,11 @@ export default {
         from: this.coinbase,
       });
 
-      const note = this.note;
-      const hash = tx.logs[0].args.note;
-      const state = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[0].args.state)
-      );
-      note.hash = hash;
-      note.state = state;
-      await updateNote(this.noteOwner, note);
-      this.$emit('updateNote', note);
+      const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
+      const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+      const noteState = Web3Utils.toHex(tx.logs[0].args.state);
+      const notes = await updateNoteState(noteOwner, noteHash, noteState);
+      this.SET_NOTES(notes);
 
       this.loading = false;
       this.$router.push({ path: '/' });

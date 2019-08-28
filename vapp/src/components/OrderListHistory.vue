@@ -17,7 +17,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in finishedOrder">
+          <tr v-for="order in completedOrderHistory">
             <td>{{ order.orderId }}</td>
             <td>{{ order.type }}</td>
             <td>{{ order.price | hexToNumberString }}</td>
@@ -34,6 +34,6 @@
 
 <script>
 export default {
-  props: ['finishedOrder'],
+  props: ['completedOrderHistory'],
 };
 </script>
