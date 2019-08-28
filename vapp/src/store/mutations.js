@@ -25,9 +25,6 @@ export default {
   SET_ORDER: (state, order) => {
     state.order = order;
   },
-  SET_ORDERS: (state, orders) => {
-    state.orders = orders;
-  },
 
   SET_NOTE: (state, note) => {
     state.note = note;
@@ -64,7 +61,66 @@ export default {
   MUTATE_ACCOUNTS (state, accounts) {
     state.accounts = accounts;
   },
-  ADD_ACCOUHNT (state, account) {
+
+  SET_ACCOUNTS (state, accounts) {
+    state.accounts = accounts;
+  },
+  ADD_ACCOUNT (state, account) {
+    if (state.accounts === null) {
+      state.accounts = [];
+    }
     state.accounts.push(account);
+  },
+  DELETE_ACCOUNT (state, account) {
+    const i = state.accounts.indexOf(account);
+    state.accounts.splice(i, 1);
+  },
+  SET_NOTES (state, notes) {
+    state.notes = notes;
+  },
+  ADD_NOTE (state, note) {
+    console.log('add note', note);
+    if (state.notes === null) {
+      state.notes = [];
+    }
+    state.notes.push(note);
+    console.log('inadd', state.notes);
+  },
+  UPDATE_NOTE_STATE: (state, n) => {
+    console.log('inupdate', state.notes);
+    // const { noteHash, noteState } = n;
+    // console.log('test', noteHash, noteState);
+    for (let i = 0; i < state.notes.length; i++) {
+      console.log('update note', state.notes[i]);
+      // if (state.notes[i].hash === noteHash) {
+      //   const note = state.notes[i];
+      //   note.hash = noteHash;
+      //   note.state = noteState;
+      //   state.notes.splice(i, 1, note);
+      //   console.log('after', state.notes);
+      //   break;
+      // }
+    }
+  },
+  SET_TRANSFER_NOTES (state, transferNotes) {
+    state.transferNotes = transferNotes;
+  },
+  SET_ORDERS: (state, orders) => {
+    state.orders = orders;
+  },
+  ADD_ORDER: (state, order) => {
+    if (state.orders === null) {
+      state.orders = [];
+    }
+    state.orders.push(order);
+  },
+  SET_ORDER_HISTORY: (state, history) => {
+    state.orderHistory = history;
+  },
+  ADD_ORDER_HISTORY: (state, history) => {
+    if (state.orderHistory === null) {
+      state.orderHistory = [];
+    }
+    state.orderHistory.push(history);
   },
 };

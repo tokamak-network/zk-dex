@@ -54,6 +54,12 @@ export default {
     commit('SET_ORDERS', orders);
   },
 
+  setAccounts ({
+    commit,
+  }, accounts) {
+    commit('SET_ACCOUNTS', accounts);
+  },
+
   setNote ({
     commit,
   }, note) {

@@ -1,6 +1,5 @@
 const state = {
   account: null,
-  accounts: [],
   dexContract: null,
   daiContract: null,
   dexContractInstance: null,
@@ -8,9 +7,8 @@ const state = {
   key: null,
   viewingKey: null,
   order: null,
-  orders: [],
   note: null,
-  myNotes: [],
+  myNotes: null,
   web3: {
     isListening: false,
     web3Instance: null,
@@ -21,6 +19,12 @@ const state = {
   },
   contract: null,
   path: '/dashboard',
+
+  accounts: null,
+  notes: null,
+  transferNotes: null,
+  orders: null,
+  orderHistory: null,
 };
 
 export default state;
