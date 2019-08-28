@@ -85,7 +85,8 @@ class Note {
   }
 
   encrypt(encKey) {
-    const cipher = crypto.createCipher(mode, encKey);
+    const key = marshalEncDecKey(encKey);
+    const cipher = crypto.createCipher(mode, key);
 
     const r1 = cipher.update(this.toString(), 'utf8', 'base64');
     const r2 = cipher.final('base64');
@@ -96,12 +97,38 @@ class Note {
   }
 }
 
+function marshalEncDecKey(_key) {
+  const key = util.unmarshal(_key.toLowerCase());
+  const reg = new RegExp(/^0*(.+)/, 'g');
+  const match = reg.exec(key);
+
+  let res = match[1];
+
+  if (!res) {
+    throw new Error("Failed to marshal key:", _key);
+  }
+
+  if (res.length % 2 === 1) {
+    res = '0' + res;
+  }
+
+  // console.warn(`
+  //   marshal?
+  //     match:    ${match}
+  //     original: ${_key}
+  //     res:      ${res}
+  // `)
+
+  return res;
+}
+
 function decrypt(v, decKey) {
+  const key = marshalEncDecKey(decKey);
   if (!v) {
     throw new Error(`invalid value to decrypt: ${v}`);
   }
 
-  const decipher = crypto.createDecipher(mode, decKey);
+  const decipher = crypto.createDecipher(mode, key);
 
   const r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
   const r2 = decipher.final('utf8');
