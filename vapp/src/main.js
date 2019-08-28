@@ -8,6 +8,9 @@ import Buefy from 'buefy';
 
 import * as filters from './filters';
 
+// Global event bus
+Vue.prototype.$bus = new Vue();
+
 Vue.use(Buefy);
 
 // register global utility filters
