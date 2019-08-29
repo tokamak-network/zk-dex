@@ -43,7 +43,12 @@ field nh0, field nh1, private field nOwner0, private field nOwner1, private fiel
   smartOwner0 == originH0
   smartOwner1 == originH1
 
+  // check value
   smartValue == nValue
+
+  // check type
+  smartType == originType
+  originType == nType
 
   h = sha256([smartOwner0, smartOwner1, smartValue, smartType, smartVk0, smartVk1, smartSalt])
   h[0] == smartH0

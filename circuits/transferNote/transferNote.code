@@ -47,9 +47,15 @@ field changeH0, field changeH1, private field changeOwner0, private field change
   o0owner0 == o1owner0
   o0owner1 == o1owner1
 
+  // check value
   field inputValue = add(o0val, o1val)
   field outputValue = add(nVal, changeVal)
   inputValue == outputValue
+
+  // check type
+  o0type == o1type
+  o1type == nType
+  nType == changeType
 
   // check old note 0
   h = sha256([o0owner0, o0owner1, o0val, o0type, o0vk0, o0vk1, o0salt])
