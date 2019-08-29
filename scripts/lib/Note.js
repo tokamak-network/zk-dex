@@ -115,21 +115,31 @@ function dummyProofCreateNote(note) {
     ...note.hashArr(),
     note.value,
     note.token,
-    1,
   ];
 
   return util.parseProofObj(proof);
 }
 
-function dummyProofSpendNote(oldNote, newNote1, newNote2, originalNote = null) {
+function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
-    ...oldNote.hashArr(),
-    ...newNote1.hashArr(),
-    ...newNote2.hashArr(),
-    ...(originalNote === null ? EMPTY_NOTE.hashArr() : originalNote.hashArr()),
-    1,
+    ...oldNote0.hashArr(),
+    ...oldNote1.hashArr(),
+    ...newNote.hashArr(),
+    ...changeNote.hashArr(),
+  ];
+
+  return util.parseProofObj(proof);
+}
+
+function dummyProofConvertNote(smartNote, originNote, note) {
+  const proof = JSON.parse(sampleProof);
+
+  proof.input = [
+    ...smartNote.hashArr(),
+    ...originNote.hashArr(),
+    ...note.hashArr(),
   ];
 
   return util.parseProofObj(proof);
@@ -137,34 +147,33 @@ function dummyProofSpendNote(oldNote, newNote1, newNote2, originalNote = null) {
 
 function dummyProofMakeOrder(makerNote) {
   const proof = JSON.parse(sampleProof);
-  const hash = util.unmarshal(makerNote.hash());
 
   proof.input = [
     ...makerNote.hashArr(),
     makerNote.token,
-    1,
   ];
 
   return util.parseProofObj(proof);
 }
 
-function dummyProofTakeOrder(makerNote, parentNote, stakeNote) {
+function dummyProofTakeOrder(parentNote, stakeNote, makerNoteHash) {
   const proof = JSON.parse(sampleProof);
+  const splitMakerNoteHash = split32BytesTo16BytesArr(makerNoteHash);
 
   proof.input = [
     ...parentNote.hashArr(),
     parentNote.token,
     ...stakeNote.hashArr(),
+    ...splitMakerNoteHash,
     stakeNote.token,
-    ...makerNote.hashArr(),
-    1,
   ];
 
   return util.parseProofObj(proof);
 }
 
-function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
+function dummyProofSettleOrder(makerNote, parentNoteHash, stakeNote, rewardNote, paymentNote, changeNote, price) {
   const proof = JSON.parse(sampleProof);
+  const splitParentNoteHash = split32BytesTo16BytesArr(parentNoteHash)
 
   proof.input = [
     ...makerNote.hashArr(),
@@ -174,19 +183,17 @@ function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, pay
     stakeNote.token,
 
     ...rewardNote.hashArr(),
+    ...splitParentNoteHash,
     rewardNote.token,
-    ...parentNote.hashArr(),
 
     ...paymentNote.hashArr(),
-    paymentNote.token,
     ...makerNote.hashArr(),
+    paymentNote.token,
 
     ...changeNote.hashArr(),
     changeNote.token,
 
     price,
-
-    1,
   ];
 
   return util.parseProofObj(proof);
@@ -212,6 +219,7 @@ module.exports = {
     dummyProofCreateNote,
     dummyProofSpendNote,
     dummyProofLiquidateNote: dummyProofCreateNote,
+    dummyProofConvertNote,
     dummyProofMakeOrder,
     dummyProofTakeOrder,
     dummyProofSettleOrder,
