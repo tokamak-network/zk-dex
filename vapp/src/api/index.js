@@ -16,7 +16,7 @@ async function getViewingKey (key) {
 
 async function getAccounts (key) {
   const res = await instance.get(`/accounts/${key}`);
-  return JSON.parse(res.data.accounts);
+  return res.data.accounts;
 }
 
 async function getNotes (account) {
@@ -57,9 +57,8 @@ async function getOrders () {
 }
 
 // post
-function addAccount (key, account) {
-  return instance.post('/accounts/import', {
-    key,
+function addAccount (userKey, account) {
+  return instance.post(`/accounts/import/${userKey}`, {
     account,
   });
 }
@@ -97,8 +96,8 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount (passphrase) {
-  return instance.post('/accounts', {
+function createAccount (userKey, passphrase) {
+  return instance.post(`/accounts/${userKey}`, {
     passphrase,
   });
 }
@@ -134,10 +133,9 @@ function updateOrder (order) {
   });
 }
 
-function deleteAccount (key, address) {
-  return instance.delete('/accounts', {
+function deleteAccount (userKey, address) {
+  return instance.delete(`/accounts/${userKey}`, {
     data: {
-      key,
       address,
     },
   });

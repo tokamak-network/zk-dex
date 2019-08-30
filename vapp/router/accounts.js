@@ -70,7 +70,6 @@ router.post('/unlock/:userKey', asyncWrap(
   }
 ));
 
-// TODO: import account by userKey
 router.post('/import/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
@@ -80,7 +79,6 @@ router.post('/import/:userKey', asyncWrap(
   }
 ));
 
-// TODO: delete account by userKey
 router.delete('/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
