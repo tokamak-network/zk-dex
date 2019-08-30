@@ -49,12 +49,7 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input v-if="!isSelfTransfer" style="width: 100%; text-align: right;" class="input" type="text" v-model="account">
-        <b-select v-else placeholder="Select Account" v-model="account">
-          <option v-for="account in accounts">
-            {{ account.address }} {{ account.name }}
-          </option>
-        </b-select>
+        <input style="width: 100%; text-align: right;" class="input" type="text" v-model="account">
       </p>
     </div>
     <div class="field has-addons">
@@ -70,6 +65,25 @@
     <div style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="transferNote" :class="{ 'is-static': noteHash === '' || amount === '', 'is-loading': loading }">Transfer</button>
     </div>
+    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
+      <div class="box">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>address</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hoverable" v-for="account in accounts" @click="selectAccount(account)">
+              <td>{{ account.address }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="display: flex; justify-content: flex-end">
+          <button class="button" @click="closeModal">Close</button>
+        </div>
+      </div>
+    </b-modal>
   </div>
 </template>
 
@@ -90,6 +104,7 @@ import {
 export default {
   data () {
     return {
+      createAccountModalActive: false,
       loading: false,
       note: '',
       noteOwner: '',
@@ -114,12 +129,23 @@ export default {
   beforeDestroy () {
     this.$bus.$off('select-note');
   },
+  watch: {
+    isSelfTransfer (selfTransfer) {
+      if (selfTransfer) {
+        this.createAccountModalActive = true;
+      }
+    },
+  },
   methods: {
-    ...mapMutations([
+    ...mapMutations(['SET_NOTES', 'SET_TRANSFER_NOTES']),
     onlyNumber () {
       if (event.keyCode < 48 || event.keyCode > 57) {
         event.returnValue = false;
       }
+    },
+    closeModal () {
+      this.createAccountModalActive = false;
+    },
     selectNote (note) {
       this.note = note;
       this.noteOwner = Web3Utils.padLeft(
@@ -133,6 +159,10 @@ export default {
       } else {
         this.account = '';
       }
+    },
+    selectAccount (account) {
+      this.account = account.address;
+      this.closeModal();
     },
     notes () {
       if (this.note.state !== '0x1') {
@@ -282,3 +312,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.hoverable {
+  cursor: pointer;
+}
+</style>

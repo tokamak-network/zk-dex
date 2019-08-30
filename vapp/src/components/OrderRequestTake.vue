@@ -6,12 +6,10 @@
           Order id
         </a>
       </p>
-      <p class="control is-expanded" style="width: 100%;">
-          <b-select placeholder="Select Order" style="width: 100%;" v-model="selectedOrder">
-            <option v-for="order in orders">
-              {{ order.orderId | hexToNumberString }}
-            </option>
-          </b-select>
+     <p class="control is-expanded">
+        <a class="button is-static" style="width: 100%;">
+          {{ orderId | hexToNumberString }}
+        </a>
       </p>
     </div>
     <div class="field has-addons">
@@ -53,6 +51,27 @@
     <div style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Take Order</button>
     </div>
+    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
+      <div class="box">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hoverable" v-for="order in orders" @click="selectOrder(order)">
+              <td>{{ order.orderId | hexToNumberString }}</td>
+              <td>{{ order.price | hexToNumberString }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="display: flex; justify-content: flex-end">
+          <button class="button" @click="closeModal">Close</button>
+        </div>
+      </div>
+    </b-modal>
   </div>
 </template>
 
@@ -77,8 +96,8 @@ import {
 export default {
   data () {
     return {
+      createAccountModalActive: false,
       loading: false,
-      selectedOrder: null,
       orderId: '',
       orderPrice: '',
       order: null,
@@ -106,25 +125,24 @@ export default {
     // TODO: research
     // this.$bus.$off('select-note');
   },
-  watch: {
-    selectedOrder (id) {
-      const orderId = Web3Utils.toHex(id);
-      const order = this.orders.find(function (o) {
-        return o.orderId === orderId;
-      });
-      this.order = order;
-      this.orderId = order.orderId;
-      this.orderPrice = order.price;
-    },
-  },
   methods: {
     ...mapMutations(['SET_ORDERS', 'SET_ORDER_HISTORY', 'SET_NOTES']),
+    closeModal () {
+      this.createAccountModalActive = false;
+    },
     selectNote (note) {
       this.note = note;
       this.noteHash = note.hash;
       this.noteValue = note.value;
     },
+    selectOrder (order) {
+      this.order = order;
+      this.orderId = order.orderId;
+      this.orderPrice = order.price;
+      this.createAccountModalActive = false;
+    },
     selectOrders (orders) {
+      this.createAccountModalActive = true;
       this.orders = orders;
     },
     stakeNote () {
@@ -272,6 +290,8 @@ export default {
   },
 };
 </script>
-
 <style>
+.hoverable {
+  cursor: pointer;
+}
 </style>
