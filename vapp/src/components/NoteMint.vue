@@ -34,9 +34,9 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapActions, mapMutations } from 'vuex';
 import { Note, constants } from '../../../scripts/lib/Note';
-import { addNote, generateProof } from '../api/index';
+import { getNotes, addNote, generateProof } from '../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {
@@ -65,7 +65,7 @@ export default {
         this.amount,
         constants.DAI_TOKEN_TYPE,
         '0x0',
-        salt,
+        salt
       );
       return note;
     },
@@ -76,7 +76,7 @@ export default {
         this.amount,
         constants.ETH_TOKEN_TYPE,
         '0x0',
-        salt,
+        salt
       );
       return note;
     },
@@ -92,9 +92,11 @@ export default {
       this.loading = true;
 
       const getNote =
-        this.token === 'DAI' ? this.daiNote :
-          this.token === 'ETH' ? this.ethNote :
-            () => {
+        this.token === 'DAI'
+          ? this.daiNote
+          : this.token === 'ETH'
+            ? this.ethNote
+            : () => {
               alert('undefined token type' + this.token);
               return null;
             };
@@ -120,24 +122,51 @@ export default {
       }
 
       if (tx.receipt.status) {
-        const hash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+        const hash = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
+          64
+        );
         const state = Web3Utils.toHex(tx.logs[0].args.state);
 
         const noteObject = {};
-        noteObject.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.owner)), 40);
+        noteObject.owner = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.owner)),
+          40
+        );
         noteObject.value = Web3Utils.toHex(Web3Utils.toBN(note.value));
         noteObject.token = Web3Utils.toHex(Web3Utils.toBN(note.token));
-        noteObject.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.viewingKey)), 16);
-        noteObject.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.salt)), 32);
+        noteObject.viewingKey = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.viewingKey)),
+          16
+        );
+        noteObject.salt = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.salt)),
+          32
+        );
         noteObject.isSmart = Web3Utils.toHex(Web3Utils.toBN(note.isSmart));
         noteObject.hash = hash;
         noteObject.state = state;
 
-        const notes = await addNote(this.account, noteObject);
-        this.SET_NOTES(notes);
+        await addNote(this.account, noteObject);
+
+        const newNotes = [];
+        for (let i = 0; i < this.accounts.length; i++) {
+          const n = await getNotes(this.accounts[i].address);
+          if (n !== null) {
+            newNotes.push(...n);
+          }
+        }
+        this.SET_NOTES(newNotes);
+        this.updateDaiAmount();
       }
       this.loading = false;
       this.$router.push({ path: '/' });
+    },
+    async updateDaiAmount () {
+      const daiAmount = await this.dai.balanceOf(this.coinbase);
+      this.$store.dispatch('setDaiAmount', {
+        daiAmount,
+      });
     },
   },
 };

@@ -29,9 +29,6 @@ export default {
   SET_NOTE: (state, note) => {
     state.note = note;
   },
-  SET_MY_NOTES: (state, notes) => {
-    state.myNotes = notes;
-  },
 
   SET_WEB3: (state, web3) => {
     state.web3 = web3;
@@ -123,4 +120,27 @@ export default {
     }
     state.orderHistory.push(history);
   },
+  SET_DAI_AMOUNT: (state, d) => {
+    state.daiAmount = d.daiAmount;
+  },
+  MAKE_INITIAL_STATE: (state) => {
+    const s = initialState();
+    Object.keys(s).forEach((key) => {
+      state[key] = s[key];
+    });
+  },
 };
+
+function initialState () {
+  return {
+    'path': '/',
+    'key': null,
+    'viewingKey': null,
+    'accounts': null,
+    'notes': null,
+    'transferNotes': null,
+    'orders': null,
+    'orderHistory': null,
+    'daiAmount': '0',
+  };
+}

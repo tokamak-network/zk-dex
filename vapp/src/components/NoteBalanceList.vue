@@ -12,7 +12,7 @@
         </b-select>
       </section>
     </div>
-    <table class="table fixed_header" style="margin-top: 80px;">
+    <table class="table" style="margin-top: 40px;">
       <thead>
         <tr>
           <th>Currency Name</th>
@@ -26,7 +26,7 @@
           <td>{{ token.name }}</td>
           <td>{{ token.symbol }}</td>
           <td>{{ totalNotes(token.type) }}</td>
-          <td>
+          <td v-if="$route.path === '/'">
             <router-link :to="{ path: 'notes', query: { action: 'mint', token: token.symbol } }" tag="button" class="button is-small">Create</router-link>
             <router-link :to="{ path: 'notes', query: { action: 'liquidate', token: token.symbol } }" tag="button" class="button is-small" style="margin-left: 5px;">Liquidate</router-link>
           </td>

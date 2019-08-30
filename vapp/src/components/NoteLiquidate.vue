@@ -46,8 +46,8 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex';
-import { updateNoteState, generateProof } from '../api/index';
+import { mapState, mapActions, mapMutations } from 'vuex';
+import { getNotes, updateNoteState, generateProof } from '../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {
@@ -67,8 +67,10 @@ export default {
   },
   computed: {
     ...mapState({
+      accounts: state => state.accounts,
       coinbase: state => state.web3.coinbase,
       dex: state => state.dexContractInstance,
+      dai: state => state.daiContractInstance,
     }),
   },
   created () {
@@ -110,11 +112,26 @@ export default {
       const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
       const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
       const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-      const notes = await updateNoteState(noteOwner, noteHash, noteState);
-      this.SET_NOTES(notes);
+      await updateNoteState(noteOwner, noteHash, noteState);
+
+      const newNotes = [];
+      for (let i = 0; i < this.accounts.length; i++) {
+        const n = await getNotes(this.accounts[i].address);
+        if (n !== null) {
+          newNotes.push(...n);
+        }
+      }
+      this.SET_NOTES(newNotes);
+      this.updateDaiAmount();
 
       this.loading = false;
       this.$router.push({ path: '/' });
+    },
+    async updateDaiAmount () {
+      const daiAmount = await this.dai.balanceOf(this.coinbase);
+      this.$store.dispatch('setDaiAmount', {
+        daiAmount,
+      });
     },
   },
 };

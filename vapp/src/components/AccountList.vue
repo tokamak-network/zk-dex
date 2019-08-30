@@ -5,7 +5,7 @@
         <p style="margin-left: 10px;">Accounts</p>
       </div>
       <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="$route.path === '/'">
-        <button class="button" @click="activeModal" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
+        <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
       </div>
     </div>
     <table class="table">
@@ -77,7 +77,7 @@ export default {
     // TODO: refactoring
     createNewAccount () {
       this.done = false;
-      createAccount(this.passphrase).then((res) => {
+      createAccount(this.passphrase).then(async (res) => {
         const keystore = res.data.address;
         const account = {};
         account.keystore = keystore;
@@ -85,12 +85,11 @@ export default {
         account.name = '';
         account.numberOfNotes = 0;
 
-        addAccount(this.key, account).then(() => {
-          this.ADD_ACCOUNT(account);
-          this.createAccountModalActive = false;
-          this.done = true;
-          this.passphrase = '';
-        });
+        await addAccount(this.key, account);
+        this.ADD_ACCOUNT(account);
+        this.createAccountModalActive = false;
+        this.done = true;
+        this.passphrase = '';
       });
     },
     activeModal () {

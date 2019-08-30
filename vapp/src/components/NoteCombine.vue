@@ -76,7 +76,6 @@ export default {
   props: ['account'],
   computed: {
     ...mapState({
-      note: state => state.note,
       coinbase: state => state.web3.coinbase,
       dex: state => state.dexContractInstance,
       viewingKey: state => state.viewingKey,
