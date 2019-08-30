@@ -16,7 +16,7 @@ async function getViewingKey (key) {
 
 async function getAccounts (key) {
   const res = await instance.get(`/accounts/${key}`);
-  return JSON.parse(res.data.accounts);
+  return res.data.accounts;
 }
 
 async function getNoteByNoteHash (account, hash) {
@@ -62,9 +62,8 @@ async function getOrders () {
 }
 
 // post
-async function addAccount (key, account) {
-  const res = await instance.post('/accounts/import', {
-    key,
+function addAccount (userKey, account) {
+  const res = instance.post(`/accounts/import/${userKey}`, {
     account,
   });
   return res.data.accounts;
@@ -107,8 +106,8 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount (passphrase) {
-  return instance.post('/accounts', {
+function createAccount (userKey, passphrase) {
+  return instance.post(`/accounts/${userKey}`, {
     passphrase,
   });
 }
@@ -165,10 +164,9 @@ async function updateOrderTaker (orderId, orderTaker) {
   return res.data.orders;
 }
 
-async function deleteAccount (key, address) {
-  const res = await instance.delete('/accounts', {
+function deleteAccount (userKey, address) {
+  return instance.delete(`/accounts/${userKey}`, {
     data: {
-      key,
       address,
     },
   });
