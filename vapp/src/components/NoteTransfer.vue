@@ -64,7 +64,7 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" v-model="amount">
+        <input style="width: 100%; text-align: right;" class="input" type="text" v-model="amount" @keypress="onlyNumber">
       </p>
     </div>
     <div style="margin-top: 10px; display: flex; justify-content: flex-end">
@@ -116,9 +116,10 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'SET_NOTES',
-      'SET_TRANSFER_NOTES',
-    ]),
+    onlyNumber () {
+      if (event.keyCode < 48 || event.keyCode > 57) {
+        event.returnValue = false;
+      }
     selectNote (note) {
       this.note = note;
       this.noteOwner = Web3Utils.padLeft(

@@ -24,7 +24,7 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="amount">
+        <input style="width: 100%; text-align: right;" class="input" @keypress="onlyNumber" v-model="amount">
       </p>
     </div>
     <div style="display: flex; justify-content: flex-end">
@@ -58,6 +58,11 @@ export default {
   props: ['accounts', 'token'],
   methods: {
     ...mapMutations(['SET_NOTES']),
+    onlyNumber () {
+      if ((event.keyCode < 48) || (event.keyCode > 57)) {
+        event.returnValue = false;
+      }
+    },
     daiNote () {
       const salt = Web3Utils.randomHex(16);
       const note = new Note(

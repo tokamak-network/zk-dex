@@ -7,7 +7,7 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="price">
+        <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="price" @keypress="onlyNumber">
       </p>
     </div>
     <div class="field has-addons">
@@ -81,6 +81,11 @@ export default {
       'SET_ORDER_HISTORY',
       'SET_NOTES',
     ]),
+    onlyNumber () {
+      if ((event.keyCode < 48) || (event.keyCode > 57)) {
+        event.returnValue = false;
+      }
+    },
     selectNote (note) {
       this.note = note;
       this.noteHash = note.hash;
