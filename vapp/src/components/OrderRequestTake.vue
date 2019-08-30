@@ -234,10 +234,7 @@ export default {
           this.order.orderId,
           Web3Utils.toHex(order.state)
         );
-        const orders = await updateOrderTaker(
-          this.order.orderId,
-          noteOwner,
-        );
+        const orders = await updateOrderTaker(this.order.orderId, noteOwner);
         this.SET_ORDERS(orders);
 
         // 4. update order history state

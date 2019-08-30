@@ -223,35 +223,69 @@ export default {
       );
 
       // 1. update note
-      const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
-      const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+      const noteOwner = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
+        40
+      );
+      const noteHash = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
+        64
+      );
       const noteState = Web3Utils.toHex(tx.logs[0].args.state);
       await updateNoteState(noteOwner, noteHash, noteState);
 
       // 2. add note1
-      const noteHash1 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)), 64);
+      const noteHash1 = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
+        64
+      );
       const noteState1 = Web3Utils.toHex(tx.logs[1].args.state);
       const noteObject1 = {};
-      noteObject1.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.owner)), 40);
+      noteObject1.owner = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note1.owner)),
+        40
+      );
       noteObject1.value = Web3Utils.toHex(Web3Utils.toBN(notes.note1.value));
       noteObject1.token = Web3Utils.toHex(Web3Utils.toBN(notes.note1.token));
-      noteObject1.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.viewingKey)), 16);
-      noteObject1.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note1.salt)), 32);
-      noteObject1.isSmart = Web3Utils.toHex(Web3Utils.toBN(notes.note1.isSmart));
+      noteObject1.viewingKey = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note1.viewingKey)),
+        16
+      );
+      noteObject1.salt = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note1.salt)),
+        32
+      );
+      noteObject1.isSmart = Web3Utils.toHex(
+        Web3Utils.toBN(notes.note1.isSmart)
+      );
       noteObject1.hash = noteHash1;
       noteObject1.state = noteState1;
       await addNote(noteObject1.owner, noteObject1);
 
       // 3. add note2
-      const noteHash2 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)), 64);
+      const noteHash2 = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)),
+        64
+      );
       const noteState2 = Web3Utils.toHex(tx.logs[2].args.state);
       const noteObject2 = {};
-      noteObject2.owner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.owner)), 40);
+      noteObject2.owner = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note2.owner)),
+        40
+      );
       noteObject2.value = Web3Utils.toHex(Web3Utils.toBN(notes.note2.value));
       noteObject2.token = Web3Utils.toHex(Web3Utils.toBN(notes.note2.token));
-      noteObject2.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.viewingKey)), 16);
-      noteObject2.salt = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(notes.note2.salt)), 32);
-      noteObject2.isSmart = Web3Utils.toHex(Web3Utils.toBN(notes.note2.isSmart));
+      noteObject2.viewingKey = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note2.viewingKey)),
+        16
+      );
+      noteObject2.salt = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(notes.note2.salt)),
+        32
+      );
+      noteObject2.isSmart = Web3Utils.toHex(
+        Web3Utils.toBN(notes.note2.isSmart)
+      );
       noteObject2.hash = noteHash2;
       noteObject2.state = noteState2;
       await addNote(noteObject2.owner, noteObject2);
@@ -269,9 +303,9 @@ export default {
       // transfer note2
       const transferNote2 = noteObject1;
       transferNote2.type = '0x1';
-      transferNote2.from = '',
+      transferNote2.from = '';
       transferNote2.to = this.account;
-      transferNote2.change = '',
+      transferNote2.change = '';
       transferNote2.value = Web3Utils.toHex(this.amount);
       transferNote2.transactionHash = tx.receipt.transactionHash;
       await addTransferNote(this.account, transferNote2);

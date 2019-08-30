@@ -1,13 +1,11 @@
 <template>
   <div>
-    <note-balance-list :notes="notes" />
-    <note-list :notes="notes" />
     <note-transfer :notes="notes" />
+    <note-list :notes="notes" />
   </div>
 </template>
 
 <script>
-import NoteBalanceList from '../components/NoteBalanceList';
 import NoteList from '../components/NoteList';
 import NoteTransfer from '../components/NoteTransfer';
 
@@ -16,7 +14,6 @@ import { getAccounts, getNotes } from '../api/index';
 
 export default {
   components: {
-    NoteBalanceList,
     NoteList,
     NoteTransfer,
   },
