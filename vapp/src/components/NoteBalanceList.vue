@@ -55,12 +55,6 @@ export default {
           symbol: 'DAI',
           totalNotes: 0,
         },
-        {
-          type: '2',
-          name: 'Tokamak Network',
-          symbol: 'TON',
-          totalNotes: 0,
-        },
       ],
       selectedAccount: null,
     };
