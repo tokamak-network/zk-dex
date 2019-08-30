@@ -89,23 +89,22 @@ const routes = [
 
 const createRouter = () =>
   new Router({
-    scrollBehavior: () => ({
-      y: 0,
-    }),
+    mode: 'history',
+    // scrollBehavior: () => ({
+    //   y: 0,
+    // }),
     routes,
   });
 
 const router = createRouter();
 
-// router.beforeResolve((to, _, next) => {
-//   const isListening = store.state.web3.isListening;
-//   if (typeof isListening === 'undefined' || !isListening) {
-//     if (to.path !== '/access') {
-//       next('/access');
-//     }
-//   }
-//   // store.dispatch('setLastPath', to.path);
-//   next();
-// });
+router.beforeResolve((to, _, next) => {
+  const key = store.state.key;
+  if (key === null && to.path !== '/login') {
+    next({ path: '/login' });
+  } else {
+    next();
+  }
+});
 
 export default router;
