@@ -5,7 +5,7 @@ const asyncWrap = require('../lib/asyncWrap');
 const {
   getOrder,
   getOrders,
-  getOrdersByAccount,
+  getOrdersByUser,
   addOrder,
   addOrderByAccount,
   updateOrder,
@@ -23,26 +23,6 @@ router.get('/', asyncWrap(
   }
 ));
 
-router.get('/:id', asyncWrap(
-  async function (req, res) {
-    const id = req.params.id;
-    const order = getOrder(id);
-    return res.status(200).json({
-      order,
-    });
-  }
-));
-
-router.get('/:account', asyncWrap(
-  async function (req, res) {
-    const account = req.params.account;
-    const orders = getOrdersByAccount(account);
-    return res.status(200).json({
-      orders,
-    });
-  }
-));
-
 router.post('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
@@ -51,22 +31,13 @@ router.post('/', asyncWrap(
   }
 ));
 
-router.post('/:account', asyncWrap(
+router.get('/:id', asyncWrap(
   async function (req, res) {
-    const account = req.params.account;
-    const order = req.body.order;
-    addOrderByAccount(account, order);
-    return res.status(200).json({});
-  }
-));
-
-
-router.put('/:account', asyncWrap(
-  async function (req, res) {
-    const account = req.params.account;
-    const order = req.body.order;
-    updateOrderByAccount(account, order);
-    return res.status(200).json({});
+    const id = req.params.id;
+    const order = getOrder(id);
+    return res.status(200).json({
+      order,
+    });
   }
 ));
 

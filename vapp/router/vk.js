@@ -3,29 +3,32 @@ const express = require('express');
 const asyncWrap = require('../lib/asyncWrap');
 
 const {
-  getViewingKey,
-  setViewingKey,
+  getViewingKeys,
+  addViewingKeys,
+  addUserKey,
 } = require('../localstorage');
 
 const router = express.Router();
 
-router.get('/:key', asyncWrap(
+router.get('/:userKey', asyncWrap(
   async function (req, res) {
-    const key = req.params.key;
-    const vk = getViewingKey(key);
-
+    const userKey = req.params.userKey;
+    const vks = getViewingKeys(userKey);
     return res.status(200).json({
-      vk,
+      vks,
     });
   }
 ));
 
-router.post('/', asyncWrap(
+router.post('/:userKey', asyncWrap(
   async function (req, res) {
-    const key = req.body.key;
+    const userKey = req.params.userKey;
     const vk = req.body.vk;
-    setViewingKey(key, vk);
-    return res.status(200).json({});
+    const vks = addViewingKeys(userKey, vk);
+    addUserKey(userKey);
+    return res.status(200).json({
+      vks,
+    });
   }
 ));
 
