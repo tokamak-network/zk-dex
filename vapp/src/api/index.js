@@ -29,7 +29,7 @@ async function getTransferNotes (account) {
   return JSON.parse(res.data.notes);
 }
 
-async function getOrdersByAccount (account) {
+async function getOrdersByUser (account) {
   const res = await instance.get(`/orders/${account}`);
   if (res.data === null) {
     return [];
@@ -149,7 +149,7 @@ export {
   getNotes,
   getTransferNotes,
   getOrder,
-  getOrdersByAccount,
+  getOrdersByUser,
   getOrders,
   addAccount,
   unlockAccount,

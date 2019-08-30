@@ -10,7 +10,7 @@ import OrderListOngoing from '../components/OrderListOngoing.vue';
 import OrderListHistory from '../components/OrderListHistory.vue';
 
 import { mapState } from 'vuex';
-import { getAccounts, getOrdersByAccount } from '../api/index';
+import { getAccounts, getOrdersByUser } from '../api/index';
 
 export default {
   components: {
@@ -38,7 +38,7 @@ export default {
       if (accounts !== null) {
         const orders = [];
         for (let i = 0; i < accounts.length; i++) {
-          const o = await getOrdersByAccount(accounts[i].address);
+          const o = await getOrdersByUser(accounts[i].address);
           if (o != null) {
             orders.push(...o);
           }

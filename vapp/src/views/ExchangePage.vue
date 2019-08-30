@@ -30,7 +30,7 @@ import OrderListHistory from '../components/OrderListHistory.vue';
 import {
   getAccounts,
   getNotes,
-  getOrdersByAccount,
+  getOrdersByUser,
   getOrders,
 } from '../api/index';
 
@@ -99,7 +99,7 @@ export default {
           if (n != null) {
             notes.push(...n);
           }
-          const o = await getOrdersByAccount(accounts[i].address);
+          const o = await getOrdersByUser(accounts[i].address);
           if (o != null) {
             orders.push(...o);
           }

@@ -125,6 +125,7 @@ export default {
 
         const orderId = (await this.dex.getOrderCount()) - 1;
         const order = await this.dex.orders(orderId);
+        order.orderId = orderId;
         order.sourceToken = Web3Utils.hexToNumberString(Web3Utils.toHex(order.sourceToken));
         order.targetToken = Web3Utils.hexToNumberString(Web3Utils.toHex(order.targetToken));
         order.state = Web3Utils.hexToNumberString(Web3Utils.toHex(order.state));
