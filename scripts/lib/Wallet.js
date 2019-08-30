@@ -91,7 +91,11 @@ class Wallet {
 
   }
 
-  async init(zkdexAddress) {
+  async init(zkdexAddress, provider = null) {
+    if (provider) {
+      ZkDex.setProvider(web3.currentProvider);
+    }
+
     this.zkdex = await ZkDex.at(zkdexAddress);
     this._listen();
   }
@@ -119,6 +123,10 @@ class Wallet {
         let decryptedNote;
         try {
           decryptedNote = decrypt(encryptedNote, vk);
+          // ignore invalid decription
+          if (!decryptedNote) {
+            return;
+          }
         } catch (e) {
           // ignore error
           return;

@@ -41,13 +41,18 @@ function parseProofObj(obj) {
 }
 
 function marshal(str) {
-  if (str.slice(0, 2) === '0x') return str;
-  return '0x'.concat(str);
+  if (!str) throw new Error("Cannot marshal empty string");
+
+  return '0x' + unmarshal(str);
 }
 
 function unmarshal(str) {
-  if (str.slice(0, 2) === '0x') return str.slice(2);
-  return str;
+  // console.warn("unmarshal", 'str', str)
+  str = str.trim();
+  if (!str) throw new Error("Cannot unmarshal empty string");
+  const i = str.lastIndexOf("0x");
+  if (i < 0) return str;
+  return str.slice(i+2);
 }
 
 function calcHash(h0, h1) {
