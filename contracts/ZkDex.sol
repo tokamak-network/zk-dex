@@ -27,14 +27,18 @@ contract ZkDex is ZkDai {
     bytes32 takerNoteToMaker;
     bytes32 parentNote;
 
+    uint64 createdAt;
+    uint64 takendAt;
+    uint64 settledAt;
+
     OrderState state;
   }
 
   Order[] public orders;
 
-  event OrderCreated(uint256 orderId, uint256 sourceToken, uint256 targetToken);
-  event OrderTaken(uint256 orderId, bytes32 takerNoteToMaker, bytes32 parentNote);
-  event OrderSettled(uint256 orderId, bytes32 rewardNote, bytes32 paymentNote, bytes32 changeNote);
+  event OrderCreated(uint256 orderId, uint256 sourceToken, uint256 targetToken, uint256 createdAt);
+  event OrderTaken(uint256 orderId, bytes32 takerNoteToMaker, bytes32 parentNote, uint256 takenAt);
+  event OrderSettled(uint256 orderId, bytes32 rewardNote, bytes32 paymentNote, bytes32 changeNote, uint256 settledAt);
 
   constructor(
     bool _development,
@@ -89,13 +93,14 @@ contract ZkDex is ZkDai {
     order.targetToken = targetToken;
     order.price = price;
     order.state = OrderState.Created;
+    order.createdAt = uint64(block.timestamp);
 
     notes[makerNote] = State.Traiding;
 
     emit NoteStateChange(makerNote, State.Traiding);
 
     // NOTE: cannot compile below line due to stack too deep error..
-    // emit OrderCreated(orderId, input[2], targetToken);
+    // emit OrderCreated(orderId, input[2], targetToken, block.timestamp);
   }
 
 
@@ -148,10 +153,11 @@ contract ZkDex is ZkDai {
     order.parentNote = parentNote;
     order.takerNoteToMaker = takerNoteToMaker;
     order.state = OrderState.Taken;
+    order.takendAt = uint64(block.timestamp);
 
     emit NoteStateChange(parentNote, State.Traiding);
     emit NoteStateChange(takerNoteToMaker, State.Traiding);
-    emit OrderTaken(orderId, takerNoteToMaker, parentNote);
+    emit OrderTaken(orderId, takerNoteToMaker, parentNote, block.timestamp);
   }
 
   /**
@@ -229,6 +235,7 @@ contract ZkDex is ZkDai {
     encryptedNotes[calcHash(input[16], input[17])] = encList[2].toBytes();
 
     order.state = OrderState.Settled;
+    order.settledAt = uint64(block.timestamp);
 
     emit NoteStateChange(calcHash(input[6], input[7]), State.Valid);
     emit NoteStateChange(calcHash(input[11], input[12]), State.Valid);
@@ -238,7 +245,7 @@ contract ZkDex is ZkDai {
     emit NoteStateChange(order.parentNote, State.Spent);
     emit NoteStateChange(order.takerNoteToMaker, State.Spent);
 
-    emit OrderSettled(orderId, calcHash(input[6], input[7]), calcHash(input[11], input[12]), calcHash(input[16], input[17]));
+    emit OrderSettled(orderId, calcHash(input[6], input[7]), calcHash(input[11], input[12]), calcHash(input[16], input[17]), block.timestamp);
   }
 
   function hashOrder(Order memory order) internal view returns (bytes32) {
