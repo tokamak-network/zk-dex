@@ -1,6 +1,7 @@
-import "../sha/1024bitPacked.code" as sha256
 import "../utils/isSmart.code" as isSmart
-import "../utils/ownership/verifyOwnership.code" as verifyOwnership
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
 // Note = (owner, value, type, viewKey, salt)
 
@@ -26,7 +27,8 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 def main(field oh0, field oh1, private field owner0, private field owner1, private field oVal, field oType, private field ovk0, private field ovk1, private field oSalt, \
 field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nType, private field nvk0, private field nvk1, private field nSalt, private field sk) -> (field):
   // check ownership of note
-  field isOwner = verifyOwnership(sk, owner1)
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([owner0, owner1], sk, params)
   isOwner == 1
   
   oVal == nVal

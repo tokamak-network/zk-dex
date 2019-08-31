@@ -1,8 +1,9 @@
-import "../sha/1024bitPacked.code" as sha256
 import "../utils/math/add.code" as add
 import "../utils/math/mul.code" as mul
 import "../utils/isSmart.code" as isSmart
-import "../utils/ownership/verifyOwnership.code" as verifyOwnership
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
 // Note = (owner, value, type, viewKey, salt)
 
@@ -13,35 +14,35 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // n2 = changeNote from o1 or o2 to maker or taker(change)
 
 // (public) o0h0 + o0h1 : makerNote hash
-// (private) o0owner0 + o0owner0 : makerNote address
+// (private) o0owner0 + o0owner0 : makerNote owner
 // (private) o0Val : makerNote value
 // (public) o0Type : makerNote type
 // (private) o0vk0 + o0vk1 : makerNote viewKey
 // (private) o0Salt : makerNote salt
 
 // (public) o1h0 + o1h1 : takerNotetoMaker hash
-// (private) o1owner0 + o1owner1 : takerNotetoMaker address
+// (private) o1owner0 + o1owner1 : takerNotetoMaker owner
 // (public) o1Type : takerNotetoMaker type
 // (private) o1Val : takerNotetoMaker value
 // (private) o1vk0 + o1vk1 : takerNotetoMaker viewKey
 // (private) o1Salt : takerNotetoMaker salt
 
 // (public) n0h0 + n0h1 : newNoteToTaker hash
-// (public) n0owner0 + n0owner1 : newNoteToTaker address (should be order.parentNote)
+// (public) n0owner0 + n0owner1 : newNoteToTaker owner (should be order.parentNote)
 // (private) n0Val : newNoteToTaker value
 // (public) n0Type : newNoteToTaker type
 // (private) n0vk0 + n0vk1 : newNoteToTaker viewKey
 // (private) n0Salt : newNoteToTaker salt
 
 // (public) n1h0 + n1h1 : newNoteToMaker hash
-// (public) n1owner0 + n1owner1 : makerNote address (should be makerNote)
+// (public) n1owner0 + n1owner1 : makerNote owner (should be makerNote)
 // (private) n1Val : newNoteToMaker value
 // (public) n1Type : newNoteToMaker type
 // (private) n1vk0+ n1vk1 : newNoteToMaker viewKey
 // (private) n1Salt : newNoteToMaker salt
 
 // (public) n2h0 + n2h1 : changeNote hash
-// (private) n2owner0 + n2owner1 : changeNote address
+// (private) n2owner0 + n2owner1 : changeNote owner
 // (private) n2Val : changeNote value
 // (public) n2Type : changeNote type
 // (private) n2vk0+ n2vk1 : changeNote viewKey
@@ -54,7 +55,7 @@ import "../utils/ownership/verifyOwnership.code" as verifyOwnership
 // (private) q1 : quotient of o1Val / price
 // (private) r1 : o1Val % price
 
-// (private) sk : secret key corresponding to address of makerNote
+// (private) sk : secret key corresponding to owner of makerNote
 
 
 def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0Val, field o0Type, private field o0vk0, private field o0vk1, private field o0Salt, \
@@ -65,7 +66,8 @@ field n2h0, field n2h1, private field n2owner0, private field n2owner1, private 
 field price, private field q0, private field r0, private field q1, private field r1, private field sk) -> (field):
 
   // check ownership of makerNote
-  field isOwner = verifyOwnership(sk, o0owner1)
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
   isOwner == 1
 
   // check (hash(makerNote) == newNoteToMaker.owner)

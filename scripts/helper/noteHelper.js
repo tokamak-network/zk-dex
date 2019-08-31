@@ -1,59 +1,67 @@
 const fs = require('fs');
 const BN = require('bn.js');
 const crypto = require('crypto');
+const Web3Utils = require('web3-utils');
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
-function getNoteHash(owner, value, type, viewKey, salt) {
-  const paddedO = _toPadedObject(owner, value, type, viewKey, salt);
-  const { splittedNoteOwner } = paddedO;
+function getNoteHash(owner0, owner1, value, type, viewKey, salt) {
+
+  const paddedO = _toPadedObject(owner0, owner1, value, type, viewKey, salt);
+  const { noteOwner0 } = paddedO;
+  const { noteOwner1 } = paddedO;
   const { noteValue } = paddedO;
   const { noteType } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
 
-  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
+  const note = noteOwner0 + noteOwner1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
   
   const hashArr = toHashed(note);
   
   return hashArr[0] + hashArr[1];
 }
 
-function getNoteParams(owner, value, type, viewKey, salt) {
-  const paddedO = _toPadedObject(owner, value, type, viewKey, salt);
-  const { splittedNoteOwner } = paddedO;
+function getNoteParams(owner0, owner1, value, type, viewKey, salt) {
+  const paddedO = _toPadedObject(owner0, owner1, value, type, viewKey, salt);
+  const { noteOwner0 } = paddedO;
+  const { noteOwner1 } = paddedO;
   const { noteValue } = paddedO;
   const { noteType } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
 
   // To be hashed, raw note info
-  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
+  const note = noteOwner0 + noteOwner1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
   const noteHash = toHashed(note);
-  const noteParams = noteHash.concat(splittedNoteOwner, noteValue, noteType, splittedNoteViewKey, noteSalt);
+  const noteParams = noteHash.concat(noteOwner0, noteOwner1, noteValue, noteType, splittedNoteViewKey, noteSalt);
 
   return noteParams;
 }
 
-function _toPadedObject(owner, value, type, viewKey, salt) {
+function _toPadedObject(owner0, owner1, value, type, viewKey, salt) {
   // all params should look like this "0001"(o), "0x0001"(x)
-  const noteOwner = new BN(owner, 16).toString(16, 64) // 256bits
-  let splittedNoteOwner;
-  let isSmartNote = isSmart(owner);
-  if (isSmartNote) {
-    splittedNoteOwner = _checkLenAndReturn(noteOwner)
+  const noteHash = new BN(owner0, 16).toString(16, 64) 
+
+  let noteOwner0; // 256bits
+  let noteOwner1; // 256bits
+  if (owner1 == null) {
+    noteOwner0 = splitNoteHash(noteHash)[0];
+    noteOwner1 = splitNoteHash(noteHash)[1]; 
   } else {
-    splittedNoteOwner = _split160(noteOwner)
+    noteOwner0 = new BN(owner0, 16).toString(16, 64);
+    noteOwner1 = new BN(owner1, 16).toString(16, 64);
   }
+
   const noteValue = new BN(value, 16).toString(16, 64); // 256bits
-  const noteType = new BN(type, 16).toString(16, 32); // 256bits
+  const noteType = new BN(type, 16).toString(16, 64); // 256bits
   const noteViewKey = new BN(viewKey, 16).toString(16, 64); // 256bits
   const splittedNoteViewKey = _checkLenAndReturn(noteViewKey);
-  const noteSalt = new BN(salt, 16).toString(16, 32); // 256bits
+  const noteSalt = new BN(salt, 16).toString(16, 64); // 256bits
 
   const result = {
-    noteOwner,
-    splittedNoteOwner,
+    noteOwner0,
+    noteOwner1,
     noteValue,
     noteType,
     noteViewKey,
@@ -62,6 +70,13 @@ function _toPadedObject(owner, value, type, viewKey, salt) {
   };
 
   return result;
+}
+
+function splitNoteHash(noteHash) {
+  const noteHash0 = '0'.repeat(32) + noteHash.slice(0,32)
+  const noteHash1 = '0'.repeat(32) + noteHash.slice(32)
+
+  return [noteHash0, noteHash1]
 }
 
 function _checkLenAndReturn(targetHex) {
@@ -80,21 +95,6 @@ function _checkLenAndReturn(targetHex) {
   }
 
   return splittedData;
-}
-
-function isSmart(owner) {
-  const noteOwner = new BN(owner, 16)
-  const address_value = 2**160
-  const address = new BN(address_value.toString(16), 16)
-  if (noteOwner.cmp(address) == 1) {
-    return true
-  } 
-  return false
-}
-
-function _split160(targetHex) {
-  const splittedData = ['0'.repeat(24), targetHex.slice(24)]
-  return splittedData
 }
 
 function toHashed(encodedValue) {

@@ -16,23 +16,18 @@ function getPubKey(privKey) {
   return PublicKey.fromPrivate(privKey);
 }
 
-function getAddress(sk) {
+function getOwner(sk) {
   const privKey = getPrivKey(sk);
   const pubKey = getPubKey(privKey);
-  const pubKeyX = Web3Utils.padLeft(pubKey.p.x.n.toString(16, 64), 64)
-  const pubKeyY = Web3Utils.padLeft(pubKey.p.y.n.toString(16, 64), 64)
-  
-  const params = pubKeyX + pubKeyY
+  const pubKeyX = pubKey.p.x.n.toString(16, 64);
+  const pubKeyY = pubKey.p.y.n.toString(16, 64);
 
-  const buf = Buffer.from(params, 'hex');
-  const digest = crypto.createHash('sha256').update(buf).digest('hex');
-
-  return digest.slice(24);
+  return [pubKeyX, pubKeyY]
 }
 
 module.exports = {
   getSk,
   getPrivKey,
   getPubKey,
-  getAddress,
+  getOwner,
 }

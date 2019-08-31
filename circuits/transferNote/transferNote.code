@@ -1,6 +1,7 @@
-import "../sha/1024bitPacked.code" as sha256
 import "../utils/math/add.code" as add
-import "../utils/ownership/verifyOwnership.code" as verifyOwnership
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
 
 // Note = (owner, value, type, viewKey, salt)
@@ -42,7 +43,8 @@ field nh0, field nh1, private field nOwner0, private field nOwner1, private fiel
 field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt, private field sk) -> (field):
   
   // check ownership of old note
-  field isOwner = verifyOwnership(sk, o0owner1)
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
   isOwner == 1
   o0owner0 == o1owner0
   o0owner1 == o1owner1

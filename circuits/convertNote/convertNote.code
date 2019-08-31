@@ -1,25 +1,26 @@
-import "../sha/1024bitPacked.code" as sha256
+import "../sha/1536bitPacked.code" as sha256
 import "../utils/isSmart.code" as isSmart
-import "../utils/ownership/verifyOwnership.code" as verifyOwnership
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
 // Note = (owner, value, type, viewKey, salt)
 
 // (public) smartH0 + smartH1 : smartNote hash
-// (private) smartOwner0, smartOwner1 : smartNote owner address
+// (private) smartOwner0, smartOwner1 : smartNote owner pubkey
 // (private) smartValue : smartNote value
 // (private) smartType : smartNote type
 // (private) smartVk0 + smartVk1 : smartNote viewKey
 // (private) smartSalt : smartNote salt, random value
 
 // (public) originH0 + originH1 : originNote hash
-// (private) originOwner0, originOwner1 : originNote owner address
+// (private) originOwner0, originOwner1 : originNote owner pubkey
 // (private) originValue : originNote value
 // (private) originType : originNote type
 // (private) originVk0 + originVk1 : originNote viewKey
 // (private) originSalt : originNote salt, random value
 
 // (public) nh0 + nh1 : note hash
-// (private) nOwner0, nOwner1 : note owner address
+// (private) nOwner0, nOwner1 : note owner pubkey
 // (private) nValue : note value
 // (private) nType : note type
 // (private) nVk0 + nVk1 : note viewKey
@@ -38,11 +39,12 @@ field nh0, field nh1, private field nOwner0, private field nOwner1, private fiel
   isSmartNote == 1
   
   // check ownership of note
-  field isOwner = verifyOwnership(sk, originOwner1)
-  isOwner == 1
   smartOwner0 == originH0
   smartOwner1 == originH1
-
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([originOwner0, originOwner1], sk, params)
+  isOwner == 1
+  
   // check value
   smartValue == nValue
 

@@ -48,25 +48,36 @@ const NoteState = {
 };
 
 class Note {
-  constructor(owner, value, token, viewingKey, salt) {
-    this.owner = Web3Utils.padLeft(Web3Utils.toHex(owner), 64);
+  constructor(owner0, owner1, value, token, viewKey, salt) {
+    this.owner0 = Web3Utils.padLeft(owner0, 64);
+    if (owner1 != null) {
+      this.owner1 = Web3Utils.padLeft(owner1, 64);
+    }
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
-    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 32);
-    this.viewKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
+    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
+    this.viewKey = Web3Utils.padLeft(Web3Utils.toHex(viewKey), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
+  }
+
+  isSmart() {
+    if (this.owner1 == null) {
+      return true
+    }
+    return false
   }
 
   getOwner() {
-    if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
-      return this.owner;
+    if (this.isSmart()) {
+      return this.owner0;
     }
 
-    return util.marshal(this.owner.slice(-40));
+    return [owner0, owner1];
   }
 
   hash() {
     return util.marshal(noteHelper.getNoteHash(
-      util.unmarshal(this.owner),
+      util.unmarshal(this.owner0),
+      util.unmarshal(this.owner1),
       util.unmarshal(this.value),
       util.unmarshal(this.token),
       util.unmarshal(this.viewKey),

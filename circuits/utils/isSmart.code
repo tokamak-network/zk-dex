@@ -1,5 +1,15 @@
 import "PACKING/split" as split
 
 def main(field i) -> (field):
-  field r = if i == 0 then 0 else 1 fi
-  return r
+
+    field[254] b = split(i)
+
+    field check = 0
+
+    for field i in 0..126 do
+      check = if b[i] == 0 then check + 1 else check fi
+    endfor
+
+    field isSmart = if check == 126 then 1 else 0 fi
+
+    return isSmart

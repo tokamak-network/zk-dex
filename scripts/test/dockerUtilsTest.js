@@ -10,7 +10,7 @@ const {
 
 const {
   getSk,
-  getAddress,
+  getOwner,
 } = require('../helper/accountHelper');
 
 const {
@@ -27,7 +27,7 @@ const {
 const SCALING_FACTOR = new BN('1000000000000000000');
     
 let sk;
-let address;
+let owner;
 let viewingKey;
 let salt;
 
@@ -52,40 +52,42 @@ let price;
 
 
 describe('dockerUtils', function() {
-
   before(async() => {
     sk = getSk()
     sk_hex = sk.n.toString(16, 64);
-    address = getAddress(sk);
+    owner = getOwner(sk);
     viewingKey = Web3Utils.randomHex(32);
-    salt = Web3Utils.randomHex(16);
+    salt = Web3Utils.randomHex(31);
+
+    console.log(owner[0]);
+    console.log(owner[1]);
 
     let oldDAIValue = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
     let oldDAIValue1 = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
     let newDAIValue = Web3Utils.toHex(new BN(7000).mul(SCALING_FACTOR));
     let changeValue = Web3Utils.toHex(new BN(3000).mul(SCALING_FACTOR));
 
-    oldDAINote = new Note(address, oldDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    oldDAINote1 = new Note(address, oldDAIValue1, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    newDAINote = new Note(address, newDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    changeNote = new Note(address, changeValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    oldDAINote = new Note(owner[0], owner[1], oldDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    oldDAINote1 = new Note(owner[0], owner[1], oldDAIValue1, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    newDAINote = new Note(owner[0], owner[1], newDAIValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    changeNote = new Note(owner[0], owner[1], changeValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     let smartValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
     let originValue = Web3Utils.toHex(new BN(50000).mul(SCALING_FACTOR));
     let noteValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
 
-    originNote = new Note(address, originValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    smartNote = new Note(originNote.hash(), smartValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-    note = new Note(address, noteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    originNote = new Note(owner[0], owner[1], originValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    smartNote = new Note(originNote.hash(), null, smartValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    note = new Note(owner[0], owner[1], noteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     parentNoteValue = Web3Utils.toHex(new BN(20000).mul(SCALING_FACTOR));
-    parentNote = new Note(address, parentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    parentNote = new Note(owner[0], owner[1], parentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     makerNoteValue = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
     stakeNoteValue = Web3Utils.toHex(new BN(20000).mul(SCALING_FACTOR));
 
-    makerNote = new Note(address, makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
-    stakeNote = new Note(makerNote.hash(), stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+    makerNote = new Note(owner[0], owner[1], makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+    stakeNote = new Note(makerNote.hash(), null, stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     await initialized();
     
@@ -126,11 +128,11 @@ describe('dockerUtils', function() {
   
       price = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
 
-      makerNote = new Note(address, makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
-      stakeNote = new Note(makerNote.hash(), stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-      rewardNote = new Note(parentNote.hash(), rewardNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
-      paymentNote = new Note(makerNote.hash(), paymentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-      changeNote = new Note(makerNote.hash(), changeNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+      makerNote = new Note(owner[0], owner[1], makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+      stakeNote = new Note(makerNote.hash(), null, stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+      rewardNote = new Note(parentNote.hash(), null, rewardNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+      paymentNote = new Note(makerNote.hash(), null, paymentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+      changeNote = new Note(makerNote.hash(), null, changeNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
     })
     
     it('should get proof of settleOrder when makerNote.value >= stakeNote.value * price', async () => {
@@ -149,11 +151,11 @@ describe('dockerUtils', function() {
   
       price = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
 
-      makerNote = new Note(address, makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
-      stakeNote = new Note(makerNote.hash(), stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-      rewardNote = new Note(parentNote.hash(), rewardNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
-      paymentNote = new Note(makerNote.hash(), paymentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
-      changeNote = new Note(parentNote.hash(), changeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+      makerNote = new Note(owner[0], owner[1], makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+      stakeNote = new Note(makerNote.hash(), null, stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+      rewardNote = new Note(parentNote.hash(), null, rewardNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
+      paymentNote = new Note(makerNote.hash(), null, paymentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
+      changeNote = new Note(parentNote.hash(), null, changeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
     })
 
     it('should get proof of settleOrder when makerNote.value < stakeNote.value * price', async () => {
