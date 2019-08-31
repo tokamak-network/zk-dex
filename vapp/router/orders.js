@@ -67,29 +67,6 @@ router.post('/history/:account', asyncWrap(
   }
 ));
 
-
-router.put('/:account', asyncWrap(
-  async function (req, res) {
-    const account = req.params.account;
-    const order = req.body.order;
-    const orders = updateOrderHistory(account, order);
-    return res.status(200).json({
-      orders,
-    });
-  }
-));
-
-router.put('/', asyncWrap(
-  async function (req, res) {
-    const orderId = req.body.orderId;
-    const orderState = req.body.orderState;
-    const orders = updateOrderState(orderId, orderState);
-    return res.status(200).json({
-      orders,
-    });
-  }
-));
-
 router.put('/taker', asyncWrap(
   async function (req, res) {
     const orderId = req.body.orderId;
@@ -109,6 +86,28 @@ router.put('/state/:account', asyncWrap(
     const history = updateOrderHistoryState(account, orderId, orderState);
     return res.status(200).json({
       history,
+    });
+  }
+));
+
+router.put('/:account', asyncWrap(
+  async function (req, res) {
+    const account = req.params.account;
+    const order = req.body.order;
+    const orders = updateOrderHistory(account, order);
+    return res.status(200).json({
+      orders,
+    });
+  }
+));
+
+router.put('/', asyncWrap(
+  async function (req, res) {
+    const orderId = req.body.orderId;
+    const orderState = req.body.orderState;
+    const orders = updateOrderState(orderId, orderState);
+    return res.status(200).json({
+      orders,
     });
   }
 ));

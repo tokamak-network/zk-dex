@@ -20,6 +20,8 @@ const state = {
   orders: null,
   orderHistory: null,
   daiAmount: '0',
+  doYouWantToBuyOrSell: 'buy',
+  doYouWantToMakeOrTake: 'make',
 };
 
 export default state;

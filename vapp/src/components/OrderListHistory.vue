@@ -41,11 +41,12 @@ export default {
     change (order) {
       const makerNoteAmount = Web3Utils.toBN(order.makerNoteAmount);
       const takerNoteAmount = Web3Utils.toBN(order.takerNoteAmount);
+      const price = Web3Utils.toBN(order.price);
 
-      if (makerNoteAmount.cmp(takerNoteAmount) >= 0) {
-        return Web3Utils.toHex(makerNoteAmount.sub(takerNoteAmount));
+      if ((makerNoteAmount.mul(price)).cmp(takerNoteAmount) >= 0) {
+        return makerNoteAmount.sub(takerNoteAmount.div(price));
       } else {
-        return Web3Utils.toHex(takerNoteAmount.sub(makerNoteAmount));
+        return takerNoteAmount.sub(makerNoteAmount.mul(price));
       }
     },
   },

@@ -6,7 +6,7 @@
           Order id
         </a>
       </p>
-     <p class="control is-expanded">
+      <p class="control is-expanded">
         <a class="button is-static" style="width: 100%;">
           {{ orderId | hexToNumberString }}
         </a>
@@ -48,8 +48,11 @@
         </a>
       </p>
     </div>
-    <div style="margin-top: 10px; display: flex; justify-content: flex-end">
-      <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Take Order</button>
+    <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
+      <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Buy DAI</button>
+    </div>
+    <div v-else-if="radio === 'sell'" style="margin-top: 10px; display: flex; justify-content: flex-end">
+      <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Sell DAI</button>
     </div>
     <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
       <div class="box">
@@ -108,6 +111,7 @@ export default {
       salt: null,
     };
   },
+  props: ['radio'],
   computed: {
     ...mapState({
       accounts: state => state.accounts,
@@ -250,6 +254,7 @@ export default {
         const orderHistory = this.order;
         orderHistory.takerNote = noteObject.hash;
         orderHistory.takerNoteAmount = noteObject.value;
+        orderHistory.orderTaker = noteOwner;
         await updateOrderHistory(this.order.orderMaker, orderHistory);
 
         // 5. create order history (buy)

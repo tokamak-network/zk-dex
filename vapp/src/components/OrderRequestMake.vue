@@ -30,12 +30,15 @@
       </p>
       <p class="control is-expanded">
         <a class="button is-static" style="width: 100%;">
-          {{ noteValue }}
+          {{ noteValue | hexToNumberString }}
         </a>
       </p>
     </div>
-    <div style="margin-top: 10px; display: flex; justify-content: flex-end">
-      <button class="button" @click="makeNewOrder" :class="{ 'is-static': noteHash === '' || price === '', 'is-loading': loading }">Make Order</button>
+    <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
+      <button class="button" @click="makeNewOrder" :class="{ 'is-static': noteHash === '' || price === '', 'is-loading': loading }">Buy ETH</button>
+    </div>
+    <div v-else-if="radio === 'sell'" style="margin-top: 10px; display: flex; justify-content: flex-end">
+      <button class="button" @click="makeNewOrder" :class="{ 'is-static': noteHash === '' || price === '', 'is-loading': loading }">Sell ETH</button>
     </div>
   </div>
 </template>
@@ -45,6 +48,7 @@ import { mapState, mapMutations } from 'vuex';
 import { constants } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 import {
+  getNotes,
   updateNoteState,
   addOrderHistory,
   addOrder,
@@ -62,8 +66,10 @@ export default {
       price: '',
     };
   },
+  props: ['radio'],
   computed: {
     ...mapState({
+      accounts: state => state.accounts,
       coinbase: state => state.web3.coinbase,
       dex: state => state.dexContractInstance,
       viewingKey: state => state.viewingKey,
@@ -172,8 +178,16 @@ export default {
       this.SET_ORDER_HISTORY(history);
     },
     async updateNoteState (noteOwner, noteHash, noteState) {
-      const notes = await updateNoteState(noteOwner, noteHash, noteState);
-      this.SET_NOTES(notes);
+      await updateNoteState(noteOwner, noteHash, noteState);
+
+      const newNotes = [];
+      for (let i = 0; i < this.accounts.length; i++) {
+        const n = await getNotes(this.accounts[i].address);
+        if (n !== null) {
+          newNotes.push(...n);
+        }
+      }
+      this.SET_NOTES(newNotes);
     },
   },
 };

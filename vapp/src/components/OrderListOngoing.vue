@@ -21,7 +21,8 @@
       </thead>
       <tbody>
         <tr v-for="order in ongoingOrderHistory">
-          <td>{{ order.sourceToken | tokenType }}-{{ order.targetToken | tokenType }}</td>
+          <!-- <td>{{ order.sourceToken | tokenType }}-{{ order.targetToken | tokenType }}</td> -->
+          <td>DAI-ETH</td>
           <td>{{ order.orderId | hexToNumberString }}</td>
           <td>{{ order.type | orderType }}</td>
           <td>{{ order.price | hexToNumberString }}</td>
@@ -231,6 +232,18 @@ export default {
         } else {
           await addNote(this.order.orderTaker, changeNoteObject);
         }
+
+        const noteHash4 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[3].args.note)), 64);
+        const noteState4 = Web3Utils.toHex(tx.logs[3].args.state);
+        await updateNoteState(this.order.orderMaker, noteHash4, noteState4);
+
+        const noteHash5 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[4].args.note)), 64);
+        const noteState5 = Web3Utils.toHex(tx.logs[4].args.state);
+        await updateNoteState(this.order.orderTaker, noteHash5, noteState5);
+
+        const noteHash6 = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[5].args.note)), 64);
+        const noteState6 = Web3Utils.toHex(tx.logs[5].args.state);
+        await updateNoteState(this.order.orderMaker, noteHash6, noteState6);
 
         // order state update
         const order = await this.dex.orders(Web3Utils.toBN(this.order.orderId));

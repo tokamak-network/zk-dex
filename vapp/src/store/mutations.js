@@ -123,6 +123,13 @@ export default {
   SET_DAI_AMOUNT: (state, d) => {
     state.daiAmount = d.daiAmount;
   },
+  SELECT_BUY_OR_SELL: (state, choice) => {
+    state.doYouWantToBuyOrSell = choice;
+  },
+  SELECT_MAKE_OR_TAKE: (state, choice) => {
+    state.doYouWantToMakeOrTake = choice;
+  },
+
   MAKE_INITIAL_STATE: (state) => {
     const s = initialState();
     Object.keys(s).forEach((key) => {
@@ -142,5 +149,7 @@ function initialState () {
     'orders': null,
     'orderHistory': null,
     'daiAmount': '0',
+    'doYouWantToBuyOrSell': 'buy',
+    'doYouWantToMakeOrTake': 'make',
   };
 }
