@@ -17,14 +17,14 @@ function getTransferCmd(
   from1Owner0, from1Owner1, from1Value, from1Type, from1ViewKey, from1Salt,
   toOwner0, toOwner1, toValue, toType, toViewKey, toSalt,
   changeOwner0, changeOwner1, changeValue, changeType, changeViewKey, changeSalt,
-  sk,
+  sk0, sk1,
 ) {
   const from0Params = noteHelper.getNoteParams(from0Owner0, from0Owner1, from0Value, from0Type, from0ViewKey, from0Salt);
   const from1Params = noteHelper.getNoteParams(from1Owner0, from1Owner1, from1Value, from1Type, from1ViewKey, from1Salt);
   const toParams = noteHelper.getNoteParams(toOwner0, toOwner1, toValue, toType, toViewKey, toSalt);
   const changeParams = noteHelper.getNoteParams(changeOwner0, changeOwner1, changeValue, changeType, changeViewKey, changeSalt);
 
-  const transferParams = from0Params.concat(from1Params, toParams, changeParams, sk);
+  const transferParams = from0Params.concat(from1Params, toParams, changeParams, sk0, sk1);
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(transferParams);
   }

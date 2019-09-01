@@ -2,16 +2,16 @@ const { expect } = require('chai');
 const BN = require('bn.js');
 const Web3Utils = require('web3-utils');
 
-const util = require('../lib/util');
+const util = require('../scripts/lib/util');
 const {
-  constants, 
+  constants,
   Note,
-} = require('../lib/Note');
+} = require('../scripts/lib/Note');
 
 const {
   getSk,
   getOwner,
-} = require('../helper/accountHelper');
+} = require('../scripts/helper/accountHelper');
 
 const {
   getMintNBurnProof,
@@ -21,11 +21,11 @@ const {
   getTakeOrderProof,
   getSettleOrderProof,
   initialized,
-} = require('../lib/dockerUtils');
+} = require('../scripts/lib/dockerUtils');
 
 
 const SCALING_FACTOR = new BN('1000000000000000000');
-    
+
 let sk;
 let owner;
 let viewingKey;
@@ -90,7 +90,7 @@ describe('dockerUtils', function() {
     stakeNote = new Note(makerNote.hash(), null, stakeNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     await initialized();
-    
+
   });
 
   it('should get proof of mintNBurn', async () => {
@@ -98,8 +98,21 @@ describe('dockerUtils', function() {
     console.log(proof);
   });
 
-  it('should get proof of trasnfer', async () => {
-    proof = await getTransferProof(oldDAINote, oldDAINote1, newDAINote, changeNote, sk_hex)
+  it('should get proof of transfer', async () => {
+    proof = await getTransferProof(oldDAINote, oldDAINote1, newDAINote, changeNote, sk_hex, sk_hex)
+    console.log(proof);
+  });
+
+  it('should get proof of transfer only 1 note', async () => {
+    const oldNoteValue = 1000;
+    const newNote1Value = 100;
+    const newNote2Value = 900;
+
+    const oldNote = new Note(owner[0], owner[1], oldNoteValue, constants.DAI_TOKEN_TYPE, "0x00", salt);
+    const newNote1 = new Note(owner[0], owner[1], newNote1Value, constants.DAI_TOKEN_TYPE, "0x00", salt);
+    const newNote2 = new Note(owner[0], owner[1], newNote2Value, constants.DAI_TOKEN_TYPE, "0x00", salt);
+
+    proof = await getTransferProof(oldNote, constants.EMPTY_NOTE, newNote1, newNote2, sk_hex, '0x00')
     console.log(proof);
   });
 
@@ -107,7 +120,7 @@ describe('dockerUtils', function() {
     proof = await getConvertProof(smartNote, originNote, note, sk_hex)
     console.log(proof);
   });
-  
+
   it('should get proof of makeOrder', async () => {
     proof = await getMakeOrderProof(oldDAINote, sk_hex)
     console.log(proof);
@@ -125,7 +138,7 @@ describe('dockerUtils', function() {
       rewardNoteValue = Web3Utils.toHex(new BN(50).mul(SCALING_FACTOR));
       paymentNoteValue = Web3Utils.toHex(new BN(5000).mul(SCALING_FACTOR));
       changeNoteValue = Web3Utils.toHex(new BN(50).mul(SCALING_FACTOR));
-  
+
       price = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
 
       makerNote = new Note(owner[0], owner[1], makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
@@ -134,7 +147,7 @@ describe('dockerUtils', function() {
       paymentNote = new Note(makerNote.hash(), null, paymentNoteValue, constants.DAI_TOKEN_TYPE, viewingKey, salt);
       changeNote = new Note(makerNote.hash(), null, changeNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);
     })
-    
+
     it('should get proof of settleOrder when makerNote.value >= stakeNote.value * price', async () => {
       proof = await getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, sk_hex)
       console.log(proof);
@@ -148,7 +161,7 @@ describe('dockerUtils', function() {
       rewardNoteValue = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
       paymentNoteValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
       changeNoteValue = Web3Utils.toHex(new BN(10000).mul(SCALING_FACTOR));
-  
+
       price = Web3Utils.toHex(new BN(100).mul(SCALING_FACTOR));
 
       makerNote = new Note(owner[0], owner[1], makerNoteValue, constants.ETH_TOKEN_TYPE, viewingKey, salt);

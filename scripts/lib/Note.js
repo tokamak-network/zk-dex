@@ -48,9 +48,18 @@ const NoteState = {
 };
 
 class Note {
+  /**
+   *
+   * @param { String | BN } owner0 x-coordinates of public key for normal note, original note hash for smart note
+   * @param { String | BN | Null } owner1 y-coordinates of public key for normal note, null for smart note
+   * @param { String | BN } value The amount of token
+   * @param { String | BN } token The type of token
+   * @param { String | BN } viewKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
+   * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
+   */
   constructor(owner0, owner1, value, token, viewKey, salt) {
     this.owner0 = Web3Utils.padLeft(owner0, 64);
-    if (owner1 != null) {
+    if (owner1 !== null) {
       this.owner1 = Web3Utils.padLeft(owner1, 64);
     }
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
@@ -60,12 +69,13 @@ class Note {
   }
 
   isSmart() {
-    if (this.owner1 == null) {
-      return true
-    }
-    return false
+    return this.owner1 === null;
   }
 
+
+  /**
+   * @returns { String | Array } Array of x and y coordinates of public key of the owner for normal note, or String of the original note hash for smart note.
+   */
   getOwner() {
     if (this.isSmart()) {
       return this.owner0;
@@ -210,7 +220,7 @@ function dummyProofSettleOrder(makerNote, parentNoteHash, stakeNote, rewardNote,
   return util.parseProofObj(proof);
 }
 
-const EMPTY_NOTE = new Note('0', '0', '0', '0', '0', false);
+const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00', '0x00');
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
 console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);

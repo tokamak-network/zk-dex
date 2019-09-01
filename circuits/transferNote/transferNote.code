@@ -1,3 +1,9 @@
+import "utils/binary/or.code" as or
+import "utils/binary/not.code" as not
+import "utils/binary/and.code" as and
+
+import "../utils/boolean/toBool.code" as toBool
+import "../utils/boolean/fromBool.code" as fromBool
 import "../utils/math/add.code" as add
 import "../sha/1536bitPacked.code" as sha256
 import "ecc/proofOfOwnership.code" as proofOfOwnership
@@ -40,14 +46,16 @@ import "ecc/babyjubjubParams.code" as babyjubjubParams
 def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0val, private field o0type, private field o0vk0, private field o0vk1, private field o0salt, \
 field o1h0, field o1h1, private field o1owner0, private field o1owner1, private field o1val, private field o1type, private field o1vk0, private field o1vk1, private field o1salt, \
 field nh0, field nh1, private field nOwner0, private field nOwner1, private field nVal, private field nType, private field nVk0, private field nVk1, private field nSalt, \
-field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt, private field sk) -> (field):
-  
-  // check ownership of old note
+field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt, private field sk0, private field sk1) -> (field):
+
+  // check ownership of old note 0
   field[10] params = babyjubjubParams()
-  field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
-  isOwner == 1
-  o0owner0 == o1owner0
-  o0owner1 == o1owner1
+  proofOfOwnership([o0owner0, o0owner1], sk0, params) == 1
+
+  field transfer1Note = fromBool(o1owner0 == 0 && o1owner1 == 0 && o1val == 0 && o1type == 0 && o1vk0 == 0 && o1vk1 == 0 && o1salt == 0)
+
+  // check if transfer 1 note or 2 notes.
+  or(transfer1Note, proofOfOwnership([o1owner0, o1owner1], sk1, params)) == 1
 
   // check value
   field inputValue = add(o0val, o1val)
@@ -55,8 +63,8 @@ field changeH0, field changeH1, private field changeOwner0, private field change
   inputValue == outputValue
 
   // check type
-  o0type == o1type
-  o1type == nType
+  or(transfer1Note, fromBool(o0type == o1type)) == 1
+  o0type == nType
   nType == changeType
 
   // check old note 0

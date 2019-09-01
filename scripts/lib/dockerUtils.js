@@ -90,7 +90,7 @@ async function getMintNBurnProof(note, sk) {
   return util.parseProofObj(proof);
 }
 
-async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk) {
+async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk1) {
   const cmdArgs = getTransferCmd(
     convert(oldNote0.owner0),
     convert(oldNote0.owner1),
@@ -116,7 +116,8 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk) {
     convert(changeNote.token),
     convert(changeNote.viewKey),
     convert(changeNote.salt),
-    convert(sk),
+    convert(sk0),
+    convert(sk1),
   );
 
   const proof = await execute('transferNote', `${cmdBase} ${cmdArgs}`);
