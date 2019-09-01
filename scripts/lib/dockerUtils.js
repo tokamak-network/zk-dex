@@ -137,7 +137,7 @@ async function getMakeOrderProof(makerNote) {
   return util.parseProofObj(proof);
 }
 
-async function getTakeOrderProof(makerNote, parentNote, stakeNote) {
+async function getTakeOrderProof(makerNoteHash, parentNote, stakeNote) {
   const cmdArgs = getTakeOrderCommand(
     convert(parentNote.owner),
     convert(parentNote.value),
@@ -145,7 +145,7 @@ async function getTakeOrderProof(makerNote, parentNote, stakeNote) {
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
     convert(parentNote.isSmart),
-    convert(hash(makerNote)),
+    convert(makerNoteHash),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
