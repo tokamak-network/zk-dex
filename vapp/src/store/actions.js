@@ -1,6 +1,3 @@
-// import getWeb3 from '../utils/getWeb3'
-import getWeb3 from '../services/web3/getWeb3';
-
 import contract from 'truffle-contract';
 import dexJSON from '../../../build/contracts/ZkDex.json';
 import daiJSON from '../../../build/contracts/MockDai.json';
@@ -29,15 +26,16 @@ export default {
     commit('SET_DAI_CONTRACT_INSTANCE', instance);
   },
 
-  setWallet ({
-    commit,
-  }, wallet) {
-    commit('SET_WALLET', wallet);
-  },
   setDaiAddress ({
     commit,
   }, daiAddress) {
     commit('SET_DAI_ADDRESS', daiAddress);
+  },
+
+  setDaiAmount ({
+    commit,
+  }, daiAmount) {
+    commit('SET_DAI_AMOUNT', daiAmount);
   },
 
   setViewingKey ({
@@ -62,26 +60,33 @@ export default {
     commit('SET_ORDERS', orders);
   },
 
+  setAccounts ({
+    commit,
+  }, accounts) {
+    commit('SET_ACCOUNTS', accounts);
+  },
+
   setNote ({
     commit,
   }, note) {
     commit('SET_NOTE', note);
   },
-  setMyNotes ({
+
+  setWeb3 ({
     commit,
-  }, notes) {
-    commit('SET_MY_NOTES', notes);
+  }, web3) {
+    commit('SET_WEB3', web3);
   },
 
-  async registerWeb3 ({
+  updateWallet ({
     commit,
-  }) {
-    const web3 = await getWeb3();
-    commit('REGISTER_WEB3', web3);
+  }, account) {
+    commit('UPDATE_WALLET', account);
   },
-  pollingWeb3 ({
+
+  setLastPath ({
     commit,
-  }, payload) {
-    commit('POLL_WEB3', payload);
+  }, path) {
+    commit('SET_LAST_PATH', path);
   },
 };

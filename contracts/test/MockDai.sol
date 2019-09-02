@@ -6,4 +6,8 @@ contract MockDai is ERC20 {
   constructor() public {
     _mint(msg.sender, 100 * 10**18);
   }
+
+  function mint() public {
+    _mint(msg.sender, 100 * 10**18);
+  }
 }

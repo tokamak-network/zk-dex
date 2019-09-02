@@ -292,5 +292,8 @@ contract ZkDex is ZkDai {
       order.price
     ));
   }
-}
 
+  function getOrderCount() public view returns (uint256) {
+    return orders.length;
+  }
+}

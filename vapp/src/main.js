@@ -1,19 +1,26 @@
-import getWeb3 from './services/web3/getWeb3';
-import 'element-ui/lib/theme-chalk/index.css';
-import ElementUI from 'element-ui';
+import Vue from 'vue';
 
-getWeb3().then(() => {
-  const Vue = require('vue').default;
-  const App = require('./App.vue').default;
-  const router = require('./router').default;
-  const store = require('./store').default;
+import App from './App.vue';
+import router from './router';
+import store from './store';
 
-  Vue.use(ElementUI);
+import Buefy from 'buefy';
 
-  new Vue({
-    el: '#app',
-    router,
-    store,
-    render: h => h(App),
-  });
+import * as filters from './filters';
+
+// Global event bus
+Vue.prototype.$bus = new Vue();
+
+Vue.use(Buefy);
+
+// register global utility filters
+Object.keys(filters).forEach((key) => {
+  Vue.filter(key, filters[key]);
+});
+
+new Vue({
+  el: '#app',
+  router,
+  store,
+  render: h => h(App),
 });
