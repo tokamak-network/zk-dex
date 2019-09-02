@@ -4,7 +4,7 @@ const Web3Utils = require('web3-utils');
 const util = require('./util');
 
 const { constants } = require('./Note');
-const { 
+const {
   getMintAndBurnCmd,
   getTransferCmd,
   getConvertCmd,
@@ -73,7 +73,7 @@ async function execute(circuitName, cmd) {
   });
 }
 
-const convert = v => Web3Utils.toBN(v, 16);
+const convert = v => Web3Utils.toBN(v || '0x00', 16);
 
 async function getMintNBurnProof(note, sk) {
   const cmdArgs = getMintAndBurnCmd(
@@ -81,7 +81,7 @@ async function getMintNBurnProof(note, sk) {
     convert(note.owner1),
     convert(note.value),
     convert(note.token),
-    convert(note.viewKey),
+    convert(note.viewingKey),
     convert(note.salt),
     convert(sk),
   );
@@ -91,30 +91,35 @@ async function getMintNBurnProof(note, sk) {
 }
 
 async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk1) {
+  if (!oldNote1) {
+    oldNote1 = constants.EMPTY_NOTE;
+    sk1 = '0x00';
+  }
+
   const cmdArgs = getTransferCmd(
     convert(oldNote0.owner0),
     convert(oldNote0.owner1),
     convert(oldNote0.value),
     convert(oldNote0.token),
-    convert(oldNote0.viewKey),
+    convert(oldNote0.viewingKey),
     convert(oldNote0.salt),
     convert(oldNote1.owner0),
     convert(oldNote1.owner1),
     convert(oldNote1.value),
     convert(oldNote1.token),
-    convert(oldNote1.viewKey),
+    convert(oldNote1.viewingKey),
     convert(oldNote1.salt),
     convert(newNote.owner0),
     convert(newNote.owner1),
     convert(newNote.value),
     convert(newNote.token),
-    convert(newNote.viewKey),
+    convert(newNote.viewingKey),
     convert(newNote.salt),
     convert(changeNote.owner0),
     convert(changeNote.owner1),
     convert(changeNote.value),
     convert(changeNote.token),
-    convert(changeNote.viewKey),
+    convert(changeNote.viewingKey),
     convert(changeNote.salt),
     convert(sk0),
     convert(sk1),
@@ -127,22 +132,22 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
 async function getConvertProof(smartNote, originNote, note, sk) {
   const cmdArgs = getConvertCmd(
     convert(smartNote.owner0),
-    smartNote.owner1,
+    null,
     convert(smartNote.value),
     convert(smartNote.token),
-    convert(smartNote.viewKey),
+    convert(smartNote.viewingKey),
     convert(smartNote.salt),
     convert(originNote.owner0),
     convert(originNote.owner1),
     convert(originNote.value),
     convert(originNote.token),
-    convert(originNote.viewKey),
+    convert(originNote.viewingKey),
     convert(originNote.salt),
     convert(note.owner0),
     convert(note.owner1),
     convert(note.value),
     convert(note.token),
-    convert(note.viewKey),
+    convert(note.viewingKey),
     convert(note.salt),
     convert(sk),
   );
@@ -157,7 +162,7 @@ async function getMakeOrderProof(makerNote, sk) {
     convert(makerNote.owner1),
     convert(makerNote.value),
     convert(makerNote.token),
-    convert(makerNote.viewKey),
+    convert(makerNote.viewingKey),
     convert(makerNote.salt),
     convert(sk),
   );
@@ -166,19 +171,19 @@ async function getMakeOrderProof(makerNote, sk) {
   return util.parseProofObj(proof);
 }
 
-async function getTakeOrderProof(parentNote, stakeNote, makerNoteHash, sk) {
+async function getTakeOrderProof(parentNote, stakeNote, sk) {
   const cmdArgs = getTakeOrderCmd(
     convert(parentNote.owner0),
     convert(parentNote.owner1),
     convert(parentNote.value),
     convert(parentNote.token),
-    convert(parentNote.viewKey),
+    convert(parentNote.viewingKey),
     convert(parentNote.salt),
-    convert(makerNoteHash),
+    convert(stakeNote.owner0),
     null,
     convert(stakeNote.value),
     convert(stakeNote.token),
-    convert(stakeNote.viewKey),
+    convert(stakeNote.viewingKey),
     convert(stakeNote.salt),
     convert(sk),
   );
@@ -193,31 +198,31 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
     convert(makerNote.owner1),
     convert(makerNote.value),
     convert(makerNote.token),
-    convert(makerNote.viewKey),
+    convert(makerNote.viewingKey),
     convert(makerNote.salt),
     convert(stakeNote.owner0),
     null,
     convert(stakeNote.value),
     convert(stakeNote.token),
-    convert(stakeNote.viewKey),
+    convert(stakeNote.viewingKey),
     convert(stakeNote.salt),
     convert(rewardNote.owner0),
     null,
     convert(rewardNote.value),
     convert(rewardNote.token),
-    convert(rewardNote.viewKey),
+    convert(rewardNote.viewingKey),
     convert(rewardNote.salt),
     convert(paymentNote.owner0),
     null,
     convert(paymentNote.value),
     convert(paymentNote.token),
-    convert(paymentNote.viewKey),
+    convert(paymentNote.viewingKey),
     convert(paymentNote.salt),
     convert(changeNote.owner0),
     null,
     convert(changeNote.value),
     convert(changeNote.token),
-    convert(changeNote.viewKey),
+    convert(changeNote.viewingKey),
     convert(changeNote.salt),
     convert(price),
     convert(util.getQuotient(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),

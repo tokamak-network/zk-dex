@@ -54,17 +54,17 @@ class Note {
    * @param { String | BN | Null } owner1 y-coordinates of public key for normal note, null for smart note
    * @param { String | BN } value The amount of token
    * @param { String | BN } token The type of token
-   * @param { String | BN } viewKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
+   * @param { String | BN } viewingKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
    * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
    */
-  constructor(owner0, owner1, value, token, viewKey, salt) {
+  constructor(owner0, owner1, value, token, viewingKey, salt) {
     this.owner0 = Web3Utils.padLeft(owner0, 64);
-    if (owner1 !== null) {
+    if (owner1) {
       this.owner1 = Web3Utils.padLeft(owner1, 64);
     }
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
-    this.viewKey = Web3Utils.padLeft(Web3Utils.toHex(viewKey), 64);
+    this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
     this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
   }
 
@@ -81,16 +81,16 @@ class Note {
       return this.owner0;
     }
 
-    return [owner0, owner1];
+    return [this.owner0, this.owner1];
   }
 
   hash() {
     return util.marshal(noteHelper.getNoteHash(
       util.unmarshal(this.owner0),
-      util.unmarshal(this.owner1),
+      this.owner1 ? util.unmarshal(this.owner1) : null,
       util.unmarshal(this.value),
       util.unmarshal(this.token),
-      util.unmarshal(this.viewKey),
+      util.unmarshal(this.viewingKey),
       util.unmarshal(this.salt)
     ));
   }
@@ -126,7 +126,7 @@ function decrypt(v, sk) {
   const r2 = decipher.final('utf8');
 
   const note = JSON.parse(r1 + r2);
-  return new Note(note.owner, note.value, note.token, note.viewingKey, note.salt);
+  return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
 }
 
 function dummyProofCreateNote(note) {
