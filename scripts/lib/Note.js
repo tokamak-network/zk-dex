@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const Web3Utils = require('web3-utils');
 
-const util = require('./util');
+const {
+  marshal,
+  unmarshal,
+  split32BytesTo16BytesArr,
+  parseProofObj,
+} = require('./util');
 const noteHelper = require('../helper/noteHelper');
 
 const mode = 'aes-256-cbc';
@@ -85,18 +90,18 @@ class Note {
   }
 
   hash() {
-    return util.marshal(noteHelper.getNoteHash(
-      util.unmarshal(this.owner0),
-      this.owner1 ? util.unmarshal(this.owner1) : null,
-      util.unmarshal(this.value),
-      util.unmarshal(this.token),
-      util.unmarshal(this.viewingKey),
-      util.unmarshal(this.salt)
+    return marshal(noteHelper.getNoteHash(
+      unmarshal(this.owner0),
+      this.owner1 ? unmarshal(this.owner1) : null,
+      unmarshal(this.value),
+      unmarshal(this.token),
+      unmarshal(this.viewingKey),
+      unmarshal(this.salt)
     ));
   }
 
   hashArr() {
-    return util.split32BytesTo16BytesArr(this.hash());
+    return split32BytesTo16BytesArr(this.hash());
   }
 
   toString() {
@@ -109,7 +114,7 @@ class Note {
     const r1 = cipher.update(this.toString(), 'utf8', 'base64');
     const r2 = cipher.final('base64');
 
-    return util.marshal(
+    return marshal(
       Web3Utils.fromAscii(r1 + r2),
     );
   }
@@ -136,9 +141,10 @@ function dummyProofCreateNote(note) {
     ...note.hashArr(),
     note.value,
     note.token,
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
 function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
@@ -146,24 +152,26 @@ function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
 
   proof.input = [
     ...oldNote0.hashArr(),
-    ...oldNote1.hashArr(),
+    ...(oldNote1 || EMPTY_NOTE).hashArr(),
     ...newNote.hashArr(),
     ...changeNote.hashArr(),
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
-function dummyProofConvertNote(smartNote, originNote, note) {
+function dummyProofConvertNote(smartNote, originNote, convertedNote) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
     ...smartNote.hashArr(),
     ...originNote.hashArr(),
-    ...note.hashArr(),
+    ...convertedNote.hashArr(),
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
 function dummyProofMakeOrder(makerNote) {
@@ -172,29 +180,30 @@ function dummyProofMakeOrder(makerNote) {
   proof.input = [
     ...makerNote.hashArr(),
     makerNote.token,
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
-function dummyProofTakeOrder(parentNote, stakeNote, makerNoteHash) {
+function dummyProofTakeOrder(parentNote, stakeNote) {
   const proof = JSON.parse(sampleProof);
-  const splitMakerNoteHash = split32BytesTo16BytesArr(makerNoteHash);
 
   proof.input = [
     ...parentNote.hashArr(),
     parentNote.token,
+
     ...stakeNote.hashArr(),
-    ...splitMakerNoteHash,
+    ...split32BytesTo16BytesArr(stakeNote.owner0),
     stakeNote.token,
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
-function dummyProofSettleOrder(makerNote, parentNoteHash, stakeNote, rewardNote, paymentNote, changeNote, price) {
+function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
   const proof = JSON.parse(sampleProof);
-  const splitParentNoteHash = split32BytesTo16BytesArr(parentNoteHash)
 
   proof.input = [
     ...makerNote.hashArr(),
@@ -204,20 +213,21 @@ function dummyProofSettleOrder(makerNote, parentNoteHash, stakeNote, rewardNote,
     stakeNote.token,
 
     ...rewardNote.hashArr(),
-    ...splitParentNoteHash,
+    ...split32BytesTo16BytesArr(rewardNote.owner0),
     rewardNote.token,
 
     ...paymentNote.hashArr(),
-    ...makerNote.hashArr(),
+    ...split32BytesTo16BytesArr(paymentNote.owner0),
     paymentNote.token,
 
     ...changeNote.hashArr(),
     changeNote.token,
 
     price,
+    1,
   ];
 
-  return util.parseProofObj(proof);
+  return parseProofObj(proof);
 }
 
 const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00', '0x00');

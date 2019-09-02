@@ -54,7 +54,7 @@ const getSalt = () => web3.utils.randomHex(16);
 
 
 contract('ZkDex', function(accounts) {
-  const development = false;
+  const development = true;
 
   let dai, zkdex, wallet;
 
@@ -101,7 +101,6 @@ contract('ZkDex', function(accounts) {
   }
 
   async function createDAINote(owner, value, viewingKey, salt, sk, from) {
-    console.log("viewingKey", viewingKey);
     const note = new Note(owner[0], owner[1], value, constants.DAI_TOKEN_TYPE, viewingKey, salt);
 
     const ownerBalance = await dai.balanceOf(from);
@@ -397,11 +396,8 @@ contract('ZkDex', function(accounts) {
         stakeNote.encrypt(),
       );
 
-      console.log("!")
       await checkNote(takerNote, NoteState.Traiding, "taker note");
-      console.log("2")
       await checkNote(stakeNote, NoteState.Traiding, "stake note");
-      console.log("3")
       await checkOrderState(orderId, OrderState.Taken);
     }
 
@@ -451,7 +447,6 @@ contract('ZkDex', function(accounts) {
 
     it("should take an order", async () => {
       await makeOrder();
-      console.log("Take order")
       await takeOrder();
     });
 
