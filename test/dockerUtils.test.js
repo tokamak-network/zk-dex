@@ -127,7 +127,7 @@ describe('dockerUtils', function() {
   });
 
   it('should get proof of takeOrder', async () => {
-    proof = await getTakeOrderProof(parentNote, stakeNote, makerNote.hash(), sk_hex)
+    proof = await getTakeOrderProof(parentNote, stakeNote, sk_hex)
     console.log(proof);
   });
 
