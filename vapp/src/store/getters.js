@@ -57,6 +57,12 @@ const getters = {
     }
     return [];
   },
+  validNotesSortedByNoteState: (state) => {
+    if (state.notes !== null && typeof state.notes !== 'undefined') {
+      return state.notes.sort((n1, n2) => parseInt(n1.state) < parseInt(n2.state) ? -1 : parseInt(n1.state) > parseInt(n2.state) ? 1 : 0);
+    }
+    return [];
+  },
 };
 
 export default getters;

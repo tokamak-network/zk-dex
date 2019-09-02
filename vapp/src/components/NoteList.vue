@@ -36,7 +36,7 @@
           </tr>
         </div>
         <div v-else>
-          <tr v-for="note in notes" @click="selectNote(note)">
+          <tr v-for="note in validNotesSortedByNoteState" @click="selectNote(note)">
             <td>{{ note.hash | abbreviate}}</td>
             <td>{{ note.owner | abbreviate }}</td>
             <td>{{ note.token | tokenType }}</td>
@@ -60,7 +60,7 @@ export default {
     ...mapState({
       accounts: state => state.accounts,
     }),
-    ...mapGetters(['notesFilteredByOrderType']),
+    ...mapGetters(['notesFilteredByOrderType', 'validNotesSortedByNoteState']),
     validNotes () {
       return this.notes.filter(note => note.state === '0x1');
     },
