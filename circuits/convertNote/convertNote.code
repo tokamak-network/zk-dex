@@ -12,7 +12,7 @@ import "ecc/babyjubjubParams.code" as babyjubjubParams
 // (private) smartVk0 + smartVk1 : smartNote viewKey
 // (private) smartSalt : smartNote salt, random value
 
-// (public) originH0 + originH1 : originNote hash
+// (public) originH0 + originH1 : originNote hash -- to be private
 // (private) originOwner0, originOwner1 : originNote owner pubkey
 // (private) originValue : originNote value
 // (private) originType : originNote type
@@ -37,20 +37,19 @@ field nh0, field nh1, private field nOwner0, private field nOwner1, private fiel
   // smartNote should be smartNote
   field isSmartNote = isSmart(smartOwner0)
   isSmartNote == 1
-  
+
   // check ownership of note
   smartOwner0 == originH0
   smartOwner1 == originH1
   field[10] params = babyjubjubParams()
   field isOwner = proofOfOwnership([originOwner0, originOwner1], sk, params)
   isOwner == 1
-  
+
   // check value
   smartValue == nValue
 
   // check type
-  smartType == originType
-  originType == nType
+  smartType == nType
 
   h = sha256([smartOwner0, smartOwner1, smartValue, smartType, smartVk0, smartVk1, smartSalt])
   h[0] == smartH0
