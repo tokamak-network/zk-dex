@@ -68,6 +68,16 @@ function reduceParams(params) {
     .reduce((a, b) => `${a} ${b}`, '').trim();
 }
 
+function getQuotient(x, y) {
+  const q = (x.sub(x.mod(y))).div(y);
+  return Web3Utils.toHex(q)
+}
+
+function getRemainder(x, y) {
+  const r = x.mod(y)
+  return Web3Utils.toHex(r)
+} 
+
 module.exports = {
   sleep,
   parseProof,
@@ -77,4 +87,6 @@ module.exports = {
   unmarshal,
   split32BytesTo16BytesArr,
   reduceParams,
+  getQuotient,
+  getRemainder,
 };

@@ -2,7 +2,9 @@
 # Iterating all directories under circuit
 # setup circuit only matched name directory & code file.
 
-for d in */ ; do
+TARGET_DIR=${1:-*/}
+
+for d in $TARGET_DIR ; do
     DIR=${d%?}
 
     CODE_FILE=${DIR}.code

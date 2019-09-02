@@ -1,18 +1,24 @@
-import "../sha/1024bitPacked.code" as sha256
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
-
-// Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
+// Note = (owner, value, type, viewKey, salt)
 
 // (public) nh0 + nh1 : makerNote hash
-// (public) type : makerNote type
-// (private) pk0 + pk1 : makerNote's owner
+// (private) owner0, owner1 : makerNote owner address (if owner0 is not empty, corresponding note is smart note)
 // (private) value : makerNote value
+// (public) type : makerNote type
 // (private) vk0 + vk1 : makerNote viewKey
 // (private) salt : makerNote salt, random value
-// (private) isSmart : makerNote isSmart, 0 if is not smart note
+// (private) sk : secret key corresponding to address
 
-def main(field nh0, field nh1, field type, private field pk0, private field pk1, private field value, private field vk0, private field vk1, private field salt, private field isSmart) -> (field):
-  h = sha256([pk0, pk1, value, type, vk0, vk1, salt, isSmart])
+def main(field nh0, field nh1, private field owner0, private field owner1, private field value, field type, private field vk0, private field vk1, private field salt, private field sk) -> (field):
+  // check ownership of note
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([owner0, owner1], sk, params)
+  isOwner == 1
+
+  h = sha256([owner0, owner1, value, type, vk0, vk1, salt])
   h[0] == nh0
   h[1] == nh1
   return 1

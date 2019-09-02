@@ -7,8 +7,6 @@ import "./ZkDaiBase.sol";
 contract SpendNotes is ZkDaiBase {
   uint8 internal constant NUM_PUBLIC_INPUTS = 9;
 
-  bytes32 public constant EMPTY_NOTE_HASH = 0x38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca;
-
   SpendNoteVerifier public spendNoteVerifier;
 
   constructor(SpendNoteVerifier _spendNoteVerifier) public {
@@ -19,10 +17,10 @@ contract SpendNotes is ZkDaiBase {
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
   *      public input
-  *       - [0, 1]  = old note hash
-  *       - [2, 3]  = new note 1 hash
-  *       - [4, 5]  = new note 2 hash
-  *       - [6, 7]  = original note hash (in case of smart note)
+  *       - [0, 1]  = old note 1 hash
+  *       - [2, 3]  = old note 2 hash
+  *       - [4, 5]  = new note 1 hash
+  *       - [6, 7]  = new note 2 hash
   *       - [8]     = output
 */
   function submit(
@@ -45,21 +43,32 @@ contract SpendNotes is ZkDaiBase {
 
     // check that the first note (among public params) is valid and
     // new notes should not be existing at this point
-    require(notes[_notes[0]] == State.Valid, "Note is either invalid or already spent");
-    require(notes[_notes[1]] == State.Invalid, "output note1 is already minted");
-    require(notes[_notes[2]] == State.Invalid, "output note2 is already minted");
-    require(_notes[3] == EMPTY_NOTE_HASH || notes[_notes[3]] != State.Invalid, "original is already minted");
+    require(_notes[0] == EMPTY_NOTE_HASH || notes[_notes[0]] == State.Valid, "Input note 1 cannot be spent");
+    require(_notes[1] == EMPTY_NOTE_HASH || notes[_notes[1]] == State.Valid, "Input note 2 cannot be spent");
+    require(_notes[2] == EMPTY_NOTE_HASH || notes[_notes[2]] == State.Invalid, "Output note 1 was already minted");
+    require(_notes[3] == EMPTY_NOTE_HASH || notes[_notes[3]] == State.Invalid, "Output note 2 was already minted");
 
-    notes[_notes[0]] = State.Spent;
-    notes[_notes[1]] = State.Valid;
-    notes[_notes[2]] = State.Valid;
+    if (_notes[0] != EMPTY_NOTE_HASH) {
+      notes[_notes[0]] = State.Spent;
+      emit NoteStateChange(_notes[0], State.Spent);
+    }
 
-    encryptedNotes[_notes[1]] = encryptedNote1;
-    encryptedNotes[_notes[2]] = encryptedNote2;
+    if (_notes[1] != EMPTY_NOTE_HASH) {
+      notes[_notes[1]] = State.Spent;
+      emit NoteStateChange(_notes[1], State.Spent);
+    }
 
-    emit NoteStateChange(_notes[0], State.Spent);
-    emit NoteStateChange(_notes[1], State.Valid);
-    emit NoteStateChange(_notes[2], State.Valid);
+    if (_notes[2] != EMPTY_NOTE_HASH) {
+      notes[_notes[2]] = State.Valid;
+      encryptedNotes[_notes[2]] = encryptedNote1;
+      emit NoteStateChange(_notes[2], State.Valid);
+    }
+
+    if (_notes[3] != EMPTY_NOTE_HASH) {
+      notes[_notes[3]] = State.Valid;
+      encryptedNotes[_notes[3]] = encryptedNote2;
+      emit NoteStateChange(_notes[3], State.Valid);
+    }
   }
 
   function get4Notes(uint256[9] memory input)
