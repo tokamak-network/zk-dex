@@ -30,7 +30,7 @@ field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nT
   field[10] params = babyjubjubParams()
   field isOwner = proofOfOwnership([owner0, owner1], sk, params)
   isOwner == 1
-  
+
   oVal == nVal
 
   h = sha256([owner0, owner1, oVal, oType, ovk0, ovk1, oSalt])

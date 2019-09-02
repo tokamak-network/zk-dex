@@ -87,7 +87,7 @@ field price, private field q0, private field r0, private field q1, private field
   // o1Val / price = q1 * 10**18
   field o0ValPrice = q0
   field o1ValOverPrice = mul(q1, 10**18)
-  
+
   field bit = if o0Val < o1ValOverPrice then 0 else 1 fi
 
   field n0ValExp = if bit == 1 then o1ValOverPrice else o0Val fi

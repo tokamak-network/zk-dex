@@ -16,9 +16,9 @@ function getNoteHash(owner0, owner1, value, type, viewKey, salt) {
   const { noteSalt } = paddedO;
 
   const note = noteOwner0 + noteOwner1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
-  
+
   const hashArr = toHashed(note);
-  
+
   return hashArr[0] + hashArr[1];
 }
 
@@ -41,13 +41,13 @@ function getNoteParams(owner0, owner1, value, type, viewKey, salt) {
 
 function _toPadedObject(owner0, owner1, value, type, viewKey, salt) {
   // all params should look like this "0001"(o), "0x0001"(x)
-  const noteHash = new BN(owner0, 16).toString(16, 64) 
+  const noteHash = new BN(owner0, 16).toString(16, 64)
 
   let noteOwner0; // 256bits
   let noteOwner1; // 256bits
   if (owner1 == null) {
     noteOwner0 = splitNoteHash(noteHash)[0];
-    noteOwner1 = splitNoteHash(noteHash)[1]; 
+    noteOwner1 = splitNoteHash(noteHash)[1];
   } else {
     noteOwner0 = new BN(owner0, 16).toString(16, 64);
     noteOwner1 = new BN(owner1, 16).toString(16, 64);
