@@ -13,16 +13,18 @@
         <tr>
           <th>Index</th>
           <th>Address</th>
-          <!-- <th>Name</th> -->
           <th>Total Notes</th>
+          <th>total ETH</th>
+          <th>total DAI</th>
         </tr>
       </thead>
       <tbody>
         <tr class="hoverable" v-for="(account, index) in accounts" @click="selectAccount(account)">
           <td>{{ index }}</td>
-          <td>{{ account.address }}</td>
-          <!-- <td>{{ account.name }}</td> -->
+          <td>{{ account.address | abbreviate }}</td>
           <td>{{ getNumberOfNotesInAccount(account) }}</td>
+          <td>{{ getTotalValidEthNoteAmountInAccount(account) | hexToNumberString }}</td>
+          <td>{{ getTotalValidDaiNoteAmountInAccount(account) | hexToNumberString }}</td>
         </tr>
       </tbody>
     </table>
@@ -64,12 +66,22 @@ export default {
     ...mapState({
       key: state => state.key,
     }),
-    ...mapGetters(['numberOfNotesInAccount']),
+    ...mapGetters([
+      'numberOfNotesInAccount',
+      'totalValidEthNoteAmountInAccount',
+      'totalValidDaiNoteAmountInAccount',
+    ]),
   },
   methods: {
     ...mapMutations(['ADD_ACCOUNT']),
     getNumberOfNotesInAccount (account) {
       return this.numberOfNotesInAccount(account);
+    },
+    getTotalValidEthNoteAmountInAccount (account) {
+      return this.totalValidEthNoteAmountInAccount(account);
+    },
+    getTotalValidDaiNoteAmountInAccount (account) {
+      return this.totalValidDaiNoteAmountInAccount(account);
     },
     selectAccount (account) {
       this.$bus.$emit('select-account', account);

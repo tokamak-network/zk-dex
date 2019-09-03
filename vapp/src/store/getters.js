@@ -1,3 +1,5 @@
+import Web3Utils from 'web3-utils';
+
 const getters = {
   isListening: state => state.web3.isListening,
   numberOfNotesInAccount: state => (account) => {
@@ -10,6 +12,28 @@ const getters = {
       }
     }
     return count;
+  },
+  totalValidEthNoteAmountInAccount: state => (account) => {
+    let amount = Web3Utils.toBN('0');
+    if (state.notes !== null) {
+      for (let i = 0; i < state.notes.length; i++) {
+        if (state.notes[i].owner === account.address && state.notes[i].state === '0x1' && state.notes[i].token === '0x0') {
+          amount = amount.add(Web3Utils.toBN(state.notes[i].value));
+        }
+      }
+    }
+    return Web3Utils.toHex(amount);
+  },
+  totalValidDaiNoteAmountInAccount: state => (account) => {
+    let amount = Web3Utils.toBN('0');
+    if (state.notes !== null) {
+      for (let i = 0; i < state.notes.length; i++) {
+        if (state.notes[i].owner === account.address && state.notes[i].state === '0x1' && state.notes[i].token === '0x1') {
+          amount = amount.add(Web3Utils.toBN(state.notes[i].value));
+        }
+      }
+    }
+    return Web3Utils.toHex(amount);
   },
   orderList: (state) => {
     const list = {};

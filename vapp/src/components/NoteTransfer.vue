@@ -21,7 +21,7 @@
     <div class="field has-addons">
       <p class="control">
         <a class="button is-static" style="width: 140px">
-          Note
+          Note {{ noteType }}
         </a>
       </p>
       <p class="control is-expanded">
@@ -122,6 +122,18 @@ export default {
       dex: state => state.dexContractInstance,
       viewingKey: state => state.viewingKey,
     }),
+    noteType () {
+      if (this.note !== '') {
+        if (this.note.token === '0x0') {
+          return '(ETH)';
+        } else if (this.note.token === '0x1') {
+          return '(DAI)';
+        } else {
+          return '';
+        }
+      }
+      return '';
+    },
   },
   created () {
     this.$bus.$on('select-note', this.selectNote);
