@@ -18,7 +18,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(account, index) in accounts" @click="selectAccount(account)">
+        <tr class="hoverable" v-for="(account, index) in accounts" @click="selectAccount(account)">
           <td>{{ index }}</td>
           <td>{{ account.address }}</td>
           <!-- <td>{{ account.name }}</td> -->
@@ -98,3 +98,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.hoverable {
+  cursor: pointer;
+}
+</style>

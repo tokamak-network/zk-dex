@@ -43,7 +43,7 @@ export default {
     this.$bus.$on('select-account', this.selectAccount);
   },
   beforeDestroy () {
-    this.$bus.$off('select-account');
+    // this.$bus.$off('select-account');
   },
   methods: {
     ...mapMutations(['SET_ACCOUNTS', 'DELETE_ACCOUNT']),

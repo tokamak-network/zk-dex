@@ -42,17 +42,19 @@ const getters = {
     return [];
   },
   notesFilteredByOrderType: (state) => {
-    if (state.doYouWantToBuyOrSell === 'buy') {
-      if (state.doYouWantToMakeOrTake === 'make') {
-        return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
-      } else if (state.doYouWantToMakeOrTake === 'take') {
-        return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
-      }
-    } else if (state.doYouWantToBuyOrSell === 'sell') {
-      if (state.doYouWantToMakeOrTake === 'make') {
-        return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
-      } else if (state.doYouWantToMakeOrTake === 'take') {
-        return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
+    if (state.notes !== null && typeof state.notes !== 'undefined') {
+      if (state.doYouWantToBuyOrSell === 'buy') {
+        if (state.doYouWantToMakeOrTake === 'make') {
+          return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
+        } else if (state.doYouWantToMakeOrTake === 'take') {
+          return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
+        }
+      } else if (state.doYouWantToBuyOrSell === 'sell') {
+        if (state.doYouWantToMakeOrTake === 'make') {
+          return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
+        } else if (state.doYouWantToMakeOrTake === 'take') {
+          return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
+        }
       }
     }
     return [];
