@@ -56,12 +56,19 @@ export default {
       }
     },
   },
+  beforeDestroy () {
+    this.SELECT_MAKE_OR_TAKE('make');
+    this.SELECT_BUY_OR_SELL('buy');
+  },
   components: {
     OrderRequestMake,
     OrderRequestTake,
   },
   methods: {
-    ...mapMutations(['SELECT_BUY_OR_SELL', 'SELECT_MAKE_OR_TAKE']),
+    ...mapMutations([
+      'SELECT_BUY_OR_SELL',
+      'SELECT_MAKE_OR_TAKE',
+    ]),
   },
 };
 </script>
