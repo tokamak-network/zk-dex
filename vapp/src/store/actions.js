@@ -32,6 +32,12 @@ export default {
     commit('SET_DAI_ADDRESS', daiAddress);
   },
 
+  setDaiAmount ({
+    commit,
+  }, daiAmount) {
+    commit('SET_DAI_AMOUNT', daiAmount);
+  },
+
   setViewingKey ({
     commit,
   }, key) {
@@ -54,15 +60,16 @@ export default {
     commit('SET_ORDERS', orders);
   },
 
+  setAccounts ({
+    commit,
+  }, accounts) {
+    commit('SET_ACCOUNTS', accounts);
+  },
+
   setNote ({
     commit,
   }, note) {
     commit('SET_NOTE', note);
-  },
-  setMyNotes ({
-    commit,
-  }, notes) {
-    commit('SET_MY_NOTES', notes);
   },
 
   setWeb3 ({

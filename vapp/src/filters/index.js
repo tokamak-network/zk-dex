@@ -8,16 +8,16 @@ export function toNumberString (value) {
 }
 
 export function address (a) {
-  return Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(a)), 20);
+  return Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(a)), 40);
 }
 
 export function orderState (value) {
   switch (value) {
-  case '0':
+  case '0x0':
     return 'CRETAED';
-  case '1':
+  case '0x1':
     return 'TAKEN';
-  case '2':
+  case '0x2':
     return 'SETTLED';
   default:
     return '';
@@ -26,14 +26,36 @@ export function orderState (value) {
 
 export function noteState (value) {
   switch (value) {
-  case '0':
+  case '0x0':
     return 'INVALID';
-  case '1':
+  case '0x1':
     return 'VALID';
-  case '2':
+  case '0x2':
     return 'TRADING';
-  case '3':
+  case '0x3':
     return 'SPENT';
+  default:
+    return '';
+  }
+}
+
+export function transferNoteType (value) {
+  switch (value) {
+  case '0x0':
+    return 'Send';
+  case '0x1':
+    return 'Receive';
+  default:
+    return '';
+  }
+}
+
+export function orderType (value) {
+  switch (value) {
+  case '0x0':
+    return 'Sell';
+  case '0x1':
+    return 'Buy';
   default:
     return '';
   }
@@ -41,9 +63,9 @@ export function noteState (value) {
 
 export function tokenType (type) {
   switch (type) {
-  case '0':
+  case '0x0':
     return 'ETH';
-  case '1':
+  case '0x1':
     return 'DAI';
   default:
     return '';
@@ -52,9 +74,9 @@ export function tokenType (type) {
 
 export function isSmartNote (value) {
   switch (value) {
-  case '0':
+  case '0x0':
     return false;
-  case '1':
+  case '0x1':
     return true;
   default:
     return '';

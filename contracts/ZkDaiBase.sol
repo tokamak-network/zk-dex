@@ -16,6 +16,8 @@ contract ZkDaiBase is Requestable {
   uint256 public constant ETH_TOKEY_TYPE = 0;
   uint256 public constant DAI_TOKEY_TYPE = 1;
 
+  bytes32 public constant EMPTY_NOTE_HASH = 0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5;
+
   constructor(bool _development, address _dai, MintNoteVerifier _requestVerifier) public {
     development = _development;
     dai = ERC20(_dai);

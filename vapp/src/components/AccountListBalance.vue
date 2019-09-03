@@ -42,7 +42,6 @@ export default {
     // account: state => state.account,
   }),
   methods: {
-    // ...mapActions(['setNote', 'setMyNotes']),
     selectAccount (account) {
       this.selectedAccount = account;
     },

@@ -1,13 +1,15 @@
 <template>
   <div>
     <div>
-      <p>ZkDex address: {{ address }}</p>
+      <p style="margin-top: 12px;">DAI Amount: {{ daiAmount }} dai </p>
+      <p style="margin-top: 12px;">ZkDex address: {{ address }}</p>
     </div>
   </div>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapMutations } from 'vuex';
+import Web3Utils from 'web3-utils';
 
 export default {
   data () {
@@ -30,6 +32,7 @@ export default {
       .then(daiAddress => this.daiContract.at(daiAddress))
       .then((daiContractInstance) => {
         this.setDaiContractInstance(daiContractInstance);
+        this.updateDaiAmount();
       });
   },
   computed: mapState({
@@ -37,13 +40,20 @@ export default {
     viewingKey: state => state.viewingKey,
     dexContract: state => state.dexContract,
     daiContract: state => state.daiContract,
+    daiContractInstance: state => state.daiContractInstance,
+    daiAmount: state => state.daiAmount,
   }),
   methods: {
     ...mapActions([
       'setDexContractInstance',
       'setDaiContractInstance',
-      'setaccount',
     ]),
+    async updateDaiAmount () {
+      const daiAmount = await this.daiContractInstance.balanceOf(this.coinbase);
+      this.$store.dispatch('setDaiAmount', {
+        daiAmount,
+      });
+    },
   },
 };
 </script>

@@ -1,41 +1,47 @@
-import "../sha/1024bitPacked.code" as sha256
+import "../utils/isSmart.code" as isSmart
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
-
-// Note = (_owner, _value, type, _senderViewingKey, _salt, _isSmart)
+// Note = (owner, value, type, viewKey, salt)
 
 // o = parentNote
 // n = takerNoteToMaker
 
 // (public) oh0 + oh1 : old note hash
-// (public) oType : old note type
-// (private) pk0 + pk1 : old note's owner
+// (private) owner0 + owner1 : old note address
 // (private) oVal : old note value
+// (public) oType : old note type
 // (private) ovk0 + ovk1 : old note viewKey
-// (private) oSalt : old note salt, random value
-// (private) oIsSmart : old note isSmart, 0 if is not smart note
+// (private) oSalt : old note salt
 
-// (public) n0h0 + n0h1 : new note 0 hash
-// (public) n0Type : new note 0 type
-// (public) rpk0 + rpk1 : reciever(new note 0 owner)
-// (private) n0Val : new note 0 value
-// (private) n0vk0 + n0vk1 : new note 0 viewKey
-// (private) n0Salt : new note 0 salt
-// (private) n0IsSmart : new note 0 isSmart, 0 if is not smart note
+// (public) nh + nh : new note hash
+// (public) nOwner0 + nOwner1 : new owner address (should be makerNote.hash)
+// (private) nVal : new note value
+// (public) nType : new note type
+// (private) nvk0 + nvk1 : new note viewKey
+// (private) nSalt : new note salt
 
-def main(field oh0, field oh1, field oType, private field pk0, private field pk1, private field oVal, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field nh0, field nh1, field nType, field rpk0, field rpk1, private field nVal, private field nvk0, private field nvk1, private field nSalt, private field nIsSmart) -> (field):
+// (private) sk : secret key corresponding to address of old note
+
+def main(field oh0, field oh1, private field owner0, private field owner1, private field oVal, field oType, private field ovk0, private field ovk1, private field oSalt, \
+field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nType, private field nvk0, private field nvk1, private field nSalt, private field sk) -> (field):
+  // check ownership of note
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([owner0, owner1], sk, params)
+  isOwner == 1
+
   oVal == nVal
 
-  // get public key corresponding to private key
-  // circuit for above hasn't been implemented as yet, so directly using the private key for PoC
-  h = sha256([pk0, pk1, oVal, oType, ovk0, ovk1, oSalt, oIsSmart])
+  h = sha256([owner0, owner1, oVal, oType, ovk0, ovk1, oSalt])
   oh0 == h[0]
   oh1 == h[1]
 
-  h = sha256([rpk0, rpk1, nVal, nType, nvk0, nvk1, nSalt, nIsSmart])
+  h = sha256([nOwner0, nOwner1, nVal, nType, nvk0, nvk1, nSalt])
   nh0 == h[0]
   nh1 == h[1]
 
-  field bit = if nIsSmart > 0 then 1 else 0 fi
-  bit == 1
+  field nIsSmart = isSmart(nOwner0)
+  nIsSmart == 1
 
   return 1

@@ -1,8 +1,8 @@
 <template>
   <div>
     <p>Network: {{ network }}</p>
-    <p>Account: {{ coinbase | abbreviate}}</p>
-    <p>Balance: {{ balance }} wei</p>
+    <p>Account: {{ coinbase }}</p>
+    <p>ETH: {{ balance }} wei</p>
   </div>
 </template>
 
@@ -27,6 +27,7 @@ export default {
     getWeb3()
       .then((web3) => {
         this.setWeb3(web3);
+        setDaiAmount(this.$store);
         polling(this.$store);
       })
       .catch((e) => {
@@ -79,6 +80,7 @@ const polling = (store) => {
         coinbase: account,
         balance: newBalance,
       });
+      await setDaiAmount(store);
     } else {
       const balance = await window.web3.eth.getBalance(store.state.web3.coinbase);
       if (balance !== store.state.web3.balance) {
@@ -86,9 +88,20 @@ const polling = (store) => {
           coinbase: store.state.web3.coinbase,
           balance,
         });
+        await setDaiAmount(store);
       }
     }
   }, 500);
+};
+
+const setDaiAmount = async function (store) {
+  const daiContract = store.state.daiContractInstance;
+  if (daiContract !== null) {
+    const daiAmount = await store.state.daiContractInstance.balanceOf(store.state.web3.coinbase);
+    store.dispatch('setDaiAmount', {
+      daiAmount,
+    });
+  }
 };
 </script>
 

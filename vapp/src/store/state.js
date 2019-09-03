@@ -1,16 +1,8 @@
 const state = {
-  account: null,
-  accounts: [],
   dexContract: null,
   daiContract: null,
   dexContractInstance: null,
   daiContractInstance: null,
-  key: null,
-  viewingKey: null,
-  order: null,
-  orders: [],
-  note: null,
-  myNotes: [],
   web3: {
     isListening: false,
     web3Instance: null,
@@ -19,8 +11,17 @@ const state = {
     balance: null,
     error: null,
   },
-  contract: null,
-  path: '/dashboard',
+  path: '/',
+  key: null,
+  viewingKey: null,
+  accounts: null,
+  notes: null,
+  transferNotes: null,
+  orders: null,
+  orderHistory: null,
+  daiAmount: '0',
+  doYouWantToBuyOrSell: 'buy',
+  doYouWantToMakeOrTake: 'make',
 };
 
 export default state;

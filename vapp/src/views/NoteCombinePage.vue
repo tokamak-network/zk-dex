@@ -11,7 +11,7 @@ import NoteBalanceList from '../components/NoteBalanceList';
 import NoteList from '../components/NoteList';
 import NoteCombine from '../components/NoteCombine';
 
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import { getAccounts, getNotes } from '../api/index';
 
 import Web3Utils from 'web3-utils';
@@ -25,23 +25,29 @@ export default {
   data () {
     return {
       account: '',
-      accounts: [],
       notes: [],
     };
   },
   computed: {
     ...mapState({
       key: state => state.key,
+      accounts: state => state.accounts,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-      }
-    });
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
+        if (a !== null) {
+          accounts.push(...a);
+        }
+        this.SET_ACCOUNTS(accounts);
+      });
+    }
   },
+  // TODO: selected notes event listening.
   methods: {
+    ...mapMutations(['SET_ACCOUNTS']),
     async selectAccount (account) {
       this.account = account;
       const notes = await getNotes(account);

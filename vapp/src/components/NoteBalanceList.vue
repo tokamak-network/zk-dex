@@ -12,7 +12,7 @@
         </b-select>
       </section>
     </div>
-    <table class="table fixed_header" style="margin-top: 80px;">
+    <table class="table" style="margin-top: 40px;">
       <thead>
         <tr>
           <th>Currency Name</th>
@@ -26,9 +26,9 @@
           <td>{{ token.name }}</td>
           <td>{{ token.symbol }}</td>
           <td>{{ totalNotes(token.type) }}</td>
-          <td>
-            <router-link :to="{ path: 'note', query: { action: 'mint', token: token.symbol } }" tag="button" class="button is-small">Create</router-link>
-            <router-link :to="{ path: 'note', query: { action: 'liquidate', token: token.symbol } }" tag="button" class="button is-small" style="margin-left: 5px;">Liquidate</router-link>
+          <td v-if="$route.path === '/'">
+            <router-link :to="{ path: 'notes', query: { action: 'mint', token: token.symbol } }" tag="button" class="button is-small">Create</router-link>
+            <router-link :to="{ path: 'notes', query: { action: 'liquidate', token: token.symbol } }" tag="button" class="button is-small" style="margin-left: 5px;">Liquidate</router-link>
           </td>
         </tr>
       </tbody>
@@ -55,37 +55,36 @@ export default {
           symbol: 'DAI',
           totalNotes: 0,
         },
-        {
-          type: '2',
-          name: 'Tokamak Network',
-          symbol: 'TON',
-          totalNotes: 0,
-        },
       ],
       selectedAccount: null,
     };
   },
   props: ['accounts', 'notes'],
   created () {
-    for (const note of this.notes) {
-      const token = Web3Utils.hexToNumberString(note.token);
-      if (token === '0') {
-        this.tokens[0].totalNotes++;
-      } else if (token === '1') {
-        this.tokens[1].totalNotes++;
-      } else if (token === '2') {
-        this.tokens[2].totalNotes++;
+    if (this.notes !== null) {
+      for (const note of this.notes) {
+        const token = Web3Utils.hexToNumberString(note.token);
+        if (token === '0') {
+          this.tokens[0].totalNotes++;
+        } else if (token === '1') {
+          this.tokens[1].totalNotes++;
+        } else if (token === '2') {
+          this.tokens[2].totalNotes++;
+        }
       }
     }
   },
   computed: {
     totalNotes () {
       return (type) => {
-        const f = this.notes.filter((n) => {
-          const t = Web3Utils.hexToNumberString(n.token);
-          return t === type;
-        });
-        return f.length;
+        if (this.notes !== null) {
+          const f = this.notes.filter((n) => {
+            const t = Web3Utils.hexToNumberString(n.token);
+            return t === type;
+          });
+          return f.length;
+        }
+        return 0;
       };
     },
   },
@@ -93,21 +92,6 @@ export default {
     selectedAccount (newAccount) {
       this.$emit('selectAccount', newAccount);
     },
-  },
-  methods: {
-    // filterNoteByAccount () {
-    //   if (this.selectedAccount !== '') {
-    //     this.notes = this.notes.filter((note) => {
-    //       const noteOwner = Web3Utils.padLeft(
-    //         Web3Utils.toHex(Web3Utils.toBN(note.owner)),
-    //         20
-    //       );
-    //       return noteOwner === this.selectedAccount;
-    //     });
-    //   } else {
-    //     this.notes = [];
-    //   }
-    // },
   },
 };
 </script>

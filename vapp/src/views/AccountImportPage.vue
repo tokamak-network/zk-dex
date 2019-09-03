@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import AccountList from '../components/AccountList.vue';
 
 import { getAccounts, addAccount } from '../api/index';
@@ -15,8 +15,6 @@ export default {
   data () {
     return {
       file: null,
-      filse: [],
-      accounts: [],
     };
   },
   components: {
@@ -25,21 +23,22 @@ export default {
   computed: {
     ...mapState({
       key: state => state.key,
+      accounts: state => state.accounts,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-      }
-    });
-  },
-  watch: {
-    file (newFile) {
-      console.log('newFi;e', newFile);
-    },
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
+        if (a !== null) {
+          accounts.push(...a);
+        }
+        this.SET_ACCOUNTS(accounts);
+      });
+    }
   },
   methods: {
+    ...mapMutations(['SET_ACCOUNTS']),
     onChange (event) {
       const reader = new FileReader();
       reader.onload = this.onReaderLoad;

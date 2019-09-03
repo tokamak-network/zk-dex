@@ -13,6 +13,7 @@ import NotePage from '../views/NotePage.vue';
 import NoteTransferPage from '../views/NoteTransferPage.vue';
 import NoteWalletPage from '../views/NoteWalletPage.vue';
 import NoteCombinePage from '../views/NoteCombinePage.vue';
+import NoteConvertPage from '../views/NoteConvertPage.vue';
 import HistoryNoteTransferPage from '../views/HistoryNoteTransferPage.vue';
 import HistoryOrderPage from '../views/HistoryOrderPage.vue';
 import AccountImportPage from '../views/AccountImportPage.vue';
@@ -53,6 +54,10 @@ const routes = [
             component: NoteCombinePage,
           },
           {
+            path: 'convert',
+            component: NoteConvertPage,
+          },
+          {
             path: 'notes/transfer',
             component: HistoryNoteTransferPage,
           },
@@ -84,23 +89,22 @@ const routes = [
 
 const createRouter = () =>
   new Router({
-    scrollBehavior: () => ({
-      y: 0,
-    }),
+    mode: 'history',
+    // scrollBehavior: () => ({
+    //   y: 0,
+    // }),
     routes,
   });
 
 const router = createRouter();
 
-// router.beforeResolve((to, _, next) => {
-//   const isListening = store.state.web3.isListening;
-//   if (typeof isListening === 'undefined' || !isListening) {
-//     if (to.path !== '/access') {
-//       next('/access');
-//     }
-//   }
-//   // store.dispatch('setLastPath', to.path);
-//   next();
-// });
+router.beforeResolve((to, _, next) => {
+  const key = store.state.key;
+  if (key === null && to.path !== '/login') {
+    next({ path: '/login' });
+  } else {
+    next();
+  }
+});
 
 export default router;

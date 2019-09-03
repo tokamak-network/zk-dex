@@ -19,12 +19,12 @@
       <tbody>
         <tr v-for="note in transferNotes">
           <td>{{ note.hash | abbreviate }}</td>
-          <td>{{ note.type }}</td>
-          <td>{{ note.token | hexToNumberString | tokenType }}</td>
-          <td>{{ note.value }}</td>
+          <td>{{ note.type | transferNoteType }}</td>
+          <td>{{ note.token | tokenType }}</td>
+          <td>{{ note.value | hexToNumberString }}</td>
           <td>{{ note.from | abbreviate }}</td>
           <td>{{ note.to | abbreviate}}</td>
-          <td>{{ note.change }}</td>
+          <td>{{ note.change | hexToNumberString }}</td>
           <td>{{ note.transactionHash | abbreviate }}</td>
         </tr>
       </tbody>

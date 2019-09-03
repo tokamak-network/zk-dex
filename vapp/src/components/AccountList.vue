@@ -5,15 +5,15 @@
         <p style="margin-left: 10px;">Accounts</p>
       </div>
       <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="$route.path === '/'">
-        <button class="button" @click="activeModal" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
+        <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
       </div>
     </div>
-    <table class="table fixed_header">
+    <table class="table">
       <thead>
         <tr>
           <th>Index</th>
           <th>Address</th>
-          <th>Name</th>
+          <!-- <th>Name</th> -->
           <th>Total Notes</th>
         </tr>
       </thead>
@@ -21,8 +21,8 @@
         <tr v-for="(account, index) in accounts" @click="selectAccount(account)">
           <td>{{ index }}</td>
           <td>{{ account.address }}</td>
-          <td>{{ account.name }}</td>
-          <td>{{ account.numberOfNotes }}</td>
+          <!-- <td>{{ account.name }}</td> -->
+          <td>{{ getNumberOfNotesInAccount(account) }}</td>
         </tr>
       </tbody>
     </table>
@@ -48,8 +48,8 @@
 </template>
 
 <script>
-import { mapMutations, mapState } from 'vuex';
-import { createAccount, addAccount, getAccounts } from '../api/index';
+import { mapMutations, mapState, mapGetters } from 'vuex';
+import { createAccount, addAccount } from '../api/index';
 
 export default {
   data () {
@@ -64,26 +64,29 @@ export default {
     ...mapState({
       key: state => state.key,
     }),
+    ...mapGetters(['numberOfNotesInAccount']),
   },
   methods: {
-    ...mapMutations(['SET_ACCOUNT']),
-    selectAccount (account) {
-      this.SET_ACCOUNT(account);
+    ...mapMutations(['ADD_ACCOUNT']),
+    getNumberOfNotesInAccount (account) {
+      return this.numberOfNotesInAccount(account);
     },
+    selectAccount (account) {
+      this.$bus.$emit('select-account', account);
+    },
+    // TODO: refactoring
     createNewAccount () {
       this.done = false;
-      createAccount(this.passphrase).then((res) => {
+      createAccount(this.passphrase).then(async (res) => {
         const keystore = res.data.address;
-        const account = { };
+        const account = {};
         account.keystore = keystore;
         account.address = `0x${keystore.address}`;
         account.name = '';
         account.numberOfNotes = 0;
 
-        addAccount(this.key, account).then(() => {
-          this.$emit('addNewAccount', account);
-          this.done = true;
-        });
+        await addAccount(this.key, account);
+        this.ADD_ACCOUNT(account);
         this.createAccountModalActive = false;
         this.done = true;
         this.passphrase = '';

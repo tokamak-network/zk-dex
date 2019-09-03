@@ -14,14 +14,11 @@
           </div>
           <div class="navbar-end">
             <div class="navbar-item">
-              <!-- <div class="buttons">
-                <a class="button is-primary">
-                  <strong>Sign up</strong>
-                </a>
-                <a class="button is-light">
-                  Log in
-                </a>
-              </div> -->
+              <div class="buttons">
+                <button class="button" @click="logout">
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -38,7 +35,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 import MetaMask from '../components/MetaMask.vue';
 import ZkDexContract from '../components/ZkDexContract.vue';
@@ -47,6 +44,13 @@ export default {
   components: {
     MetaMask,
     ZkDexContract,
+  },
+  methods: {
+    ...mapMutations(['MAKE_INITIAL_STATE']),
+    logout () {
+      this.MAKE_INITIAL_STATE();
+      this.$router.push({ path: '/login' });
+    },
   },
 };
 </script>

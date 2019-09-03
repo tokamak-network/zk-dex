@@ -67,10 +67,15 @@ export default {
       selectedNotes: [],
     };
   },
+  created () {
+    this.$bus.$on('select-note', this.selectNote);
+  },
+  beforeDestroy () {
+    this.$bus.$off('select-note');
+  },
   props: ['account'],
   computed: {
     ...mapState({
-      note: state => state.note,
       coinbase: state => state.web3.coinbase,
       dex: state => state.dexContractInstance,
       viewingKey: state => state.viewingKey,
@@ -83,16 +88,6 @@ export default {
       }
       return Web3Utils.hexToNumberString(Web3Utils.toHex(totalAmount));
     },
-  },
-  mounted () {
-    this.$store.watch(
-      (state, getters) => getters.note,
-      () => {
-        if (!this.selectedNotes.includes(this.note)) {
-          this.selectedNotes.push(this.note);
-        }
-      }
-    );
   },
   methods: {
     unselectNote (note) {

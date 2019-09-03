@@ -24,7 +24,7 @@
         </a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="amount">
+        <input style="width: 100%; text-align: right;" class="input" @keypress="onlyNumber" v-model="amount">
       </p>
     </div>
     <div style="display: flex; justify-content: flex-end">
@@ -34,9 +34,9 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions, mapMutations } from 'vuex';
 import { Note, constants } from '../../../scripts/lib/Note';
-import { addNote, generateProof } from '../api/index';
+import { getNotes, addNote, generateProof } from '../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {
@@ -57,15 +57,20 @@ export default {
   },
   props: ['accounts', 'token'],
   methods: {
+    ...mapMutations(['SET_NOTES']),
+    onlyNumber () {
+      if ((event.keyCode < 48) || (event.keyCode > 57)) {
+        event.returnValue = false;
+      }
+    },
     daiNote () {
       const salt = Web3Utils.randomHex(16);
       const note = new Note(
         this.account,
         this.amount,
         constants.DAI_TOKEN_TYPE,
-        this.viewingKey,
-        salt,
-        false
+        '0x0',
+        salt
       );
       return note;
     },
@@ -75,9 +80,8 @@ export default {
         this.account,
         this.amount,
         constants.ETH_TOKEN_TYPE,
-        this.viewingKey,
-        salt,
-        false
+        '0x0',
+        salt
       );
       return note;
     },
@@ -93,9 +97,11 @@ export default {
       this.loading = true;
 
       const getNote =
-        this.token === 'DAI' ? this.daiNote :
-          this.token === 'ETH' ? this.ethNote :
-            () => {
+        this.token === 'DAI'
+          ? this.daiNote
+          : this.token === 'ETH'
+            ? this.ethNote
+            : () => {
               alert('undefined token type' + this.token);
               return null;
             };
@@ -110,27 +116,62 @@ export default {
         await this.dai.approve(this.dex.address, this.amount, {
           from: this.coinbase,
         });
-        tx = await this.dex.mint(...proof, note.encrypt(), {
+        tx = await this.dex.mint(...proof, note.encrypt(note.owner), {
           from: this.coinbase,
         });
       } else if (this.token === 'ETH') {
-        tx = await this.dex.mint(...proof, note.encrypt(), {
+        tx = await this.dex.mint(...proof, note.encrypt(note.owner), {
           from: this.coinbase,
           value: this.amount,
         });
       }
 
-      const hash = tx.logs[0].args.note;
-      const state = Web3Utils.hexToNumberString(
-        Web3Utils.toHex(tx.logs[0].args.state)
-      );
-      note.hash = hash;
-      note.state = state;
-      await addNote(this.account, note);
-      this.$emit('addNewNote', note);
+      if (tx.receipt.status) {
+        const hash = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
+          64
+        );
+        const state = Web3Utils.toHex(tx.logs[0].args.state);
 
+        const noteObject = {};
+        noteObject.owner = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.owner)),
+          40
+        );
+        noteObject.value = Web3Utils.toHex(Web3Utils.toBN(note.value));
+        noteObject.token = Web3Utils.toHex(Web3Utils.toBN(note.token));
+        noteObject.viewingKey = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.viewingKey)),
+          16
+        );
+        noteObject.salt = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(note.salt)),
+          32
+        );
+        noteObject.isSmart = Web3Utils.toHex(Web3Utils.toBN(note.isSmart));
+        noteObject.hash = hash;
+        noteObject.state = state;
+
+        await addNote(this.account, noteObject);
+
+        const newNotes = [];
+        for (let i = 0; i < this.accounts.length; i++) {
+          const n = await getNotes(this.accounts[i].address);
+          if (n !== null) {
+            newNotes.push(...n);
+          }
+        }
+        this.SET_NOTES(newNotes);
+        this.updateDaiAmount();
+      }
       this.loading = false;
       this.$router.push({ path: '/' });
+    },
+    async updateDaiAmount () {
+      const daiAmount = await this.dai.balanceOf(this.coinbase);
+      this.$store.dispatch('setDaiAmount', {
+        daiAmount,
+      });
     },
   },
 };

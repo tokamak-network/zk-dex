@@ -1,7 +1,7 @@
 <template>
   <div class="box" style="text-align: center;">
     <div style="float: left;">
-      <p style="margin-left: 10px; margin-bottom: 20px;">All Notes</p>
+      <p style="margin-left: 10px; margin-bottom: 20px;">Notes</p>
     </div>
     <table class="table fixed_header">
       <thead>
@@ -11,43 +11,63 @@
           <th>Token</th>
           <th>VALUE</th>
           <th>STATE</th>
+          <!-- <th>SMART NOTE</th> -->
         </tr>
       </thead>
       <tbody>
-        <tr v-for="note in notes" @click="selectNote(note)">
-          <td>{{ note.hash | abbreviate }}</td>
-          <td>{{ note.owner | address | abbreviate }}</td>
-          <td>{{ note.token | hexToNumberString | tokenType }}</td>
-          <td>{{ note.value | hexToNumberString }}</td>
-          <td>{{ note.state | noteState }}</td>
-        </tr>
+        <div v-if="$route.path === '/exchange'">
+          <tr v-for="note in notesFilteredByOrderType" @click="selectNote(note)">
+            <td>{{ note.hash | abbreviate}}</td>
+            <td>{{ note.owner | abbreviate }}</td>
+            <td>{{ note.token | tokenType }}</td>
+            <td>{{ note.value | hexToNumberString }}</td>
+            <td>{{ note.state | noteState }}</td>
+            <!-- <td>{{ note.isSmart | isSmartNote }}</td> -->
+          </tr>
+        </div>
+        <div v-else-if="$route.path === '/transfer' || $route.path === '/convert'">
+          <tr v-for="note in validNotes" @click="selectNote(note)">
+            <td>{{ note.hash | abbreviate}}</td>
+            <td>{{ note.owner | abbreviate }}</td>
+            <td>{{ note.token | tokenType }}</td>
+            <td>{{ note.value | hexToNumberString }}</td>
+            <td>{{ note.state | noteState }}</td>
+            <!-- <td>{{ note.isSmart | isSmartNote }}</td> -->
+          </tr>
+        </div>
+        <div v-else>
+          <tr v-for="note in notes" @click="selectNote(note)">
+            <td>{{ note.hash | abbreviate}}</td>
+            <td>{{ note.owner | abbreviate }}</td>
+            <td>{{ note.token | tokenType }}</td>
+            <td>{{ note.value | hexToNumberString }}</td>
+            <td>{{ note.state | noteState }}</td>
+          </tr>
+        </div>
       </tbody>
     </table>
   </div>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapGetters } from 'vuex';
 import { constants } from '../../../scripts/lib/Note';
 import { getNotes } from '../api/index';
 
 export default {
-  data () {
-    return {
-      selectedNote: null,
-    };
-  },
   props: ['notes'],
   computed: {
     ...mapState({
       accounts: state => state.accounts,
     }),
+    ...mapGetters(['notesFilteredByOrderType']),
+    validNotes () {
+      return this.notes.filter(note => note.state === '0x1');
+    },
   },
   methods: {
-    ...mapActions(['setNote']),
     selectNote (note) {
-      this.selectedNote = note;
-      this.setNote(note);
+      this.$bus.$emit('select-note', note);
     },
     mappedNotes (notes) {
       return notes.map((note) => {

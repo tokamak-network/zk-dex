@@ -402,8 +402,8 @@ function updateOrderByAccount (_userKey, order) {
   }
 
   for (let i = 0; i < orders.length; i++) {
-    if (orders[i].orderId === order.orderId) {
-      orders.splice(i, 1, order);
+    if (orders[i].orderId === orderId) {
+      orders[i].orderTaker = orderTaker;
       break;
     }
   }

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <account-list :accounts="accounts" v-on:addNewAccount="addNewAccount" />
+    <account-list :accounts="accounts" />
     <note-list :notes="notes" />
     <note-balance-list :notes="notes" />
     <note-list-transfer-history :transferNotes="transferNotes" />
@@ -13,17 +13,10 @@ import NoteList from '../components/NoteList.vue';
 import NoteBalanceList from '../components/NoteBalanceList.vue';
 import NoteListTransferHistory from '../components/NoteListTransferHistory.vue';
 
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 import { getAccounts, getTransferNotes, getNotes } from '../api/index';
 
 export default {
-  data () {
-    return {
-      accounts: [],
-      notes: [],
-      transferNotes: [],
-    };
-  },
   components: {
     AccountList,
     NoteList,
@@ -33,38 +26,39 @@ export default {
   computed: {
     ...mapState({
       key: state => state.key,
+      accounts: state => state.accounts,
+      notes: state => state.notes,
+      transferNotes: state => state.transferNotes,
     }),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
         const notes = [];
         const transferNotes = [];
-        for (let i = 0; i < accounts.length; i++) {
-          const n = await getNotes(accounts[i].address);
-          if (n !== null) {
-            notes.push(...n);
-          }
-          const tn = await getTransferNotes(accounts[i].address);
-          if (tn !== null) {
-            transferNotes.push(...tn);
+
+        if (a !== null) {
+          accounts.push(...a);
+          for (let i = 0; i < accounts.length; i++) {
+            const n = await getNotes(accounts[i].address);
+            if (n !== null) {
+              notes.push(...n);
+            }
+            const tn = await getTransferNotes(accounts[i].address);
+            if (tn !== null) {
+              transferNotes.push(...tn);
+            }
           }
         }
-        this.accounts = accounts;
-        this.notes = notes;
-        this.transferNotes = transferNotes;
-      } else {
-        alert('You have to make account!');
-      }
-    });
+        this.SET_ACCOUNTS(accounts);
+        this.SET_NOTES(notes);
+        this.SET_TRANSFER_NOTES(transferNotes);
+      });
+    }
   },
   methods: {
-    addNewAccount (account) {
-      this.accounts.push(account);
-    },
-    addNewNote (note) {
-      this.notes.push(note);
-    },
+    ...mapMutations(['SET_ACCOUNTS', 'SET_NOTES', 'SET_TRANSFER_NOTES']),
   },
 };
 </script>
