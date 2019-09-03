@@ -38,12 +38,29 @@ const getters = {
   orderList: (state) => {
     const list = {};
     if (state.orders !== null && typeof state.orders !== 'undefined') {
-      state.orders.forEach((o) => {
-        // only valid order
-        if (o.state === '0x0') {
-          list[o.price] = (list[o.price] || 0) + 1;
-        }
-      });
+      if (state.doYouWantToBuyOrSell === 'buy') {
+        state.orders.forEach((o) => {
+          if (o.state === '0x0' && o.sourceToken === '0x1') {
+            list[o.price] = {
+              count: typeof list[o.price] !== 'undefined' ? list[o.price].count + 1 : 1,
+              type: '0x1',
+              sourceToken: o.sourceToken,
+            };
+          }
+        });
+        return list;
+      } else if (state.doYouWantToBuyOrSell === 'sell') {
+        state.orders.forEach((o) => {
+          if (o.state === '0x0' && o.sourceToken === '0x0') {
+            list[o.price] = {
+              count: typeof list[o.price] !== 'undefined' ? list[o.price].count + 1 : 1,
+              type: '0x0',
+              sourceToken: o.sourceToken,
+            };
+          }
+        });
+        return list;
+      }
     }
     return list;
   },

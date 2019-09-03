@@ -6,12 +6,14 @@
         <tr>
           <th>PRICE(DAI)</th>
           <th>Orders</th>
+          <th>Type</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(count, price) in orderList" @click="selectOrders(price)">
+        <tr v-for="(order, price) in orderList" @click="selectOrders(price, order.sourceToken)">
           <td>{{ price | hexToNumberString }} </td>
-          <td>{{ count }}</td>
+          <td>{{ order.count }}</td>
+          <td>{{ order.type | orderType}}</td>
         </tr>
       </tbody>
     </table>
@@ -33,8 +35,8 @@ export default {
     ...mapGetters(['orderList']),
   },
   methods: {
-    selectOrders (price) {
-      const orders = this.orders.filter(o => (o.price === price && o.state === '0x0'));
+    selectOrders (price, sourceToken) {
+      const orders = this.orders.filter(o => (o.price === price && o.state === '0x0' && o.sourceToken === sourceToken));
       this.$bus.$emit('select-orders', orders);
     },
   },
