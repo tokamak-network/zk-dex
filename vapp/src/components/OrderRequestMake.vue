@@ -1,14 +1,26 @@
 <template>
   <div>
-    <div class="field has-addons">
-      <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Price
-        </a>
-      </p>
-      <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="price" @keypress="onlyNumber">
-      </p>
+    <div class="columns">
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected1, 'is-outlined': selected1 }" style="width: 100%;" @click="select1">1</button>
+      </div>
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected2, 'is-outlined': selected2 }" style="width: 100%;" @click="select2">0.5</button>
+      </div>
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected3, 'is-outlined': selected3 }" style="width: 100%;" @click="select3">0.25</button>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected4, 'is-outlined': selected4 }" style="width: 100%;" @click="select4">0.2</button>
+      </div>
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected5, 'is-outlined': selected5 }" style="width: 100%;" @click="select5">0.125</button>
+      </div>
+      <div class="column">
+        <button class="button" :class="{ 'is-info': selected6, 'is-outlined': selected6 }" style="width: 100%;" @click="select6">0.1</button>
+      </div>
     </div>
     <div class="field has-addons">
       <p class="control">
@@ -64,6 +76,12 @@ export default {
       noteHash: '',
       noteValue: '',
       price: '',
+      selected1: false,
+      selected2: false,
+      selected3: false,
+      selected4: false,
+      selected5: false,
+      selected6: false,
     };
   },
   props: ['radio'],
@@ -82,15 +100,65 @@ export default {
     // this.$bus.$off('select-note');
   },
   methods: {
-    ...mapMutations([
-      'SET_ORDERS',
-      'SET_ORDER_HISTORY',
-      'SET_NOTES',
-    ]),
+    ...mapMutations(['SET_ORDERS', 'SET_ORDER_HISTORY', 'SET_NOTES']),
     onlyNumber () {
-      if ((event.keyCode < 48) || (event.keyCode > 57)) {
+      if (event.keyCode < 48 || event.keyCode > 57) {
         event.returnValue = false;
       }
+    },
+    select1 () {
+      this.selected1 = true;
+      this.selected2 = false;
+      this.selected3 = false;
+      this.selected4 = false;
+      this.selected5 = false;
+      this.selected6 = false;
+      this.price = 1;
+    },
+    select2 () {
+      this.selected1 = false;
+      this.selected2 = true;
+      this.selected3 = false;
+      this.selected4 = false;
+      this.selected5 = false;
+      this.selected6 = false;
+      this.price = 2;
+    },
+    select3 () {
+      this.selected1 = false;
+      this.selected2 = false;
+      this.selected3 = true;
+      this.selected4 = false;
+      this.selected5 = false;
+      this.selected6 = false;
+      this.price = 4;
+    },
+    select4 () {
+      this.selected1 = false;
+      this.selected2 = false;
+      this.selected3 = false;
+      this.selected4 = true;
+      this.selected5 = false;
+      this.selected6 = false;
+      this.price = 5;
+    },
+    select5 () {
+      this.selected1 = false;
+      this.selected2 = false;
+      this.selected3 = false;
+      this.selected4 = false;
+      this.selected5 = true;
+      this.selected6 = false;
+      this.price = 8;
+    },
+    select6 () {
+      this.selected1 = false;
+      this.selected2 = false;
+      this.selected3 = false;
+      this.selected4 = false;
+      this.selected5 = false;
+      this.selected6 = true;
+      this.price = 10;
     },
     selectNote (note) {
       this.note = note;
@@ -131,8 +199,14 @@ export default {
       );
 
       if (tx.receipt.status) {
-        const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
-        const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
+        const noteOwner = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
+          40
+        );
+        const noteHash = Web3Utils.padLeft(
+          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
+          64
+        );
         const noteState = Web3Utils.toHex(tx.logs[0].args.state);
         await this.updateNoteState(noteOwner, noteHash, noteState);
 
@@ -146,18 +220,39 @@ export default {
       this.noteHash = '';
       this.noteValue = '';
       this.price = '';
+      this.selected1 = false;
+      this.selected2 = false;
+      this.selected3 = false;
+      this.selected4 = false;
+      this.selected5 = false;
+      this.selected6 = false;
     },
     async createOrder () {
-      const orderMaker = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
+      const orderMaker = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
+        40
+      );
       const orderId = (await this.dex.getOrderCount()) - 1;
       const order = await this.dex.orders(orderId);
 
       order.orderId = Web3Utils.toHex(orderId);
       order.orderMaker = orderMaker;
-      order.makerNote = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.makerNote)), 64);
-      order.parentNote = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.parentNote)), 64);
-      order.takerNoteToMaker = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.takerNoteToMaker)), 64);
-      order.makerViewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.makerViewingKey)), 16);
+      order.makerNote = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(order.makerNote)),
+        64
+      );
+      order.parentNote = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(order.parentNote)),
+        64
+      );
+      order.takerNoteToMaker = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(order.takerNoteToMaker)),
+        64
+      );
+      order.makerViewingKey = Web3Utils.padLeft(
+        Web3Utils.toHex(Web3Utils.toBN(order.makerViewingKey)),
+        16
+      );
       order.price = Web3Utils.toHex(order.price);
       order.sourceToken = Web3Utils.toHex(order.sourceToken);
       order.targetToken = Web3Utils.toHex(order.targetToken);
