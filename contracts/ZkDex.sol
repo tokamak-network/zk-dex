@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
 import {transferNote_Verifier as SpendNoteVerifier} from "./verifiers/transferNote_Verifier.sol";
+import {convertNote_Verifier as ConvertNoteVerifier} from "./verifiers/convertNote_Verifier.sol";
 import {makeOrder_Verifier as MakeOrderVerifier} from "./verifiers/makeOrder_Verifier.sol";
 import {takeOrder_Verifier as TakeOrderVerifier} from "./verifiers/takeOrder_Verifier.sol";
 import {settleOrder_Verifier as SettleOrderVerifier} from "./verifiers/settleOrder_Verifier.sol";
@@ -12,6 +13,7 @@ import "./RLPReader.sol";
 contract ZkDex is ZkDai {
   using RLPReader for *;
 
+  ConvertNoteVerifier public convertNoteVerifier;
   MakeOrderVerifier public makeOrderVerifier;
   TakeOrderVerifier public takeOrderVerifier;
   SettleOrderVerifier public settleOrderVerifier;
@@ -41,6 +43,7 @@ contract ZkDex is ZkDai {
     address _dai,
     MintNoteVerifier _mintNoteVerifier,
     SpendNoteVerifier _spendNoteVerifier,
+    ConvertNoteVerifier _convertNoteVerifier,
     MakeOrderVerifier _makeOrderVerifier,
     TakeOrderVerifier _takeOrderVerifier,
     SettleOrderVerifier _settleOrderVerifier
@@ -48,9 +51,48 @@ contract ZkDex is ZkDai {
     public
     ZkDai(_development, _dai, _mintNoteVerifier, _spendNoteVerifier)
   {
+    convertNoteVerifier = _convertNoteVerifier;
     makeOrderVerifier = _makeOrderVerifier;
     takeOrderVerifier = _takeOrderVerifier;
     settleOrderVerifier = _settleOrderVerifier;
+  }
+
+  /**
+   * zk-SNARK public input
+   *  - [0, 1]  = smart note hash
+   *  - [2, 3]  = original note hash (smart note's owner)
+   *  - [4, 5]  = new note hash (converted normal note)
+   *  - [6]     = output
+   */
+   function convertNote(
+    uint256[2] calldata a,
+    uint256[2] calldata a_p,
+    uint256[2][2] calldata b,
+    uint256[2] calldata b_p,
+    uint256[2] calldata c,
+    uint256[2] calldata c_p,
+    uint256[2] calldata h,
+    uint256[2] calldata k,
+    uint256[7] calldata input,
+    bytes calldata encryptedNote
+  ) external {
+    require(development || convertNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+
+    bytes32 smartNote = calcHash(input[0], input[1]);
+    bytes32 originalNote = calcHash(input[2], input[3]);
+    bytes32 newNote = calcHash(input[4], input[5]);
+
+    require(notes[smartNote] == State.Valid, "Smart note cannot be converted");
+    require(notes[originalNote] != State.Invalid, "Original note doesn't exist");
+    require(notes[newNote] == State.Invalid, "New note was already mint");
+
+    notes[smartNote] = State.Invalid;
+    notes[newNote] = State.Valid;
+
+    encryptedNotes[newNote] = encryptedNote;
+
+    emit NoteStateChange(smartNote, State.Invalid);
+    emit NoteStateChange(newNote, State.Valid);
   }
 
   /**
@@ -105,9 +147,9 @@ contract ZkDex is ZkDai {
    *  - [0, 1]  = parent note hash
    *  - [2]     = parent note type
    *
-   *  - [3, 4]  = taker note to maker note hash (staking note)
-   *  - [5]     = taker note to maker type
-   *  - [6, 7]  = owner of taker note to maker (== maker note)
+   *  - [3, 4]  = taker note to maker note hash (stake note)
+   *  - [5, 6]  = owner of taker note to maker (== maker note)
+   *  - [7]     = taker note to maker type
    *
    *  - [8]     = output
    */
@@ -131,8 +173,8 @@ contract ZkDex is ZkDai {
     require(order.state == OrderState.Created);
 
     require(order.targetToken == input[2], "ZkDex: parent note token type mismatch");
-    require(order.targetToken == input[5], "ZkDex: staking note token type mismatch");
-    require(order.makerNote == calcHash(input[6], input[7]), "ZkDex: owner of taker note to maker mismatch");
+    require(order.targetToken == input[7], "ZkDex: stake note token type mismatch");
+    require(order.makerNote == calcHash(input[5], input[6]), "ZkDex: owner of taker note to maker mismatch");
 
     bytes32 parentNote = calcHash(input[0], input[1]);
     bytes32 takerNoteToMaker = calcHash(input[3], input[4]);
@@ -163,15 +205,15 @@ contract ZkDex is ZkDai {
    *  - [5]     = taker note to maker type
    *
    *  - [6, 7]  = reward note hash
-   *  - [8]    = reward note type
-   *  - [9, 10]= owner of reward note (parent note (for taker))
+   *  - [8, 9]  = owner of reward note (parent note (for taker))
+   *  - [10]    = reward note type
    *
    *  - [11, 12]= payment note hash
-   *  - [13]    = payment note type
-   *  - [14, 15]= owner of payment note (maker note (for maker))
+   *  - [13, 14]= owner of payment note (maker note (for maker))
+   *  - [15]    = payment note type
    *
    *  - [16, 17]= change note hash
-   *  - [18]    = change note type
+   *  - [18]    = change note type // TODO: make it private
    *
    *  - [19]    = price
    *
@@ -200,10 +242,10 @@ contract ZkDex is ZkDai {
     require(order.takerNoteToMaker == calcHash(input[3], input[4]), "ZkDex: taker note to maker mismatch");
     require(order.targetToken == input[5], "ZkDex: target token mismatch");
 
-    require(order.sourceToken == input[8], "ZkDex: reward token type mismatch");
-    require(order.parentNote == calcHash(input[9], input[10]), "ZkDex: owner of reward note mismatch");
-    require(order.targetToken == input[13], "ZkDex: payment token type mismatch");
-    require(order.makerNote == calcHash(input[14], input[15]), "ZkDex: owner of payment note mismatch");
+    require(order.sourceToken == input[10], "ZkDex: reward token type mismatch");
+    require(order.parentNote == calcHash(input[8], input[9]), "ZkDex: owner of reward note mismatch");
+    require(order.targetToken == input[15], "ZkDex: payment token type mismatch");
+    require(order.makerNote == calcHash(input[13], input[14]), "ZkDex: owner of payment note mismatch");
 
     require(order.price == input[19], "ZkDex: order price mismatch");
 

@@ -1,0 +1,12 @@
+import "./sub.code" as sub
+
+def main() -> (field):
+  field z = sub(20000000000000000000000, 10000000000000000000000)
+  field result = 10000000000000000000000
+  z == result
+  return z
+
+
+
+
+
