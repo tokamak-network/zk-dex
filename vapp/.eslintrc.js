@@ -2,6 +2,7 @@ module.exports = {
   root: true,
   plugins: ["es-beautifier"],
   extends: ["plugin:vue/essential", "plugin:es-beautifier/standard"],
+
   rules: {
     "no-console": process.env.NODE_ENV === "production" ? "error" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "error" : "off",
@@ -45,8 +46,20 @@ module.exports = {
     "promise/avoid-new": "off",
     "no-unused-vars": "off"
   },
+
   "env": {
     "browser": true,
     "node": true,
-  }
+  },
+
+  overrides: [
+    {
+      files: [
+        '**/__tests__/*.{j,t}s?(x)'
+      ],
+      env: {
+        jest: true
+      }
+    }
+  ]
 };

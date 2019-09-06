@@ -5,13 +5,14 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "compile": "truffle compile",
-    "migrate": "truffle migrate --reset",
     "test": "truffle test",
     "lint": "eslint --ext .js,.vue src",
+    "compile": "truffle compile",
+    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh",
     "lint:fix": "solium -d contracts/ --fix",
+    "migrate": "truffle migrate --reset",
     "start:zokrates": "docker run -d -it --name zokrates -v $(pwd)/circuit:/home/zokrates/circuit -v $(pwd)/contracts:/home/zokrates/contracts zokrates/zokrates:latest /bin/bash",
-    "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
+    "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
     "axios": "^0.19.0",
@@ -34,8 +35,12 @@
     "@vue/babel-preset-app": "^3.9.2",
     "@vue/cli-plugin-babel": "^3.9.0",
     "@vue/cli-plugin-eslint": "^3.9.0",
+    "@vue/cli-plugin-unit-jest": "^3.11.0",
     "@vue/cli-service": "^3.9.0",
+    "@vue/test-utils": "1.0.0-beta.29",
+    "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^10.0.1",
+    "babel-jest": "^23.6.0",
     "eslint": "^5.16.0",
     "eslint-plugin-es-beautifier": "^1.0.1",
     "eslint-plugin-vue": "^5.2.3",
