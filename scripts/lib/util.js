@@ -41,18 +41,29 @@ function parseProofObj(obj) {
 }
 
 function marshal(str) {
-  if (!str) throw new Error("Cannot marshal empty string");
+  if (!str) throw new Error("Cannot add hex prefix empty string");
 
   return '0x' + unmarshal(str);
 }
 
-function unmarshal(str) {
-  // console.warn("unmarshal", 'str', str)
-  str = str.trim();
-  if (!str) throw new Error("Cannot unmarshal empty string");
+function unmarshal(_str) {
+  let str;
+  if (_str instanceof Buffer) {
+    str = _str.toString('hex');
+  } else {
+    str = _str.trim();
+  }
+
+  if (!str) throw new Error("Cannot remove hex prefix empty string");
+
   const i = str.lastIndexOf("0x");
-  if (i < 0) return str;
-  return str.slice(i+2);
+  if (i >= 0) str = str.slice(i+2);
+
+  if (str.length % 2 === 1) {
+    str = '0' + str;
+  }
+
+  return str;
 }
 
 function calcHash(h0, h1) {

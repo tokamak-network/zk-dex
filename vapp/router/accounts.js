@@ -1,9 +1,10 @@
 const express = require('express');
-
 const {
-  marshal,
-  unmarshal,
-} = require('../../scripts/lib/util');
+  addZkPrefix,
+  removeZkPrefix,
+} = require('zk-dex-keystore/lib/utils');
+
+
 const asyncWrap = require('../lib/asyncWrap');
 
 const {
@@ -39,7 +40,7 @@ router.post('/:userKey', asyncWrap(
     const account = createAccount(passphrase);
     addAccount(userKey, account);
     return res.status(200).json({
-      address: marshal(account.address),
+      address: addZkPrefix(account.address),
     });
   }
 ));
@@ -61,7 +62,7 @@ router.post('/unlock/:userKey', asyncWrap(
       address,
     } = req.body;
 
-    const account = getAccountByAddress(unmarshal(address));
+    const account = getAccountByAddress(removeZkPrefix(address));
     const privateKey = unlockAccount(passphrase, account);
 
     return res.status(200).json({
@@ -70,7 +71,7 @@ router.post('/unlock/:userKey', asyncWrap(
   }
 ));
 
-// TODO: import account by userKey
+// TODO: use zk-dex-keystore
 router.post('/import/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
@@ -80,14 +81,14 @@ router.post('/import/:userKey', asyncWrap(
   }
 ));
 
-// TODO: delete account by userKey
+// TODO: use zk-dex-keystore
 router.delete('/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
-    const address = unmarshal(req.body.address);
+    const address = removeZkPrefix(req.body.address);
     deleteAccount(userKey, address);
     return res.status(200).json({
-      address: marshal(address),
+      address: addZkPrefix(address),
     });
   }
 ));

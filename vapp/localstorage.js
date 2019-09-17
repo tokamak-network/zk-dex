@@ -2,6 +2,12 @@ const { toHex, toBN } = require('web3-utils');
 
 const { LocalStorage } = require('node-localstorage');
 
+const {
+  addZkPrefix,
+  removeZkPrefix,
+} = require('zk-dex-keystore/lib/utils');
+
+
 const { marshal } = require('../scripts/lib/util');
 const { Note } = require('../scripts/lib/Note');
 
@@ -82,10 +88,10 @@ function getAccounts (_userKey) {
 module.exports.getAccounts = getAccounts;
 
 function getAccountByAddress (userKey, _address) {
-  const address = marshal(_address);
+  const address = removeZkPrefix(_address);
 
   const accounts = getAccounts(userKey);
-  const account = accounts.find(({ address: a }) => marshal(a) === address);
+  const account = accounts.find(({ address: a }) => a === address);
   if (!account) {
     throw new Error(`Account ${address} not exists`);
   }
@@ -103,7 +109,7 @@ module.exports.addAccount = addAccount;
 
 function deleteAccount (_userKey, _address) {
   const userKey = marshal(_userKey);
-  const address = marshal(_address);
+  const address = removeZkPrefix(_address);
 
   const accounts = getAccounts(userKey);
 
@@ -111,7 +117,7 @@ function deleteAccount (_userKey, _address) {
     throw new Error('There is no account');
   }
 
-  const i = accounts.findIndex(({ address: a }) => marshal(a) === address);
+  const i = accounts.findIndex(({ address: a }) => a === address);
   if (i < 0) {
     throw new Error(`Account ${address} not exists`);
   }

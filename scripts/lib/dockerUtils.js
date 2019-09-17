@@ -255,25 +255,6 @@ function initialized() {
   });
 }
 
-function initialized() {
-  const MAX_TRY = 100;
-  let i = 0;
-
-  return new Promise((resolve, reject) => {
-    const timer = () => setTimeout(() => {
-      i++;
-      if (i >= MAX_TRY) {
-        reject("Out of time");
-      }
-
-      if (!c) return timer();
-      return resolve();
-    }, 500);
-
-    timer();
-  });
-}
-
 (async () => {
   try {
     const containers = await docker.listContainers();

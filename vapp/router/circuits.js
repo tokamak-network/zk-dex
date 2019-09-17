@@ -36,6 +36,7 @@ console.log('process.env.USE_DUMMY', process.env.USE_DUMMY);
 
 const useDummy = process.env.USE_DUMMY || false;
 
+// TODO: get private key from DB.
 router.post('/:circuit', asyncWrap(
   async function (req, res) {
     const circuit = req.params.circuit;
