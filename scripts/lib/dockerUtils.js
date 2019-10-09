@@ -65,7 +65,7 @@ async function execute(circuitName, cmd) {
       });
 
       stream.on('data', (data) => {
-        // console.log(data.toString());
+        console.log(data.toString());
         chunks.push(data.toString());
       });
     });
