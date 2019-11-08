@@ -142,7 +142,7 @@ export default {
         const orderId = Web3Utils.toHex(tx.logs[6].args.orderId);
         order.state = (await this.dexContract.orders(orderId)).state;
         order.timestamp = new Date().getTime();
-  
+
         this.$store.dispatch(
           'updateOrder',
           (await api.updateOrder(orderId, order))

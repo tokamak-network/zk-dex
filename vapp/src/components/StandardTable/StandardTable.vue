@@ -127,12 +127,37 @@ export default {
         switch (column) {
           case 'type': 
             if (this.metamaskAccount === order.orderMaker) {
-              return 'Send';
+              return 'Buy';
             } else if (this.metamaskAccount === order.orderTaker) {
-              return 'Receive';
+              return 'Sell';
             }
             return '';
   
+          default:
+            return columnData;
+        }
+      } else if (this.type === 'orderHistory') {
+        const order = data;
+        switch (column) {
+          case 'type': 
+            if (this.metamaskAccount === order.orderMaker) {
+              return 'Buy';
+            } else if (this.metamaskAccount === order.orderTaker) {
+              return 'Sell';
+            }
+            return '';
+
+          case 'change':
+            const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
+            const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
+            const price = Web3Utils.toBN(order.price);
+
+            if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
+              return makerNoteValue.sub(stakeNoteValue.div(price));
+            } else {
+              return stakeNoteValue.sub(makerNoteValue.mul(price));
+            }
+
           default:
             return columnData;
         }
@@ -352,6 +377,48 @@ const columns = {
       options: [],
     },
   ],
+  orderHistory: [
+    {
+      title: 'Order ID',
+      data: 'orderId',
+      options: [],
+    },
+    {
+      title: 'Type',
+      data: 'type',
+      options: [],
+    },
+    {
+      title: 'Price',
+      data: 'price',
+      options: [],
+    },
+    {
+      title: 'DAI Amount',
+      data: 'makerNoteValue',
+      options: [],
+    },
+    {
+      title: 'ETH Amount',
+      data: 'takerNoteValue',
+      options: [],
+    },
+    {
+      title: 'Change',
+      data: 'change',
+      options: [],
+    },
+    {
+      title: 'State',
+      data: 'state',
+      options: [],
+    },
+    {
+      title: 'Time',
+      data: 'timestamp',
+      options: [],
+    },
+  ]
 };
 </script>
 

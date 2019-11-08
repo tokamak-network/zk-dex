@@ -13,7 +13,7 @@
       <order-book-container class="short" />
     </div>
     <order-ongoing-container />
-    <!-- <order-history-container /> -->
+    <order-history-container />
   </div>
 </template>
 

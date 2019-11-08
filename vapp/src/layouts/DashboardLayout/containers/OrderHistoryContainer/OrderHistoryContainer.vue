@@ -7,8 +7,7 @@
     <div class="table-container">
       <standard-table
         :type="'orderHistory'"
-        :columns="columns"
-        :datas="$store.state.order.orderHistory"
+        :datas="$store.getters.orderHistory"
       />
     </div>
   </div>

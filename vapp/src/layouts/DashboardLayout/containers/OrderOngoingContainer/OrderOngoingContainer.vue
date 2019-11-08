@@ -7,7 +7,6 @@
     <div class="table-container">
       <standard-table
         :type="'ongoingOrder'"
-        :columns="columns"
         :datas="$store.state.order.orders"
       />
     </div>
