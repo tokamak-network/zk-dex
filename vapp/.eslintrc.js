@@ -44,7 +44,8 @@ module.exports = {
     "space-before-function-paren": ["error", "always"],
     "promise/always-return": "off",
     "promise/avoid-new": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "one-var-declaration-per-line": ["error", "initializations"]
   },
 
   "env": {

@@ -1,0 +1,100 @@
+.account-delete-container {
+  padding-top: 36px;
+  padding-bottom: 30px;
+  padding-left: 194px;
+  padding-right: 194px;
+
+  div {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  p {
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.5;
+    letter-spacing: -0.32px;
+    text-align: center;
+    color: #ff5640;
+  }
+
+  p:nth-child(1) {
+    font-family: DINPro;
+    font-size: 16px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: normal;
+    letter-spacing: -0.36px;
+    color: #ff5640;
+  }
+  
+  p:nth-child(2) {
+    margin-top: 8px;
+  }
+
+  p:nth-child(4) {
+    margin-top: 29px;
+    margin-bottom: 12px;
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.5;
+    letter-spacing: -0.32px;
+    text-align: center;
+    color: #e3e5e9;
+  }
+
+  .cancel {
+    margin-right: 5px;
+    width: 155px;
+    height: 48px;
+    background-color: rgba(31, 31, 42, 1.000);
+    border-radius: 24px;
+    border: solid 1px #979797;
+    font-family: DINPro;
+    font-size: 18px;
+    font-weight: normal;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.39;
+    letter-spacing: -0.34px;
+    text-align: center;
+    color: #9da3ae;
+    padding-top: 4px;
+  }
+
+  .cancel:hover {
+    cursor: pointer;
+  }
+
+  .delete {
+    margin-left: 5px;
+    padding-top: 4px;
+    width: 155px;
+    height: 48px;
+    border-radius: 24px;
+    background-color: #ff5640;
+    font-family: DINPro;
+    font-size: 18px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.39;
+    letter-spacing: -0.34px;
+    text-align: center;
+    border: 0px;
+    color: #f7f8f9;
+  }
+
+  .delete:hover {
+    cursor: pointer;
+  }
+}

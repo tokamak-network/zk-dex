@@ -21,3 +21,5 @@ yarn-error.log*
 *.sw?
 
 localstorage
+src/used
+src/usedcomponents

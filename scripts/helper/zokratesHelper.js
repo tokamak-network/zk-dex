@@ -5,6 +5,7 @@ function printZokratesCommand(params) {
   params.forEach((p) => {
     cmd += `${new BN(p, 16).toString(10)} `;
   });
+  console.log(cmd);
   return cmd;
 }
 

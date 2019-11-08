@@ -1,0 +1,76 @@
+.input-account {
+  width: 100%;
+  height: 48px;
+  display: flex;
+
+  input {
+    width: 99%;
+    height: 95%;
+    position: relative;
+    background-color: #2a2c3c;
+    border: 0;
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: normal;
+    letter-spacing: -0.32px;
+    color: #e3e5e9;
+  }
+
+  .label-container {
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1f1f2a;
+    border: solid 1px #757794;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+
+    img {
+      padding-left: 12px;
+      padding-right: 12px;
+      width: 24px;
+      height: 24px;
+    }
+
+    p {
+      width: 68px;
+      height: 18px;
+      padding-left: 10px;
+      padding-right: 10px;
+      font-family: DINPro;
+      font-size: 14px;
+      font-weight: 500;
+      font-style: normal;
+      font-stretch: normal;
+      line-height: normal;
+      letter-spacing: -0.32px;
+      color: #e3e5e9;
+    }
+  }
+
+  .input-with-label-container {
+    flex-grow: 1;
+    padding-left: 20px;
+    width: 100%;
+    height: 48px;
+    background-color: #2a2c3c;
+    border: solid 1px #757794;
+    border-left: none;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+  }
+
+  .input-without-label-container {
+    flex-grow: 1;
+    padding-left: 20px;
+    width: 100%;
+    height: 48px;
+    background-color: #2a2c3c;
+    border: solid 1px #757794;
+    border-radius: 6px;
+  }
+}

@@ -1,22 +1,17 @@
 const crypto = require('crypto');
 const Web3Utils = require('web3-utils');
 
-const {
-  marshal,
-  unmarshal,
-  split32BytesTo16BytesArr,
-  parseProofObj,
-} = require('./util');
+const util = require('./util');
 const noteHelper = require('../helper/noteHelper');
 
 const mode = 'aes-256-cbc';
 
-const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
-const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
+const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 32);
+const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 32);
 
 const { BN } = Web3Utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
-const MAX_FIELD_VALUE = new BN('21888242871839275222246405745257275088548364400416034343698204186575808495616')
+
 
 const sampleProof = `{
   "proof": {
@@ -53,55 +48,36 @@ const NoteState = {
 };
 
 class Note {
-  /**
-   *
-   * @param { String | BN } owner0 x-coordinates of public key for normal note, original note hash for smart note
-   * @param { String | BN | Null } owner1 y-coordinates of public key for normal note, null for smart note
-   * @param { String | BN } value The amount of token
-   * @param { String | BN } token The type of token
-   * @param { String | BN } viewingKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
-   * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
-   */
-  constructor(owner0, owner1, value, token, viewingKey, salt) {
-    this.owner0 = Web3Utils.padLeft(owner0, 64);
-    if (owner1) {
-      this.owner1 = Web3Utils.padLeft(owner1, 64);
-    }
-    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
-    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
+  constructor(owner, value, token, viewingKey, salt, isSmart = false) {
+    this.owner = Web3Utils.padLeft(Web3Utils.toHex(owner), 64);
+    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 32);
+    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 32);
     this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
+    this.isSmart = Web3Utils.padLeft(isSmart ? '0x1' : '0x0', 32);
   }
 
-  isSmart() {
-    return this.owner1 === null;
-  }
-
-
-  /**
-   * @returns { String | Array } Array of x and y coordinates of public key of the owner for normal note, or String of the original note hash for smart note.
-   */
   getOwner() {
-    if (this.isSmart()) {
-      return this.owner0;
+    if (this.owner.slice(0, 26) !== '0x000000000000000000000000') {
+      return this.owner;
     }
 
-    return [this.owner0, this.owner1];
+    return util.marshal(this.owner.slice(-40));
   }
 
   hash() {
-    return marshal(noteHelper.getNoteHash(
-      unmarshal(this.owner0),
-      this.owner1 ? unmarshal(this.owner1) : null,
-      unmarshal(this.value),
-      unmarshal(this.token),
-      unmarshal(this.viewingKey),
-      unmarshal(this.salt),
+    return util.marshal(noteHelper.getNoteHash(
+      util.unmarshal(this.owner),
+      util.unmarshal(this.value),
+      util.unmarshal(this.token),
+      util.unmarshal(this.viewingKey),
+      util.unmarshal(this.salt),
+      util.unmarshal(this.isSmart),
     ));
   }
 
   hashArr() {
-    return split32BytesTo16BytesArr(this.hash());
+    return util.split32BytesTo16BytesArr(this.hash());
   }
 
   toString() {
@@ -115,25 +91,25 @@ class Note {
     const r1 = cipher.update(this.toString(), 'utf8', 'base64');
     const r2 = cipher.final('base64');
 
-    return marshal(
+    return util.marshal(
       Web3Utils.fromAscii(r1 + r2),
     );
   }
 }
 
 function marshalEncDecKey(_key) {
-  const key = unmarshal(_key.toLowerCase());
+  const key = util.unmarshal(_key.toLowerCase());
   const reg = new RegExp(/^0*(.+)/, 'g');
   const match = reg.exec(key);
 
   let res = match[1];
 
   if (!res) {
-    throw new Error("Failed to marshal key:", _key);
+    throw new Error('Failed to marshal key:', _key);
   }
 
   if (res.length % 2 === 1) {
-    res = '0' + res;
+    res = `0${  res}`;
   }
 
   // console.warn(`
@@ -158,7 +134,7 @@ function decrypt(v, decKey) {
   const r2 = decipher.final('utf8');
 
   const note = JSON.parse(r1 + r2);
-  return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
+  return new Note(note.owner, note.value, note.token, note.viewingKey, note.salt);
 }
 
 function dummyProofCreateNote(note) {
@@ -171,38 +147,26 @@ function dummyProofCreateNote(note) {
     1,
   ];
 
-  return parseProofObj(proof);
+  return util.parseProofObj(proof);
 }
 
-function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
+function dummyProofSpendNote(oldNote, newNote1, newNote2, originalNote = null) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
-    ...oldNote0.hashArr(),
-    ...(oldNote1 || EMPTY_NOTE).hashArr(),
-    ...newNote.hashArr(),
-    ...changeNote.hashArr(),
+    ...oldNote.hashArr(),
+    ...newNote1.hashArr(),
+    ...newNote2.hashArr(),
+    ...(originalNote === null ? EMPTY_NOTE.hashArr() : originalNote.hashArr()),
     1,
   ];
 
-  return parseProofObj(proof);
-}
-
-function dummyProofConvertNote(smartNote, originNote, convertedNote) {
-  const proof = JSON.parse(sampleProof);
-
-  proof.input = [
-    ...smartNote.hashArr(),
-    ...originNote.hashArr(),
-    ...convertedNote.hashArr(),
-    1,
-  ];
-
-  return parseProofObj(proof);
+  return util.parseProofObj(proof);
 }
 
 function dummyProofMakeOrder(makerNote) {
   const proof = JSON.parse(sampleProof);
+  const hash = util.unmarshal(makerNote.hash());
 
   proof.input = [
     ...makerNote.hashArr(),
@@ -210,26 +174,25 @@ function dummyProofMakeOrder(makerNote) {
     1,
   ];
 
-  return parseProofObj(proof);
+  return util.parseProofObj(proof);
 }
 
-function dummyProofTakeOrder(parentNote, stakeNote) {
+function dummyProofTakeOrder(makerNote, parentNote, stakeNote) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
     ...parentNote.hashArr(),
     parentNote.token,
-
     ...stakeNote.hashArr(),
-    ...split32BytesTo16BytesArr(stakeNote.owner0),
     stakeNote.token,
+    ...makerNote.hashArr(),
     1,
   ];
 
-  return parseProofObj(proof);
+  return util.parseProofObj(proof);
 }
 
-function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
+function dummyProofSettleOrder(makerNote, parentNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
@@ -240,31 +203,31 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
     stakeNote.token,
 
     ...rewardNote.hashArr(),
-    ...split32BytesTo16BytesArr(rewardNote.owner0),
     rewardNote.token,
+    ...parentNote.hashArr(),
 
     ...paymentNote.hashArr(),
-    ...split32BytesTo16BytesArr(paymentNote.owner0),
     paymentNote.token,
+    ...makerNote.hashArr(),
 
     ...changeNote.hashArr(),
     changeNote.token,
 
     price,
+
     1,
   ];
 
-  return parseProofObj(proof);
+  return util.parseProofObj(proof);
 }
 
-const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00', '0x00');
+const EMPTY_NOTE = new Note('0', '0', '0', '0', '0', false);
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
 console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);
 
 module.exports = {
   constants: {
-    MAX_FIELD_VALUE,
     ETH_TOKEN_TYPE,
     DAI_TOKEN_TYPE,
     EMPTY_NOTE_HASH,
@@ -277,7 +240,6 @@ module.exports = {
     dummyProofCreateNote,
     dummyProofSpendNote,
     dummyProofLiquidateNote: dummyProofCreateNote,
-    dummyProofConvertNote,
     dummyProofMakeOrder,
     dummyProofTakeOrder,
     dummyProofSettleOrder,

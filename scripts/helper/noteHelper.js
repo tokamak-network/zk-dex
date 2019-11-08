@@ -1,82 +1,172 @@
 const fs = require('fs');
 const BN = require('bn.js');
 const crypto = require('crypto');
-const Web3Utils = require('web3-utils');
 
 const SCALING_FACTOR = new BN('1000000000000000000');
 
-function getNoteHash(owner0, owner1, value, type, viewKey, salt) {
-
-  const paddedO = _toPadedObject(owner0, owner1, value, type, viewKey, salt);
-  const { noteOwner0 } = paddedO;
-  const { noteOwner1 } = paddedO;
+function getNoteHash(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
   const { noteValue } = paddedO;
   const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
 
-  const note = noteOwner0 + noteOwner1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
 
   const hashArr = toHashed(note);
-
   return hashArr[0] + hashArr[1];
 }
 
-function getNoteParams(owner0, owner1, value, type, viewKey, salt) {
-  const paddedO = _toPadedObject(owner0, owner1, value, type, viewKey, salt);
-  const { noteOwner0 } = paddedO;
-  const { noteOwner1 } = paddedO;
+// Example Params
+// owner = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+// value = '6'
+// type = '0'
+// viewKey = "1aba488300a9d7297a315d127837be4219107c62c61966ecdf7a75431d75cc61";
+// salt = "c517f646255d5492089b881965cbd3da";
+// isSmart = '0';
+
+// Return = [noteHash[2], noteValue, noteType, splittedNoteOwner[2], splittedNoteViewKey[2], noteSalt, noteIsSmart]
+function getNoteParams(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
   const { noteValue } = paddedO;
   const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
   const { splittedNoteViewKey } = paddedO;
   const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
 
   // To be hashed, raw note info
-  const note = noteOwner0 + noteOwner1 + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt;
-  const noteHash = toHashed(note);
-  const noteParams = noteHash.concat(noteOwner0, noteOwner1, noteValue, noteType, splittedNoteViewKey, noteSalt);
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
 
+  const noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(noteValue, noteType, splittedNoteOwner, splittedNoteViewKey, noteSalt, noteIsSmart);
+
+  // console.log(noteParams); //for check parameters
   return noteParams;
 }
 
-function _toPadedObject(owner0, owner1, value, type, viewKey, salt) {
+function getNoteParamsForTransfer(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
+  const { noteValue } = paddedO;
+  const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
+  const { splittedNoteViewKey } = paddedO;
+  const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
+
+  // To be hashed, raw note info
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
+
+  const noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(splittedNoteOwner, noteValue, noteType, splittedNoteViewKey, noteSalt, noteIsSmart);
+
+  // console.log(noteViewKey, noteParams); //for check parameters
+  return noteParams;
+}
+
+function getNoteParamsForMakeOrder(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
+  const { noteValue } = paddedO;
+  const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
+  const { splittedNoteViewKey } = paddedO;
+  const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
+
+  // To be hashed, raw note info
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
+
+  const noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
+  // console.log(noteParams); //for check parameters
+  return noteParams;
+}
+
+function getNoteParamsForTakeOrder(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
+  const { noteValue } = paddedO;
+  const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
+  const { splittedNoteViewKey } = paddedO;
+  const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
+
+  // To be hashed, raw note info
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
+
+  const noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
+  // console.log(noteParams); //for check parameters
+  return noteParams;
+}
+
+function getNoteParamsForSettleOrder(owner, amount, type, viewKey, salt, isSmart) {
+  const paddedO = _toPadedObject(owner, amount, type, viewKey, salt, isSmart);
+  const { noteOwner } = paddedO;
+  const { splittedNoteOwner } = paddedO;
+  const { noteValue } = paddedO;
+  const { noteType } = paddedO;
+  const { noteViewKey } = paddedO;
+  const { splittedNoteViewKey } = paddedO;
+  const { noteSalt } = paddedO;
+  const { noteIsSmart } = paddedO;
+
+  // To be hashed, raw note info
+  const note = splittedNoteOwner.join('') + noteValue + noteType + splittedNoteViewKey.join('') + noteSalt + noteIsSmart;
+
+  const noteHash = toHashed(note);
+
+  const noteParams = noteHash.concat(noteType, splittedNoteOwner, noteValue, splittedNoteViewKey, noteSalt, noteIsSmart);
+
+  // console.log(noteParams); //for check parameters
+  return noteParams;
+}
+
+function _toPadedObject(owner, amount, type, viewKey, salt, isSmart) {
   // all params should look like this "0001"(o), "0x0001"(x)
-  const noteHash = new BN(owner0, 16).toString(16, 64)
+  const noteOwner = new BN(owner, 16).toString(16); // 32 bytes = 256 bits
+  const splittedNoteOwner = _checkLenAndReturn(noteOwner);
 
-  let noteOwner0; // 256bits
-  let noteOwner1; // 256bits
-  if (owner1 == null) {
-    noteOwner0 = splitNoteHash(noteHash)[0];
-    noteOwner1 = splitNoteHash(noteHash)[1];
-  } else {
-    noteOwner0 = new BN(owner0, 16).toString(16, 64);
-    noteOwner1 = new BN(owner1, 16).toString(16, 64);
-  }
+  const noteValue = new BN(amount, 16).toString(16, 32); // 16 bytes = 128 bits
+  const noteType = new BN(type, 16).toString(16, 32); // 16 bytes = 128 bits
 
-  const noteValue = new BN(value, 16).toString(16, 64); // 256bits
-  const noteType = new BN(type, 16).toString(16, 64); // 256bits
-  const noteViewKey = new BN(viewKey, 16).toString(16, 64); // 256bits
+  const noteViewKey = new BN(viewKey, 16).toString(16); // 32 bytes = 256 bits
+
   const splittedNoteViewKey = _checkLenAndReturn(noteViewKey);
-  const noteSalt = new BN(salt, 16).toString(16, 64); // 256bits
+
+  const noteSalt = new BN(salt, 16).toString(16, 32); // 16 bytes = 128 bits
+  const noteIsSmart = new BN(isSmart, 16).toString(16, 32); // 16 bytes = 128 bits
 
   const result = {
-    noteOwner0,
-    noteOwner1,
+    noteOwner,
+    splittedNoteOwner,
     noteValue,
     noteType,
     noteViewKey,
     splittedNoteViewKey,
     noteSalt,
+    noteIsSmart,
   };
 
   return result;
-}
-
-function splitNoteHash(noteHash) {
-  const noteHash0 = '0'.repeat(32) + noteHash.slice(0,32)
-  const noteHash1 = '0'.repeat(32) + noteHash.slice(32)
-
-  return [noteHash0, noteHash1]
 }
 
 function _checkLenAndReturn(targetHex) {
@@ -105,8 +195,20 @@ function toHashed(encodedValue) {
   return [digest.slice(0, 32), digest.slice(32)];
 }
 
+function test1(){
+  var tHex = "005";
+  var result = _checkLenAndReturn(tHex);
+  console.log(result);
+}
+
+// test1();
+
 module.exports = {
   getNoteHash,
   getNoteParams,
+  getNoteParamsForTransfer,
+  getNoteParamsForMakeOrder,
+  getNoteParamsForTakeOrder,
+  getNoteParamsForSettleOrder,
   toHashed,
 };

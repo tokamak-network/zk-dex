@@ -1,0 +1,134 @@
+.dashboard-menu {
+  min-width: 280px;
+  background-color: rgba(42, 44, 60, 1.000);
+  padding-right: 20px;
+
+  img {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .selected {
+    border-left: none;
+    border-top-right-radius: 100px;
+    border-bottom-right-radius: 100px;
+    background-color: #3a4175;
+    border-left-color: #3753d5;
+    border-left-width: 4px;
+    border-left-style: solid;
+  
+    .icon-container {
+      background-color: rgba(55, 84, 213, 1.000);
+    }
+
+    p {
+      color: #f7f8f9;
+    }
+  }
+
+  .arrow {
+    width: 7.3px;
+    height: 13px;
+    margin-left: auto;
+    margin-right: 20px;
+  }
+}
+
+.dashboard-menu > :nth-child(1) {
+  margin-top: 26px;
+}
+
+.dashboard-menu > :nth-child(2) {
+  margin-top: 44px;
+}
+
+.dashboard-menu > :nth-child(3) {
+  margin-top: 8px;
+}
+
+.dashboard-menu > :nth-child(6) {
+  margin-top: 16px;
+}
+
+.dashboard-menu > :nth-child(7) {
+  margin-top: 8px;
+}
+
+.dashboard-menu > :nth-child(10) {
+  margin-top: 16px;
+}
+
+.dashboard-menu > :nth-child(11) {
+  margin-top: 8px;
+}
+
+.menu-item-with-icon {
+  display: flex;
+  height: 56px;
+  border-left-color: rgba(42, 44, 60, 1.000);
+  border-left-width: 4px;
+  border-left-style: solid;
+
+  .icon-container {
+    margin-left: 32px;
+    margin-right: 12px;
+    margin-top: auto;
+    margin-bottom: auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #1f1f2a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .icon-selected-container {
+    margin-left: 32px;
+    margin-right: 12px;
+    margin-top: auto;
+    margin-bottom: auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(55, 84, 213, 1.000);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  p {
+    margin-top: auto;
+    margin-bottom: auto;
+    font-family: DINPro;
+    font-size: 18px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.78;
+    letter-spacing: -0.34px;
+    color: #b7c2d5;
+  }
+}
+
+.menu-item {
+  display: flex;
+  height: 56px;
+  border-left-color: rgba(42, 44, 60, 1.000);
+  border-left-width: 4px;
+  border-left-style: solid;
+  
+  p {
+    margin-left: 84px;
+    margin-top: auto;
+    margin-bottom: auto;
+    font-family: DINPro;
+    font-size: 16px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 2;
+    letter-spacing: -0.3px;
+    color: #b7c2d5;
+  }
+}
