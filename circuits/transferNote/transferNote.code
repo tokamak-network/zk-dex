@@ -1,90 +1,73 @@
-import "utils/binary/or.code" as or
-import "utils/binary/not.code" as not
-import "utils/binary/and.code" as and
+import "../sha/1024bitPacked.code" as sha256
 
-import "../utils/boolean/toBool.code" as toBool
-import "../utils/boolean/fromBool.code" as fromBool
-import "../utils/math/add.code" as add
-import "../sha/1536bitPacked.code" as sha256
-import "ecc/proofOfOwnership.code" as proofOfOwnership
-import "ecc/babyjubjubParams.code" as babyjubjubParams
+// Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
 
+// (public) oh0 + oh1 : old note hash
+// (private) pk0 + pk1 : old note's owner
+// (private) oVal : old note value
+// (private) oType : old note type
+// (private) ovk0 + ovk1 : old note viewKey
+// (private) oSalt : old note salt, random value
+// (private) oIsSmart : old note isSmart, 0 if is not smart note
 
-// Note = (owner, value, type, viewKey, salt)
+// (public) n0h0 + n0h1 : new note 0 hash
+// (private) rpk0 + rpk1 : reciever(new note 0 owner)
+// (private) n0Val : new note 0 value
+// (private) n0Type : new note 0 type
+// (private) n0vk0 + n0vk1 : new note 0 viewKey
+// (private) n0Salt : new note 0 salt
+// (private) n0IsSmart : new note 0 isSmart, 0 if is not smart note
 
-// (public) o0h0 + o0h1 : old note 0 hash
-// (private) o0owner0 + o0owner1 : old note 0 address
-// (private) o0val : old note 0 value
-// (private) o0type : old note 0 type
-// (private) o0vk0 + o0vk1 : old note 0 viewKey
-// (private) o0salt : old note 0 salt, random value
+// (public) n1h0 + n1h1 : new note 1 hash
+// (private) n1rpk0 + n1rpk1 : reciever2(new note 2 owner)
+// (private) n1Val : new note 1 value
+// (private) n1Type : new note 1 type
+// (private) n1vk0+ n1vk1 : new note 1 viewKey
+// (private) n1Salt : new note 1 salt
+// (private) n1IsSmart : new note 1 isSmart, 0 if is not smart note
 
-// (public) o1h0 + o1h1 : old note 1 hash
-// (private) o1owner0 + o1owner1 : old note 1 address
-// (private) o1val : old note 1 value
-// (private) o1type : old note 1 type
-// (private) o1vk0 + o1vk1 : old note 1 viewKey
-// (private) o1salt : old note 1 salt, random value
-
-// (public) nh0 + nh1 : new note hash
-// (private) nOwner0 + nOwner1 : new note address
-// (private) nVal : new note 0 value
-// (private) nType : new note 0 type
-// (private) nVk0 + nVk1 : new note 0 viewKey
-// (private) nSalt : new note 0 salt
-
-// (public) changeH0 + changeH1 : change note hash
-// (private) changeOwner0 + changeOwner1 : change note address
-// (private) changeVal : change note value
-// (private) changeType : change note type
-// (private) changeVk0+ changeVk1 : change note viewKey
-// (private) changeSalt : change note salt
-
-// (private) sk : secret key corresponding to address of old notes
+// (public) originH0 + originH1 : origin note hash
+// (private) originPk0 + originPk1 : origin note's owner
+// (private) originVal : origin note value
+// (private) originType : origin note type
+// (private) originVk0 + originVk1 : origin note viewKey
+// (private) originSalt : origin note salt, random value
+// (private) originIsSmart : origin note isSmart, it should be 0. Note that you cannot make smartNote from smartNote
 
 
-def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0val, private field o0type, private field o0vk0, private field o0vk1, private field o0salt, \
-field o1h0, field o1h1, private field o1owner0, private field o1owner1, private field o1val, private field o1type, private field o1vk0, private field o1vk1, private field o1salt, \
-field nh0, field nh1, private field nOwner0, private field nOwner1, private field nVal, private field nType, private field nVk0, private field nVk1, private field nSalt, \
-field changeH0, field changeH1, private field changeOwner0, private field changeOwner1, private field changeVal, private field changeType, private field changeVk0, private field changeVk1, private field changeSalt, private field sk0, private field sk1) -> (field):
+def main(field oh0, field oh1, private field pk0, private field pk1, private field oVal, private field oType, private field ovk0, private field ovk1, private field oSalt, private field oIsSmart, field n0h0, field n0h1, private field rpk0, private field rpk1, private field n0Val, private field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, private field n1rpk0, private field n1rpk1, private field n1Val, private field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field originH0, field originH1, private field originPk0, private field originPk1, private field originVal, private field originType, private field originVk0, private field originVk1, private field originSalt, private field originIsSmart) -> (field):
 
-  // check ownership of old note 0
-  field[10] params = babyjubjubParams()
-  proofOfOwnership([o0owner0, o0owner1], sk0, params) == 1
+  oVal == n0Val + n1Val
 
-  field transfer1Note = fromBool(o1owner0 == 0 && o1owner1 == 0 && o1val == 0 && o1type == 0 && o1vk0 == 0 && o1vk1 == 0 && o1salt == 0)
+  // get public key corresponding to private key
+  // circuit for above hasn't been implemented as yet, so directly using the private key for PoC
 
-  // check if transfer 1 note or 2 notes.
-  or(transfer1Note, proofOfOwnership([o1owner0, o1owner1], sk1, params)) == 1
+  // check o1
+  h = sha256([pk0, pk1, oVal, oType, ovk0, ovk1, oSalt, oIsSmart])
+  oh0 == h[0]
+  oh1 == h[1]
 
-  // check value
-  field inputValue = add(o0val, o1val)
-  field outputValue = add(nVal, changeVal)
-  inputValue == outputValue
+  // originNote should not be smartNote
+  originIsSmart == 0
 
-  // check type
-  or(transfer1Note, fromBool(o0type == o1type)) == 1
-  o0type == nType
-  nType == changeType
+  // check origin of o1
+  h = sha256([originPk0, originPk1, originVal, originType, originVk0, originVk1, originSalt, originIsSmart])
+  originH0 == h[0]
+  originH1 == h[1]
 
-  // check old note 0
-  h = sha256([o0owner0, o0owner1, o0val, o0type, o0vk0, o0vk1, o0salt])
-  o0h0 == h[0]
-  o0h1 == h[1]
+  field pk0T = if oIsSmart > 0 then originH0 else pk0 fi
+  field pk1T = if oIsSmart > 0 then originH1 else pk1 fi
+  pk0 == pk0T
+  pk1 == pk1T
 
-  // check old note 1
-  h = sha256([o1owner0, o1owner1, o1val, o1type, o1vk0, o1vk1, o1salt])
-  o1h0 == h[0]
-  o1h1 == h[1]
+  // check n0
+  h = sha256([rpk0, rpk1, n0Val, n0Type, n0vk0, n0vk1, n0Salt, n0IsSmart])
+  n0h0 == h[0]
+  n0h1 == h[1]
 
-  // check new note
-  h = sha256([nOwner0, nOwner1, nVal, nType, nVk0, nVk1, nSalt])
-  nh0 == h[0]
-  nh1 == h[1]
-
-  // check change note
-  h = sha256([changeOwner0, changeOwner1, changeVal, changeType, changeVk0, changeVk1, changeSalt])
-  changeH0 == h[0]
-  changeH1 == h[1]
+  // check n1
+  h = sha256([n1rpk0, n1rpk1, n1Val, n1Type, n1vk0, n1vk1, n1Salt, n1IsSmart])
+  n1h0 == h[0]
+  n1h1 == h[1]
 
   return 1

@@ -1,6 +1,0 @@
-import "./verifyOwnership.code" as verifyOwnership
-
-def main() -> (field):
-  field r = verifyOwnership(252794690058467479008564498262093943425, 248304133474667121178108093811581440926387306067)
-  r == 1
-  return 1

@@ -1,3 +1,0 @@
-// convert boolean to field
-def main(bool x) -> (field):
-	return if x then 1 else 0 fi

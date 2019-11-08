@@ -1,25 +1,26 @@
-import "../utils/pack/unpack160.code" as unpack160
-import "../utils/pack/nonStrictUnpack128.code" as nonStrictUnpack128
 import "utils/pack/pack128.code" as pack128
 import "utils/pack/unpack128.code" as unpack128
-import "utils/pack/nonStrictUnpack256.code" as unpack256
 import "hashes/sha256/1024bitPadded.code" as sha256
 
-def main(field[7] preimage) -> (field[2]):
-    field[96] owner0 = [0; 96]
-    owner1 = unpack160(preimage[1])
-    owner0s = unpack128(preimage[0])
-    owner1s = nonStrictUnpack128(preimage[1])
-    value = unpack256(preimage[2])
-    type = unpack128(preimage[3])
-    viewKey0 = unpack128(preimage[4])
-    viewKey1 = unpack128(preimage[5])
-    salt = unpack128(preimage[6])
+// A function that takes an array of 8 field elements as inputs, unpacks each of them to 128
+// bits (big endian), concatenates them and applies sha256.
+// It then returns an array of  two field elements, each representing 128 bits of the result.
 
-    field[256] lhs1 = if preimage[0] == 0 then [...owner0, ...owner1] else [...owner0s, ...owner1s] fi
-    field[256] lhs2 = value
-    field[256] rhs1 = [...type, ...viewKey0]
-    field[256] rhs2 = [...viewKey1, ...salt]
+def main(field[8] preimage) -> (field[2]):
+
+    a = unpack128(preimage[0])
+    b = unpack128(preimage[1])
+    c = unpack128(preimage[2])
+    d = unpack128(preimage[3])
+    e = unpack128(preimage[4])
+    f = unpack128(preimage[5])
+    g = unpack128(preimage[6])
+    h = unpack128(preimage[7])
+
+    field[256] lhs1 = [...a, ...b]
+    field[256] lhs2 = [...c, ...d]
+    field[256] rhs1 = [...e, ...f]
+    field[256] rhs2 = [...g, ...h]
 
     field[256] r = sha256(lhs1, lhs2, rhs1, rhs2)
 

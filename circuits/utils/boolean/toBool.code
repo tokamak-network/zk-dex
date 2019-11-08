@@ -1,3 +1,0 @@
-// convert field to boolean
-def main(field x) -> (bool):
-	return x > 0
