@@ -6,9 +6,9 @@
     </div>
     <div class="table-container">
       <standard-table
-        :type="'orderHistory'"
+        :type="'tradeHistory'"
         :clickable=true
-        :datas="$store.getters.orderHistory"
+        :datas="$store.getters.tradeHistory"
       />
         <!-- :datas="datas" -->
     </div>

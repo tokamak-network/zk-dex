@@ -147,7 +147,7 @@ export default {
 };
 
 const columns = {
-  orderHistory: [
+  tradeHistory: [
     {
       title: 'Price (DAI)',
       data: 'price',
