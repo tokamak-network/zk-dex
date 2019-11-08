@@ -1,5 +1,6 @@
 const LocalStorage = require('node-localstorage').LocalStorage;
-localStorage = new LocalStorage('./localstorage');
+const path = `${__dirname}/localstorage`;
+localStorage = new LocalStorage(path);
 
 function getAccounts (key) {
   return localStorage.getItem(`${key}accounts`);
