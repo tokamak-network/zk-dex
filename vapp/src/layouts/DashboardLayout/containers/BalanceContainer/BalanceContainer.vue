@@ -4,15 +4,22 @@
       <img src="../../../../assets/icons/components/balance.png" class="balance" />
       <h3>Total Balance</h3>
       <dropdown-account-selector
+        v-if="$route.path === '/notes/transfer'"
         v-on:accountSelected="accountSelected"
       />
     </div>
     <div class="table-container">
-      <!-- TODO: use balance by account, not total balance. -->
       <standard-table
+        v-if="$route.path === '/notes/transfer'"
         :type="'balance'"
         :clickable=false
-        :datas="$store.state.note.balance"
+        :datas="$store.getters.balanceFromAccount(account)"
+      />
+      <standard-table
+        v-else
+        :type="'balance'"
+        :clickable=false
+        :datas="$store.getters.balance"
       />
     </div>
   </div>
@@ -27,8 +34,15 @@ export default {
     StandardTable,
     DropdownAccountSelector,
   },
+  data() {
+    return {
+      account: '',
+    };
+  },
   methods: {
-    accountSelected (account) {},
+    accountSelected (account) {
+      this.account = account;
+    },
   },
 };
 </script>

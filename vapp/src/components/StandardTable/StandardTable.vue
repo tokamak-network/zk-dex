@@ -252,24 +252,29 @@ const columns = {
     },
     {
       title: 'Total Notes',
-      data: 'totalNoteAmount',
+      data: 'noteAmount',
       options: [],
     },
     {
       title: 'Available Balance',
-      data: 'availableBalance',
+      data: 'totalBalance',
       options: [],
     },
-    {
-      title: 'Reserved',
-      data: 'reserved',
-      options: [],
-    },
-    {
-      title: 'Total',
-      data: 'total',
-      options: [],
-    },
+    // {
+    //   title: 'Available Balance',
+    //   data: 'availableBalance',
+    //   options: [],
+    // },
+    // {
+    //   title: 'Reserved',
+    //   data: 'reserved',
+    //   options: [],
+    // },
+    // {
+    //   title: 'Total',
+    //   data: 'total',
+    //   options: [],
+    // },
   ],
   noteTransferHistory: [
     {
