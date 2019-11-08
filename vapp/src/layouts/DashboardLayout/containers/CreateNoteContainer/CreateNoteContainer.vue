@@ -43,7 +43,7 @@ import DropdownTokenSelector from '../../../../components/DropdownTokenSelector'
 
 import { mapState } from 'vuex';
 import { createNote } from '../../../../helpers/note';
-import api from '../../../../api/index'; // getNotes, addNote, generateProof
+import api from '../../../../api/index';
 import Web3Utils from 'web3-utils';
 
 export default {

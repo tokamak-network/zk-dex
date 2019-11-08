@@ -74,13 +74,13 @@ export default {
       this.noteValue = Web3Utils.toBN(note.value);
     });
   },
+  beforeDestroy () {
+    this.$bus.$off('noteSelected');
+  },
   computed: mapState({
     dexContract: state => state.app.dexContract,
     metamaskAccount: state => state.app.metamaskAccount,
   }),
-  beforeDestroy () {
-    this.$bus.$off('noteSelected');
-  },
   methods: {
     async transferNote () {
       // NOTE: `to` address must be metamask account address.
