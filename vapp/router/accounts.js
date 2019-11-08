@@ -1,9 +1,7 @@
 const express = require('express');
 const asyncWrap = require('../lib/asyncWrap');
 const localStorage = require('../localstorage');
-// getAccounts,
-//   addAccount,
-//   deleteAccount,
+
 const {
   createAccount,
   unlockAccount,

@@ -1,14 +1,6 @@
 const express = require('express');
 const asyncWrap = require('../lib/asyncWrap');
 const localStorage = require('../localstorage');
-const Web3Utils = require('web3-utils');
-
-// getNoteByNoteHash,
-//   getNotes,
-//   getTransferNotes,
-//   addNote,
-//   addTransferNote,
-//   updateNoteState,
 const router = express.Router();
 
 router.get('/:account', asyncWrap(
