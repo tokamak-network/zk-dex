@@ -1,0 +1,93 @@
+.header-container {
+  width: 100%;
+  height: 64px;
+  background-color: rgba(42, 44, 60, 1.000);
+}
+
+.header {
+  width: 100%;
+  height: 100%;
+  display: flex;  
+
+  img {
+    margin-right: 24px;
+  }
+
+  p {
+    margin: auto;
+    font-family: DINPro;
+    font-size: 24px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.33;
+    letter-spacing: -0.34px;
+    color: #f7f8f9;
+  }
+}
+
+.logo {
+  margin-left: 80px;
+  margin-right: 180px;
+  margin-top: auto;
+  margin-bottom: auto;
+  display: flex;
+}
+
+.header-button {
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-right: 16px;
+}
+
+.selected {
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 5px;
+  border-width: 0px;
+  border-radius: 20px;
+  box-shadow: 0 3px 8px 0 rgba(7, 7, 15, 0.3);
+  background-color: rgba(58, 65, 117, 1.000);
+  font-family: DINPro;
+  font-size: 18px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.78;
+  letter-spacing: -0.34px;
+  text-align: center;
+  color: #f7f8f9;
+}
+
+.unselected {
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 5px;
+  border-width: 0px;
+  background-color: rgba(42, 44, 60, 1.000);
+  font-family: DINPro;
+  font-size: 18px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.78;
+  letter-spacing: -0.34px;
+  text-align: center;
+  color: #b7c2d5;
+}
+
+.selected:hover {
+  cursor: pointer;
+}
+
+.unselected:hover {
+  cursor: pointer;
+}
+
+@media (min-width: 1440px) {
+  .header {
+    width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

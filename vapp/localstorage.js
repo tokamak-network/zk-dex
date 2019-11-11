@@ -11,9 +11,10 @@ const {
 const { marshal } = require('../scripts/lib/util');
 const { Note } = require('../scripts/lib/Note');
 
-localStorage = new LocalStorage('./localstorage');
+const path = `${__dirname}/localstorage`;
+localStorage = new LocalStorage(path);
 if (typeof localStorage === 'undefined' || localStorage === null) {
-  global.localStorage = new LocalStorage('./scratch');
+  global.localStorage = new LocalStorage(path);
 }
 
 

@@ -26,12 +26,12 @@ async function getNoteByNoteHash (account, hash) {
 
 async function getNotes (account) {
   const res = await instance.get(`/notes/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getTransferNotes (account) {
   const res = await instance.get(`/notes/transfer/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getOrdersByUser (account) {
@@ -39,7 +39,7 @@ async function getOrdersByUser (account) {
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -57,7 +57,7 @@ async function getOrders () {
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -106,8 +106,8 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount (userKey, passphrase) {
-  return instance.post(`/accounts/${userKey}`, {
+function createAccount (passphrase) {
+  return instance.post(`/accounts/create`, {
     passphrase,
   });
 }
@@ -164,8 +164,8 @@ async function updateOrderTaker (orderId, orderTaker) {
   return res.data.orders;
 }
 
-function deleteAccount (userKey, address) {
-  return instance.delete(`/accounts/${userKey}`, {
+function deleteAccount (key, address) {
+  return instance.delete(`/accounts/${key}`, {
     data: {
       address,
     },
@@ -173,7 +173,7 @@ function deleteAccount (userKey, address) {
   return res.data.accounts;
 }
 
-export {
+const api = {
   getViewingKey,
   getAccounts,
   getNoteByNoteHash,
@@ -198,3 +198,5 @@ export {
   updateOrderTaker,
   deleteAccount,
 };
+
+export default api;

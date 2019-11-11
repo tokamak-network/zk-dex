@@ -1,0 +1,27 @@
+.account-export-layout > :last-child {
+  margin-top: 30px;
+}
+
+.account-info-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  p {
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.5;
+    letter-spacing: -0.32px;
+    color: #6d93ff;
+  }
+}
+
+.account-info-container > :nth-child(2) {
+  color: #6d93ff;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+

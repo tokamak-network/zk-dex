@@ -1,0 +1,32 @@
+.container-header {
+  img {
+    margin-right: 10px;
+    width: 24px;
+    height: 24px;
+  }
+
+  :last-child {
+    margin-left: auto;
+    margin-right: 16px;
+  }
+}
+
+.input-text-container {
+  margin-top: 30px;
+  margin-left: 22px;
+  margin-right: 22px;
+  
+  button {
+    display: block;
+    margin-top: 26px;
+    margin-bottom: 30px;
+    margin-left: auto;
+  }
+}
+
+.trade-container {
+  width: 100%;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  background: rgba(31, 31, 42, 1.000);
+}

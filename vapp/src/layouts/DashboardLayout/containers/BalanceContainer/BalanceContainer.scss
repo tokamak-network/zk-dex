@@ -1,0 +1,14 @@
+.container-header {
+  background-color: rgba(2, 143, 180, 1.000);
+
+  .balance {
+    margin-right: 10px;
+    width: 18.2px;
+    height: 16.9px;
+  }
+
+  :nth-child(3) {
+    margin-left: auto;
+    margin-right: 24px;
+  }
+}

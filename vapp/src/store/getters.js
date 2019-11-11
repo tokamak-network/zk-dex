@@ -1,61 +1,92 @@
+import Web3Utils from 'web3-utils';
+
 const getters = {
-  isListening: state => state.web3.isListening,
-  numberOfNotesInAccount: state => (account) => {
-    let count = 0;
-    if (state.notes !== null) {
-      for (let i = 0; i < state.notes.length; i++) {
-        if (state.notes[i].owner === account.address) {
-          count++;
+  ongoingOrders: (state) => {
+    const key = state.app.metamaskAccount;
+    return state.order.orders.filter(order => (order.orderMaker === key || order.orderTaker === key) && order.state < 2);
+  },
+  orderBook: state => state.order.orders.filter(order => order.state === '0'),
+  orderHistory: (state) => {
+    const key = state.app.metamaskAccount;
+    return state.order.orders.filter(order => (order.orderMaker === key || order.orderTaker === key) && order.state === '2');
+  },
+  tradeHistory: state => state.order.orders.filter(order => order.state === '2'),
+  balance: (state) => {
+    let etherNoteAmount = 0;
+    let daiNoteAmount = 0;
+    let etherTotalBalance = Web3Utils.toBN('0x0');
+    let daiTotalBalance = Web3Utils.toBN('0x0');
+
+    state.note.notes.forEach((note) => {
+      if (note.state === '0x1') {
+        const token = Web3Utils.toHex(Web3Utils.toBN(note.token));
+        switch (token) {
+        case '0x0':
+          etherNoteAmount++;
+          etherTotalBalance = etherTotalBalance.add(Web3Utils.toBN(note.value));
+          break;
+
+        case '0x1':
+          daiNoteAmount++;
+          daiTotalBalance = daiTotalBalance.add(Web3Utils.toBN(note.value));
+          break;
         }
       }
-    }
-    return count;
+    });
+
+    const etherNotes = {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      noteAmount: etherNoteAmount,
+      totalBalance: Web3Utils.toHex(etherTotalBalance),
+    };
+    const daiNotes = {
+      name: 'Dai',
+      symbol: 'DAI',
+      noteAmount: daiNoteAmount,
+      totalBalance: Web3Utils.toHex(daiTotalBalance),
+    };
+
+    return [etherNotes, daiNotes];
   },
-  orderList: (state) => {
-    const list = {};
-    if (state.orders !== null && typeof state.orders !== 'undefined') {
-      state.orders.forEach((o) => {
-        // only valid order
-        if (o.state === '0x0') {
-          list[o.price] = (list[o.price] || 0) + 1;
+  balanceFromAccount: state => (account) => {
+    let etherNoteAmount = 0;
+    let daiNoteAmount = 0;
+    let etherTotalBalance = Web3Utils.toBN('0x0');
+    let daiTotalBalance = Web3Utils.toBN('0x0');
+
+    state.note.notes.forEach((note) => {
+      const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(note.owner)), 40);
+      if (note.state === '0x1' && account.address === noteOwner) {
+        const token = Web3Utils.toHex(Web3Utils.toBN(note.token));
+        switch (token) {
+        case '0x0':
+          etherNoteAmount++;
+          etherTotalBalance = etherTotalBalance.add(Web3Utils.toBN(note.value));
+          break;
+
+        case '0x1':
+          daiNoteAmount++;
+          daiTotalBalance = daiTotalBalance.add(Web3Utils.toBN(note.value));
+          break;
         }
-      });
-    }
-    return list;
-  },
-  smartNotes: (state) => {
-    if (state.notes !== null && typeof state.notes !== 'undefined') {
-      return state.notes.filter(note => note.isSmart === '0x1');
-    }
-    return [];
-  },
-  ongoingOrderHistory: (state) => {
-    if (state.orderHistory !== null) {
-      return state.orderHistory.filter(order => parseInt(order.state) <= 1);
-    }
-    return [];
-  },
-  completedOrderHistory: (state) => {
-    if (state.orderHistory !== null) {
-      return state.orderHistory.filter(order => parseInt(order.state) > 1);
-    }
-    return [];
-  },
-  notesFilteredByOrderType: (state) => {
-    if (state.doYouWantToBuyOrSell === 'buy') {
-      if (state.doYouWantToMakeOrTake === 'make') {
-        return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
-      } else if (state.doYouWantToMakeOrTake === 'take') {
-        return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
       }
-    } else if (state.doYouWantToBuyOrSell === 'sell') {
-      if (state.doYouWantToMakeOrTake === 'make') {
-        return state.notes.filter(note => note.token === '0x0' && note.state === '0x1');
-      } else if (state.doYouWantToMakeOrTake === 'take') {
-        return state.notes.filter(note => note.token === '0x1' && note.state === '0x1');
-      }
-    }
-    return [];
+    });
+
+    const etherNotes = {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      noteAmount: etherNoteAmount,
+      totalBalance: Web3Utils.toHex(etherTotalBalance),
+    };
+    const daiNotes = {
+      name: 'Dai',
+      symbol: 'DAI',
+      noteAmount: daiNoteAmount,
+      totalBalance: Web3Utils.toHex(daiTotalBalance),
+    };
+
+    return [etherNotes, daiNotes];
   },
 };
 
