@@ -1,0 +1,99 @@
+@media (min-width: 414px) {
+  .exchange {
+    width: 100%;
+    padding-top: 24px;
+  }
+
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+  }
+  
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+    margin-bottom: 26px;
+  }
+
+  .wide {
+    width: 300px;
+    flex-grow: 1;
+  }
+
+  .wide > :last-child {
+    margin-top: 24px;
+  }
+  
+  .short {
+    width: 100px;
+    flex-grow: 1;
+    margin-left: 14px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .exchange {
+    width: 100%;
+    padding-top: 34px;
+  }
+
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+  }
+  
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+    margin-bottom: 26px;
+  }
+
+  .wide {
+    flex-grow: 1;
+    width: 700px;
+  }
+
+  .wide > :last-child {
+    margin-top: 24px;
+  }
+  
+  .short {
+    width: 304px;
+    flex-grow: 1;
+    margin-left: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .exchange {
+    width: 1440px;
+    padding-top: 54px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+  }
+  
+  .exchange > :nth-child(4) {
+    margin-top: 24px;
+    margin-bottom: 26px;
+  }
+
+  .wide {
+    flex-grow: 1;
+    width: 940px;
+  }
+
+  .wide > :last-child {
+    margin-top: 24px;
+  }
+
+  .short {
+    width: 470px;
+    flex-grow: 1;
+    margin-left: 30px;
+  }
+}
+
+.group {
+  display: flex;
+  padding-top: 24px;
+}

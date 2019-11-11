@@ -4,11 +4,14 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 
-import Buefy from 'buefy';
+import VueApexCharts from 'vue-apexcharts';
 
 import * as filters from './filters';
 
-Vue.use(Buefy);
+// Global event bus
+Vue.prototype.$bus = new Vue();
+
+Vue.component('apexchart', VueApexCharts);
 
 // register global utility filters
 Object.keys(filters).forEach((key) => {

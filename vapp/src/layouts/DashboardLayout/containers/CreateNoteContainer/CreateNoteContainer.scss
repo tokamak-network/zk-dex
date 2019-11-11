@@ -1,0 +1,28 @@
+.container-header {
+  img {
+    margin-right: 10px;
+  }
+
+  .note {
+    margin-right: 10px; width: 18px; height: 18px;
+  }
+
+  :nth-child(3) {
+    margin-left: auto;
+    margin-right: 24px;
+  }
+}
+
+.create-note-container {
+  margin: 30px;
+}
+
+button {
+  display: block;
+  margin-left: auto;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  margin-right: 24px;
+  padding-left: 40px;
+  padding-right: 40px;
+}

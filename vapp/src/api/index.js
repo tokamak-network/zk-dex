@@ -21,12 +21,12 @@ async function getAccounts (key) {
 
 async function getNotes (account) {
   const res = await instance.get(`/notes/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getTransferNotes (account) {
   const res = await instance.get(`/notes/transfer/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getOrdersByUser (account) {
@@ -34,7 +34,7 @@ async function getOrdersByUser (account) {
   if (res.data === null) {
     return [];
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -52,15 +52,16 @@ async function getOrders () {
   if (res.data === null) {
     return [];
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
 // post
-function addAccount (userKey, account) {
-  return instance.post(`/accounts/import/${userKey}`, {
+async function addAccount (key, account) {
+  const res = await instance.post(`/accounts/${key}`, {
     account,
   });
+  return res.data.account;
 }
 
 function addNote (account, note) {
@@ -96,8 +97,8 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount (userKey, passphrase) {
-  return instance.post(`/accounts/${userKey}`, {
+function createAccount (passphrase) {
+  return instance.post(`/accounts/create`, {
     passphrase,
   });
 }
@@ -133,15 +134,15 @@ function updateOrder (order) {
   });
 }
 
-function deleteAccount (userKey, address) {
-  return instance.delete(`/accounts/${userKey}`, {
+function deleteAccount (key, address) {
+  return instance.delete(`/accounts/${key}`, {
     data: {
       address,
     },
   });
 }
 
-export {
+const api = {
   getViewingKey,
   getAccounts,
   getNotes,
@@ -163,3 +164,5 @@ export {
   updateOrder,
   deleteAccount,
 };
+
+export default api;

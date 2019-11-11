@@ -1,0 +1,95 @@
+.left-selected-radio-button {
+  padding-left: 20px;
+  padding-right: 16px;
+  height: 36px;
+  border-radius: 100px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border: solid 1px #f7f8f9;
+  background-color: rgba(55, 84, 213, 1.000);
+  font-family: DINPro;
+  font-size: 16px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.56;
+  letter-spacing: -0.3px;
+  text-align: center;
+  color: #f7f8f9;
+}
+
+.right-unselected-radio-button {
+  padding-left: 16px;
+  padding-right: 20px;
+  height: 36px;
+  border-radius: 100px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  box-shadow: 2px 4px 8px 0 rgba(7, 7, 15, 0.5);
+  background-color: #ffffff;
+  font-family: DINPro;
+  font-size: 16px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.56;
+  letter-spacing: -0.3px;
+  text-align: center;
+  color: rgba(55, 83, 214, 1.000);
+}
+
+.left-unselected-radio-button {
+  padding-left: 20px;
+  padding-right: 16px;
+  height: 36px;
+  border-radius: 100px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: 2px 4px 8px 0 rgba(7, 7, 15, 0.5);
+  background-color: #ffffff;
+  font-family: DINPro;
+  font-size: 16px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.56;
+  letter-spacing: -0.3px;
+  text-align: center;
+  color: rgba(55, 83, 214, 1.000);
+}
+
+.right-selected-radio-button {
+  padding-left: 16px;
+  padding-right: 20px;
+  height: 36px;
+  border-radius: 100px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border: solid 1px #f7f8f9;
+  background-color: rgba(55, 84, 213, 1.000);
+  font-family: DINPro;
+  font-size: 16px;
+  font-weight: bold;
+  font-style: normal;
+  font-stretch: normal;
+  line-height: 1.56;
+  letter-spacing: -0.3px;
+  text-align: center;
+  color: #f7f8f9;
+}
+
+.left-selected-radio-button:hover {
+  cursor: pointer;
+}
+
+.left-unselected-radio-button:hover {
+  cursor: pointer;
+}
+
+.right-selected-radio-button:hover {
+  cursor: pointer;
+}
+
+.right-unselected-radio-button:hover {
+  cursor: pointer;
+}

@@ -32,12 +32,10 @@ router.get('/:userKey', asyncWrap(
   }
 ));
 
-router.post('/:userKey', asyncWrap(
+router.post('/create', asyncWrap(
   async function (req, res) {
-    const userKey = req.params.userKey;
     const passphrase = req.body.passphrase;
     const account = createAccount(passphrase);
-    addAccount(userKey, account);
     return res.status(200).json({
       address: marshal(account.address),
     });
@@ -70,12 +68,14 @@ router.post('/unlock/:userKey', asyncWrap(
   }
 ));
 
-router.post('/import/:userKey', asyncWrap(
+router.post('/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
     const account = req.body.account;
     addAccount(userKey, account);
-    return res.status(200).json({});
+    return res.status(200).json({
+      account,
+    });
   }
 ));
 
