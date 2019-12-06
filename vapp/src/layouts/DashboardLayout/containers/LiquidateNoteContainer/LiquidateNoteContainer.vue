@@ -65,7 +65,7 @@ export default {
     });
   },
   beforeDestroy () {
-    this.$bus.$off('noteSelected');
+    this.$bus.$off('noteSelected', () => {});
   },
   methods: {
     async liquidateNote () {

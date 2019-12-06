@@ -113,8 +113,7 @@ export default {
     });
   },
   beforeDestroy () {
-    this.$bus.$off('noteSelected');
-    this.$bus.$off('orderSelected');
+    this.$bus.$off(['noteSelected', 'orderSelected'], () => {});
   },
   methods: {
     radioButtonClicked (radioButton) {

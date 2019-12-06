@@ -36,7 +36,7 @@ export default {
     });
   },
   beforeDestroy () {
-    this.$bus.$off('tableDataSelected');
+    this.$bus.$off('tableDataSelected', () => {});
   },
 };
 </script>

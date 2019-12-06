@@ -75,7 +75,7 @@ export default {
     });
   },
   beforeDestroy () {
-    this.$bus.$off('noteSelected');
+    this.$bus.$off('noteSelected', () => {});
   },
   computed: mapState({
     dexContract: state => state.app.dexContract,
