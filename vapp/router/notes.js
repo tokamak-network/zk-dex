@@ -38,28 +38,32 @@ router.get('/:userKey/history', asyncWrap(
 
 router.post('/', asyncWrap(
   async function (req, res) {
-    const userKey = req.body.userKey;
+    const account = req.body.account;
     const note = req.body.note;
-    addNote(userKey, note);
-    return res.status(200).json({});
+    addNote(account, note);
+    return res.status(200).json({
+      note,
+    });
   }
 ));
 
 router.post('/transfer/:userKey', asyncWrap(
   async function (req, res) {
-    const userKey = req.params.userKey;
+    const account = req.params.account;
     const note = req.body.note;
-    addTransferNote(userKey, note);
+    addTransferNote(account, note);
     return res.status(200).json({});
   }
 ));
 
 router.put('/', asyncWrap(
   async function (req, res) {
-    const userKey = req.body.userKey;
+    const account = req.body.account;
     const note = req.body.note;
-    updateNote(userKey, note);
-    return res.status(200).json({});
+    updateNote(account, note);
+    return res.status(200).json({
+      note,
+    });
   }
 ));
 

@@ -107,7 +107,7 @@ async function setViewingKey (key, vk) {
 }
 
 function createAccount (passphrase) {
-  return instance.post(`/accounts/create`, {
+  return instance.post('/accounts/create', {
     passphrase,
   });
 }
@@ -119,8 +119,11 @@ function unlockAccount (passphrase, keystore) {
   });
 }
 
-function generateProof (params) {
-  return instance.post('/circuits', params);
+async function generateProof (circuit, params) {
+  return await instance.post('/circuits', {
+    circuit,
+    params,
+  });
 }
 
 // put
@@ -170,7 +173,6 @@ function deleteAccount (key, address) {
       address,
     },
   });
-  return res.data.accounts;
 }
 
 const api = {

@@ -130,11 +130,9 @@ export default {
     },
     async makeOrder () {
       // generate proof.
-      const params = {
-        circuit: 'makeOrder',
-        params: [this.makerNote],
-      };
-      const proof = (await api.generateProof(params)).data.proof;
+      const circuit = 'makeOrder';
+      const params = [this.makerNote];
+      const proof = (await api.generateProof(circuit, params)).data.proof;
 
       // validate proof and make order.
       const tokenType = parseInt(this.makerNote.token);
@@ -156,9 +154,11 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[0].args.state);
+        this.makerNote.hash = noteHash;
+        this.makerNote.state = noteState;
         this.$store.dispatch(
           'updateNote',
-          (await api.updateNoteState(this.metamaskAccount, noteHash, noteState))
+          (await api.updateNote(this.metamaskAccount, this.makerNote))
         );
       } catch (err) {
         console.log(err); // TODO: error handling.
@@ -187,11 +187,9 @@ export default {
       const stakeNote = createNote(makerNoteHash, takerNote.value, this.order.targetToken, true);
 
       // generate proof.
-      const params = {
-        circuit: 'takeOrder',
-        params: [makerNoteHash, takerNote, stakeNote],
-      };
-      const proof = (await api.generateProof(params)).data.proof;
+      const circuit = 'takeOrder';
+      const params = [makerNoteHash, takerNote, stakeNote];
+      const proof = (await api.generateProof(circuit, params)).data.proof;
 
       // validate proof and take order.
       const tx = await this.dexContract.takeOrder(
@@ -209,10 +207,11 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-
+        this.takerNote.hash = noteHash;
+        this.takerNote.state = noteState;
         this.$store.dispatch(
           'updateNote',
-          (await api.updateNoteState(this.metamaskAccount, noteHash, noteState))
+          (await api.updateNote(this.metamaskAccount, this.takerNote))
         );
       } catch (err) {
         console.log(err); // TODO: error handling.
@@ -224,7 +223,6 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[1].args.state);
-
         stakeNote.hash = noteHash;
         stakeNote.state = noteState;
         await api.addNote(this.order.orderMaker, stakeNote);
@@ -239,11 +237,12 @@ export default {
       });
       this.order.orderTaker = this.metamaskAccount;
       this.order.takerNoteValue = this.takerNote.value;
+      this.order.takerNoteObject = takerNote;
       this.order.stakeNoteObject = stakeNote;
 
       this.$store.dispatch(
         'updateOrder',
-        (await api.updateOrder(orderId, this.order))
+        (await api.updateOrder(this.order))
       );
       this.clearInputText();
     },
