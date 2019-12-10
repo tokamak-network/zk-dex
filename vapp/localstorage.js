@@ -156,8 +156,7 @@ function addNote (_userKey, _note) {
   const noteHash = note.hash();
 
   if (notes.findIndex(n => Note.hashFromJSON(n) === noteHash) < 0) {
-    notes.push(note);
-    // console.warn('Note added', noteHash);
+    notes.push(_note);
     _setNotes(userKey, notes);
     setNoteByHash(userKey, note);
     return true;
@@ -186,7 +185,7 @@ module.exports.setNoteByHash = setNoteByHash;
 function updateNote (_userKey, note) {
   const userKey = marshal(_userKey);
   const notes = getNotes(userKey);
-  const i = notes.findIndex(n => n.hash() === note.hash());
+  const i = notes.findIndex(n => n.hash === note.hash);
 
   if (i >= 0) {
     notes.splice(i, 1, note);

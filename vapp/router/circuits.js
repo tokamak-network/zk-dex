@@ -36,13 +36,10 @@ console.log('process.env.USE_DUMMY', process.env.USE_DUMMY);
 
 const useDummy = process.env.USE_DUMMY || false;
 
-router.post('/:circuit', asyncWrap(
+router.post('/', asyncWrap(
   async function (req, res) {
-    const circuit = req.params.circuit;
+    const circuit = req.body.circuit;
     const params = req.body.params;
-
-    // console.log('params', JSON.stringify(params));
-
     const generator = useDummy
       ? dummyGenerators[circuit]
       : generators[circuit];

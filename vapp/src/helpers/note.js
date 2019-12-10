@@ -1,4 +1,4 @@
-import { Note, constants } from '../../../scripts/lib/Note';
+import { Note } from '../../../scripts/lib/Note';
 import Web3Utils from 'web3-utils';
 
 const salt = Web3Utils.randomHex(8);

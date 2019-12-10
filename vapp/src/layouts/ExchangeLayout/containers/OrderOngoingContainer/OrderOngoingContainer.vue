@@ -36,20 +36,26 @@ export default {
   methods: {
     async settleOrder (order) {
       const makerNote = order.makerNoteObject;
+      const takerNote = order.takerNoteObject;
       const stakeNote = order.stakeNoteObject;
       const { rewardNote, paymentNote, changeNote } = this.makeNotes(order);
-      const params = {
-        circuit: 'settleOrder',
-        params: [
-          makerNote,
-          stakeNote,
-          rewardNote,
-          paymentNote,
-          changeNote,
-          order.price,
-        ],
-      };
-      const proof = (await api.generateProof(params)).data.proof;
+      
+      const circuit = 'settleOrder';
+      const params = [
+        makerNote,
+        stakeNote,
+        rewardNote,
+        paymentNote,
+        changeNote,
+        order.price,
+      ];
+      let proof;
+      try {
+        proof = (await api.generateProof(circuit, params)).data.proof;
+      } catch (err) {
+        console.log(err);
+        return;
+      }
 
       const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
       const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
@@ -70,7 +76,6 @@ export default {
           64
         );
         rewardNote.state = Web3Utils.toHex(tx.logs[0].args.state);
-        // Note: only order maker can settle order.
         await api.addNote(order.orderTaker, rewardNote);
       } catch (err) {}
 
@@ -80,7 +85,7 @@ export default {
           64
         );
         paymentNote.state = Web3Utils.toHex(tx.logs[1].args.state);
-        this.$store.dispatch('addNote', (await api.addNote(order.orderMaker, paymentNote)));
+        await api.addNote(order.orderMaker, paymentNote);
       } catch (err) {}
 
       try {
@@ -90,9 +95,9 @@ export default {
         );
         changeNote.state = Web3Utils.toHex(tx.logs[2].args.state);
         if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
-          this.$store.dispatch('addNote', (await api.addNote(order.orderMaker, changeNote)));
+          await api.addNote(order.orderMaker, changeNote);
         } else {
-          this.$store.dispatch('addNote', order.orderTaker, changeNote);
+          await api.addNote(order.orderTaker, changeNote);
         }
       } catch (err) {}
 
@@ -102,10 +107,9 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[3].args.state);
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNoteState(order.orderMaker, noteHash, noteState))
-        );
+        makerNote.hash = noteHash;
+        makerNote.state = noteState;
+        await api.updateNote(order.orderMaker, makerNote);
       } catch (err) {
         console.log(err); // TODO: error handling.
       }
@@ -116,10 +120,9 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[4].args.state);
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNoteState(order.orderTaker, noteHash, noteState))
-        );
+        takerNote.hash = noteHash;
+        takerNote.state = noteState;
+        await api.updateNote(order.orderTaker, takerNote);
       } catch (err) {
         console.log(err); // TODO: error handling.
       }
@@ -130,26 +133,35 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[5].args.state);
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNoteState(order.orderMaker, noteHash, noteState))
-        );
+        stakeNote.hash = noteHash;
+        stakeNote.state = noteState;
+        await api.updateNote(order.orderMaker, stakeNote);
       } catch (err) {
         console.log(err); // TODO: error handling.
       }
 
+      // TODO: a way that order data are stored should be fixed.
       try {
         const orderId = Web3Utils.toHex(tx.logs[6].args.orderId);
         order.state = (await this.dexContract.orders(orderId)).state;
         order.timestamp = new Date().getTime();
-
-        this.$store.dispatch(
-          'updateOrder',
-          (await api.updateOrder(orderId, order))
-        );
+        await api.updateOrder(order);
       } catch (err) {}
+
+      const accounts = await api.getAccounts(this.metamaskAccount);
+      if (accounts !== null) {
+        this.$store.dispatch('setAccounts', accounts);
+      }
+      const notes = await api.getNotes(this.metamaskAccount);
+      if (notes !== null) {
+        this.$store.dispatch('setNotes', notes);
+      }
+      const orders = await api.getOrders();
+      if (orders !== null) {
+        this.$store.dispatch('setOrders', orders);
+      }
     },
-    makeNotes (order, makerNote, takerNote, stakeNote) {
+    makeNotes (order) {
       const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
       const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
       const price = Web3Utils.toBN(order.price);

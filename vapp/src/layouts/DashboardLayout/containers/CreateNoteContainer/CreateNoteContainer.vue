@@ -57,6 +57,7 @@ export default {
   computed: mapState({
     daiContract: state => state.app.daiContract,
     dexContract: state => state.app.dexContract,
+    key: state => state.app.key,
     metamaskAccount: state => state.app.metamaskAccount,
   }),
   components: {
@@ -72,11 +73,9 @@ export default {
       const note = createNote(this.account, this.amount, this.token.type);
 
       // generate proof.
-      const params = {
-        circuit: 'mintNBurnNote',
-        params: [note],
-      };
-      const proof = (await api.generateProof(params)).data.proof;
+      const circuit = 'mintNBurnNote';
+      const params = [note];
+      const proof = (await api.generateProof(circuit, params)).data.proof;
 
       // validate proof and make note.
       let tx;
@@ -107,7 +106,7 @@ export default {
       note.state = Web3Utils.toHex(tx.logs[0].args.state);
 
       try {
-        this.$store.dispatch('addNote', (await api.addNote(this.metamaskAccount, note)));
+        this.$store.dispatch('addNote', (await api.addNote(this.key, note)));
       } catch (err) {
       } finally {
         this.account = '';

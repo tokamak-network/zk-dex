@@ -64,11 +64,12 @@ async function addAccount (key, account) {
   return res.data.account;
 }
 
-function addNote (account, note) {
-  return instance.post('/notes', {
+async function addNote (account, note) {
+  const res = await instance.post('/notes', {
     account,
     note,
   });
+  return res.data.note;
 }
 
 function addTransferNote (account, note) {
@@ -84,10 +85,11 @@ function addOrderByAccount (account, order) {
   });
 }
 
-function addOrder (order) {
-  return instance.post('/orders', {
+async function addOrder (order) {
+  const res = await instance.post('/orders', {
     order,
   });
+  return res.data.order;
 }
 
 async function setViewingKey (key, vk) {
@@ -110,16 +112,24 @@ function unlockAccount (passphrase, keystore) {
   });
 }
 
-function generateProof (params) {
-  return instance.post('/circuits', params);
+async function generateProof (circuit, params) {
+  return await instance.post('/circuits', {
+    circuit,
+    params,
+  });
 }
 
 // put
-function updateNote (account, note) {
-  return instance.put('/notes', {
+async function updateNote (account, note) {
+  const res = await instance.put('/notes', {
     account,
     note,
   });
+  return res.data.note;
+}
+
+async function updateNoteState (accoumt, noteHash, noteState) {
+  
 }
 
 function updateOrderByAccount (account, order) {
@@ -128,10 +138,11 @@ function updateOrderByAccount (account, order) {
   });
 }
 
-function updateOrder (order) {
-  return instance.put('/orders', {
+async function updateOrder (order) {
+  const res = await instance.put('/orders', {
     order,
   });
+  return res.data.order;
 }
 
 function deleteAccount (key, address) {

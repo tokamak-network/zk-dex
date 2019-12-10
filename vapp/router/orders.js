@@ -27,7 +27,9 @@ router.post('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
     addOrder(order);
-    return res.status(200).json({});
+    return res.status(200).json({
+      order,
+    });
   }
 ));
 
@@ -45,7 +47,9 @@ router.put('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
     updateOrder(order);
-    return res.status(200).json({});
+    return res.status(200).json({
+      order,
+    });
   }
 ));
 

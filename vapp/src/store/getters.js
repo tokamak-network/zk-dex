@@ -3,7 +3,7 @@ import Web3Utils from 'web3-utils';
 const getters = {
   ongoingOrders: (state) => {
     const key = state.app.metamaskAccount;
-    return state.order.orders.filter(order => (order.orderMaker === key || order.orderTaker === key) && order.state < 2);
+    return state.order.orders.filter(order => (order.orderMaker === key || order.orderTaker === key) && parseInt(order.state, 16) < 2);
   },
   orderBook: state => state.order.orders.filter(order => order.state === '0'),
   orderHistory: (state) => {
