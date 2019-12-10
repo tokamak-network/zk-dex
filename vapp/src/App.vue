@@ -106,7 +106,19 @@ export default {
 @import './scss/Global';
 @import '~@/scss/containers';
 
-#app {
-  background: rgba(31, 31, 42, 1.000);
+html, body {
+  height: 100%;
 }
+
+#app {
+  display: flex;
+  flex-direction: column;
+  background: rgba(31, 31, 42, 1.000);
+  min-height: 100%;
+}
+
+.views {
+  flex-grow: 1;
+}
+
 </style>
