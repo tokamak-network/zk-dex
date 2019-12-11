@@ -69,11 +69,9 @@ export default {
   },
   methods: {
     async liquidateNote () {
-      const params = {
-        circuit: 'mintNBurnNote',
-        params: [this.note],
-      };
-      const proof = (await api.generateProof(params)).data.proof;
+      const circuit = 'mintNBurnNote';
+      const params = [this.note];
+      const proof = (await api.generateProof(circuit, params)).data.proof;
 
       // TODO: this.account must be address type
       const tx = await this.dexContract.liquidate(this.account, ...proof, {
@@ -91,9 +89,11 @@ export default {
           64
         );
         const noteState = Web3Utils.toHex(tx.logs[0].args.state);
+        this.note.hash = noteHash;
+        this.note.state = noteState;
         this.$store.dispatch(
           'updateNote',
-          (await api.updateNoteState(this.metamaskAccount, noteHash, noteState))
+          (await api.updateNote(this.metamaskAccount, this.note))
         );
       } catch (err) {
         console.log(err); // TODO: error handling.
