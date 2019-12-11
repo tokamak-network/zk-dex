@@ -147,6 +147,11 @@ export default {
         }
       );
 
+      if (!tx.receipt.status) {
+        alert('revert transaction');
+        return;
+      }
+
       // 1. update note state
       try {
         const noteHash = Web3Utils.padLeft(
@@ -200,6 +205,11 @@ export default {
           from: this.metamaskAccount,
         }
       );
+
+      if (!tx.receipt.status) {
+        alert('revert transaction');
+        return;
+      }
 
       try {
         const noteHash = Web3Utils.padLeft(
