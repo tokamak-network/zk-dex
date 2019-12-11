@@ -59,7 +59,6 @@ router.post('/', asyncWrap(
       const input = Note.fromJSON(params[0]);
       const output1 = Note.fromJSON(params[1]);
       const output2 = Note.fromJSON(params[2]);
-
       const history = TransferHistory.getHistory(input.hash());
       if (!history) {
         (new TransferHistory(input, output1, output2)).setHistory();

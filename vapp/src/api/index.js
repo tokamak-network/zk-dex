@@ -29,9 +29,9 @@ async function getNotes (account) {
   return res.data.notes;
 }
 
-async function getTransferNotes (account) {
-  const res = await instance.get(`/notes/transfer/${account}`);
-  return res.data.notes;
+async function getNoteTransferHistories (account) {
+  const res = await instance.get(`/notes/transfer/histories/${account}`);
+  return res.data.noteTransferHistories;
 }
 
 async function getOrdersByUser (account) {
@@ -180,13 +180,14 @@ const api = {
   getAccounts,
   getNoteByNoteHash,
   getNotes,
-  getTransferNotes,
+  getNoteTransferHistories,
   getOrder,
   getOrdersByUser,
   getOrders,
   addAccount,
   unlockAccount,
   addNote,
+  // addNoteTransferHistory,
   addTransferNote,
   addOrderHistory,
   addOrder,

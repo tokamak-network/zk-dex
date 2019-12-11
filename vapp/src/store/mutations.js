@@ -236,5 +236,6 @@ const accountsInitialState = function () {
 const notesInitialState = function () {
   return {
     'notes': [],
+    'noteTransferHistories': [],
   };
 };
