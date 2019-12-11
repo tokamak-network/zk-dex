@@ -1,4 +1,5 @@
 const express = require('express');
+const Web3Utils = require('web3-utils');
 
 const asyncWrap = require('../lib/asyncWrap');
 
@@ -24,13 +25,13 @@ router.get('/:userKey', asyncWrap(
   }
 ));
 
-router.get('/:userKey/history', asyncWrap(
+router.get('/transfer/histories/:account', asyncWrap(
   async function (req, res) {
-    const userKey = req.params.userKey;
-    const histories = TransferHistory.getHistoriesByUser(userKey);
+    const account = req.params.account;
+    const noteTransferHistories = TransferHistory.getHistoriesByUser(account);
 
     return res.status(200).json({
-      histories,
+      noteTransferHistories,
     });
   }
 ));
@@ -46,11 +47,25 @@ router.post('/', asyncWrap(
   }
 ));
 
-router.post('/transfer/:userKey', asyncWrap(
+router.post('/transfer/histories', asyncWrap(
   async function (req, res) {
-    const account = req.params.account;
-    const note = req.body.note;
-    addTransferNote(account, note);
+    const notes = req.body.notes;
+
+    const originalNote = notes.originalNote;
+    const paymentNote = notes.paymentNote;
+    const changeNote = notes.changeNote;
+
+    const sender = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(originalNote.owner)), 40);
+
+    const noteTransferHistory = {
+      token: originalNote.token,
+      value: originalNote.value,
+      from: originalNote.owner,
+      to: paymentNote.owner,
+      change: changeNote.value,
+    };
+
+    new TransferHistory(originalNote, paymentNote, changeNote).addHistoryByUser(sender, noteTransferHistory);
     return res.status(200).json({});
   }
 ));

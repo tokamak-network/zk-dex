@@ -24,9 +24,9 @@ async function getNotes (account) {
   return res.data.notes;
 }
 
-async function getTransferNotes (account) {
-  const res = await instance.get(`/notes/transfer/${account}`);
-  return res.data.notes;
+async function getNoteTransferHistories (account) {
+  const res = await instance.get(`/notes/transfer/histories/${account}`);
+  return res.data.noteTransferHistories;
 }
 
 async function getOrdersByUser (account) {
@@ -70,6 +70,12 @@ async function addNote (account, note) {
     note,
   });
   return res.data.note;
+}
+
+function addNoteTransferHistory (notes) {
+  return instance.post('notes/transfer/histories', {
+    notes,
+  });
 }
 
 function addTransferNote (account, note) {
@@ -128,10 +134,6 @@ async function updateNote (account, note) {
   return res.data.note;
 }
 
-async function updateNoteState (accoumt, noteHash, noteState) {
-  
-}
-
 function updateOrderByAccount (account, order) {
   return instance.put(`/orders/${account}`, {
     order,
@@ -157,13 +159,14 @@ const api = {
   getViewingKey,
   getAccounts,
   getNotes,
-  getTransferNotes,
+  getNoteTransferHistories,
   getOrder,
   getOrdersByUser,
   getOrders,
   addAccount,
   unlockAccount,
   addNote,
+  addNoteTransferHistory,
   addTransferNote,
   addOrderByAccount,
   addOrder,

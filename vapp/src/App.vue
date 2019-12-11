@@ -86,7 +86,15 @@ export default {
       const accounts = await api.getAccounts(key);
       if (accounts !== null) {
         this.$store.dispatch('setAccounts', accounts);
+
+        let allHistories = [];
+        for (const account of accounts) {
+          const histories = await api.getNoteTransferHistories(account.address);
+          allHistories = allHistories.concat(histories);
+        }
+        this.$store.dispatch('setNoteTransferHistories', allHistories);
       }
+
       const notes = await api.getNotes(key);
       if (notes !== null) {
         this.$store.dispatch('setNotes', notes);

@@ -231,7 +231,6 @@ class TransferHistory {
 
   // NOTE: this would override previous another temporary history
   setHistory () {
-    // console.error('save~!');
     localStorage.setItem(this.getKey(), JSON.stringify(this));
   }
 
@@ -274,11 +273,11 @@ class TransferHistory {
     return JSON.parse(res);
   }
 
-  addHistoryByUser (userKey) {
+  addHistoryByUser (userKey, noteTransferHistory) {
     console.error('addHistoryByUser ~');
 
     const histories = TransferHistory.getHistoriesByUser(userKey);
-    histories.push(this);
+    histories.push(noteTransferHistory);
 
     localStorage.setItem(TransferHistory._keyHistoryByUser(userKey), JSON.stringify(histories));
   }

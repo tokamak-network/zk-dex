@@ -7,8 +7,7 @@
     <div class="table-container">
       <standard-table
         :type="'noteTransferHistory'"
-        :columns="columns"
-        :datas="$store.state.note.noteTransferHistory"
+        :datas="$store.state.note.noteTransferHistories"
       />
     </div>
   </div>

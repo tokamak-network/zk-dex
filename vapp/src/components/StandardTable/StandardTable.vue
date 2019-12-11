@@ -278,16 +278,6 @@ const columns = {
   ],
   noteTransferHistory: [
     {
-      title: 'Note Hash',
-      data: 'noteHash',
-      options: [],
-    },
-    {
-      title: 'Type',
-      data: 'type',
-      options: [],
-    },
-    {
       title: 'Token',
       data: 'token',
       options: [],
@@ -310,11 +300,6 @@ const columns = {
     {
       title: 'Change',
       data: 'change',
-      options: [],
-    },
-    {
-      title: 'Transaction',
-      data: 'transactionHash',
       options: [],
     },
   ],
