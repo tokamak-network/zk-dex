@@ -10,7 +10,7 @@
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
     </router-link>
 
-    <div class="menu-item-with-icon">
+    <!-- <div class="menu-item-with-icon">
       <div class="icon-container"
         :class="{ 'icon-selected-container': path === '/accounts/import' || path === '/accounts/export' || path === '/accounts/delete'}"
       >
@@ -35,7 +35,7 @@
     >
       <p>Delete</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
-    </router-link>
+    </router-link> -->
 
     <div class="menu-item-with-icon">
       <div class="icon-container"
@@ -57,14 +57,14 @@
       <p>Transfer</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
     </router-link>
-    <router-link to="/notes/combine" class="menu-item"
+    <!-- <router-link to="/notes/combine" class="menu-item"
       :class="{ selected: path === '/notes/combine'}"
     >
       <p>Combine</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
-    </router-link>
+    </router-link> -->
 
-    <div class="menu-item-with-icon">
+    <div class="menu-item-with-icon" style="padding-top: 24px;">
       <div class="icon-container"
         :class="{ 'icon-selected-container': path === '/notes/history' || path === '/orders/history'}"
       >
