@@ -80,6 +80,11 @@ export default {
         from: this.metamaskAccount,
       });
 
+      if (!tx.receipt.status) {
+        alert('revert transaction');
+        return;
+      }
+
       try {
         const noteHash = Web3Utils.padLeft(
           Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
