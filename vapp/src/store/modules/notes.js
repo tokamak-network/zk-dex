@@ -21,7 +21,7 @@ const mutations = {
   },
   SET_NOTE_TRANSFER_HISTORIES: (state, histories) => {
     state.noteTransferHistories = histories;
-  }
+  },
 };
 
 const actions = {
