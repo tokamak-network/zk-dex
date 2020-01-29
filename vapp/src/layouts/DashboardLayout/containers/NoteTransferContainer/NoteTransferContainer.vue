@@ -39,13 +39,22 @@
           />
         </template>
       </input-text>
+    <div
+      class="button-container"
+      @click="transferNote"
+    >
+      <standard-button
+        :text="'Transfer'"
+        :loading="loading"
+      />
     </div>
-    <button @click="transferNote">Transfer</button>
+    </div>
   </div>
 </template>
 
 <script>
 import InputText from '../../../../components/Inputs/InputText';
+import StandardButton from '../../../../components/StandardButton';
 
 import { Note } from '../../../../../../scripts/lib/Note';
 import { mapState } from 'vuex';
@@ -61,10 +70,12 @@ export default {
       noteValue: '',
       to: '',
       amount: '',
+      loading: false,
     };
   },
   components: {
     InputText,
+    StandardButton,
   },
   created () {
     this.$bus.$on('noteSelected', (note) => {
@@ -84,6 +95,9 @@ export default {
   }),
   methods: {
     async transferNote () {
+      if (this.loading === true) return;
+      this.loading = true;
+
       let notes;
       try {
         notes = this.makeNotes(this.note);
@@ -174,6 +188,7 @@ export default {
       }
 
       this.clear();
+      this.loading = false;
     },
     makeNotes (originalNote) {
       if (this.note.state !== '0x1') {
@@ -181,7 +196,7 @@ export default {
       }
       const type = this.note.token;
       const noteAmount = Web3Utils.toBN(this.note.value);
-      const wantToTransferAmount = Web3Utils.toBN(Web3Utils.toHex(this.amount))
+      const wantToTransferAmount = Web3Utils.toBN(Web3Utils.toHex(this.amount));
       if (noteAmount.cmp(wantToTransferAmount) < 0) {
         throw 'invalid amount';
       }
@@ -203,7 +218,7 @@ export default {
       );
       return { originalNote, paymentNote, changeNote };
     },
-    clear() {
+    clear () {
       this.note = null;
       this.from = '';
       this.noteHash = '';

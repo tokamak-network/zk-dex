@@ -9,6 +9,7 @@
         v-on:settleOrderRequested="settleOrder"
         :type="'ongoingOrder'"
         :datas="$store.getters.ongoingOrders"
+        :loading=loading
       />
     </div>
   </div>
@@ -26,6 +27,11 @@ import { Note } from '../../../../../../scripts/lib/Note';
 import { encode } from 'rlp';
 
 export default {
+  data () {
+    return {
+      loading: false,
+    };
+  },
   components: {
     StandardTable,
   },
@@ -35,11 +41,12 @@ export default {
   }),
   methods: {
     async settleOrder (order) {
+      this.loading = true;
       const makerNote = order.makerNoteObject;
       const takerNote = order.takerNoteObject;
       const stakeNote = order.stakeNoteObject;
       const { rewardNote, paymentNote, changeNote } = this.makeNotes(order);
-      
+
       const circuit = 'settleOrder';
       const params = [
         makerNote,
@@ -160,6 +167,7 @@ export default {
       if (orders !== null) {
         this.$store.dispatch('setOrders', orders);
       }
+      this.loading = false;
     },
     makeNotes (order) {
       const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);

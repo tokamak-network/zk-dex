@@ -26,17 +26,22 @@
         :value="noteValue"
         :isStaticValue="true"
       />
-      <button
+      <div
+        class="button-container"
         @click="liquidateNote"
       >
-        Liquidate
-      </button>
+        <standard-button
+          :text="'Liquidate'"
+          :loading="loading"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import InputText from '../../../../components/Inputs/InputText';
+import StandardButton from '../../../../components/StandardButton';
 
 import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
@@ -45,13 +50,15 @@ import api from '../../../../api/index';
 export default {
   components: {
     InputText,
+    StandardButton,
   },
   data () {
     return {
       account: '',
       noteHash: '',
       noteValue: '',
-    }
+      loading: false,
+    };
   },
   computed: mapState({
     dexContract: state => state.app.dexContract,
@@ -69,6 +76,9 @@ export default {
   },
   methods: {
     async liquidateNote () {
+      if (this.loading === true) return;
+      this.loading = true;
+
       const circuit = 'mintNBurnNote';
       const params = [this.note];
       const proof = (await api.generateProof(circuit, params)).data.proof;
@@ -99,6 +109,7 @@ export default {
         console.log(err); // TODO: error handling.
       } finally {
         this.clear();
+        this.loading = false;
       }
     },
     clear () {
@@ -108,7 +119,7 @@ export default {
       this.noteValue = '';
     },
   },
-}
+};
 </script>
 
 <style lang="scss" scoped>
