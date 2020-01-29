@@ -34,7 +34,7 @@ export default {
     StandardTable,
     DropdownAccountSelector,
   },
-  data() {
+  data () {
     return {
       account: '',
     };

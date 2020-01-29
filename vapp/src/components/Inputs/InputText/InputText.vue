@@ -4,10 +4,17 @@
       <p>{{ label }}</p>
     </div>
     <div class="input-container">
-      <p class="static"
-        v-if="isStaticValue">
-        {{ value }}
-      </p>
+      <div v-if="isStaticValue" class="static">
+        <div v-if="label === 'Note Amount' || label === 'Order ID'">
+          {{ value | toNumber }}
+        </div>
+        <div v-else-if="label === 'Price'">
+          {{ value | stringToHex | toNumber }}
+        </div>
+        <div v-else>
+          {{ value }}
+        </div>
+      </div>
       <slot name="input"></slot>
       <p class="unit">{{ unit }}</p>
     </div>
