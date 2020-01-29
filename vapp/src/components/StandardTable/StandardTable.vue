@@ -23,11 +23,15 @@
           :style="[setWidth(columns), setColor(column, data)]"
         >
           <div v-if="column.options.includes('action') && data.state === '1' && data.orderMaker === metamaskAccount">
-            <button
+            <div
+              class="button-container"
               @click="clickButton(data)"
             >
-              {{ column.action }}
-            </button>
+              <standard-button
+                :text="'Settle'"
+                :loading="loading"
+              />
+            </div>
           </div>
           <div v-else>
             {{ filterData(column.data, data) }}
@@ -45,7 +49,12 @@ import Web3Utils from 'web3-utils';
 import { Note } from '../../../../scripts/lib/Note';
 import { generateProof } from '../../api/index';
 
+import StandardButton from '../StandardButton';
+
 export default {
+  components: {
+    StandardButton,
+  },
   data () {
     return {
       columns: [],
@@ -63,6 +72,10 @@ export default {
     type: {
       type: String,
       default: '',
+    },
+    loading: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: mapState({
@@ -107,66 +120,66 @@ export default {
       if (this.type === 'note') {
         const note = data;
         switch (column) {
-          case '1':
-            return 1;
-  
-          default:
-            return columnData;
+        case '1':
+          return 1;
+
+        default:
+          return columnData;
         }
       } else if (this.type === 'order') {
         const order = data;
         switch (column) {
-          case '1':
-            return 1;
-  
-          default:
-            return columnData;
+        case '1':
+          return 1;
+
+        default:
+          return columnData;
         }
       } else if (this.type === 'ongoingOrder') {
         const order = data;
         switch (column) {
-          case 'type': 
-            if (this.metamaskAccount === order.orderMaker) {
-              return 'Buy';
-            } else if (this.metamaskAccount === order.orderTaker) {
-              return 'Sell';
-            }
-            return '';
-  
-          default:
-            return columnData;
+        case 'type':
+          if (this.metamaskAccount === order.orderMaker) {
+            return 'Buy';
+          } else if (this.metamaskAccount === order.orderTaker) {
+            return 'Sell';
+          }
+          return '';
+
+        default:
+          return columnData;
         }
       } else if (this.type === 'orderHistory') {
         const order = data;
         switch (column) {
-          case 'type': 
-            if (this.metamaskAccount === order.orderMaker) {
-              return 'Buy';
-            } else if (this.metamaskAccount === order.orderTaker) {
-              return 'Sell';
-            }
-            return '';
+        case 'type':
+          if (this.metamaskAccount === order.orderMaker) {
+            return 'Buy';
+          } else if (this.metamaskAccount === order.orderTaker) {
+            return 'Sell';
+          }
+          return '';
 
-          case 'change':
-            const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
-            const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
-            const price = Web3Utils.toBN(order.price);
+        case 'change':
+          const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
+          const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
+          const price = Web3Utils.toBN(order.price);
 
-            if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
-              return makerNoteValue.sub(stakeNoteValue.div(price));
-            } else {
-              return stakeNoteValue.sub(makerNoteValue.mul(price));
-            }
+          if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
+            return makerNoteValue.sub(stakeNoteValue.div(price));
+          } else {
+            return stakeNoteValue.sub(makerNoteValue.mul(price));
+          }
 
-          default:
-            return columnData;
+        default:
+          return columnData;
         }
       } else {
         return columnData;
       }
     },
     clickButton (order) {
-      this.$emit('settleOrderRequested', order);  
+      this.$emit('settleOrderRequested', order);
     },
   },
 };
@@ -408,7 +421,7 @@ const columns = {
       data: 'timestamp',
       options: [],
     },
-  ]
+  ],
 };
 </script>
 

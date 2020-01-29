@@ -32,11 +32,15 @@
         :value="noteAmount"
         :isStaticValue="true"
       />
-      <button
+      <div
+        class="button-container"
         @click="makeOrder"
       >
-        Make Order
-      </button>
+        <standard-button
+          :text="'Make Order'"
+          :loading="waitingForMakingOrder"
+        />
+      </div>
     </div>
     <div class="input-text-container"
       v-else-if="whichRadioButtonClicked == 'right'">
@@ -60,11 +64,15 @@
         :isStaticValue="true"
         :value="noteAmount"
       />
-      <button
+      <div
+        class="button-container"
         @click="takeOrder"
       >
-        Take Order
-      </button>
+        <standard-button
+          :text="'Take Order'"
+          :loading="waitingForTakingOrder"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -72,6 +80,7 @@
 <script>
 import InputText from '../../../../components/Inputs/InputText';
 import RadioButton from '../../../../components/RadioButton';
+import StandardButton from '../../../../components/StandardButton';
 
 import { mapState } from 'vuex';
 import api from '../../../../api/index';
@@ -89,6 +98,8 @@ export default {
       price: '',
       noteHash: '',
       noteAmount: '',
+      waitingForMakingOrder: false,
+      waitingForTakingOrder: false,
     };
   },
   computed: mapState({
@@ -98,6 +109,7 @@ export default {
   components: {
     InputText,
     RadioButton,
+    StandardButton,
   },
   created () {
     this.$bus.$on('noteSelected', (note) => {
@@ -129,6 +141,9 @@ export default {
       this.noteAmount = '';
     },
     async makeOrder () {
+      if (this.waitingForMakingOrder === true) return;
+      this.waitingForMakingOrder = true;
+
       // generate proof.
       const circuit = 'makeOrder';
       const params = [this.makerNote];
@@ -183,9 +198,11 @@ export default {
         console.log(err);
       } finally {
         this.clearInputText();
+        this.waitingForMakingOrder = false;
       }
     },
     async takeOrder () {
+      this.waitingForTakingOrder = true;
       // get note.
       const makerNoteHash = this.order.makerNote;
       const takerNote = this.takerNote;
@@ -255,6 +272,7 @@ export default {
         (await api.updateOrder(this.order))
       );
       this.clearInputText();
+      this.waitingForTakingOrder = false;
     },
   },
 };

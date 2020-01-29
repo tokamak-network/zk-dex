@@ -29,17 +29,22 @@
         </template>
       </input-text>
     </div>
-    <button
+    <div
+      class="button-container"
       @click="createNewNote"
     >
-      Create
-    </button>
+      <standard-button
+        :text="'Create'"
+        :loading="loading"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import InputText from '../../../../components/Inputs/InputText';
 import DropdownTokenSelector from '../../../../components/DropdownTokenSelector';
+import StandardButton from '../../../../components/StandardButton';
 
 import { mapState } from 'vuex';
 import { createNote } from '../../../../helpers/note';
@@ -52,6 +57,7 @@ export default {
       account: '',
       amount: '',
       token: '',
+      loading: false,
     };
   },
   computed: mapState({
@@ -63,12 +69,15 @@ export default {
   components: {
     InputText,
     DropdownTokenSelector,
+    StandardButton,
   },
   methods: {
     tokenSelected (token) {
       this.token = token;
     },
     async createNewNote () {
+      if (this.loading === true) return;
+      this.loading = true;
       // create note.
       const note = createNote(this.account, this.amount, this.token.type);
 
@@ -107,10 +116,10 @@ export default {
 
       try {
         this.$store.dispatch('addNote', (await api.addNote(this.key, note)));
-      } catch (err) {
-      } finally {
+      } catch (err) {} finally {
         this.account = '';
         this.amount = '';
+        this.loading = false;
       }
     },
   },
