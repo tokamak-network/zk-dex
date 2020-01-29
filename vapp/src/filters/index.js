@@ -7,6 +7,16 @@ export function toNumberString (value) {
   return value.toString();
 }
 
+export function toNumber (value) {
+  if (!value) return '';
+  return parseInt(value);
+}
+
+export function stringToHex (str) {
+  if (!str) return '';
+  return `0x${str}`;
+}
+
 export function address (a) {
   return Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(a)), 20);
 }
