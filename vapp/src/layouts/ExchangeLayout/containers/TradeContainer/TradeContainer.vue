@@ -121,7 +121,9 @@ export default {
     this.$bus.$on('orderSelected', (order) => {
       this.order = order;
       this.orderId = order.orderId;
-      this.price = order.price;
+      if (this.whichRadioButtonClicked !== 'left') {
+        this.price = order.price;
+      }
     });
   },
   beforeDestroy () {

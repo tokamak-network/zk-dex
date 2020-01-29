@@ -30,7 +30,7 @@
         </template>
       </input-text>
       <input-text
-        :label="'Note'"
+        :label="'Amount'"
         :isStaticValue="false"
       >
         <template v-slot:input>
