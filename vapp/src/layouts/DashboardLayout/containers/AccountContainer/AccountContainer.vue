@@ -56,8 +56,8 @@ export default {
     key: state => state.app.key,
   }),
   methods: {
-    async addAccount (password) {   
-      const account = await this.createAccount(password);   
+    async addAccount (password) {
+      const account = await this.createAccount(password);
       try {
         this.$store.dispatch('addAccount', (await api.addAccount(this.key, account)));
       } catch (err) {

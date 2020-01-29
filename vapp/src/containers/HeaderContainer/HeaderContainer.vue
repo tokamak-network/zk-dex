@@ -2,8 +2,6 @@
   <div class="header-container">
     <div class="header">
       <div class="logo">
-        <!-- TODO: modify img tag using zk-dex logo -->
-        <img src="https://via.placeholder.com/150" alt="Smiley face" height="42" width="42">
         <p>ZK-DEX</p>
       </div>
       <router-link to="/" class="header-button">

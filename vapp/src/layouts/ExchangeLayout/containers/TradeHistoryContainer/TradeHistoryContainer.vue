@@ -7,7 +7,6 @@
     <div class="table-container">
       <standard-table
         :type="'tradeHistory'"
-        :clickable=true
         :datas="$store.getters.tradeHistory"
       />
         <!-- :datas="datas" -->
