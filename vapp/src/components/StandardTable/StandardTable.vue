@@ -118,10 +118,29 @@ export default {
       const columnData = data[column];
 
       if (this.type === 'note') {
-        const note = data;
         switch (column) {
-        case '1':
-          return 1;
+        case 'token':
+          const type = parseInt(columnData);
+          if (type === 0) return 'Ether';
+          else if (type === 1) return 'Dai';
+
+        case 'value':
+          return parseInt(columnData);
+
+        case 'state':
+          const state = parseInt(columnData);
+          if (state === 0) return 'Invalid';
+          else if (state === 1) return 'Valid';
+          else if (state === 2) return 'Traiding';
+          else if (state === 3) return 'Spent';
+
+        default:
+          return columnData;
+        }
+      } else if (this.type === 'balance') {
+        switch (column) {
+        case 'totalBalance':
+          return parseInt(columnData);
 
         default:
           return columnData;
@@ -135,9 +154,26 @@ export default {
         default:
           return columnData;
         }
+      } else if (this.type === 'orderBook') {
+        switch (column) {
+        case 'orderId':
+          return parseInt(columnData);
+
+        case 'price':
+          return parseInt(`0x${columnData}`);
+
+        default:
+          return columnData;
+        }
       } else if (this.type === 'ongoingOrder') {
         const order = data;
         switch (column) {
+        case 'orderId':
+          return parseInt(columnData);
+
+        case 'price':
+          return parseInt(`0x${columnData}`);
+
         case 'type':
           if (this.metamaskAccount === order.orderMaker) {
             return 'Buy';
@@ -145,6 +181,17 @@ export default {
             return 'Sell';
           }
           return '';
+
+        case 'makerNoteValue':
+        case 'takerNoteValue':
+          if (!columnData) return '';
+          return parseInt(columnData);
+
+        case 'state':
+          const state = parseInt(columnData);
+          if (state === 0) return 'Created';
+          else if (state === 1) return 'Taken';
+          else if (state === 2) return 'Settled';
 
         default:
           return columnData;
@@ -160,6 +207,18 @@ export default {
           }
           return '';
 
+        case 'orderId':
+        case 'makerNoteValue':
+        case 'takerNoteValue':
+          if (!columnData) return '';
+          return parseInt(columnData);
+
+        case 'state':
+          const state = parseInt(columnData);
+          if (state === 0) return 'Created';
+          else if (state === 1) return 'Taken';
+          else if (state === 2) return 'Settled';
+
         case 'change':
           const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
           const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
@@ -171,6 +230,10 @@ export default {
             return stakeNoteValue.sub(makerNoteValue.mul(price));
           }
 
+        case 'timestamp':
+          if (!columnData) return '';
+          return this.timeConverter(columnData);
+
         default:
           return columnData;
         }
@@ -180,6 +243,31 @@ export default {
     },
     clickButton (order) {
       this.$emit('settleOrderRequested', order);
+    },
+    timeConverter (timestamp) {
+      const a = new Date(timestamp * 1000);
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      const year = a.getFullYear();
+      const month = months[a.getMonth()];
+      const date = a.getDate();
+      const hour = a.getHours();
+      const min = a.getMinutes();
+      const sec = a.getSeconds();
+      const time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec;
+      return time;
     },
   },
 };
@@ -214,16 +302,16 @@ const columns = {
       data: 'address',
       options: [],
     },
-    {
-      title: 'Name',
-      data: 'name',
-      options: [],
-    },
-    {
-      title: 'Total Note',
-      data: 'totalNoteAmount',
-      options: [],
-    },
+    // {
+    //   title: 'Name',
+    //   data: 'name',
+    //   options: [],
+    // },
+    // {
+    //   title: 'Total Note',
+    //   data: 'totalNoteAmount',
+    //   options: [],
+    // },
   ],
   note: [
     {
