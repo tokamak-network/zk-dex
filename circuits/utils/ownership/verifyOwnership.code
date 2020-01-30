@@ -1,0 +1,10 @@
+import "./getPubKey.code" as getPubKey
+import "./getAddress.code" as getAddress
+import "ecc/babyjubjubParams.code" as babyjubjubParams
+
+def main(field sk, field address) -> (field):
+  field[10] params = babyjubjubParams()
+  field[2] pk = getPubKey(sk, params)
+  field addressExp = getAddress(pk)
+  addressExp == address
+  return 1

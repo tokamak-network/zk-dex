@@ -34,6 +34,9 @@
           <li>
             <router-link to="/combine">Combine</router-link>
           </li>
+          <li>
+            <router-link to="/convert">Convert</router-link>
+          </li>
         </ul>
         <p class="menu-label" style="margin-top: 30px;">
           History

@@ -1,0 +1,5 @@
+def main(field x, field y) -> (field):
+  field z = x - y
+  field check = if z <= x then 1 else 0 fi
+  check == 1
+  return z

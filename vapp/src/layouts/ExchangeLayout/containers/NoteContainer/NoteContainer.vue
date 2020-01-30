@@ -8,7 +8,7 @@
       <standard-table
         :type="'note'"
         :clickable=true
-        :datas="$store.state.note.notes"
+        :datas="$store.state.notes"
       />
     </div>
   </div>

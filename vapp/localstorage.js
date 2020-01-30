@@ -2,13 +2,18 @@ const { toHex, toBN } = require('web3-utils');
 
 const { LocalStorage } = require('node-localstorage');
 
+const {
+  addZkPrefix,
+  removeZkPrefix,
+} = require('zk-dex-keystore/lib/utils');
+
+
 const { marshal } = require('../scripts/lib/util');
 const { Note } = require('../scripts/lib/Note');
 
-const path = `${__dirname}/localstorage`;
-localStorage = new LocalStorage(path);
+localStorage = new LocalStorage('./localstorage');
 if (typeof localStorage === 'undefined' || localStorage === null) {
-  global.localStorage = new LocalStorage(path);
+  global.localStorage = new LocalStorage('./scratch');
 }
 
 
@@ -83,10 +88,10 @@ function getAccounts (_userKey) {
 module.exports.getAccounts = getAccounts;
 
 function getAccountByAddress (userKey, _address) {
-  const address = marshal(_address);
+  const address = removeZkPrefix(_address);
 
   const accounts = getAccounts(userKey);
-  const account = accounts.find(({ address: a }) => marshal(a) === address);
+  const account = accounts.find(({ address: a }) => a === address);
   if (!account) {
     throw new Error(`Account ${address} not exists`);
   }
@@ -104,7 +109,7 @@ module.exports.addAccount = addAccount;
 
 function deleteAccount (_userKey, _address) {
   const userKey = marshal(_userKey);
-  const address = marshal(_address);
+  const address = removeZkPrefix(_address);
 
   const accounts = getAccounts(userKey);
 
@@ -112,7 +117,7 @@ function deleteAccount (_userKey, _address) {
     throw new Error('There is no account');
   }
 
-  const i = accounts.findIndex(({ address: a }) => marshal(a) === address);
+  const i = accounts.findIndex(({ address: a }) => a === address);
   if (i < 0) {
     throw new Error(`Account ${address} not exists`);
   }
@@ -156,7 +161,8 @@ function addNote (_userKey, _note) {
   const noteHash = note.hash();
 
   if (notes.findIndex(n => Note.hashFromJSON(n) === noteHash) < 0) {
-    notes.push(_note);
+    notes.push(note);
+    // console.warn('Note added', noteHash);
     _setNotes(userKey, notes);
     setNoteByHash(userKey, note);
     return true;
@@ -185,7 +191,7 @@ module.exports.setNoteByHash = setNoteByHash;
 function updateNote (_userKey, note) {
   const userKey = marshal(_userKey);
   const notes = getNotes(userKey);
-  const i = notes.findIndex(n => n.hash === note.hash);
+  const i = notes.findIndex(n => n.hash() === note.hash());
 
   if (i >= 0) {
     notes.splice(i, 1, note);
@@ -231,6 +237,7 @@ class TransferHistory {
 
   // NOTE: this would override previous another temporary history
   setHistory () {
+    // console.error('save~!');
     localStorage.setItem(this.getKey(), JSON.stringify(this));
   }
 
@@ -273,11 +280,11 @@ class TransferHistory {
     return JSON.parse(res);
   }
 
-  addHistoryByUser (userKey, noteTransferHistory) {
+  addHistoryByUser (userKey) {
     console.error('addHistoryByUser ~');
 
     const histories = TransferHistory.getHistoriesByUser(userKey);
-    histories.push(noteTransferHistory);
+    histories.push(this);
 
     localStorage.setItem(TransferHistory._keyHistoryByUser(userKey), JSON.stringify(histories));
   }
@@ -401,8 +408,8 @@ function updateOrderByAccount (_userKey, order) {
   }
 
   for (let i = 0; i < orders.length; i++) {
-    if (orders[i].orderId === order.orderId) {
-      orders.splice(i, 1, order);
+    if (orders[i].orderId === orderId) {
+      orders[i].orderTaker = orderTaker;
       break;
     }
   }
@@ -410,4 +417,3 @@ function updateOrderByAccount (_userKey, order) {
   _setOrdersByAccount(userKey, orders);
 }
 module.exports.updateOrderByAccount = updateOrderByAccount;
-

@@ -61,7 +61,7 @@ export default {
 
       // set metamask account
       const metamaskAccount = (await web3.eth.getAccounts())[0];
-      this.$store.dispatch('setMetamaskAccount', metamaskAccount);
+      this.$store.dispatch('setUserKey', metamaskAccount);
 
       // set ZkDex contract instance
       const ZkDexContract = Contract(ZkDexContractJSON);
@@ -83,34 +83,33 @@ export default {
       // NOTE: use metamask account as key.
       const key = metamaskAccount;
 
-      const accounts = await api.getAccounts(key);
-      if (accounts !== null) {
-        this.$store.dispatch('setAccounts', accounts);
+      // const accounts = await api.getAccounts(key);
+      // if (accounts !== null) {
+      //   this.$store.dispatch('setAccounts', accounts);
 
-        let allHistories = [];
-        for (const account of accounts) {
-          const histories = await api.getNoteTransferHistories(account.address);
-          allHistories = allHistories.concat(histories);
-        }
-        this.$store.dispatch('setNoteTransferHistories', allHistories);
-      }
+      //   let allHistories = [];
+      //   for (const account of accounts) {
+      //     const histories = await api.getNoteTransferHistories(account.address);
+      //     allHistories = allHistories.concat(histories);
+      //   }
+      //   this.$store.dispatch('setNoteTransferHistories', allHistories);
+      // }
 
-      const notes = await api.getNotes(key);
-      if (notes !== null) {
-        this.$store.dispatch('setNotes', notes);
-      }
+      // const notes = await api.getNotes(key);
+      // if (notes !== null) {
+      //   this.$store.dispatch('setNotes', notes);
+      // }
 
-      const orders = await api.getOrders();
-      if (orders !== null) {
-        this.$store.dispatch('setOrders', orders);
-      }
+      // const orders = await api.getOrders();
+      // if (orders !== null) {
+      //   this.$store.dispatch('setOrders', orders);
+      // }
     },
   },
 };
 </script>
 
 <style lang="scss">
-// TODO: fix link issue following https://github.com/vuejs/vue-loader/issues/328#issuecomment-249175224
 @import './scss/Global';
 @import '~@/scss/containers';
 

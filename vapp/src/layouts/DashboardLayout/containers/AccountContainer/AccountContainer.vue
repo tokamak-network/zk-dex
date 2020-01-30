@@ -19,7 +19,7 @@
       <standard-table
         :type="'account'"
         :clickable=clickable
-        :datas="$store.state.account.accounts"
+        :datas="accounts"
       />
     </div>
   </div>
@@ -52,30 +52,20 @@ export default {
       showModal: false,
     };
   },
-  computed: mapState({
-    key: state => state.app.key,
-  }),
+  computed: {
+    ...mapState([
+      'userKey',
+      'accounts',
+    ]),
+  },
   methods: {
-    async addAccount (password) {
-      const account = await this.createAccount(password);
-      try {
-        this.$store.dispatch('addAccount', (await api.addAccount(this.key, account)));
-      } catch (err) {
-        console.log(err);
-      } finally {
-        this.showModal = false;
-      }
-    },
-    async createAccount (password) {
-      const account = await api.createAccount(password);
-      const index = String(this.$store.state.account.accounts.length + 1);
-      return {
-        index,
-        address: account.data.address,
-        name: '',
-        totalNoteAmount: '0',
-        password: password,
-      };
+    async addAccount (passphrase) {
+      await api.createAndAddAccount(this.userKey, passphrase);
+
+      const accounts = await api.getAccounts(this.userKey);
+      this.$store.dispatch('setAccounts', accounts);
+
+      this.showModal = false;
     },
   },
 };

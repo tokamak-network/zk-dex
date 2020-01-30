@@ -29,13 +29,11 @@
         </template>
       </input-text>
     </div>
-    <div
-      class="button-container"
-      @click="createNewNote"
-    >
+    <div class="button-container">
       <standard-button
         :text="'Create'"
         :loading="loading"
+        @click.native="createNewNote"
       />
     </div>
   </div>
@@ -47,9 +45,9 @@ import DropdownTokenSelector from '../../../../components/DropdownTokenSelector'
 import StandardButton from '../../../../components/StandardButton';
 
 import { mapState } from 'vuex';
-import { createNote } from '../../../../helpers/note';
+import { Note } from '../../../../../../scripts/lib/Note';
 import api from '../../../../api/index';
-import Web3Utils from 'web3-utils';
+import web3Utils from 'web3-utils';
 
 export default {
   data () {
@@ -60,12 +58,14 @@ export default {
       loading: false,
     };
   },
-  computed: mapState({
-    daiContract: state => state.app.daiContract,
-    dexContract: state => state.app.dexContract,
-    key: state => state.app.key,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'daiContract',
+      'dexcontract',
+      'userKey',
+      'metamaskAccount',
+    ]),
+  },
   components: {
     InputText,
     DropdownTokenSelector,
@@ -78,15 +78,20 @@ export default {
     async createNewNote () {
       if (this.loading === true) return;
       this.loading = true;
-      // create note.
-      const note = createNote(this.account, this.amount, this.token.type);
 
-      // generate proof.
+      const getSalt = () => web3Utils.randomHex(16);
+
+      // TODO: set correct parameter
+      // Create new note.
+      // const note = new Note(owner0, owner1, value, tokenType, '0xdead', getSalt());
+      const note = {};
+
+      // Generate proof.
       const circuit = 'mintNBurnNote';
       const params = [note];
       const proof = (await api.generateProof(circuit, params)).data.proof;
 
-      // validate proof and make note.
+      // Validate proof and make note.
       let tx;
       if (this.token.symbol === 'DAI') {
         await this.daiContract.approve(this.dexContract.address, this.amount, {
@@ -107,20 +112,10 @@ export default {
         return;
       }
 
-      // update vue state.
-      note.hash = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-        64
-      );
-      note.state = Web3Utils.toHex(tx.logs[0].args.state);
+      await new Promise(r => setTimeout(r, 5000));
 
-      try {
-        this.$store.dispatch('addNote', (await api.addNote(this.key, note)));
-      } catch (err) {} finally {
-        this.account = '';
-        this.amount = '';
-        this.loading = false;
-      }
+      const notes = api.getNotes(this.userKey);
+      this.$store.dispatch('setNotes', notes);
     },
   },
 };

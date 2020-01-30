@@ -1,3 +1,5 @@
+//  run with jest
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const keythereum = require('keythereum');
@@ -11,6 +13,8 @@ const Web3 = require('web3');
 const web3Utils = require('web3-utils');
 
 const router = require('./router');
+
+const { fromKeyStoreObject } = require('./lib/accounts');
 const { initialized } = require('../scripts/lib/dockerUtils');
 const { constants, Note } = require('../scripts/lib/Note');
 const { marshal, unmarshal } = require('../scripts/lib/util');
@@ -51,10 +55,6 @@ const initApp = async () => {
   return { app, zkdexService };
 };
 
-const pks = range(10)
-  .map(() => keythereum.create({ keyBytes: 32, ivBytes: 16 }))
-  .map(({ privateKey }) => privateKey.toString('hex'));
-
 const ether = n => web3Utils.toBN(n).mul(web3Utils.toBN(1e18.toString(10)));
 
 describe('Vapp API Router', () => {
@@ -71,7 +71,6 @@ describe('Vapp API Router', () => {
 
   const vk = web3Utils.randomHex(16);
 
-  const key = pks[0];
   const passphrase = 'test-passphrase';
 
   const zkdexAddresses = [];
@@ -149,7 +148,8 @@ describe('Vapp API Router', () => {
           done();
         }));
 
-      test('it should delete account', (done) => {
+      test('it should delete 1st account', (done) => {
+        console.log('zkdexAddresses', zkdexAddresses);
         const address = zkdexAddresses[0];
         return request(app)
           .delete(`/accounts/${userKey}`)
@@ -164,8 +164,9 @@ describe('Vapp API Router', () => {
           });
       });
 
-      test('it should delete account', (done) => {
+      test('it should delete 2nd account', (done) => {
         const address = zkdexAddresses[0];
+        expect(address).toBeTruthy();
         return request(app)
           .delete(`/accounts/${userKey}`)
           .send({ address })
@@ -234,9 +235,18 @@ describe('Vapp API Router', () => {
     const makerVk = web3Utils.randomHex(16);
     const takerVk = web3Utils.randomHex(16);
 
+
+    // ZkDexPrivateKey
+    let maker;
+    let taker;
+
+    // ZkDexPublicKey
+    let makerPubKey;
+    let takerPubKey;
+
+    // base58-encoded zk-address
     let makerZkAddress;
     let takerZkAddress;
-
 
     // make note
     let daiNote;
@@ -250,10 +260,10 @@ describe('Vapp API Router', () => {
     const spendDaiNoteAmount = daiAmount.div(toBN('2'));
 
     // over payment order
-    const price = toBN('2');
+    const price = ether('2');
     const stakeEthAmount = ethAmount;
     const rewardDaiAmount = spendDaiNoteAmount;
-    const paymentEthAmount = spendDaiNoteAmount.mul(price);
+    const paymentEthAmount = spendDaiNoteAmount.mul(price).div(ether('1'));
     const changeEthAmount = stakeEthAmount.sub(paymentEthAmount);
     let changeNoteOwner;
 
@@ -291,6 +301,18 @@ describe('Vapp API Router', () => {
         .expect(200);
       takerZkAddress = res.body.address;
 
+      res = await request(app)
+        .get(`/accounts/${makerUserKey}`);
+      const makerAccount = res.body.accounts[0];
+      maker = fromKeyStoreObject(makerAccount, passphrase);
+      makerPubKey = maker.toPubKey();
+
+      res = await request(app)
+        .get(`/accounts/${takerUserKey}`);
+      const takerAccount = res.body.accounts[0];
+      taker = fromKeyStoreObject(takerAccount, passphrase);
+      takerPubKey = taker.toPubKey();
+
 
       console.log(`
       makerVk: ${makerVk}
@@ -299,8 +321,12 @@ describe('Vapp API Router', () => {
       makerUserKey: ${makerUserKey}
       takerUserKey: ${takerUserKey}
 
-      makerZkAddress: ${makerZkAddress}
-      takerZkAddress: ${takerZkAddress}
+      maker: ${maker.toHex()}
+      taker: ${taker.toHex()}
+
+
+      makerPubKey: ${makerPubKey.xToHex()}, ${makerPubKey.yToHex()}
+      takerPubKey: ${takerPubKey.xToHex()}, ${takerPubKey.yToHex()}
       `);
     });
 
@@ -369,8 +395,8 @@ describe('Vapp API Router', () => {
       });
     }
 
-    async function createNote (owner, tokenType, value, from) {
-      const note = new Note(owner, value, tokenType, '0x00', getSalt(), false);
+    async function createNote (owner0, owner1, tokenType, value, from) {
+      const note = new Note(owner0, owner1, value, tokenType, '0x00', getSalt());
       const proof = await getProof('/circuits/mintNBurnNote', [note]);
 
       const prom = waitNotes([note]);
@@ -386,11 +412,11 @@ describe('Vapp API Router', () => {
     }
 
     describe('/notes', () => {
-      test('it should create a DAI note', async () => {
-        daiNote = await createNote(makerZkAddress, constants.DAI_TOKEN_TYPE, daiAmount, ethAccounts[0]);
+      test.only('it should create a DAI note', async () => {
+        daiNote = await createNote(maker, constants.DAI_TOKEN_TYPE, daiAmount, ethAccounts[0]);
       }, TIMEOUT);
 
-      test('it should fetch maker\'s DAI note', done => request(app)
+      test.only('it should fetch maker\'s DAI note', done => request(app)
         .get(`/notes/${makerUserKey}`)
         .end((err, res) => {
           if (err) return done(err);
@@ -401,7 +427,7 @@ describe('Vapp API Router', () => {
         }));
 
       test('it should create a ETH note', async () => {
-        ethNote = await createNote(takerZkAddress, constants.ETH_TOKEN_TYPE, ethAmount, ethAccounts[1]);
+        ethNote = await createNote(taker, constants.ETH_TOKEN_TYPE, ethAmount, ethAccounts[1]);
       }, TIMEOUT);
 
       test('it should fetch taker\'s ETH notes', done => request(app)
@@ -415,8 +441,8 @@ describe('Vapp API Router', () => {
         }));
 
       test('it should spend a DAI note', async () => {
-        daiNote0 = new Note(makerZkAddress, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
-        daiNote1 = new Note(makerZkAddress, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
+        daiNote0 = new Note(maker, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
+        daiNote1 = new Note(maker, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
 
         const proof = await getProof('/circuits/transferNote', [
           daiNote,

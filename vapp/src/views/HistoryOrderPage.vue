@@ -1,7 +1,7 @@
 <template>
   <div>
-    <order-list-ongoing :ongoingOrder="ongoingOrder" />
-    <order-list-history :finishedOrder="finishedOrder" />
+    <order-list-ongoing :ongoingOrderHistory="ongoingOrderHistory" />
+    <order-list-history :completedOrderHistory="completedOrderHistory" />
   </div>
 </template>
 
@@ -9,8 +9,8 @@
 import OrderListOngoing from '../components/OrderListOngoing.vue';
 import OrderListHistory from '../components/OrderListHistory.vue';
 
-import { mapState } from 'vuex';
-import { getAccounts, getOrdersByUser } from '../api/index';
+import { mapState, mapGetters, mapMutations } from 'vuex';
+import { getAccounts, getOrderHistory } from '../api/index';
 
 export default {
   components: {
@@ -25,27 +25,43 @@ export default {
   computed: {
     ...mapState({
       key: state => state.key,
+      accounts: state => state.accounts,
+      orderHistory: state => state.orderHistory,
     }),
-    ongoingOrder () {
-      return this.orders.filter(order => parseInt(order.state) <= 1);
-    },
-    finishedOrder () {
-      return this.orders.filter(order => parseInt(order.state) > 1);
-    },
+    ...mapGetters([
+      'ongoingOrderHistory',
+      'completedOrderHistory',
+    ]),
   },
   created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        const orders = [];
-        for (let i = 0; i < accounts.length; i++) {
-          const o = await getOrdersByUser(accounts[i].address);
-          if (o != null) {
-            orders.push(...o);
-          }
+    if (this.accounts === null) {
+      getAccounts(this.key).then(async (a) => {
+        const accounts = [];
+        if (a !== null) {
+          accounts.push(...a);
         }
-        this.orders = orders;
+        this.SET_ACCOUNTS(accounts);
+      });
+    }
+    if (this.accounts !== null && this.orderHistory === null) {
+      this.getOrderHistory();
+    }
+  },
+  methods: {
+    ...mapMutations([
+      'SET_ACCOUNTS',
+      'SET_ORDER_HISTORY',
+    ]),
+    async getOrderHistory () {
+      const orderHistory = [];
+      for (let i = 0; i < this.accounts.length; i++) {
+        const h = await getOrderHistory(this.accounts[i].address);
+        if (h !== null) {
+          orderHistory.push(...h);
+        }
       }
-    });
+      this.SET_ORDER_HISTORY(orderHistory);
+    },
   },
 };
 </script>

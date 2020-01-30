@@ -41,18 +41,29 @@ function parseProofObj(obj) {
 }
 
 function marshal(str) {
-  if (!str) throw new Error("Cannot marshal empty string");
+  if (!str) throw new Error("Cannot add hex prefix empty string");
 
   return '0x' + unmarshal(str);
 }
 
-function unmarshal(str) {
-  // console.warn("unmarshal", 'str', str)
-  str = str.trim();
-  if (!str) throw new Error("Cannot unmarshal empty string");
+function unmarshal(_str) {
+  let str;
+  if (_str instanceof Buffer) {
+    str = _str.toString('hex');
+  } else {
+    str = _str.trim();
+  }
+
+  if (!str) throw new Error("Cannot remove hex prefix empty string");
+
   const i = str.lastIndexOf("0x");
-  if (i < 0) return str;
-  return str.slice(i+2);
+  if (i >= 0) str = str.slice(i+2);
+
+  if (str.length % 2 === 1) {
+    str = '0' + str;
+  }
+
+  return str;
 }
 
 function calcHash(h0, h1) {
@@ -60,7 +71,7 @@ function calcHash(h0, h1) {
 }
 
 function split32BytesTo16BytesArr(b) {
-  const v = Web3Utils.toBN(b).toString(16);
+  const v = Web3Utils.toBN(b).toString(16, 64);
   return [
     marshal(v.slice(0, 32)),
     marshal(v.slice(32)),
@@ -73,6 +84,16 @@ function reduceParams(params) {
     .reduce((a, b) => `${a} ${b}`, '').trim();
 }
 
+function getQuotient(x, y) {
+  const q = (x.sub(x.mod(y))).div(y);
+  return Web3Utils.toHex(q)
+}
+
+function getRemainder(x, y) {
+  const r = x.mod(y)
+  return Web3Utils.toHex(r)
+}
+
 module.exports = {
   sleep,
   parseProof,
@@ -82,4 +103,6 @@ module.exports = {
   unmarshal,
   split32BytesTo16BytesArr,
   reduceParams,
+  getQuotient,
+  getRemainder,
 };

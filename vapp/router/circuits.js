@@ -36,10 +36,14 @@ console.log('process.env.USE_DUMMY', process.env.USE_DUMMY);
 
 const useDummy = process.env.USE_DUMMY || false;
 
-router.post('/', asyncWrap(
+// TODO: get private key from DB.
+router.post('/:circuit', asyncWrap(
   async function (req, res) {
-    const circuit = req.body.circuit;
+    const circuit = req.params.circuit;
     const params = req.body.params;
+
+    // console.log('params', JSON.stringify(params));
+
     const generator = useDummy
       ? dummyGenerators[circuit]
       : generators[circuit];
@@ -54,6 +58,7 @@ router.post('/', asyncWrap(
       const input = Note.fromJSON(params[0]);
       const output1 = Note.fromJSON(params[1]);
       const output2 = Note.fromJSON(params[2]);
+
       const history = TransferHistory.getHistory(input.hash());
       if (!history) {
         (new TransferHistory(input, output1, output2)).setHistory();

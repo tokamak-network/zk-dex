@@ -1,6 +1,11 @@
-import "../sha/1024bitPacked.code" as sha256
+import "../utils/math/add.code" as add
+import "../utils/math/mul.code" as mul
+import "../utils/isSmart.code" as isSmart
+import "../sha/1536bitPacked.code" as sha256
+import "ecc/proofOfOwnership.code" as proofOfOwnership
+import "ecc/babyjubjubParams.code" as babyjubjubParams
 
-// Note = (_owner, _value, _type, _senderViewingKey, _salt, _isSmart)
+// Note = (owner, value, type, viewKey, salt)
 
 // o0 = makerNote
 // o1 = takerNotetoMaker
@@ -9,142 +14,130 @@ import "../sha/1024bitPacked.code" as sha256
 // n2 = changeNote from o1 or o2 to maker or taker(change)
 
 // (public) o0h0 + o0h1 : makerNote hash
-// (public) o0Type : makerNote type
-// (private) o0pk0 + o0pk1 : makerNote's owner
+// (private) o0owner0 + o0owner0 : makerNote owner
 // (private) o0Val : makerNote value
+// (public) o0Type : makerNote type
 // (private) o0vk0 + o0vk1 : makerNote viewKey
-// (private) o0Salt : makerNote salt, random value
-// (private) o0IsSmart : makerNote isSmart, 0 if is not smart note
+// (private) o0Salt : makerNote salt
 
 // (public) o1h0 + o1h1 : takerNotetoMaker hash
+// (private) o1owner0 + o1owner1 : takerNotetoMaker owner
 // (public) o1Type : takerNotetoMaker type
-// (private) o1pk0 + o1pk1 : takerNotetoMaker's owner
 // (private) o1Val : takerNotetoMaker value
 // (private) o1vk0 + o1vk1 : takerNotetoMaker viewKey
-// (private) o1Salt : takerNotetoMaker salt, random value
-// (private) o1IsSmart : takerNotetoMaker isSmart, 0 if is not smart note
+// (private) o1Salt : takerNotetoMaker salt
 
 // (public) n0h0 + n0h1 : newNoteToTaker hash
-// (public) n0Type : newNoteToTaker type
-// (public) n0rpk0 + n0rpk1 : reciever(order.parentNote)
+// (public) n0owner0 + n0owner1 : newNoteToTaker owner (should be order.parentNote)
 // (private) n0Val : newNoteToTaker value
+// (public) n0Type : newNoteToTaker type
 // (private) n0vk0 + n0vk1 : newNoteToTaker viewKey
 // (private) n0Salt : newNoteToTaker salt
-// (private) n0IsSmart : newNoteToTaker isSmart, 0 if is not smart note
 
 // (public) n1h0 + n1h1 : newNoteToMaker hash
-// (public) n1Type : newNoteToMaker type
-// (public) n1rpk0 + n1rpk1 : reciever(makerNote)
+// (public) n1owner0 + n1owner1 : makerNote owner (should be makerNote)
 // (private) n1Val : newNoteToMaker value
+// (public) n1Type : newNoteToMaker type
 // (private) n1vk0+ n1vk1 : newNoteToMaker viewKey
 // (private) n1Salt : newNoteToMaker salt
-// (private) n1IsSmart : newNoteToMaker isSmart, 0 if is not smart note
 
-// (public) n2h0 + n2h1 : change hash
-// (public) n2Type : change type
-// (private) n2rpk0 + n2rpk1 : reciever(makerNote or order.parentNote)
-// (private) n2Val : change value
-// (private) n2vk0+ n2vk1 : change viewKey
-// (private) n2Salt : change salt
-// (private) n2IsSmart : change isSmart, 0 if is not smart note
+// (public) n2h0 + n2h1 : changeNote hash
+// (private) n2owner0 + n2owner1 : changeNote owner
+// (private) n2Val : changeNote value
+// (public) n2Type : changeNote type
+// (private) n2vk0+ n2vk1 : changeNote viewKey
+// (private) n2Salt : changeNote salt
 
 // (public) price : price of 1 sourceToken
 
+// (private) q0 : quotient of o0Val * price / 10**18
+// (private) r0 : o0Val * price % 10**18
+// (private) q1 : quotient of o1Val / price
+// (private) r1 : o1Val % price
 
-// Parameters
-// field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart,
-// field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart,
-// field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart,
-// field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart,
-// field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart,
-// field price
+// (private) sk : secret key corresponding to owner of makerNote
 
-// o1h0 + o1h1 : takerNotetoMaker hash
-// o1Type : takerNotetoMaker type
-// o1pk0 + o1pk1 : takerNotetoMaker's owner
-// o1Val : takerNotetoMaker value
-// o1vk0 + o1vk1 : takerNotetoMaker viewKey
-// o1Salt : takerNotetoMaker salt, random value
-// o1IsSmart : takerNotetoMaker isSmart, 0 if is not smart note
 
-// n0h0 + n0h1 : newNoteToTaker hash
-// n0Type : newNoteToTaker type
-// n0rpk0 + n0rpk1 : reciever(order.parentNote)
-// n0Val : newNoteToTaker value
-// n0vk0 + n0vk1 : newNoteToTaker viewKey
-// n0Salt : newNoteToTaker salt
-// n0IsSmart : newNoteToTaker isSmart, 0 if is not smart note
+def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0Val, field o0Type, private field o0vk0, private field o0vk1, private field o0Salt, \
+field o1h0, field o1h1, private field o1owner0, private field o1owner1, private field o1Val, field o1Type, private field o1vk0, private field o1vk1, private field o1Salt, \
+field n0h0, field n0h1, field n0owner0, field n0owner1, private field n0Val, field n0Type, private field n0vk0, private field n0vk1, private field n0Salt, \
+field n1h0, field n1h1, field n1owner0, field n1owner1, private field n1Val, field n1Type, private field n1vk0, private field n1vk1, private field n1Salt, \
+field n2h0, field n2h1, private field n2owner0, private field n2owner1, private field n2Val, field n2Type, private field n2vk0, private field n2vk1, private field n2Salt, \
+field price, private field q0, private field r0, private field q1, private field r1, private field sk) -> (field):
 
-// n1h0 + n1h1 : newNoteToMaker hash
-// n1Type : newNoteToMaker type
-// n1rpk0 + n1rpk1 : reciever(makerNote)
-// n1Val : newNoteToMaker value
-// n1vk0+ n1vk1 : newNoteToMaker viewKey
-// n1Salt : newNoteToMaker salt
-// n1IsSmart : newNoteToMaker isSmart, 0 if is not smart note
+  // check ownership of makerNote
+  field[10] params = babyjubjubParams()
+  field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
+  isOwner == 1
 
-// n2h0 + n2h1 : change hash
-// n2Type : change type
-// n2rpk0 + n2rpk1 : reciever(makerNote or order.parentNote)
-// n2Val : change value
-// n2vk0+ n2vk1 : change viewKey
-// n2Salt : change salt
-// n2IsSmart : change isSmart, 0 if is not smart note
+  // check (hash(makerNote) == newNoteToMaker.owner)
+  o0h0 == o1owner0
+  o0h1 == o1owner1
 
-def main(field o0h0, field o0h1, field o0Type, private field o0pk0, private field o0pk1, private field o0Val, private field o0vk0, private field o0vk1, private field o0Salt, private field o0IsSmart, field o1h0, field o1h1, field o1Type, private field o1pk0, private field o1pk1, private field o1Val, private field o1vk0, private field o1vk1, private field o1Salt, private field o1IsSmart, field n0h0, field n0h1, field n0Type, field n0rpk0, field n0rpk1, private field n0Val, private field n0vk0, private field n0vk1, private field n0Salt, private field n0IsSmart, field n1h0, field n1h1, field n1Type, field n1rpk0, field n1rpk1, private field n1Val, private field n1vk0, private field n1vk1, private field n1Salt, private field n1IsSmart, field n2h0, field n2h1, field n2Type, private field n2rpk0, private field n2rpk1, private field n2Val, private field n2vk0, private field n2vk1, private field n2Salt, private field n2IsSmart, field price) -> (field):
+  // check o0Val * price == q0 * 10**18 + r0
+  field o0ValxPrice = mul(o0Val, price)
+  field o0ValxPriceExp = add(mul(q0, 10**18), r0)
+  o0ValxPrice == o0ValxPriceExp
 
-  //check (hash(makerNote) == newNoteToMaker.owner)
-  o0h0 == o1pk0
-  o0h1 == o1pk1
+  // check o1Val == q1 * price + r1
+  field o1ValExp = add(mul(q1, price), r1)
+  o1Val == o1ValExp
 
-  //check (hash(takerToMakerNote.parentNote) == newNoteToTaker.owner)
-  //Don't need to
+  // o0Val * price / 10**18 = q0
+  // o1Val / price = q1 * 10**18
+  field o0ValPrice = q0
+  field o1ValOverPrice = mul(q1, 10**18)
 
-  field bit = if o0Val < o1Val/price then 0 else 1 fi
+  field bit = if o0Val < o1ValOverPrice then 0 else 1 fi
 
-  field n0ValT = if bit == 1 then o1Val/price else o0Val fi
-  field n1ValT = if bit == 1 then o1Val else o0Val*price fi
-  field n2ValT = if bit == 1 then o0Val - o1Val/price else o1Val - o0Val*price fi
+  field n0ValExp = if bit == 1 then o1ValOverPrice else o0Val fi
+  field n1ValExp = if bit == 1 then o1Val else o0ValPrice fi
+  // TODO: should check underflow
+  field n2ValExp = if bit == 1 then o0Val - o1ValOverPrice else o1Val - o0ValPrice fi
 
   // check value: o0Val + o1Val = n0Val + n1Val + n2Val
-  n0Val == n0ValT
-  n1Val == n1ValT
-  n2Val == n2ValT
+  n0Val == n0ValExp
+  n1Val == n1ValExp
+  n2Val == n2ValExp
 
   // check owner of n2(change --> hash(takerNotetoMaker) or parent(takerToMakerNote).hash)
-  field n2rpk0T = if bit == 1 then o0h0 else n0rpk0 fi
-  field n2rpk1T = if bit == 1 then o0h1 else n0rpk1 fi
+  field n2owner0Exp = if bit == 1 then o0h0 else n0owner0 fi
+  field n2owner1Exp = if bit == 1 then o0h1 else n0owner1 fi
 
-  n2rpk0 == n2rpk0T
-  //n2rpk1 == n2rpk1T
+  n2owner0 == n2owner0Exp
+  n2owner1 == n2owner1Exp
 
   // check all new notes are smartNote
+  field n0IsSmart = isSmart(n0owner0)
+  field n1IsSmart = isSmart(n1owner0)
+  field n2IsSmart = isSmart(n2owner0)
+
   n0IsSmart == 1
   n1IsSmart == 1
   n2IsSmart == 1
 
   // check o0
-  h = sha256([o0pk0, o0pk1, o0Val, o0Type, o0vk0, o0vk1, o0Salt, o0IsSmart])
+  h = sha256([o0owner0, o0owner1, o0Val, o0Type, o0vk0, o0vk1, o0Salt])
   o0h0 == h[0]
   o0h1 == h[1]
 
   // check o1
-  h = sha256([o1pk0, o1pk1, o1Val, o1Type, o1vk0, o1vk1, o1Salt, o1IsSmart])
+  h = sha256([o1owner0, o1owner1, o1Val, o1Type, o1vk0, o1vk1, o1Salt])
   o1h0 == h[0]
   o1h1 == h[1]
 
   // check n0
-  h = sha256([n0rpk0, n0rpk1, n0Val, n0Type, n0vk0, n0vk1, n0Salt, n0IsSmart])
+  h = sha256([n0owner0, n0owner1, n0Val, n0Type, n0vk0, n0vk1, n0Salt])
   n0h0 == h[0]
   n0h1 == h[1]
 
   // check n1
-  h = sha256([n1rpk0, n1rpk1, n1Val, n1Type, n1vk0, n1vk1, n1Salt, n1IsSmart])
+  h = sha256([n1owner0, n1owner1, n1Val, n1Type, n1vk0, n1vk1, n1Salt])
   n1h0 == h[0]
   n1h1 == h[1]
 
   // check n2
-  h = sha256([n2rpk0, n2rpk1, n2Val, n2Type, n2vk0, n2vk1, n2Salt, n2IsSmart])
+  h = sha256([n2owner0, n2owner1, n2Val, n2Type, n2vk0, n2vk1, n2Salt])
   n2h0 == h[0]
   n2h1 == h[1]
 

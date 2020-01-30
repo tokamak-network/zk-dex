@@ -60,10 +60,12 @@ export default {
       loading: false,
     };
   },
-  computed: mapState({
-    dexContract: state => state.app.dexContract,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'dexcontract',
+      'metamaskAccount',
+    ]),
+  },
   created () {
     this.$bus.$on('noteSelected', (note) => {
       this.note = note;

@@ -1,0 +1,7 @@
+import "./mul.code" as mul
+
+def main() -> (field):
+  field z = mul(100, 200)
+  field result = 20000
+  z == result
+  return z
