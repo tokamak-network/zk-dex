@@ -11,10 +11,9 @@ const {
 const { marshal } = require('../scripts/lib/util');
 const { Note } = require('../scripts/lib/Note');
 
-const path = `${__dirname}/localstorage`;
-localStorage = new LocalStorage(path);
+localStorage = new LocalStorage('./localstorage');
 if (typeof localStorage === 'undefined' || localStorage === null) {
-  global.localStorage = new LocalStorage(path);
+  global.localStorage = new LocalStorage('./scratch');
 }
 
 
@@ -162,7 +161,8 @@ function addNote (_userKey, _note) {
   const noteHash = note.hash();
 
   if (notes.findIndex(n => Note.hashFromJSON(n) === noteHash) < 0) {
-    notes.push(_note);
+    notes.push(note);
+    // console.warn('Note added', noteHash);
     _setNotes(userKey, notes);
     setNoteByHash(userKey, note);
     return true;
@@ -191,7 +191,7 @@ module.exports.setNoteByHash = setNoteByHash;
 function updateNote (_userKey, note) {
   const userKey = marshal(_userKey);
   const notes = getNotes(userKey);
-  const i = notes.findIndex(n => n.hash === note.hash);
+  const i = notes.findIndex(n => n.hash() === note.hash());
 
   if (i >= 0) {
     notes.splice(i, 1, note);
@@ -237,6 +237,7 @@ class TransferHistory {
 
   // NOTE: this would override previous another temporary history
   setHistory () {
+    // console.error('save~!');
     localStorage.setItem(this.getKey(), JSON.stringify(this));
   }
 
@@ -279,11 +280,11 @@ class TransferHistory {
     return JSON.parse(res);
   }
 
-  addHistoryByUser (userKey, noteTransferHistory) {
+  addHistoryByUser (userKey) {
     console.error('addHistoryByUser ~');
 
     const histories = TransferHistory.getHistoriesByUser(userKey);
-    histories.push(noteTransferHistory);
+    histories.push(this);
 
     localStorage.setItem(TransferHistory._keyHistoryByUser(userKey), JSON.stringify(histories));
   }
@@ -416,4 +417,3 @@ function updateOrderByAccount (_userKey, order) {
   _setOrdersByAccount(userKey, orders);
 }
 module.exports.updateOrderByAccount = updateOrderByAccount;
-

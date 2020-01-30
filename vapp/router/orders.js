@@ -28,15 +28,9 @@ router.get('/', asyncWrap(
 router.post('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
-<<<<<<< HEAD
     const orders = addOrder(order);
     return res.status(200).json({
       orders,
-=======
-    addOrder(order);
-    return res.status(200).json({
-      order,
->>>>>>> vapp: modify some codes to make settleOrder work
     });
   }
 ));
@@ -53,18 +47,11 @@ router.get('/:id', asyncWrap(
 
 router.put('/', asyncWrap(
   async function (req, res) {
-<<<<<<< HEAD
     const orderId = req.body.orderId;
     const orderState = req.body.orderState;
     const orders = updateOrderState(orderId, orderState);
     return res.status(200).json({
       orders,
-=======
-    const order = req.body.order;
-    updateOrder(order);
-    return res.status(200).json({
-      order,
->>>>>>> vapp: modify some codes to make settleOrder work
     });
   }
 ));

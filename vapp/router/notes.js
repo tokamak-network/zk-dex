@@ -1,5 +1,4 @@
 const express = require('express');
-const Web3Utils = require('web3-utils');
 
 const asyncWrap = require('../lib/asyncWrap');
 
@@ -26,59 +25,41 @@ router.get('/:userKey', asyncWrap(
   }
 ));
 
-router.get('/transfer/histories/:account', asyncWrap(
+router.get('/:userKey/history', asyncWrap(
   async function (req, res) {
-    const account = req.params.account;
-    const noteTransferHistories = TransferHistory.getHistoriesByUser(account);
+    const userKey = req.params.userKey;
+    const histories = TransferHistory.getHistoriesByUser(userKey);
 
     return res.status(200).json({
-      noteTransferHistories,
+      histories,
     });
   }
 ));
 
 router.post('/', asyncWrap(
   async function (req, res) {
-    const account = req.body.account;
+    const userKey = req.body.userKey;
     const note = req.body.note;
-    addNote(account, note);
-    return res.status(200).json({
-      note,
-    });
+    addNote(userKey, note);
+    return res.status(200).json({});
   }
 ));
 
-router.post('/transfer/histories', asyncWrap(
+router.post('/transfer/:userKey', asyncWrap(
   async function (req, res) {
-    const notes = req.body.notes;
-
-    const originalNote = notes.originalNote;
-    const paymentNote = notes.paymentNote;
-    const changeNote = notes.changeNote;
-
-    const sender = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(originalNote.owner)), 40);
-
-    const noteTransferHistory = {
-      token: originalNote.token,
-      value: originalNote.value,
-      from: originalNote.owner,
-      to: paymentNote.owner,
-      change: changeNote.value,
-    };
-
-    new TransferHistory(originalNote, paymentNote, changeNote).addHistoryByUser(sender, noteTransferHistory);
+    const userKey = req.params.userKey;
+    const note = req.body.note;
+    addTransferNote(userKey, note);
     return res.status(200).json({});
   }
 ));
 
 router.put('/', asyncWrap(
   async function (req, res) {
-    const account = req.body.account;
+    const userKey = req.body.userKey;
     const note = req.body.note;
-    updateNote(account, note);
-    return res.status(200).json({
-      note,
-    });
+    updateNote(userKey, note);
+    return res.status(200).json({});
   }
 ));
 
