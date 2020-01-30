@@ -42,7 +42,8 @@ field nh0, field nh1, private field nOwner0, private field nOwner1, private fiel
   smartOwner0 == originH0
   smartOwner1 == originH1
   field[10] params = babyjubjubParams()
-  field isOwner = proofOfOwnership([originOwner0, originOwner1], sk, params)
+  // TODO: activate
+  // field isOwner = proofOfOwnership([originOwner0, originOwner1], sk, params)
   isOwner == 1
 
   // check value

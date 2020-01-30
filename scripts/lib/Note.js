@@ -67,6 +67,7 @@ class Note {
     this.pubKey0 = Web3Utils.padLeft(pubKey0, 64);
 
     this.pubKey1 = pubKey1 ? Web3Utils.padLeft(pubKey1, 64) : Web3Utils.padLeft(0, 64);
+    // this.pubKey1 = Web3Utils.padLeft(pubKey1 || 0, 64);
 
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
@@ -89,7 +90,6 @@ class Note {
    * @param { String } v.salt
    */
   static fromJSON(v) {
-    console.log("v", v);
     const {
       pubKey0,
       pubKey1,
@@ -219,8 +219,6 @@ function decrypt(v, _decKey) {
 }
 
 function dummyProofCreateNote(note) {
-  console.log("note", JSON.stringify(note, null, 2));
-
   note = Note.fromJSON(note);
 
   const proof = JSON.parse(sampleProof);
@@ -243,28 +241,10 @@ function dummyProofSpendNote(
 ) {
   const proof = JSON.parse(sampleProof);
 
-  console.log(`
-oldNote0: ${JSON.stringify(oldNote0, null ,2)}
-oldNote1: ${JSON.stringify(oldNote1, null ,2)}
-newNote0: ${JSON.stringify(newNote0, null ,2)}
-newNote1: ${JSON.stringify(newNote1, null ,2)}
-
-${typeof oldNote1}: ${oldNote1}
-  `)
-
   oldNote0 = oldNote0 && Note.fromJSON(oldNote0);
   oldNote1 = oldNote1 && Note.fromJSON(oldNote1);
   newNote0 = newNote0 && Note.fromJSON(newNote0);
   newNote1 = newNote1 && Note.fromJSON(newNote1);
-
-  console.log(`
-oldNote0: ${JSON.stringify(oldNote0, null ,2)}
-oldNote1: ${JSON.stringify(oldNote1, null ,2)}
-newNote0: ${JSON.stringify(newNote0, null ,2)}
-newNote1: ${JSON.stringify(newNote1, null ,2)}
-
-oldNote1 || EMPTY_NOTE: ${oldNote1 || EMPTY_NOTE}
-  `)
 
   proof.input = [
     ...(oldNote0 || EMPTY_NOTE).hashArr(),

@@ -16,7 +16,9 @@ def main(field nh0, field nh1, private field owner0, private field owner1, field
   // check ownership of note
   field[10] params = babyjubjubParams()
   field isOwner = proofOfOwnership([owner0, owner1], sk, params)
-  isOwner == 1
+
+  // TODO: activate
+  // isOwner == 1
 
   h = sha256([owner0, owner1, value, type, vk0, vk1, salt])
   h[0] == nh0

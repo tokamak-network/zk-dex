@@ -40,7 +40,8 @@ import "ecc/babyjubjubParams.code" as babyjubjubParams
 // (private) changeVk0+ changeVk1 : change note viewKey
 // (private) changeSalt : change note salt
 
-// (private) sk : secret key corresponding to address of old notes
+// (private) sk0 : secret key corresponding to address of old note 0
+// (private) sk1 : secret key corresponding to address of old note 1
 
 
 def main(field o0h0, field o0h1, private field o0owner0, private field o0owner1, private field o0val, private field o0type, private field o0vk0, private field o0vk1, private field o0salt, \
@@ -50,12 +51,14 @@ field changeH0, field changeH1, private field changeOwner0, private field change
 
   // check ownership of old note 0
   field[10] params = babyjubjubParams()
-  proofOfOwnership([o0owner0, o0owner1], sk0, params) == 1
+  // TODO: activate
+  // proofOfOwnership([o0owner0, o0owner1], sk0, params) == 1
 
   field transfer1Note = fromBool(o1owner0 == 0 && o1owner1 == 0 && o1val == 0 && o1type == 0 && o1vk0 == 0 && o1vk1 == 0 && o1salt == 0)
 
   // check if transfer 1 note or 2 notes.
-  or(transfer1Note, proofOfOwnership([o1owner0, o1owner1], sk1, params)) == 1
+  // TODO: activate
+  // or(transfer1Note, proofOfOwnership([o1owner0, o1owner1], sk1, params)) == 1
 
   // check value
   field inputValue = add(o0val, o1val)

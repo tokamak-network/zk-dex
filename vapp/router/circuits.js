@@ -33,9 +33,9 @@ const dummyGenerators = {
   settleOrder: createProof.dummyProofSettleOrder,
 };
 
-console.log('process.env.USE_DUMMY', process.env.USE_DUMMY);
 
-const useDummy = process.env.USE_DUMMY || false;
+const USE_DUMMY = process.env.USE_DUMMY === 'true';
+console.log('USE_DUMMY', USE_DUMMY);
 
 // TODO: get private key from DB.
 router.post('/:circuit', asyncWrap(
@@ -43,9 +43,8 @@ router.post('/:circuit', asyncWrap(
     const circuit = req.params.circuit;
     const params = req.body.params;
 
-    // console.log('params', JSON.stringify(params));
 
-    const generator = useDummy
+    const generator = USE_DUMMY
       ? dummyGenerators[circuit]
       : generators[circuit];
 

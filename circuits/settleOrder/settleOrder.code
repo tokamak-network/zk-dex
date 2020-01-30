@@ -67,7 +67,8 @@ field price, private field q0, private field r0, private field q1, private field
 
   // check ownership of makerNote
   field[10] params = babyjubjubParams()
-  field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
+  // TODO: activate
+  // field isOwner = proofOfOwnership([o0owner0, o0owner1], sk, params)
   isOwner == 1
 
   // check (hash(makerNote) == newNoteToMaker.owner)

@@ -32,8 +32,10 @@ Dai.setProvider(web3.currentProvider);
 
 const { BN, toBN, padRight } = web3Utils;
 
-process.env.USE_DUMMY = true;
-console.log('process.env.USE_DUMMY', process.env.USE_DUMMY);
+
+const USE_DUMMY = process.env.USE_DUMMY === 'true';
+
+console.log('USE_DUMMY', USE_DUMMY);
 
 const initApp = async () => {
   const app = express();
@@ -229,7 +231,7 @@ describe('Vapp API Router', () => {
 
 
   describe('With Circuit', () => {
-    const TIMEOUT = process.env.USE_DUMMY ? 10000 : 360000; // 1 hour
+    const TIMEOUT = USE_DUMMY ? 10000 : 360000; // 1 hour
     const makerUserKey = web3Utils.randomHex(16);
     const takerUserKey = web3Utils.randomHex(16);
     const makerVk = web3Utils.randomHex(16);
@@ -237,8 +239,8 @@ describe('Vapp API Router', () => {
 
 
     // ZkDexPrivateKey
-    let maker;
-    let taker;
+    let makerPrivKey;
+    let takerPrivKey;
 
     // ZkDexPublicKey
     let makerPubKey;
@@ -249,7 +251,7 @@ describe('Vapp API Router', () => {
     let takerZkAddress;
 
     // make note
-    let daiNote;
+    let daiNote; // daiNote -> daiNote0 + daiNote1
     let ethNote;
     const daiAmount = ether('20');
     const ethAmount = ether('100');
@@ -304,14 +306,14 @@ describe('Vapp API Router', () => {
       res = await request(app)
         .get(`/accounts/${makerUserKey}`);
       const makerAccount = res.body.accounts[0];
-      maker = fromKeyStoreObject(makerAccount, passphrase);
-      makerPubKey = maker.toPubKey();
+      makerPrivKey = fromKeyStoreObject(makerAccount, passphrase);
+      makerPubKey = makerPrivKey.toPubKey();
 
       res = await request(app)
         .get(`/accounts/${takerUserKey}`);
       const takerAccount = res.body.accounts[0];
-      taker = fromKeyStoreObject(takerAccount, passphrase);
-      takerPubKey = taker.toPubKey();
+      takerPrivKey = fromKeyStoreObject(takerAccount, passphrase);
+      takerPubKey = takerPrivKey.toPubKey();
 
 
       console.log(`
@@ -321,8 +323,8 @@ describe('Vapp API Router', () => {
       makerUserKey: ${makerUserKey}
       takerUserKey: ${takerUserKey}
 
-      maker: ${maker.toHex()}
-      taker: ${taker.toHex()}
+      makerPrivKey: ${makerPrivKey.toHex()}
+      takerPrivKey: ${takerPrivKey.toHex()}
 
 
       makerPubKey: ${makerPubKey.xToHex()}, ${makerPubKey.yToHex()}
@@ -394,10 +396,13 @@ describe('Vapp API Router', () => {
       });
     }
 
-    async function createNote (pubKey0, pubKey1, tokenType, value, from, encKey) {
+    async function createNote (
+      pubKey0, pubKey1, tokenType, value, privKey, from, encKey) {
       const note = new Note(pubKey0, pubKey1, value, tokenType, '0x00', getSalt());
-      const proof = await getProof('/circuits/mintNBurnNote', [note]);
-
+      const proof = await getProof('/circuits/mintNBurnNote', [
+        note,
+        privKey.toHex(),
+      ]);
 
       const prom = waitNotes([note]);
 
@@ -417,6 +422,7 @@ describe('Vapp API Router', () => {
           makerPubKey.xToHex(), makerPubKey.yToHex(),
           constants.DAI_TOKEN_TYPE,
           daiAmount,
+          makerPrivKey,
           ethAccounts[0],
           makerVk,
         );
@@ -437,6 +443,7 @@ describe('Vapp API Router', () => {
           takerPubKey.xToHex(), takerPubKey.yToHex(),
           constants.ETH_TOKEN_TYPE,
           ethAmount,
+          takerPrivKey,
           ethAccounts[1],
           takerVk,
         );
@@ -462,7 +469,7 @@ describe('Vapp API Router', () => {
         );
 
         daiNote1 = new Note(
-          makerPubKey.xToHex(), makerPubKey.yToHex(),
+          takerPubKey.xToHex(), takerPubKey.yToHex(),
           spendDaiNoteAmount,
           constants.DAI_TOKEN_TYPE,
           '0x00',
@@ -474,12 +481,14 @@ describe('Vapp API Router', () => {
           null,
           daiNote0,
           daiNote1,
+          makerPrivKey.toHex(),
+          null,
         ]);
 
         await zkdex.spend(
           ...proof,
           daiNote0.encrypt(makerVk),
-          daiNote1.encrypt(makerVk),
+          daiNote1.encrypt(takerVk),
           {
             from: ethAccounts[0],
           }
@@ -488,15 +497,25 @@ describe('Vapp API Router', () => {
         await waitNotes([daiNote0, daiNote1]);
       }, TIMEOUT);
 
-      test('it should fetch maker\'s 3 notes', done => request(app)
+      test('it should fetch maker\'s 2 notes', done => request(app)
         .get(`/notes/${makerUserKey}`)
         .end((err, res) => {
           if (err) return done(err);
           expect(res.status).toEqual(200);
-          expect(res.body.notes.length).toEqual(3);
+          expect(res.body.notes.length).toEqual(2);
           expect(Note.hashFromJSON(res.body.notes[0])).toEqual(daiNote.hash());
           expect(Note.hashFromJSON(res.body.notes[1])).toEqual(daiNote0.hash());
-          expect(Note.hashFromJSON(res.body.notes[2])).toEqual(daiNote1.hash());
+          done();
+        }));
+
+      test('it should fetch taker\'s 2 notes', done => request(app)
+        .get(`/notes/${takerUserKey}`)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.status).toEqual(200);
+          expect(res.body.notes.length).toEqual(2);
+          expect(Note.hashFromJSON(res.body.notes[0])).toEqual(ethNote.hash());
+          expect(Note.hashFromJSON(res.body.notes[1])).toEqual(daiNote1.hash());
           done();
         }));
 
@@ -509,7 +528,6 @@ describe('Vapp API Router', () => {
           expect(res.body.histories.length).toEqual(1);
 
           const history = res.body.histories[0];
-          console.log('history', history);
 
           expect(history.oldNote0Hash).toEqual(daiNote.hash());
           expect(history.oldNote1Hash).toEqual(constants.EMPTY_NOTE_HASH);
@@ -517,6 +535,8 @@ describe('Vapp API Router', () => {
           expect(history.newNote1Hash).toEqual(daiNote1.hash());
           done();
         }));
+
+      // TODO: test taker's note and transfer history
     });
 
     describe('/orders', () => {
@@ -524,13 +544,22 @@ describe('Vapp API Router', () => {
         makerNote = daiNote0;
         takerNote = ethNote;
 
-        stakeNote = new Note(makerNote.hash(), stakeEthAmount, constants.ETH_TOKEN_TYPE, takerVk, getSalt(), true);
+        stakeNote = new Note(
+          makerNote.hash(), null,
+          stakeEthAmount, constants.ETH_TOKEN_TYPE,
+          takerVk,
+          getSalt(),
+        );
+
         changeNoteOwner = takerNote.hash();
       });
 
       describe('Make Order', () => {
         test('it should make a new order#0', async () => {
-          const proof = await getProof('/circuits/makeOrder', [makerNote]);
+          const proof = await getProof('/circuits/makeOrder', [
+            makerNote,
+            makerPrivKey.toHex(),
+          ]);
 
           orderId = Number(await zkdex.getOrderCount());
 
@@ -599,6 +628,7 @@ describe('Vapp API Router', () => {
             order.makerNote,
             takerNote,
             stakeNote,
+            takerPrivKey.toHex(),
           ]);
 
           await zkdex.takeOrder(
@@ -688,6 +718,7 @@ describe('Vapp API Router', () => {
             order.makerInfo.paymentNote,
             order.makerInfo.changeNote,
             price,
+            makerPrivKey.toHex(),
           ]);
 
           // console.error(`settleorder proof length: ${proof.length}`);

@@ -28,8 +28,9 @@ def main(field oh0, field oh1, private field owner0, private field owner1, priva
 field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nType, private field nvk0, private field nvk1, private field nSalt, private field sk) -> (field):
   // check ownership of note
   field[10] params = babyjubjubParams()
-  field isOwner = proofOfOwnership([owner0, owner1], sk, params)
-  isOwner == 1
+  // TODO: activate
+  // field isOwner = proofOfOwnership([owner0, owner1], sk, params)
+  // isOwner == 1
 
   oVal == nVal
 

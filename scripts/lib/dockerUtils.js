@@ -55,6 +55,7 @@ async function execute(circuitName, cmd) {
           proof = proof.slice(i);
           proof = JSON.parse(proof);
         } catch (e) {
+          console.log("proof chunks", proof);
           return reject(new Error(`Failed to parse proof json: ${e.message}`));
         }
 
@@ -91,6 +92,10 @@ async function getMintNBurnProof(note, sk) {
 }
 
 async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk1) {
+  if (!oldNote0) {
+    oldNote0 = constants.EMPTY_NOTE;
+    sk0 = '0x00';
+  }
   if (!oldNote1) {
     oldNote1 = constants.EMPTY_NOTE;
     sk1 = '0x00';
@@ -157,6 +162,7 @@ async function getConvertProof(smartNote, originNote, note, sk) {
 }
 
 async function getMakeOrderProof(makerNote, sk) {
+  console.log("makerNote, sk", makerNote, sk)
   const cmdArgs = getMakeOrderCmd(
     convert(makerNote.owner0),
     convert(makerNote.owner1),
