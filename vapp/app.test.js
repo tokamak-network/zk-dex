@@ -32,7 +32,7 @@ const Dai = Contract(require('../build/contracts/MockDai.json'));
 ZkDex.setProvider(web3.currentProvider);
 Dai.setProvider(web3.currentProvider);
 
-const { BN, toBN, padRight } = web3Utils;
+const { BN, toHex, toBN, padRight } = web3Utils;
 
 
 const USE_DUMMY = process.env.USE_DUMMY === 'true';
@@ -584,7 +584,7 @@ describe('Vapp API Router', () => {
           await zkdex.makeOrder(
             makerVk,
             constants.ETH_TOKEN_TYPE,
-            price,
+            toHex(price),
             ...proof,
             {
               from: ethAccounts[0],
@@ -737,11 +737,18 @@ describe('Vapp API Router', () => {
             order.makerInfo.rewardNote,
             order.makerInfo.paymentNote,
             order.makerInfo.changeNote,
-            price,
+            toHex(price),
             makerPrivKey.toHex(),
           ]);
 
-          console.log(`settle order proof: ${proof}`);
+          console.log(`
+
+
+          settle order proof: ${proof}
+
+
+
+          `);
 
           const prom = waitOrder(orderId, 'order:settled');
 

@@ -343,7 +343,7 @@ function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote
     ...changeNote.hashArr(),
     changeNote.token,
 
-    price,
+    Web3Utils.toHex(price),
 
     1,
   ];
