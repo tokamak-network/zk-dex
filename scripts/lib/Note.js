@@ -287,8 +287,8 @@ function dummyProofMakeOrder(_makerNote) {
 function dummyProofTakeOrder(_parentNote, _stakeNote) {
   const proof = JSON.parse(sampleProof);
 
-  const parentNote = Note.fromJSON(parentNote);
-  const stakeNote = Note.fromJSON(stakeNote);
+  const parentNote = Note.fromJSON(_parentNote);
+  const stakeNote = Note.fromJSON(_stakeNote);
 
   proof.input = [
     ...parentNote.hashArr(),
@@ -305,6 +305,18 @@ function dummyProofTakeOrder(_parentNote, _stakeNote) {
 }
 
 function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote, _changeNote, price) {
+  console.log(`
+      _makerNote    : ${JSON.stringify(_makerNote)}
+
+      _stakeNote    : ${JSON.stringify(_stakeNote)}
+
+      _rewardNote   : ${JSON.stringify(_rewardNote)}
+
+      _paymentNote  : ${JSON.stringify(_paymentNote)}
+
+      _changeNote   : ${JSON.stringify(_changeNote)}
+
+    `)
   const proof = JSON.parse(sampleProof);
 
   const makerNote = Note.fromJSON(_makerNote);

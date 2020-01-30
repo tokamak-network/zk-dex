@@ -207,8 +207,8 @@ contract ZkDex is ZkDai {
    *  - [0, 1]  = maker note hash
    *  - [2]     = maker note type
    *
-   *  - [3, 4]  = taker note to maker note hash
-   *  - [5]     = taker note to maker type
+   *  - [3, 4]  = taker note to maker note (stake note) hash
+   *  - [5]     = taker note to maker note (stake note) type
    *
    *  - [6, 7]  = reward note hash
    *  - [8, 9]  = owner of reward note (parent note (for taker))

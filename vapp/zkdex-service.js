@@ -26,6 +26,9 @@ const targetEvents = [
   'OrderSettled',
 ];
 
+
+const SCALING_FACTOR = toBN('1000000000000000000');
+
 const PRIORITY_FETCH_ORDER = 1;
 const PRIORITY_NOTE_STATE_CHANGE = 3;
 const PRIORITY_ORDER_TAKEN = 4;
@@ -239,7 +242,7 @@ class ZkDexService extends EventEmitter {
         const stakeAmount = toBN(stakeNote.value);
         const price = toBN(order.price);
 
-        const maxTakerAmount = makerAmount.mul(price);
+        const maxTakerAmount = makerAmount.mul(price).div(SCALING_FACTOR);
         const isOverPayment = maxTakerAmount.cmp(stakeAmount) < 0;
 
         let rewardAmount; // source token amount to taker
@@ -251,7 +254,7 @@ class ZkDexService extends EventEmitter {
         let changeNoteEncKey;
 
         if (!isOverPayment) {
-          rewardAmount = stakeAmount.div(price);
+          rewardAmount = stakeAmount.mul(SCALING_FACTOR).div(price);
           paymentAmount = stakeAmount;
           changeAmount = makerAmount.sub(rewardAmount);
 
@@ -260,7 +263,7 @@ class ZkDexService extends EventEmitter {
           changeNoteEncKey = newMakerVk;
         } else {
           rewardAmount = makerAmount;
-          paymentAmount = makerAmount.mul(price);
+          paymentAmount = makerAmount.mul(price).div(SCALING_FACTOR);
           changeAmount = stakeAmount.sub(paymentAmount);
 
           changeNoteOwner = takerNoteHash;
@@ -268,9 +271,9 @@ class ZkDexService extends EventEmitter {
           changeNoteEncKey = order.makerInfo.takerViewingKey;
         }
 
-        order.makerInfo.rewardNote = new Note(takerNoteHash, rewardAmount, order.sourceToken, '0x00', getSalt(), true);
-        order.makerInfo.paymentNote = new Note(makerNote.hash(), paymentAmount, order.targetToken, '0x00', getSalt(), true);
-        order.makerInfo.changeNote = new Note(changeNoteOwner, changeAmount, changeTokenType, changeNoteEncKey, getSalt(), true);
+        order.makerInfo.rewardNote = new Note(takerNoteHash, null, rewardAmount, order.sourceToken, '0x00', getSalt(), true);
+        order.makerInfo.paymentNote = new Note(makerNote.hash(), null, paymentAmount, order.targetToken, '0x00', getSalt(), true);
+        order.makerInfo.changeNote = new Note(changeNoteOwner, null, changeAmount, changeTokenType, '0x00', getSalt(), true);
 
         order.makerInfo.rewardNoteEncKey = order.makerInfo.takerViewingKey;
         order.makerInfo.paymentNoteEncKey = newMakerVk;
@@ -361,6 +364,7 @@ class ZkDexService extends EventEmitter {
       db.increaseOrderCount();
       await db.addOrder(order);
       this.emit('order', order);
+      console.log('order fired', order);
 
       for (const userKey of userKeys) {
         // console.error('userKey, order.makerNote', userKey, order.makerNote);
@@ -373,6 +377,7 @@ class ZkDexService extends EventEmitter {
           db.addOrUpdateOrderByUser(userKey, order);
           db.updateOrder(order);
           this.emit('order:created', order);
+          console.log('order:created fired', order);
           return;
         }
       }

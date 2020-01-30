@@ -52,6 +52,8 @@ router.post('/:circuit', asyncWrap(
       throw new Error('Unknown circuit ' + circuit);
     }
 
+    if (circuit === 'takeOrder') console.log('params', JSON.stringify(params, null, 2));
+
     const proof = await generator(...params);
 
     if (circuit === 'transferNote') {

@@ -5,6 +5,8 @@ const ZkDexPrivateKey = KeyStore.ZkDexPrivateKey;
 function createAccount (passphrase) {
   const dk = KeyStore.create();
 
+  const priv = ZkDexPrivateKey.randomPrivateKey();
+
   const keyObj = KeyStore.dump(
     passphrase,
     dk.privateKey,

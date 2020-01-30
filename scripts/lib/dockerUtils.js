@@ -162,7 +162,7 @@ async function getConvertProof(smartNote, originNote, note, sk) {
 }
 
 async function getMakeOrderProof(makerNote, sk) {
-  console.log("makerNote, sk", makerNote, sk)
+  console.log("makerNote, sk", makerNote, sk);
   const cmdArgs = getMakeOrderCmd(
     convert(makerNote.owner0),
     convert(makerNote.owner1),
@@ -178,6 +178,7 @@ async function getMakeOrderProof(makerNote, sk) {
 }
 
 async function getTakeOrderProof(parentNote, stakeNote, sk) {
+  console.log("parentNote, stakeNote, sk", parentNote, stakeNote, sk);
   const cmdArgs = getTakeOrderCmd(
     convert(parentNote.owner0),
     convert(parentNote.owner1),
@@ -186,7 +187,7 @@ async function getTakeOrderProof(parentNote, stakeNote, sk) {
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
     convert(stakeNote.owner0),
-    null,
+    convert(stakeNote.owner1),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
@@ -206,31 +207,37 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
     convert(makerNote.token),
     convert(makerNote.viewingKey),
     convert(makerNote.salt),
+
     convert(stakeNote.owner0),
     null,
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
     convert(stakeNote.salt),
+
     convert(rewardNote.owner0),
     null,
     convert(rewardNote.value),
     convert(rewardNote.token),
     convert(rewardNote.viewingKey),
     convert(rewardNote.salt),
+
     convert(paymentNote.owner0),
     null,
     convert(paymentNote.value),
     convert(paymentNote.token),
     convert(paymentNote.viewingKey),
     convert(paymentNote.salt),
+
     convert(changeNote.owner0),
     null,
     convert(changeNote.value),
     convert(changeNote.token),
     convert(changeNote.viewingKey),
     convert(changeNote.salt),
+
     convert(price),
+
     convert(util.getQuotient(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
     convert(util.getRemainder(Web3Utils.toBN(makerNote.value).mul(Web3Utils.toBN(price)), SCALING_FACTOR)),
     convert(util.getQuotient(Web3Utils.toBN(stakeNote.value), Web3Utils.toBN(price))),

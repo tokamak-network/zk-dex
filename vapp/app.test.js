@@ -12,6 +12,8 @@ const request = require('supertest');
 const Web3 = require('web3');
 const web3Utils = require('web3-utils');
 
+require('dotenv').config();
+
 const router = require('./router');
 
 const { fromKeyStoreObject } = require('./lib/accounts');
@@ -231,7 +233,7 @@ describe('Vapp API Router', () => {
 
 
   describe('With Circuit', () => {
-    const TIMEOUT = USE_DUMMY ? 10000 : 360000; // 1 hour
+    const TIMEOUT = USE_DUMMY ? 20000 : 360000; // 1 hour
     const makerUserKey = web3Utils.randomHex(16);
     const takerUserKey = web3Utils.randomHex(16);
     const makerVk = web3Utils.randomHex(16);
@@ -381,8 +383,17 @@ describe('Vapp API Router', () => {
     function waitOrder (orderId, e = 'order') {
       orderId = toBN(orderId).toNumber();
       let resolved = false;
+
+      console.log(`Waiting Order#${orderId} -- eventName: ${e}`);
+
       return new Promise((resolve, reject) => {
         zkdexService.on(e, function (order) {
+          console.log(`
+          eventName    : ${e}
+          emitteOrderId: ${order.orderId}
+          targetOrderId: ${orderId}
+          same?        : ${order.orderId === orderId}
+          `);
           if (order.orderId === orderId) {
             this.removeAllListeners();
             resolved = true;
@@ -546,22 +557,29 @@ describe('Vapp API Router', () => {
 
         stakeNote = new Note(
           makerNote.hash(), null,
-          stakeEthAmount, constants.ETH_TOKEN_TYPE,
+          stakeEthAmount,
+          constants.ETH_TOKEN_TYPE,
           takerVk,
           getSalt(),
         );
+
+        console.log(`
+        stakeNote: ${JSON.stringify(stakeNote, null, 2)}
+        `);
 
         changeNoteOwner = takerNote.hash();
       });
 
       describe('Make Order', () => {
         test('it should make a new order#0', async () => {
+          orderId = Number(await zkdex.getOrderCount());
+
           const proof = await getProof('/circuits/makeOrder', [
             makerNote,
             makerPrivKey.toHex(),
           ]);
 
-          orderId = Number(await zkdex.getOrderCount());
+          const prom = waitOrder(orderId, 'order:created');
 
           await zkdex.makeOrder(
             makerVk,
@@ -570,9 +588,10 @@ describe('Vapp API Router', () => {
             ...proof,
             {
               from: ethAccounts[0],
-            }
+            },
           );
-          order = await waitOrder(orderId, 'order:created');
+
+          order = await prom;
         }, TIMEOUT);
 
         test('it should fetch all orders', done => request(app)
@@ -625,11 +644,11 @@ describe('Vapp API Router', () => {
       describe('Take Order', () => {
         test('it should take order', async () => {
           const proof = await getProof('/circuits/takeOrder', [
-            order.makerNote,
             takerNote,
             stakeNote,
             takerPrivKey.toHex(),
           ]);
+          const prom = waitOrder(orderId, 'order:taken');
 
           await zkdex.takeOrder(
             orderId,
@@ -640,7 +659,7 @@ describe('Vapp API Router', () => {
             }
           );
 
-          order = await waitOrder(orderId, 'order:taken');
+          order = await prom;
         }, TIMEOUT);
 
         test('make should have new vk', done => request(app)
@@ -686,6 +705,8 @@ describe('Vapp API Router', () => {
             expect(order.orderId).toEqual(orderId);
             expect(order.taken).toEqual(true);
 
+            console.log('order?', JSON.stringify(order, null, 2));
+
             // maker info
             expect(order.makerInfo.makerUserKey).toEqual(makerUserKey);
             expect(Note.hashFromJSON(order.makerInfo.stakeNote)).toEqual(stakeNote.hash());
@@ -698,7 +719,7 @@ describe('Vapp API Router', () => {
             expect(web3Utils.hexToNumberString(order.makerInfo.changeNote.value))
               .toEqual(web3Utils.hexToNumberString(changeEthAmount));
 
-            expect(order.makerInfo.changeNote.owner).toEqual(changeNoteOwner);
+            expect(order.makerInfo.changeNote.pubKey0).toEqual(changeNoteOwner);
 
             done();
           })
@@ -712,7 +733,6 @@ describe('Vapp API Router', () => {
 
           const proof = await getProof('/circuits/settleOrder', [
             order.makerInfo.makerNote,
-            order.parentNote,
             order.makerInfo.stakeNote,
             order.makerInfo.rewardNote,
             order.makerInfo.paymentNote,
@@ -720,6 +740,10 @@ describe('Vapp API Router', () => {
             price,
             makerPrivKey.toHex(),
           ]);
+
+          console.log(`settle order proof: ${proof}`);
+
+          const prom = waitOrder(orderId, 'order:settled');
 
           // console.error(`settleorder proof length: ${proof.length}`);
 
@@ -736,7 +760,7 @@ describe('Vapp API Router', () => {
             }
           );
 
-          order = await waitOrder(orderId, 'order:settled');
+          order = await prom;
         }, TIMEOUT);
 
         test('should fetch order by id', done => request(app)
