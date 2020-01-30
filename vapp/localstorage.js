@@ -9,7 +9,7 @@ const {
 
 
 const { marshal } = require('../scripts/lib/util');
-const { Note } = require('../scripts/lib/Note');
+const { Note, constants: { EMPTY_NOTE_HASH } } = require('../scripts/lib/Note');
 
 localStorage = new LocalStorage('./localstorage');
 if (typeof localStorage === 'undefined' || localStorage === null) {
@@ -132,7 +132,7 @@ function _setAccounts (userKey, accounts) {
   localStorage.setItem(`${userKey}-accounts`, JSON.stringify(accounts));
 }
 
-// Notes
+// Notes - by user
 function getNotes (_userKey) {
   const userKey = marshal(_userKey);
 
@@ -160,14 +160,14 @@ function addNote (_userKey, _note) {
 
   const noteHash = note.hash();
 
-  if (notes.findIndex(n => Note.hashFromJSON(n) === noteHash) < 0) {
-    notes.push(note);
-    // console.warn('Note added', noteHash);
-    _setNotes(userKey, notes);
-    setNoteByHash(userKey, note);
-    return true;
+  if (notes.findIndex(n => Note.hashFromJSON(n) === noteHash) >= 0) {
+    return false;
   }
-  return false;
+
+  notes.push(note);
+  _setNotes(userKey, notes);
+  setNoteByHash(userKey, note);
+  return true;
 }
 module.exports.addNote = addNote;
 
@@ -211,11 +211,33 @@ const TransferHistoryState = {
   Deleted: 'deleted',
   Transferred: 'transferred',
 };
+
 class TransferHistory {
-  constructor (input, output1, output2, state = TransferHistoryState.Init) {
-    this.input = input;
-    this.output1 = output1;
-    this.output2 = output2;
+  /**
+   *
+   * @param {String} oldNote0Hash hash of old note 0
+   * @param {String} oldNote1Hash hash of old note 1
+   * @param {String} newNote0Hash hash of new note 0
+   * @param {String} newNote1Hash hash of new note 1
+   * @param {TransferHistoryState} state
+   */
+  constructor (
+    oldNote0Hash,
+    oldNote1Hash,
+    newNote0Hash,
+    newNote1Hash,
+    state = TransferHistoryState.Init
+  ) {
+    if (!oldNote0Hash) throw new Error(`oldNote0Hash must be hash: ${oldNote0Hash}`);
+    if (!oldNote1Hash) throw new Error(`oldNote1Hash must be hash: ${oldNote1Hash}`);
+    if (!newNote0Hash) throw new Error(`newNote0Hash must be hash: ${newNote0Hash}`);
+    if (!newNote1Hash) throw new Error(`newNote1Hash must be hash: ${newNote1Hash}`);
+
+    this.oldNote0Hash = oldNote0Hash;
+    this.oldNote1Hash = oldNote1Hash;
+    this.newNote0Hash = newNote0Hash;
+    this.newNote1Hash = newNote1Hash;
+
     this.state = state;
   }
 
@@ -223,27 +245,51 @@ class TransferHistory {
     JSON.stringify(this);
   }
 
-  static _keyHistory (h0) {
-    return `transfer-history-${marshal(h0)}`;
+  static _keyHistory (oldNote0Hash, oldNote1Hash) {
+    return `transfer-history-${marshal(oldNote0Hash + oldNote1Hash)}`;
   }
 
-  static getHistory (h0) {
-    const res = localStorage.getItem(TransferHistory._keyHistory(h0));
+  static getHistory (oldNote0Hash, oldNote1Hash) {
+    const res = localStorage.getItem(TransferHistory._keyHistory(oldNote0Hash, oldNote1Hash));
 
     if (!res) return null;
+
     const obj = JSON.parse(res);
-    return new TransferHistory(obj.input, obj.output1, obj.output2, obj.state);
+
+    return new TransferHistory(
+      obj.oldNote0Hash,
+      obj.oldNote1Hash,
+      obj.newNote0Hash,
+      obj.newNote1Hash,
+      obj.state
+    );
   }
 
   // NOTE: this would override previous another temporary history
   setHistory () {
-    // console.error('save~!');
-    localStorage.setItem(this.getKey(), JSON.stringify(this));
+    // store history by old notes hash
+    localStorage.setItem(this.getKey(), this.toString());
+
+    // store history by user and old notes hash
+    const userKeys = getUserKeys();
+    const hs = [
+      this.oldNote0Hash,
+      this.oldNote1Hash,
+    ].filter(h => h !== EMPTY_NOTE_HASH);
+
+    userKeys.forEach((userKey) => {
+      hs.forEach((h) => {
+        if (getNoteByHash(userKey, h)) {
+          this.addHistoryByUser(userKey);
+        }
+      });
+    });
   }
 
   getKey () {
     return TransferHistory._keyHistory(
-      Note.hashFromJSON(this.input),
+      this.oldNote0Hash,
+      this.oldNote1Hash,
     );
   }
 
@@ -265,7 +311,6 @@ class TransferHistory {
     this.setHistory();
   }
 
-
   // by user
   static _keyHistoryByUser (userKey) {
     console.error('_keyHistoryByUser', userKey);
@@ -281,8 +326,6 @@ class TransferHistory {
   }
 
   addHistoryByUser (userKey) {
-    console.error('addHistoryByUser ~');
-
     const histories = TransferHistory.getHistoriesByUser(userKey);
     histories.push(this);
 

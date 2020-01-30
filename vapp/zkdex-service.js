@@ -157,7 +157,7 @@ class ZkDexService extends EventEmitter {
           if (!decryptedNote) return;
 
           if (db.addNote(userKey, decryptedNote)) {
-            console.log(`[User ${userKey}] has Note#${noteHash} isSmart${decryptedNote.isSmart}`);
+            console.log(`[User ${userKey}] has Note#${noteHash} isSmart=${decryptedNote.isSmart()}`);
             this.emit('note', null, decryptedNote);
           }
         } catch (e) {

@@ -1,4 +1,5 @@
 const express = require('express');
+const isEmpty = require('lodash/isEmpty');
 
 const asyncWrap = require('../lib/asyncWrap');
 
@@ -10,7 +11,7 @@ const {
   getSettleOrderProof,
 } = require('../../scripts/lib/dockerUtils');
 
-const { Note, createProof } = require('../../scripts/lib/Note');
+const { Note, createProof, constants: { EMPTY_NOTE } } = require('../../scripts/lib/Note');
 
 const { TransferHistory, TransferHistoryState } = require('../localstorage');
 
@@ -55,13 +56,20 @@ router.post('/:circuit', asyncWrap(
     const proof = await generator(...params);
 
     if (circuit === 'transferNote') {
-      const input = Note.fromJSON(params[0]);
-      const output1 = Note.fromJSON(params[1]);
-      const output2 = Note.fromJSON(params[2]);
+      const oldNote0 = isEmpty(params[0]) ? EMPTY_NOTE : Note.fromJSON(params[0]);
+      const oldNote1 = isEmpty(params[1]) ? EMPTY_NOTE : Note.fromJSON(params[1]);
+      const newNote0 = isEmpty(params[2]) ? EMPTY_NOTE : Note.fromJSON(params[2]);
+      const newNote1 = isEmpty(params[3]) ? EMPTY_NOTE : Note.fromJSON(params[3]);
 
-      const history = TransferHistory.getHistory(input.hash());
+      const oldNote0Hash = oldNote0.hash();
+      const oldNote1Hash = oldNote1.hash();
+      const newNote0Hash = newNote0.hash();
+      const newNote1Hash = newNote1.hash();
+
+      const history = TransferHistory.getHistory(oldNote0Hash, oldNote1Hash);
+
       if (!history) {
-        (new TransferHistory(input, output1, output2)).setHistory();
+        (new TransferHistory(oldNote0Hash, oldNote1Hash, newNote0Hash, newNote1Hash)).setHistory();
       }
     }
 

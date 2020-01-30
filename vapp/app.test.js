@@ -332,7 +332,6 @@ describe('Vapp API Router', () => {
 
     // helper functions
     async function getProof (url, params) {
-      console.log('get proof', url);
       const res = await request(app)
         .post(url)
         .send({ params })
@@ -395,13 +394,14 @@ describe('Vapp API Router', () => {
       });
     }
 
-    async function createNote (owner0, owner1, tokenType, value, from) {
-      const note = new Note(owner0, owner1, value, tokenType, '0x00', getSalt());
+    async function createNote (pubKey0, pubKey1, tokenType, value, from, encKey) {
+      const note = new Note(pubKey0, pubKey1, value, tokenType, '0x00', getSalt());
       const proof = await getProof('/circuits/mintNBurnNote', [note]);
+
 
       const prom = waitNotes([note]);
 
-      await zkdex.mint(...proof, note.encrypt(owner), {
+      await zkdex.mint(...proof, note.encrypt(encKey), {
         from,
         value: tokenType === constants.ETH_TOKEN_TYPE ? value : 0,
       });
@@ -412,11 +412,17 @@ describe('Vapp API Router', () => {
     }
 
     describe('/notes', () => {
-      test.only('it should create a DAI note', async () => {
-        daiNote = await createNote(maker, constants.DAI_TOKEN_TYPE, daiAmount, ethAccounts[0]);
+      test('it should create a DAI note', async () => {
+        daiNote = await createNote(
+          makerPubKey.xToHex(), makerPubKey.yToHex(),
+          constants.DAI_TOKEN_TYPE,
+          daiAmount,
+          ethAccounts[0],
+          makerVk,
+        );
       }, TIMEOUT);
 
-      test.only('it should fetch maker\'s DAI note', done => request(app)
+      test('it should fetch maker\'s DAI note', done => request(app)
         .get(`/notes/${makerUserKey}`)
         .end((err, res) => {
           if (err) return done(err);
@@ -427,7 +433,13 @@ describe('Vapp API Router', () => {
         }));
 
       test('it should create a ETH note', async () => {
-        ethNote = await createNote(taker, constants.ETH_TOKEN_TYPE, ethAmount, ethAccounts[1]);
+        ethNote = await createNote(
+          takerPubKey.xToHex(), takerPubKey.yToHex(),
+          constants.ETH_TOKEN_TYPE,
+          ethAmount,
+          ethAccounts[1],
+          takerVk,
+        );
       }, TIMEOUT);
 
       test('it should fetch taker\'s ETH notes', done => request(app)
@@ -441,20 +453,33 @@ describe('Vapp API Router', () => {
         }));
 
       test('it should spend a DAI note', async () => {
-        daiNote0 = new Note(maker, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
-        daiNote1 = new Note(maker, spendDaiNoteAmount, constants.DAI_TOKEN_TYPE, '0x00', getSalt(), false);
+        daiNote0 = new Note(
+          makerPubKey.xToHex(), makerPubKey.yToHex(),
+          spendDaiNoteAmount,
+          constants.DAI_TOKEN_TYPE,
+          '0x00',
+          getSalt(),
+        );
+
+        daiNote1 = new Note(
+          makerPubKey.xToHex(), makerPubKey.yToHex(),
+          spendDaiNoteAmount,
+          constants.DAI_TOKEN_TYPE,
+          '0x00',
+          getSalt(),
+        );
 
         const proof = await getProof('/circuits/transferNote', [
           daiNote,
+          null,
           daiNote0,
           daiNote1,
-          null,
         ]);
 
         await zkdex.spend(
           ...proof,
-          daiNote0.encrypt(daiNote0.owner),
-          daiNote1.encrypt(daiNote1.owner),
+          daiNote0.encrypt(makerVk),
+          daiNote1.encrypt(makerVk),
           {
             from: ethAccounts[0],
           }
@@ -483,11 +508,13 @@ describe('Vapp API Router', () => {
           expect(res.status).toEqual(200);
           expect(res.body.histories.length).toEqual(1);
 
-          const histories = res.body.histories;
+          const history = res.body.histories[0];
+          console.log('history', history);
 
-          expect(Note.hashFromJSON(histories[0].input)).toEqual(daiNote.hash());
-          expect(Note.hashFromJSON(histories[0].output1)).toEqual(daiNote0.hash());
-          expect(Note.hashFromJSON(histories[0].output2)).toEqual(daiNote1.hash());
+          expect(history.oldNote0Hash).toEqual(daiNote.hash());
+          expect(history.oldNote1Hash).toEqual(constants.EMPTY_NOTE_HASH);
+          expect(history.newNote0Hash).toEqual(daiNote0.hash());
+          expect(history.newNote1Hash).toEqual(daiNote1.hash());
           done();
         }));
     });

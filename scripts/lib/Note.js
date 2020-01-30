@@ -7,8 +7,8 @@ const {
   split32BytesTo16BytesArr,
   parseProofObj,
 } = require('./util');
-const noteHelper = require('../helper/noteHelper');
 
+const noteHelper = require('../helper/noteHelper');
 
 const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
 const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
@@ -56,18 +56,18 @@ const NoteState = {
 class Note {
   /**
    *
-   * @param { String | BN } owner0 x-coordinates of public key for normal note, original note hash for smart note
-   * @param { String | BN | Null } owner1 y-coordinates of public key for normal note, null for smart note
+   * @param { String | BN } pubKey0 x-coordinates of public key for normal note, original note hash for smart note
+   * @param { String | BN | Null } pubKey1 y-coordinates of public key for normal note, null for smart note
    * @param { String | BN } value The amount of token
    * @param { String | BN } token The type of token
    * @param { String | BN } viewingKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
    * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
    */
-  constructor(owner0, owner1, value, token, viewingKey, salt) {
-    this.owner0 = Web3Utils.padLeft(owner0, 64);
-    if (owner1) {
-      this.owner1 = Web3Utils.padLeft(owner1, 64);
-    }
+  constructor(pubKey0, pubKey1, value, token, viewingKey, salt) {
+    this.pubKey0 = Web3Utils.padLeft(pubKey0, 64);
+
+    this.pubKey1 = pubKey1 ? Web3Utils.padLeft(pubKey1, 64) : Web3Utils.padLeft(0, 64);
+
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
     this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
@@ -78,39 +78,49 @@ class Note {
     return this.fromJSON(v).hash();
   }
 
+  /**
+   *
+   * @param { Object } v a JSON-encoded note
+   * @param { String } v.pubKey0
+   * @param { String } v.pubKey1
+   * @param { String } v.value
+   * @param { String } v.token
+   * @param { String } v.viewingKey
+   * @param { String } v.salt
+   */
   static fromJSON(v) {
+    console.log("v", v);
     const {
-      owner,
+      pubKey0,
+      pubKey1,
       value,
       token,
       viewingKey,
       salt,
-      isSmart,
     } = typeof v === 'object' ? v : JSON.parse(v);
 
-    return new Note(owner, value, token, viewingKey, salt, isSmart);
+    return new Note(pubKey0, pubKey1, value, token, viewingKey, salt);
   }
 
   isSmart() {
-    return this.owner1 === null;
+    return this.pubKey1 === Web3Utils.padLeft(0, 64);
   }
-
 
   /**
    * @returns { String | Array } Array of x and y coordinates of public key of the owner for normal note, or String of the original note hash for smart note.
    */
   getOwner() {
     if (this.isSmart()) {
-      return this.owner0;
+      return this.pubKey0;
     }
 
-    return [this.owner0, this.owner1];
+    return [this.pubKey0, this.pubKey1];
   }
 
   hash() {
     return marshal(noteHelper.getNoteHash(
-      unmarshal(this.owner0),
-      this.owner1 ? unmarshal(this.owner1) : null,
+      unmarshal(this.pubKey0),
+      this.pubKey1 ? unmarshal(this.pubKey1) : null,
       unmarshal(this.value),
       unmarshal(this.token),
       unmarshal(this.viewingKey),
@@ -201,7 +211,7 @@ function decrypt(v, _decKey) {
 
   try {
     const note = JSON.parse(str);
-    return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
+    return new Note(note.pubKey0, note.pubKey1, note.value, note.token, note.viewingKey, note.salt);
   } catch (e) {
     console.error("Failed to parse decrypted note JSON", e);
     return null;
@@ -209,6 +219,8 @@ function decrypt(v, _decKey) {
 }
 
 function dummyProofCreateNote(note) {
+  console.log("note", JSON.stringify(note, null, 2));
+
   note = Note.fromJSON(note);
 
   const proof = JSON.parse(sampleProof);
@@ -223,19 +235,42 @@ function dummyProofCreateNote(note) {
   return parseProofObj(proof);
 }
 
-function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
+function dummyProofSpendNote(
+  oldNote0,
+  oldNote1,
+  newNote0,
+  newNote1,
+) {
   const proof = JSON.parse(sampleProof);
 
-  oldNote = Note.fromJSON(oldNote);
-  newNote1 = Note.fromJSON(newNote1);
-  newNote2 = Note.fromJSON(newNote2);
-  originalNote = originalNote && Note.fromJSON(originalNote);
+  console.log(`
+oldNote0: ${JSON.stringify(oldNote0, null ,2)}
+oldNote1: ${JSON.stringify(oldNote1, null ,2)}
+newNote0: ${JSON.stringify(newNote0, null ,2)}
+newNote1: ${JSON.stringify(newNote1, null ,2)}
+
+${typeof oldNote1}: ${oldNote1}
+  `)
+
+  oldNote0 = oldNote0 && Note.fromJSON(oldNote0);
+  oldNote1 = oldNote1 && Note.fromJSON(oldNote1);
+  newNote0 = newNote0 && Note.fromJSON(newNote0);
+  newNote1 = newNote1 && Note.fromJSON(newNote1);
+
+  console.log(`
+oldNote0: ${JSON.stringify(oldNote0, null ,2)}
+oldNote1: ${JSON.stringify(oldNote1, null ,2)}
+newNote0: ${JSON.stringify(newNote0, null ,2)}
+newNote1: ${JSON.stringify(newNote1, null ,2)}
+
+oldNote1 || EMPTY_NOTE: ${oldNote1 || EMPTY_NOTE}
+  `)
 
   proof.input = [
-    ...oldNote0.hashArr(),
+    ...(oldNote0 || EMPTY_NOTE).hashArr(),
     ...(oldNote1 || EMPTY_NOTE).hashArr(),
-    ...newNote.hashArr(),
-    ...changeNote.hashArr(),
+    ...(newNote0 || EMPTY_NOTE).hashArr(),
+    ...(newNote1 || EMPTY_NOTE).hashArr(),
     1,
   ];
 
@@ -280,7 +315,7 @@ function dummyProofTakeOrder(_parentNote, _stakeNote) {
     parentNote.token,
 
     ...stakeNote.hashArr(),
-    ...split32BytesTo16BytesArr(stakeNote.owner0),
+    ...split32BytesTo16BytesArr(stakeNote.pubKey0),
     stakeNote.token,
 
     1,
@@ -306,11 +341,11 @@ function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote
     stakeNote.token,
 
     ...rewardNote.hashArr(),
-    ...split32BytesTo16BytesArr(rewardNote.owner0),
+    ...split32BytesTo16BytesArr(rewardNote.pubKey0),
     rewardNote.token,
 
     ...paymentNote.hashArr(),
-    ...split32BytesTo16BytesArr(paymentNote.owner0),
+    ...split32BytesTo16BytesArr(paymentNote.pubKey0),
     paymentNote.token,
 
     ...changeNote.hashArr(),
