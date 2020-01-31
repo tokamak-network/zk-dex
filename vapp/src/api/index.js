@@ -9,38 +9,29 @@ function createInstance () {
 const instance = createInstance();
 
 // get
-async function getViewingKey (key) {
-  const res = await instance.get(`/vk/${key}`);
+async function getViewingKey (userKey) {
+  const res = await instance.get(`/vk/${userKey}`);
   return res.data.vk;
 }
 
-async function getAccounts (key) {
-  const res = await instance.get(`/accounts/${key}`);
+async function getAccounts (userKey) {
+  const res = await instance.get(`/accounts/${userKey}`);
   return res.data.accounts;
 }
 
-async function getNoteByNoteHash (account, hash) {
-  const res = await instance.get(`/notes/${account}/${hash}`);
-  return res.data.note;
-}
+// async function getNoteByNoteHash (account, hash) {
+//   const res = await instance.get(`/notes/${account}/${hash}`);
+//   return res.data.note;
+// }
 
-async function getNotes (account) {
-  const res = await instance.get(`/notes/${account}`);
+async function getNotes (userKey) {
+  const res = await instance.get(`/notes/${userKey}`);
   return res.data.notes;
 }
 
-async function getNoteTransferHistories (account) {
-  const res = await instance.get(`/notes/transfer/histories/${account}`);
-  return res.data.noteTransferHistories;
-}
-
-async function getOrdersByUser (account) {
-  const res = await instance.get(`/orders/${account}`);
-  if (res.data === null) {
-    return null;
-  } else {
-    return res.data.orders;
-  }
+async function getNoteTransferHistories (userKey) {
+  const res = await instance.get(`/notes/${userKey}/history`);
+  return res.data.histories;
 }
 
 async function getOrder (id) {
@@ -61,9 +52,18 @@ async function getOrders () {
   }
 }
 
+async function getOrdersByUser (userKey) {
+  const res = await instance.get(`/orders/${userKey}`);
+  if (res.data === null) {
+    return null;
+  } else {
+    return res.data.orders;
+  }
+}
+
 // post
-function createAndAddAccount (userKey, passphrase) {
-  const res = instance.post(`/accounts/${userKey}`, {
+async function createAndAddAccount (userKey, passphrase) {
+  const res = await instance.post(`/accounts/${userKey}`, {
     passphrase,
   });
   return res.data.address;
@@ -84,16 +84,16 @@ async function addNote (account, note) {
   return res.data.notes;
 }
 
-async function addTransferNote (account, note) {
+async function addTransferNote (userKey, note) {
   const res = await instance.post('/notes/transfer', {
-    account,
+    userKey,
     note,
   });
   return res.data.notes;
 }
 
-async function addOrderHistory (account, history) {
-  const res = await instance.post(`/orders/history/${account}`, {
+async function addOrderHistory (userKey, history) {
+  const res = await instance.post(`/orders/history/${userKey}`, {
     history,
   });
   return res.data.history;
@@ -178,7 +178,7 @@ function deleteAccount (key, address) {
 const api = {
   getViewingKey,
   getAccounts,
-  getNoteByNoteHash,
+  // getNoteByNoteHash,
   getNotes,
   getNoteTransferHistories,
   getOrder,

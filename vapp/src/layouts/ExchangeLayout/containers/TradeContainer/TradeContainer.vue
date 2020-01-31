@@ -32,11 +32,9 @@
         :value="noteAmount"
         :isStaticValue="true"
       />
-      <div
-        class="button-container"
-        @click="makeOrder"
-      >
+      <div class="button-container">
         <standard-button
+          @click.native="makeOrder"
           :text="'Make Order'"
           :loading="waitingForMakingOrder"
         />
@@ -64,11 +62,9 @@
         :isStaticValue="true"
         :value="noteAmount"
       />
-      <div
-        class="button-container"
-        @click="takeOrder"
-      >
+      <div class="button-container">
         <standard-button
+          @click.native="takeOrder"
           :text="'Take Order'"
           :loading="waitingForTakingOrder"
         />
@@ -85,7 +81,6 @@ import StandardButton from '../../../../components/StandardButton';
 import { mapState } from 'vuex';
 import api from '../../../../api/index';
 import Web3Utils from 'web3-utils';
-import { createNote } from '../../../../helpers/note';
 
 export default {
   data () {
@@ -102,10 +97,13 @@ export default {
       waitingForTakingOrder: false,
     };
   },
-  computed: mapState({
-    dexContract: state => state.app.dexContract,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'userKey',
+      'metamaskAccount',
+      'dexContract',
+    ]),
+  },
   components: {
     InputText,
     RadioButton,
@@ -132,15 +130,17 @@ export default {
   methods: {
     radioButtonClicked (radioButton) {
       if (this.whichRadioButtonClicked !== radioButton) {
-        this.clearInputText();
+        this.clear();
       }
       this.whichRadioButtonClicked = radioButton;
     },
-    clearInputText () {
+    clear () {
       this.orderId = '',
       this.price = '',
       this.noteHash = '';
       this.noteAmount = '';
+      this.waitingForTakingOrder = false;
+      this.waitingForTakingOrder = false;
     },
     async makeOrder () {
       if (this.waitingForMakingOrder === true) return;
@@ -169,53 +169,31 @@ export default {
         return;
       }
 
-      // 1. update note state
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        this.makerNote.hash = noteHash;
-        this.makerNote.state = noteState;
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNote(this.metamaskAccount, this.makerNote))
-        );
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
+      await new Promise(r => setTimeout(r, 5000));
 
-      // 2. create order
-      const orderId = Web3Utils.toHex((await this.dexContract.getOrderCount()) - 1);
-      const order = await this.dexContract.orders(orderId);
-      order.orderId = orderId;
-      order.orderMaker = this.metamaskAccount;
-      order.makerNoteObject = this.makerNote; // TODO: makerNoteObject -> makerNote, makerNote -> makerNoteHash
-      order.makerNoteValue = this.makerNote.value;
+      const notes = await api.getNotes(this.userKey);
+      const orders = await api.getOrders();
+      const ordersByUser = await api.getOrdersByUser(this.userKey);
 
-      try {
-        this.$store.dispatch('addOrder', (await api.addOrder(order)));
-      } catch (err) {
-        console.log(err);
-      } finally {
-        this.clearInputText();
-        this.waitingForMakingOrder = false;
-      }
+      this.$store.dispatch('setNotes', notes);
+      this.$store.dispatch('setOrders', orders);
+      this.$store.dispatch('setOrdersByUser', ordersByUser);
+
+      this.clear();
     },
     async takeOrder () {
+      if (this.waitingForTakingOrder === true) return;
       this.waitingForTakingOrder = true;
-      // get note.
+
       const makerNoteHash = this.order.makerNote;
       const takerNote = this.takerNote;
-      const stakeNote = createNote(makerNoteHash, takerNote.value, this.order.targetToken, true);
+      const stakeNote = {};
+      // const stakeNote = createNote(makerNoteHash, takerNote.value, this.order.targetToken, true);
 
-      // generate proof.
       const circuit = 'takeOrder';
       const params = [makerNoteHash, takerNote, stakeNote];
       const proof = (await api.generateProof(circuit, params)).data.proof;
 
-      // validate proof and take order.
       const tx = await this.dexContract.takeOrder(
         Web3Utils.toHex(this.orderId),
         ...proof,
@@ -230,51 +208,17 @@ export default {
         return;
       }
 
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        this.takerNote.hash = noteHash;
-        this.takerNote.state = noteState;
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNote(this.metamaskAccount, this.takerNote))
-        );
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
+      await new Promise(r => setTimeout(r, 5000));
 
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[1].args.state);
-        stakeNote.hash = noteHash;
-        stakeNote.state = noteState;
-        await api.addNote(this.order.orderMaker, stakeNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
+      const notes = await api.getNotes(this.userKey);
+      const orders = await api.getOrders();
+      const ordersByUser = await api.getOrdersByUser(this.userKey);
 
-      const orderId = Web3Utils.toHex(tx.logs[2].args.orderId);
-      const order = await this.dexContract.orders(orderId);
-      Object.keys(order).forEach((key) => {
-        this.order[key] = order[key];
-      });
-      this.order.orderTaker = this.metamaskAccount;
-      this.order.takerNoteValue = this.takerNote.value;
-      this.order.takerNoteObject = takerNote;
-      this.order.stakeNoteObject = stakeNote;
+      this.$store.dispatch('setNotes', notes);
+      this.$store.dispatch('setOrders', orders);
+      this.$store.dispatch('setOrdersByUser', ordersByUser);
 
-      this.$store.dispatch(
-        'updateOrder',
-        (await api.updateOrder(this.order))
-      );
-      this.clearInputText();
-      this.waitingForTakingOrder = false;
+      this.clear();
     },
   },
 };

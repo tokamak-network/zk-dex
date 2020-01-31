@@ -26,11 +26,9 @@
         :value="noteValue"
         :isStaticValue="true"
       />
-      <div
-        class="button-container"
-        @click="liquidateNote"
-      >
+      <div class="button-container">
         <standard-button
+          @click.native="liquidateNote"
           :text="'Liquidate'"
           :loading="loading"
         />
@@ -78,7 +76,7 @@ export default {
   },
   methods: {
     async liquidateNote () {
-      if (this.loading === true) return;
+      if (this.loading) return;
       this.loading = true;
 
       const circuit = 'mintNBurnNote';
@@ -95,30 +93,19 @@ export default {
         return;
       }
 
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        this.note.hash = noteHash;
-        this.note.state = noteState;
-        this.$store.dispatch(
-          'updateNote',
-          (await api.updateNote(this.metamaskAccount, this.note))
-        );
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      } finally {
-        this.clear();
-        this.loading = false;
-      }
+      await new Promise(r => setTimeout(r, 5000));
+
+      const notes = await api.getNotes(this.userKey);
+      this.$store.dispatch('setNotes', notes);
+
+      this.clear();
     },
     clear () {
       this.account = '';
       this.note = null;
       this.noteHash = '';
       this.noteValue = '';
+      this.loading = false;
     },
   },
 };

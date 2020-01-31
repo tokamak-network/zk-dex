@@ -39,11 +39,9 @@
           />
         </template>
       </input-text>
-    <div
-      class="button-container"
-      @click="transferNote"
-    >
+    <div class="button-container">
       <standard-button
+        @click.native="transferNote"
         :text="'Transfer'"
         :loading="loading"
       />
@@ -98,15 +96,7 @@ export default {
       if (this.loading === true) return;
       this.loading = true;
 
-      let notes;
-      try {
-        notes = this.makeNotes(this.note);
-      } catch (err) {
-        return alert(err);
-      }
-      const originalNote = notes.originalNote;
-      const paymentNote = notes.paymentNote;
-      const changeNote = notes.changeNote;
+      const { originalNote, paymentNote, changeNote } = this.makeNotes(this.note);
 
       const circuit = 'transferNote';
       const params = [originalNote, paymentNote, changeNote, null];
@@ -131,64 +121,15 @@ export default {
         return;
       }
 
-      // 1. add note transfer history.
-      await api.addNoteTransferHistory(notes);
+      await new Promise(r => setTimeout(r, 5000));
 
-      // 2. update note state.
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        originalNote.hash = noteHash;
-        originalNote.state = noteState;
-        await api.updateNote(this.metamaskAccount, originalNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
+      const notes = await api.getNotes(this.userKey);
+      const histories = await api.getNoteTransferHistories(this.userKey);
 
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[1].args.state);
-        paymentNote.hash = noteHash;
-        paymentNote.state = noteState;
-        await api.addNote(this.to, paymentNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
-
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[2].args.state);
-        changeNote.hash = noteHash;
-        changeNote.state = noteState;
-        await api.addNote(this.metamaskAccount, changeNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
-
-      // 3. get note transfer histories.
-      let allHistories = [];
-      for (const account of this.accounts) {
-        const histories = await api.getNoteTransferHistories(account.address);
-        allHistories = allHistories.concat(histories);
-      }
-      this.$store.dispatch('setNoteTransferHistories', allHistories);
-
-      // 4. get notes.
-      if (notes !== null) {
-        this.$store.dispatch('setNotes', (await api.getNotes(this.metamaskAccount)));
-      }
+      this.$store.dispatch('setNotes', notes);
+      this.$store.dispatch('setNoteTransferHistories', histories);
 
       this.clear();
-      this.loading = false;
     },
     makeNotes (originalNote) {
       if (this.note.state !== '0x1') {
@@ -225,6 +166,7 @@ export default {
       this.noteValue = '';
       this.to = '';
       this.amount = '';
+      this.loading = false;
     },
   },
 };

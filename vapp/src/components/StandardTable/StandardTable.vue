@@ -23,11 +23,9 @@
           :style="[setWidth(columns), setColor(column, data)]"
         >
           <div v-if="column.options.includes('action') && data.state === '1' && data.orderMaker === metamaskAccount">
-            <div
-              class="button-container"
-              @click="clickButton(data)"
-            >
+            <div class="button-container">
               <standard-button
+                @click.native="clickButton(data)"
                 :text="'Settle'"
                 :loading="loading"
               />
@@ -116,8 +114,15 @@ export default {
     },
     filterData (column, data) {
       const columnData = data[column];
+      if (this.type === 'account') {
+        switch (column) {
+        case 'index':
+          return this.datas.indexOf(data);
 
-      if (this.type === 'note') {
+        default:
+          return columnData;
+        }
+      } else if (this.type === 'note') {
         switch (column) {
         case 'token':
           const type = parseInt(columnData);
@@ -302,16 +307,16 @@ const columns = {
       data: 'address',
       options: [],
     },
-    // {
-    //   title: 'Name',
-    //   data: 'name',
-    //   options: [],
-    // },
-    // {
-    //   title: 'Total Note',
-    //   data: 'totalNoteAmount',
-    //   options: [],
-    // },
+    {
+      title: 'Name',
+      data: 'name',
+      options: [],
+    },
+    {
+      title: 'Total Note',
+      data: 'totalNoteAmount',
+      options: [],
+    },
   ],
   note: [
     {

@@ -18,12 +18,14 @@ const initialState = {
   metamaskAccount: '',
   vks: [],
   accounts: [],
+  notes: [],
   histories: [], // note transfer history
 
   /**
    * ORDER
    */
   orders: [],
+  ordersByUser: [],
 };
 
 const getInitialState = () => initialState;
@@ -59,12 +61,18 @@ const mutations = {
   SET_ACCOUNTS: (state, accounts) => {
     state.accounts = accounts;
   },
+  SET_NOTES: (state, notes) => {
+    state.notes = notes;
+  },
   SET_NOTE_TRANSFER_HISTORIES: (state, histories) => {
     state.histories = histories;
   },
 
   SET_ORDERS: (state, orders) => {
     state.orders = orders;
+  },
+  SET_ORDERS_BY_USER: (state, orders) => {
+    state.ordersByUser = orders;
   },
 };
 
@@ -83,10 +91,6 @@ const actions = {
     commit('SET_DAI_CONTRACT', contract);
   },
 
-  setOrders ({ commit }, orders) {
-    commit('SET_ORDERS', orders);
-  },
-
   setUserKey ({ commit }, account) {
     commit('SET_USER_KEY', account);
     commit('SET_METAMASK_ACCOUNT', account); // TODO: metamask account -> account that only sign transaction.
@@ -97,8 +101,18 @@ const actions = {
   setAccounts ({ commit }, accounts) {
     commit('SET_ACCOUNTS', accounts);
   },
+  setNotes ({ commit }, notes) {
+    commit('SET_NOTES', notes);
+  },
   setNoteTransferHistories ({ commit }, histories) {
     commit('SET_NOTE_TRANSFER_HISTORIES', histories);
+  },
+
+  setOrders ({ commit }, orders) {
+    commit('SET_ORDERS', orders);
+  },
+  setOrdersByUser ({ commit }, orders) {
+    commit('SET_ORDERS_BY_USER', orders);
   },
 };
 export default new Vuex.Store({

@@ -80,30 +80,27 @@ export default {
       this.setState(metamaskAccount);
     },
     async setState (metamaskAccount) {
-      // NOTE: use metamask account as key.
-      const key = metamaskAccount;
+      const userKey = metamaskAccount;
 
-      // const accounts = await api.getAccounts(key);
-      // if (accounts !== null) {
-      //   this.$store.dispatch('setAccounts', accounts);
+      const accounts = await api.getAccounts(userKey);
+      const notes = await api.getNotes(userKey);
+      const orders = await api.getOrders();
+      const ordersByUser = await api.getOrdersByUser(this.userKey);
+      const histories = await api.getNoteTransferHistories(this.userKey);
 
-      //   let allHistories = [];
-      //   for (const account of accounts) {
-      //     const histories = await api.getNoteTransferHistories(account.address);
-      //     allHistories = allHistories.concat(histories);
-      //   }
-      //   this.$store.dispatch('setNoteTransferHistories', allHistories);
-      // }
+      // console.log(`
+      // accounts    : ${accounts},
+      // notes       : ${notes},
+      // orders      : ${orders},
+      // ordersByUser: ${ordersByUser},
+      // histories   : ${histories},
+      // `);
 
-      // const notes = await api.getNotes(key);
-      // if (notes !== null) {
-      //   this.$store.dispatch('setNotes', notes);
-      // }
-
-      // const orders = await api.getOrders();
-      // if (orders !== null) {
-      //   this.$store.dispatch('setOrders', orders);
-      // }
+      if (accounts) this.$store.dispatch('setAccounts', accounts);
+      if (notes) this.$store.dispatch('setNotes', notes);
+      if (orders) this.$store.dispatch('setOrders', orders);
+      if (ordersByUser) this.$store.dispatch('setOrdersByUser', ordersByUser);
+      if (histories) this.$store.dispatch('setNoteTransferHistories', histories);
     },
   },
 };

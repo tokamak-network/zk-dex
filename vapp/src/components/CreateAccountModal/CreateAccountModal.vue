@@ -13,17 +13,14 @@
               ref="password2"
               labelType="password"
             />
-            <button class="modal-button"
-              @click="clickConfirmButton"
-            >
-              Confirm
-            </button>
+            <div class="button-container">
+              <standard-button
+                @click.native="clickConfirmButton"
+                :text="'Settle'"
+                :loading="loading"
+              />
+            </div>
           </div>
-          <!-- <div class="modal-footer">
-            <p>Account </p>
-            <p>00000abcd00000abcd</p>
-            <p>successfully created.</p>
-          </div> -->
         </div>
       </div>
     </div>
@@ -32,26 +29,41 @@
 
 <script>
 import InputAccount from '../../components/Inputs/InputAccount';
+import StandardButton from '../../components/StandardButton';
 
 import api from '../../api/index';
 
 export default {
+  data () {
+    return {
+      loading: false,
+    };
+  },
   components: {
     InputAccount,
+    StandardButton,
   },
   mounted () {
     this.$refs.password1.$refs.input.focus();
   },
   methods: {
     async clickConfirmButton () {
+      if (this.loading) return;
+      this.loading = true;
       const password1 = this.$refs.password1.$refs.input.value;
       const password2 = this.$refs.password2.$refs.input.value;
 
       if (!this.isValidPassword(password1, password2)) {
         alert('invalid password');
+        this.loading = false;
         return;
       }
+
       this.$emit('newAccountRequested', password1);
+
+      // TODO: get synchronously event
+      await new Promise(r => setTimeout(r, 2000));
+      this.loading = false;
     },
     isValidPassword (password1, password2) {
       if (password1 !== '' &&

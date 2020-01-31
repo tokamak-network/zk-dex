@@ -56,13 +56,7 @@ export default {
         changeNote,
         order.price,
       ];
-      let proof;
-      try {
-        proof = (await api.generateProof(circuit, params)).data.proof;
-      } catch (err) {
-        console.log(err);
-        return;
-      }
+      const proof = (await api.generateProof(circuit, params)).data.proof;
 
       const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
       const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
@@ -77,96 +71,16 @@ export default {
         from: this.metamaskAccount,
       });
 
-      try {
-        rewardNote.hash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        rewardNote.state = Web3Utils.toHex(tx.logs[0].args.state);
-        await api.addNote(order.orderTaker, rewardNote);
-      } catch (err) {}
+      await new Promise(r => setTimeout(r, 5000));
 
-      try {
-        paymentNote.hash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
-          64
-        );
-        paymentNote.state = Web3Utils.toHex(tx.logs[1].args.state);
-        await api.addNote(order.orderMaker, paymentNote);
-      } catch (err) {}
-
-      try {
-        changeNote.hash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)),
-          64
-        );
-        changeNote.state = Web3Utils.toHex(tx.logs[2].args.state);
-        if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
-          await api.addNote(order.orderMaker, changeNote);
-        } else {
-          await api.addNote(order.orderTaker, changeNote);
-        }
-      } catch (err) {}
-
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[3].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[3].args.state);
-        makerNote.hash = noteHash;
-        makerNote.state = noteState;
-        await api.updateNote(order.orderMaker, makerNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
-
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[4].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[4].args.state);
-        takerNote.hash = noteHash;
-        takerNote.state = noteState;
-        await api.updateNote(order.orderTaker, takerNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
-
-      try {
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[5].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[5].args.state);
-        stakeNote.hash = noteHash;
-        stakeNote.state = noteState;
-        await api.updateNote(order.orderMaker, stakeNote);
-      } catch (err) {
-        console.log(err); // TODO: error handling.
-      }
-
-      // TODO: a way that order data are stored should be fixed.
-      try {
-        const orderId = Web3Utils.toHex(tx.logs[6].args.orderId);
-        order.state = (await this.dexContract.orders(orderId)).state;
-        order.timestamp = new Date().getTime();
-        await api.updateOrder(order);
-      } catch (err) {}
-
-      const accounts = await api.getAccounts(this.metamaskAccount);
-      if (accounts !== null) {
-        this.$store.dispatch('setAccounts', accounts);
-      }
-      const notes = await api.getNotes(this.metamaskAccount);
-      if (notes !== null) {
-        this.$store.dispatch('setNotes', notes);
-      }
+      const notes = await api.getNotes(this.userKey);
       const orders = await api.getOrders();
-      if (orders !== null) {
-        this.$store.dispatch('setOrders', orders);
-      }
+      const ordersByUser = await api.getOrdersByUser(this.userKey);
+
+      this.$store.dispatch('setNotes', notes);
+      this.$store.dispatch('setOrders', orders);
+      this.$store.dispatch('setOrdersByUser', ordersByUser);
+
       this.loading = false;
     },
     makeNotes (order) {
