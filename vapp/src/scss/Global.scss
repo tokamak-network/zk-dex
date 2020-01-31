@@ -1,0 +1,296 @@
+
+@import '~@/scss/GlobalVariables';
+@media all {
+  // *********************************************************************
+  // CSS reset
+  // *********************************************************************
+  html,
+  body,
+  div,
+  span,
+  applet,
+  object,
+  iframe,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  blockquote,
+  pre,
+  a,
+  abbr,
+  acronym,
+  address,
+  big,
+  cite,
+  code,
+  del,
+  dfn,
+  em,
+  img,
+  ins,
+  kbd,
+  q,
+  s,
+  samp,
+  small,
+  strike,
+  strong,
+  sub,
+  sup,
+  tt,
+  var,
+  b,
+  u,
+  center,
+  dl,
+  dt,
+  dd,
+  ol,
+  ul,
+  li,
+  fieldset,
+  form,
+  label,
+  legend,
+  table,
+  caption,
+  tbody,
+  tfoot,
+  thead,
+  tr,
+  th,
+  td,
+  article,
+  aside,
+  canvas,
+  details,
+  embed,
+  figure,
+  figcaption,
+  footer,
+  header,
+  hgroup,
+  menu,
+  nav,
+  output,
+  ruby,
+  section,
+  summary,
+  time,
+  mark,
+  audio,
+  video {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    box-sizing: border-box;
+  }
+
+  ::placeholder {
+    color: black;
+    opacity: 0.2;
+  }
+
+  *:focus {
+    outline: 0 !important;
+  }
+
+  .prevent-pointer-events {
+    pointer-events: none;
+  }
+
+  .prevent-user-select {
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    border-radius: 4px;
+  }
+
+  button {
+    box-shadow: none !important;
+  }
+
+  // *********************************************************************
+  // Disable WebKit Spinners
+  // *********************************************************************
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  // *********************************************************************
+  // Standard list styles
+  // *********************************************************************
+  ul li {
+    list-style-type: none;
+  }
+
+  // *********************************************************************
+  // Standard link styles
+  // *********************************************************************
+  a:link,
+  a:visited,
+  a:hover,
+  a:active {
+    text-decoration: none;
+
+    p {
+      text-decoration: none;
+    }
+
+    &.nounderline,
+    &.nounderline * {
+      text-decoration: none;
+    }
+  }
+
+  a {
+    &.underline {
+      text-decoration: underline;
+    }
+
+    &.underline:hover * {
+      text-decoration: underline;
+    }
+  }
+
+  .underline a {
+    text-decoration: underline;
+  }
+
+  // *********************************************************************
+  // Standard elements
+  // *********************************************************************
+  .hidden {
+    display: none;
+  }
+
+  // *********************************************************************
+  // Standard text styles
+  // *********************************************************************
+
+  p {
+    color: black;
+  }
+
+  h1 {
+    font-size: 42px;
+  }
+
+  h2 {
+    font-size: 30px;
+  }
+
+  h3 {
+    font-size: 20px;
+  }
+
+  h4 {
+    font-size: 16px;
+  }
+
+  h5 {
+    font-size: 14px;
+  }
+
+  h6 {
+    font-size: 13px;
+  }
+
+  // *********************************************************************
+  // Standard flex-box styles
+  // *********************************************************************
+  .flex {
+    &.row {
+      flex-direction: row;
+    }
+
+    &.column {
+      flex-direction: column;
+    }
+
+    &.align-items-start {
+      align-items: flex-start;
+    }
+
+    &.align-items-center {
+      align-items: center;
+    }
+
+    &.align-items-end {
+      align-items: flex-end;
+    }
+  }
+
+  .flex-col-1-1-vertical-center {
+    align-items: center;
+    display: flex;
+
+    > * {
+      flex: 1;
+    }
+  }
+
+  .flex-col-vertical-top {
+    align-items: flex-start;
+    display: flex;
+  }
+
+  .flex-col-vertical-center {
+    align-items: center;
+    display: flex;
+  }
+
+  .flex-col-vertical-bottom {
+    align-items: flex-end;
+    display: flex;
+  }
+
+  .flex-space-between {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  // *********************************************************************
+  // Standard buttons
+  // *********************************************************************
+  button {
+    padding-top: 5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    height: 38px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px 0 rgba(7, 7, 15, 0.2);
+    background-color: rgba(247, 248, 249, 1.000);    
+    font-family: DINPro;
+    font-size: 16px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.39;
+    letter-spacing: -0.34px;
+    text-align: center;
+    color: #3753d5;
+    border: 0px;
+  }
+
+  button:hover {
+    cursor: pointer;
+    background-color: rgba(222, 224, 224, 1.000);
+  }
+} // @media all and ( min-width: calc(#{$tablet-width} + 1px) )
+
+// **********************************************************************************************************
+// Global elements for all sizes (Desktop, Tablet, Mobile)
+// **********************************************************************************************************

@@ -16,7 +16,7 @@ async function getViewingKey (key) {
 
 async function getAccounts (key) {
   const res = await instance.get(`/accounts/${key}`);
-  return JSON.parse(res.data.accounts);
+  return res.data.accounts;
 }
 
 async function getNoteByNoteHash (account, hash) {
@@ -26,20 +26,20 @@ async function getNoteByNoteHash (account, hash) {
 
 async function getNotes (account) {
   const res = await instance.get(`/notes/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
-async function getTransferNotes (account) {
-  const res = await instance.get(`/notes/transfer/${account}`);
-  return JSON.parse(res.data.notes);
+async function getNoteTransferHistories (account) {
+  const res = await instance.get(`/notes/transfer/histories/${account}`);
+  return res.data.noteTransferHistories;
 }
 
-async function getOrderHistory (account) {
-  const res = await instance.get(`/orders/history/${account}`);
+async function getOrdersByUser (account) {
+  const res = await instance.get(`/orders/${account}`);
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -57,14 +57,13 @@ async function getOrders () {
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
 // post
-async function addAccount (key, account) {
-  const res = await instance.post('/accounts/import', {
-    key,
+function addAccount (userKey, account) {
+  const res = instance.post(`/accounts/import/${userKey}`, {
     account,
   });
   return res.data.accounts;
@@ -108,7 +107,7 @@ async function setViewingKey (key, vk) {
 }
 
 function createAccount (passphrase) {
-  return instance.post('/accounts', {
+  return instance.post('/accounts/create', {
     passphrase,
   });
 }
@@ -120,8 +119,11 @@ function unlockAccount (passphrase, keystore) {
   });
 }
 
-function generateProof (params) {
-  return instance.post('/circuits', params);
+async function generateProof (circuit, params) {
+  return await instance.post('/circuits', {
+    circuit,
+    params,
+  });
 }
 
 // put
@@ -165,28 +167,27 @@ async function updateOrderTaker (orderId, orderTaker) {
   return res.data.orders;
 }
 
-async function deleteAccount (key, address) {
-  const res = await instance.delete('/accounts', {
+function deleteAccount (key, address) {
+  return instance.delete(`/accounts/${key}`, {
     data: {
-      key,
       address,
     },
   });
-  return res.data.accounts;
 }
 
-export {
+const api = {
   getViewingKey,
   getAccounts,
   getNoteByNoteHash,
   getNotes,
-  getTransferNotes,
+  getNoteTransferHistories,
   getOrder,
-  getOrderHistory,
+  getOrdersByUser,
   getOrders,
   addAccount,
   unlockAccount,
   addNote,
+  // addNoteTransferHistory,
   addTransferNote,
   addOrderHistory,
   addOrder,
@@ -200,3 +201,5 @@ export {
   updateOrderTaker,
   deleteAccount,
 };
+
+export default api;

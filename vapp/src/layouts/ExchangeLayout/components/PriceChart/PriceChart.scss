@@ -1,0 +1,37 @@
+.price-chart {
+  width: 100%;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: -25px;
+
+  div {
+    width: 180px;
+    display: flex;
+
+    p:first-child {
+      font-family: DINPro;
+      font-size: 13px;
+      font-weight: 500;
+      font-style: normal;
+      font-stretch: normal;
+      line-height: 1.54;
+      letter-spacing: -0.32px;
+      text-align: center;
+      color: #9da3ae;
+    }
+
+    p:last-child {
+      font-family: DINPro;
+      font-size: 13px;
+      font-weight: 500;
+      font-style: normal;
+      font-stretch: normal;
+      line-height: 1.54;
+      letter-spacing: -0.32px;
+      color: #f7f8f9;
+      margin-left: 4px;
+    }
+  }
+}

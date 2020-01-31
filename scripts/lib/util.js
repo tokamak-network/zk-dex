@@ -41,12 +41,28 @@ function parseProofObj(obj) {
 }
 
 function marshal(str) {
-  if (str.slice(0, 2) === '0x') return str;
-  return '0x'.concat(str);
+  if (!str) throw new Error("Cannot add hex prefix empty string");
+
+  return '0x' + unmarshal(str);
 }
 
-function unmarshal(str) {
-  if (str.slice(0, 2) === '0x') return str.slice(2);
+function unmarshal(_str) {
+  let str;
+  if (_str instanceof Buffer) {
+    str = _str.toString('hex');
+  } else {
+    str = _str.trim();
+  }
+
+  if (!str) throw new Error("Cannot remove hex prefix empty string");
+
+  const i = str.lastIndexOf("0x");
+  if (i >= 0) str = str.slice(i+2);
+
+  if (str.length % 2 === 1) {
+    str = '0' + str;
+  }
+
   return str;
 }
 

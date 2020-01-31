@@ -1,17 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const router = require('./router');
+const { ZkDexService } = require('./zkdex-service');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/circuits', require('./router/circuits'));
-app.use('/vk', require('./router/vk'));
-app.use('/accounts', require('./router/accounts'));
-app.use('/notes', require('./router/notes'));
-app.use('/orders', require('./router/orders'));
+app.use(router());
 
 app.use(function (err, req, res, next) {
   console.error(err.stack);
@@ -21,5 +19,6 @@ app.use(function (err, req, res, next) {
 });
 
 app.listen(3000, function () {
+  ZkDexService.init('http://127.0.0.1:8545');
   console.log('Example app listening on port 3000!');
 });

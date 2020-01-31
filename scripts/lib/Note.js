@@ -9,13 +9,14 @@ const {
 } = require('./util');
 const noteHelper = require('../helper/noteHelper');
 
-const mode = 'aes-256-cbc';
 
 const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
 const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
 
 const { BN } = Web3Utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
+
+const MODE = 'aes-256-cbc';
 const MAX_FIELD_VALUE = new BN('21888242871839275222246405745257275088548364400416034343698204186575808495616')
 
 const sampleProof = `{
@@ -70,7 +71,24 @@ class Note {
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
     this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
+    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
+  }
+
+  static hashFromJSON(v) {
+    return this.fromJSON(v).hash();
+  }
+
+  static fromJSON(v) {
+    const {
+      owner,
+      value,
+      token,
+      viewingKey,
+      salt,
+      isSmart,
+    } = typeof v === 'object' ? v : JSON.parse(v);
+
+    return new Note(owner, value, token, viewingKey, salt, isSmart);
   }
 
   isSmart() {
@@ -108,12 +126,23 @@ class Note {
     return JSON.stringify(this);
   }
 
-  encrypt(encKey) {
-    const key = marshalEncDecKey(encKey);
-    const cipher = crypto.createCipher(mode, key);
+  encrypt(_encKey) {
+    const encKey = marshalEncDecKey(_encKey);
 
-    const r1 = cipher.update(this.toString(), 'utf8', 'base64');
-    const r2 = cipher.final('base64');
+    const v = this.toString();
+
+    let cipher;
+    let r1;
+    let r2;
+    try {
+      cipher = crypto.createCipher(MODE, encKey);
+      r1 = cipher.update(v, 'utf8', 'base64');
+      r2 = cipher.final('base64');
+    } catch (e) {
+      throw new EncryptError("Failed to encrypt", v, encKey);
+    }
+
+    // console.warn(`Note#${this.hash()} is encrypted by ${encKey}`);
 
     return marshal(
       Web3Utils.fromAscii(r1 + r2),
@@ -136,32 +165,52 @@ function marshalEncDecKey(_key) {
     res = '0' + res;
   }
 
-  // console.warn(`
-  //   marshal?
-  //     match:    ${match}
-  //     original: ${_key}
-  //     res:      ${res}
-  // `)
-
   return res;
 }
 
-function decrypt(v, decKey) {
-  const key = marshalEncDecKey(decKey);
+class DecryptError extends Error {
+  constructor(message, value, key) {
+    super(message);
+    this.value = value;
+    this.key = key;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+class EncryptError extends DecryptError {}
+
+function decrypt(v, _decKey) {
+  const decKey = marshalEncDecKey(_decKey);
+
   if (!v) {
     throw new Error(`invalid value to decrypt: ${v}`);
   }
 
-  const decipher = crypto.createDecipher(mode, key);
+  let decipher;
+  let r1;
+  let r2;
 
-  const r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
-  const r2 = decipher.final('utf8');
+  try {
+    decipher = crypto.createDecipher(MODE, decKey);
+    r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
+    r2 = decipher.final('utf8');
+  } catch (e) {
+    throw new DecryptError(`Failed to decrypt`, v, decKey)
+  }
 
-  const note = JSON.parse(r1 + r2);
-  return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
+  const str = r1 + r2;
+
+  try {
+    const note = JSON.parse(str);
+    return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
+  } catch (e) {
+    console.error("Failed to parse decrypted note JSON", e);
+    return null;
+  }
 }
 
 function dummyProofCreateNote(note) {
+  note = Note.fromJSON(note);
+
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
@@ -176,6 +225,11 @@ function dummyProofCreateNote(note) {
 
 function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
   const proof = JSON.parse(sampleProof);
+
+  oldNote = Note.fromJSON(oldNote);
+  newNote1 = Note.fromJSON(newNote1);
+  newNote2 = Note.fromJSON(newNote2);
+  originalNote = originalNote && Note.fromJSON(originalNote);
 
   proof.input = [
     ...oldNote0.hashArr(),
@@ -201,8 +255,10 @@ function dummyProofConvertNote(smartNote, originNote, convertedNote) {
   return parseProofObj(proof);
 }
 
-function dummyProofMakeOrder(makerNote) {
+function dummyProofMakeOrder(_makerNote) {
   const proof = JSON.parse(sampleProof);
+
+  const makerNote = Note.fromJSON(_makerNote);
 
   proof.input = [
     ...makerNote.hashArr(),
@@ -213,8 +269,11 @@ function dummyProofMakeOrder(makerNote) {
   return parseProofObj(proof);
 }
 
-function dummyProofTakeOrder(parentNote, stakeNote) {
+function dummyProofTakeOrder(_parentNote, _stakeNote) {
   const proof = JSON.parse(sampleProof);
+
+  const parentNote = Note.fromJSON(parentNote);
+  const stakeNote = Note.fromJSON(stakeNote);
 
   proof.input = [
     ...parentNote.hashArr(),
@@ -223,14 +282,21 @@ function dummyProofTakeOrder(parentNote, stakeNote) {
     ...stakeNote.hashArr(),
     ...split32BytesTo16BytesArr(stakeNote.owner0),
     stakeNote.token,
+
     1,
   ];
 
   return parseProofObj(proof);
 }
 
-function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
+function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote, _changeNote, price) {
   const proof = JSON.parse(sampleProof);
+
+  const makerNote = Note.fromJSON(_makerNote);
+  const stakeNote = Note.fromJSON(_stakeNote);
+  const rewardNote = Note.fromJSON(_rewardNote);
+  const paymentNote = Note.fromJSON(_paymentNote);
+  const changeNote = Note.fromJSON(_changeNote);
 
   proof.input = [
     ...makerNote.hashArr(),
@@ -251,6 +317,7 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
     changeNote.token,
 
     price,
+
     1,
   ];
 
@@ -272,6 +339,8 @@ module.exports = {
   },
   NoteState,
   Note,
+  DecryptError,
+  EncryptError,
   decrypt,
   createProof: {
     dummyProofCreateNote,

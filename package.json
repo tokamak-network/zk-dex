@@ -30,12 +30,13 @@
     "openzeppelin-test-helpers": "^0.4.0",
     "rlp": "^2.2.3",
     "truffle": "^5.0.27",
-    "truffle-contract": "^4.0.25",
+    "truffle-contract": "^4.0.30",
     "web3-utils": "^1.0.0"
   },
   "dependencies": {
     "babyjubjub": "^1.0.2",
     "bn.js": "^5.0.0",
+    "bs58": "^4.0.1",
     "child-process-promise": "^2.2.1",
     "dockerode": "^2.5.8",
     "dockerode-promise": "^0.1.0",
@@ -43,6 +44,7 @@
     "ethlint": "^1.2.2",
     "node-docker-api": "^1.1.22",
     "secp256k1": "^3.6.1",
-    "truffle": "^5.0.0-beta.1"
+    "truffle": "^5.0.0-beta.1",
+    "zk-dex-keystore": "0.0.3"
   }
 }

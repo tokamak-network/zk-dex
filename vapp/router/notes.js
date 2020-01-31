@@ -8,74 +8,58 @@ const {
   getTransferNotes,
   addNote,
   addTransferNote,
-  updateNoteState,
+  updateNote,
+  TransferHistory,
 } = require('../localstorage');
 
 
 const router = express.Router();
 
-router.get('/transfer/:account', asyncWrap(
+router.get('/:userKey', asyncWrap(
   async function (req, res) {
-    const account = req.params.account;
-    const notes = getTransferNotes(account);
+    const userKey = req.params.userKey;
+    const notes = getNotes(userKey);
     return res.status(200).json({
       notes,
     });
   }
 ));
 
-router.get('/:account/:hash', asyncWrap(
+router.get('/:userKey/history', asyncWrap(
   async function (req, res) {
-    const account = req.params.account;
-    const hash = req.params.hash;
-    const note = getNoteByNoteHash(account, hash);
-    return res.status(200).json({
-      note,
-    });
-  }
-));
+    const userKey = req.params.userKey;
+    const histories = TransferHistory.getHistoriesByUser(userKey);
 
-router.get('/:account', asyncWrap(
-  async function (req, res) {
-    const account = req.params.account;
-    const notes = getNotes(account);
     return res.status(200).json({
-      notes,
+      histories,
     });
   }
 ));
 
 router.post('/', asyncWrap(
   async function (req, res) {
-    const account = req.body.account;
+    const userKey = req.body.userKey;
     const note = req.body.note;
-    const notes = addNote(account, note);
-    return res.status(200).json({
-      notes,
-    });
+    addNote(userKey, note);
+    return res.status(200).json({});
   }
 ));
 
-router.post('/transfer', asyncWrap(
+router.post('/transfer/:userKey', asyncWrap(
   async function (req, res) {
-    const account = req.body.account;
+    const userKey = req.params.userKey;
     const note = req.body.note;
-    const notes = addTransferNote(account, note);
-    return res.status(200).json({
-      notes,
-    });
+    addTransferNote(userKey, note);
+    return res.status(200).json({});
   }
 ));
 
 router.put('/', asyncWrap(
   async function (req, res) {
-    const noteOwner = req.body.noteOwner;
-    const noteHash = req.body.noteHash;
-    const noteState = req.body.noteState;
-    const notes = updateNoteState(noteOwner, noteHash, noteState);
-    return res.status(200).json({
-      notes,
-    });
+    const userKey = req.body.userKey;
+    const note = req.body.note;
+    updateNote(userKey, note);
+    return res.status(200).json({});
   }
 ));
 

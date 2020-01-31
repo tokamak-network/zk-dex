@@ -1,11 +1,17 @@
-const BN = require('bn.js');
+const bs58 = require('bs58');
 const { PublicKey, PrivateKey } = require('babyjubjub');
 const crypto = require('crypto');
 const Web3Utils = require('web3-utils');
 
+const { marshal, unmarshal } = require('../lib/util');
+
 function getSk() {
   let sk = PrivateKey.getRandObj().field;
   return sk;
+}
+
+function getSkHex() {
+  return PrivateKey.getRandObj().hexString;
 }
 
 function getPrivKey(sk) {
@@ -25,9 +31,29 @@ function getOwner(sk) {
   return [pubKeyX, pubKeyY]
 }
 
+/**
+ * @param {String} hexString hex-encoded string
+ * @returns {String} base58-encoded string
+ */
+function encodeBase58(hexString) {
+  return bs58.encode(Buffer.from(unmarshal(hexString), 'hex'));
+}
+
+/**
+ *
+ * @param {String} base58String base58-encoded string
+ * @returns {String} hex-encoded string
+ */
+function decodeBase58(base58String) {
+  return bs58.decode(base58String).toString('hex');
+}
+
 module.exports = {
   getSk,
+  getSkHex,
   getPrivKey,
   getPubKey,
   getOwner,
+  encodeBase58,
+  decodeBase58,
 }
