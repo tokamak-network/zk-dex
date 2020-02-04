@@ -109,13 +109,9 @@ field price, private field q0, private field r0, private field q1, private field
   n2owner1 == n2owner1Exp
 
   // check all new notes are smartNote
-  field n0IsSmart = isSmart(n0owner0)
-  field n1IsSmart = isSmart(n1owner0)
-  field n2IsSmart = isSmart(n2owner0)
-
-  n0IsSmart == 1
-  n1IsSmart == 1
-  n2IsSmart == 1
+  isSmart(n0owner0, n0owner1) == 1
+  isSmart(n1owner0, n1owner1) == 1
+  isSmart(n2owner0, n2owner1) == 1
 
   // check o0
   h = sha256([o0owner0, o0owner1, o0Val, o0Type, o0vk0, o0vk1, o0Salt])

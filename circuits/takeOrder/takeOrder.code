@@ -33,6 +33,7 @@ field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nT
   // isOwner == 1
 
   oVal == nVal
+  oType == nType
 
   h = sha256([owner0, owner1, oVal, oType, ovk0, ovk1, oSalt])
   oh0 == h[0]
@@ -42,7 +43,7 @@ field nh0, field nh1, field nOwner0, field nOwner1, private field nVal, field nT
   nh0 == h[0]
   nh1 == h[1]
 
-  field nIsSmart = isSmart(nOwner0)
-  nIsSmart == 1
+  // check whether takerNoteToMaker is smart note
+  isSmart(nOwner0, nOwner1) == 1
 
   return 1

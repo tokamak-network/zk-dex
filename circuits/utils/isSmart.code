@@ -1,15 +1,7 @@
-import "PACKING/split" as split
+import "utils/binary/and.code" as and
+import "./boolean/fromBool.code" as fromBool
 
-def main(field i) -> (field):
 
-    field[254] b = split(i)
-
-    field check = 0
-
-    for field i in 0..126 do
-      check = if b[i] == 0 then check + 1 else check fi
-    endfor
-
-    field isSmart = if check == 126 then 1 else 0 fi
-
-    return isSmart
+def main(field h0, field h1) -> (field):
+  // 1<<128 = 340282366920938463463374607431768211456
+  return and(fromBool(h0 < 340282366920938463463374607431768211456), fromBool(h1 < 340282366920938463463374607431768211456))
