@@ -231,14 +231,12 @@ describe('Vapp API Router', () => {
     });
   });
 
-
   describe('With Circuit', () => {
     const TIMEOUT = USE_DUMMY ? 20000 : 360000; // 1 hour
-    const makerUserKey = web3Utils.randomHex(16);
-    const takerUserKey = web3Utils.randomHex(16);
-    const makerVk = web3Utils.randomHex(16);
-    const takerVk = web3Utils.randomHex(16);
-
+    const makerUserKey = web3Utils.randomHex(4);
+    const takerUserKey = web3Utils.randomHex(4);
+    const makerVk = web3Utils.randomHex(constants.VK_BYTES);
+    const takerVk = web3Utils.randomHex(constants.VK_BYTES);
 
     // ZkDexPrivateKey
     let makerPrivKey;
@@ -366,7 +364,7 @@ describe('Vapp API Router', () => {
 
 
           if (checkHash && (note.hash() !== decryptedNote.hash())) {
-            return reject(new Error('decrypted hash mismatach'));
+            return reject(new Error('decrypted hash mismatch'));
           }
 
           if (cnt === len) {
@@ -381,13 +379,19 @@ describe('Vapp API Router', () => {
     }
 
     function waitOrder (orderId, e = 'order') {
+      console.log(`
+        Waiting Order#${orderId} -- eventName: ${e}
+      `);
+
       orderId = toBN(orderId).toNumber();
       let resolved = false;
-
-      console.log(`Waiting Order#${orderId} -- eventName: ${e}`);
-
       return new Promise((resolve, reject) => {
-        zkdexService.on(e, function (order) {
+        zkdexService.on(e, function (err, order) {
+          if (err) {
+            this.removeAllListeners();
+            return reject(err);
+          }
+
           console.log(`
           eventName    : ${e}
           emitteOrderId: ${order.orderId}
@@ -397,12 +401,18 @@ describe('Vapp API Router', () => {
           if (order.orderId === orderId) {
             this.removeAllListeners();
             resolved = true;
+
+            console.warn(`
+        Catch Order#${orderId} -- eventName: ${e}`);
             resolve(order);
           }
         });
 
-        wait(15).then(() => {
-          if (!resolved) reject(new Error(`ZkDex service did not received Order#${orderId}`));
+        wait(30).then(() => {
+          if (!resolved) {
+            console.error(`ZkDex service did not received Order#${orderId} ${e}`);
+            reject(new Error(`ZkDex service did not received Order#${orderId} ${e}`));
+          }
         }).catch(reject);
       });
     }
@@ -555,8 +565,8 @@ describe('Vapp API Router', () => {
         makerNote = daiNote0;
         takerNote = ethNote;
 
-        stakeNote = new Note(
-          makerNote.hash(), null,
+        stakeNote = Note.createSmartNote(
+          makerNote.hash(),
           stakeEthAmount,
           constants.ETH_TOKEN_TYPE,
           takerVk,
@@ -564,7 +574,9 @@ describe('Vapp API Router', () => {
         );
 
         console.log(`
-        stakeNote: ${JSON.stringify(stakeNote, null, 2)}
+        makerNote: ${makerNote.hash()} ${JSON.stringify(makerNote, null, 2)}
+        takerNote: ${takerNote.hash()} ${JSON.stringify(takerNote, null, 2)}
+        stakeNote: ${stakeNote.hash()} ${JSON.stringify(stakeNote, null, 2)}
         `);
 
         changeNoteOwner = takerNote.hash();
@@ -578,6 +590,11 @@ describe('Vapp API Router', () => {
             makerNote,
             makerPrivKey.toHex(),
           ]);
+
+          console.log(`
+            makerNoteHash   : ${makerNote.hash()}
+            proof.input     : ${JSON.stringify(proof.slice(-1)[0], null, 2)}
+          `);
 
           const prom = waitOrder(orderId, 'order:created');
 
@@ -719,7 +736,17 @@ describe('Vapp API Router', () => {
             expect(web3Utils.hexToNumberString(order.makerInfo.changeNote.value))
               .toEqual(web3Utils.hexToNumberString(changeEthAmount));
 
-            expect(order.makerInfo.changeNote.pubKey0).toEqual(changeNoteOwner);
+            const e = marshal(
+              unmarshal(order.makerInfo.changeNote.pubKey0).slice(constants.PUBKEY_BYTES, constants.PUBKEY_BYTES * 2)
+              + unmarshal(order.makerInfo.changeNote.pubKey1).slice(constants.PUBKEY_BYTES, constants.PUBKEY_BYTES * 2)
+            );
+            expect(e).toEqual(changeNoteOwner);
+
+
+            console.log(`
+
+            order: ${JSON.stringify(order, null, 2)}
+            `);
 
             done();
           })
@@ -741,14 +768,6 @@ describe('Vapp API Router', () => {
             makerPrivKey.toHex(),
           ]);
 
-          console.log(`
-
-
-          settle order proof: ${proof}
-
-
-
-          `);
 
           const prom = waitOrder(orderId, 'order:settled');
 
@@ -801,6 +820,7 @@ describe('Vapp API Router', () => {
   //     expect(res.status).toEqual(200);
   //   });
   // });
+
 
   // test('it should fetch empty accounts list', async () => {
   //     moxios.stubRequest('/accounts', {
