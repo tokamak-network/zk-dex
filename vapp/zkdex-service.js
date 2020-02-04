@@ -36,8 +36,6 @@ const PRIORITY_ORDER_SETTLED = 4;
 
 class ZkDexService extends EventEmitter {
   async init (providerUrl, zkdexAddress = '') {
-    this._fetchOrders = throttle(this._fetchOrders.bind(this), 500);
-
     this.web3 = new Web3(providerUrl);
     ZkDex.setProvider(this.web3.currentProvider);
     if (!zkdexAddress) {
@@ -48,27 +46,33 @@ class ZkDexService extends EventEmitter {
 
     console.log('ZkDex is deployed at', this.zkdex.address);
 
-    // get event handlers
+    // register target contract event handlers
     const getHandlerName = e => `_handle${e}`;
-    this._handlers = {
 
-    };
+    this._handlers = {};
+    this.emitters = {};
+
+    // bind event handlers
     for (const eventName of targetEvents) {
       this._handlers[eventName] = this[getHandlerName(eventName)].bind(this);
     }
+    this._fetchOrders = throttle(this._fetchOrders.bind(this), 500);
+    // this._fetchOrders = this._fetchOrders.bind(this);
 
+    // OrderCreated event is handled in a different way...
     this.queue = PQ(async (data) => {
-      if (data === this._fetchOrders) return this._fetchOrders();
+      if (data === this._fetchOrders) {
+        await this._fetchOrders();
+        return;
+      }
 
       console.log(`event ${data.event} fired`);
 
-      this[getHandlerName(data.event)](data);
+      await this[getHandlerName(data.event)](data);
     });
 
-    // initialize queue
-    this._fetchOrders();
+    this.queue.push(this._fetchOrders, PRIORITY_FETCH_ORDER);
 
-    this.emitters = {};
     this._listen();
   }
 
@@ -114,7 +118,6 @@ class ZkDexService extends EventEmitter {
 
     console.log(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
 
-
     const userKeys = db.getUserKeys();
     let found = false;
     // console.log('userKeys', userKeys);
@@ -123,19 +126,19 @@ class ZkDexService extends EventEmitter {
       if (found) return;
 
       const note = db.getNoteByHash(userKey, noteHash);
-      // console.warn(`getNoteByHash User${userKey} Note${noteHash}`);
+      // console.log(`getNoteByHash User${userKey} Note${noteHash}`);
 
       if (note) {
         found = true;
 
-        // console.error('NOTE STATE, ', state);
-        // console.error(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
-        // console.error('isSpent', isSpent);
+        // console.log('NOTE STATE, ', state);
+        // console.log(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
+        // console.log('isSpent', isSpent);
 
         if (isSpent) {
           // send history
           const history = TransferHistory.getHistory(noteHash);
-          // console.error(`history: ${history && history.toString()}`);
+          // console.log(`history: ${history && history.toString()}`);
 
           if (history && history.state === TransferHistoryState.Init) {
             const timestamp = await this.web3.eth.getBlock(data.blockNumber);
@@ -183,10 +186,17 @@ class ZkDexService extends EventEmitter {
       accounts.map(({ address }) => address).forEach(f);
     }
 
-    if (!found) this.emit('note', new Error(`Note#${noteHash} cannot be decrypted`), null);
+    if (!found) {
+      this.emit(
+        'note',
+        new Error(`Note#${noteHash} cannot be decrypted`),
+        null
+      );
+    }
   }
 
   async _handleOrderTaken (data) {
+    // TODO: check removed
     const {
       orderId,
       takerNoteToMaker: stakeNoteHash,
@@ -211,7 +221,7 @@ class ZkDexService extends EventEmitter {
       // for taker
       const takerNote = db.getNoteByHash(userKey, takerNoteHash);
       if (takerNote) {
-        // console.error('_handleOrderTaken - taker');
+        // console.log('_handleOrderTaken - taker');
         order.takerInfo = {
           takerUserKey: userKey,
           takerNote: takerNote,
@@ -271,9 +281,9 @@ class ZkDexService extends EventEmitter {
           changeNoteEncKey = order.makerInfo.takerViewingKey;
         }
 
-        order.makerInfo.rewardNote = new Note(takerNoteHash, null, rewardAmount, order.sourceToken, '0x00', getSalt(), true);
-        order.makerInfo.paymentNote = new Note(makerNote.hash(), null, paymentAmount, order.targetToken, '0x00', getSalt(), true);
-        order.makerInfo.changeNote = new Note(changeNoteOwner, null, changeAmount, changeTokenType, '0x00', getSalt(), true);
+        order.makerInfo.rewardNote = Note.createSmartNote(takerNoteHash, rewardAmount, order.sourceToken, '0x00', getSalt(), true);
+        order.makerInfo.paymentNote = Note.createSmartNote(makerNote.hash(), paymentAmount, order.targetToken, '0x00', getSalt(), true);
+        order.makerInfo.changeNote = Note.createSmartNote(changeNoteOwner, changeAmount, changeTokenType, '0x00', getSalt(), true);
 
         order.makerInfo.rewardNoteEncKey = order.makerInfo.takerViewingKey;
         order.makerInfo.paymentNoteEncKey = newMakerVk;
@@ -283,7 +293,11 @@ class ZkDexService extends EventEmitter {
 
         db.addOrUpdateOrderByUser(userKey, order);
         db.updateOrder(order);
-        this.emit('order:taken', order);
+        this.emit(
+          'order:taken',
+          null,
+          order,
+        );
       }
     }
   }
@@ -297,8 +311,15 @@ class ZkDexService extends EventEmitter {
     } = data.args;
 
     const order = db.getOrder(orderId);
+
     if (!order) {
-      throw new Error(`failed to read Order#${orderId}`);
+      this.emit(
+        'order:settled',
+        new Error(`failed to read Order#${orderId}`),
+        null,
+      );
+
+      return;
     }
 
     order.rewardNote = rewardNoteHash;
@@ -329,46 +350,39 @@ class ZkDexService extends EventEmitter {
       db.updateOrder(order);
     }
 
-    this.emit('order:settled', order);
+    this.emit(
+      'order:settled',
+      null,
+      order,
+    );
   }
 
 
   async _fetchOrders () {
     if (this.closed) return;
 
-    this.queue.push(this._fetchOrders, PRIORITY_FETCH_ORDER);
+    const numOrdersContract = toBN(await this.zkdex.getOrderCount()).toNumber();
+    const numOrdersDB = db.getOrderCount().toNumber();
 
-    const numOrderContract = toBN(await this.zkdex.getOrderCount()).toNumber();
-    const numOrderDB = db.getOrderCount().toNumber();
-
-    // console.error(`
-    // fetchOrder
-    // numOrderContract:   ${numOrderContract}
-    // numOrderDB:         ${numOrderDB}
-    // `);
-
-    const userKeys = db.getUserKeys();
-
-    for (let i = numOrderDB; i < numOrderContract; i++) {
+    for (let i = numOrdersDB; i < numOrdersContract; i++) {
       const order = await this.zkdex.orders(i);
-      console.log(`Order#${i} fetched`);
+      console.info(`Order#${i} fetched`);
 
       order.sourceToken = hexToNumberString(toHex(order.sourceToken));
       order.targetToken = hexToNumberString(toHex(order.targetToken));
       order.state = hexToNumberString(toHex(order.state));
       order.orderId = i;
-      order.orderMaker = null;
-      order.type = 'Sell';
-      order.amount = null;
 
       db.increaseOrderCount();
-      await db.addOrder(order);
-      this.emit('order', order);
-      console.log('order fired', order);
+      db.addOrder(order);
+      this.emit('order', null, order);
+      console.log(`[Order#${i}] fetched`;
 
+      // find maker's order
+      const userKeys = db.getUserKeys();
       for (const userKey of userKeys) {
-        // console.error('userKey, order.makerNote', userKey, order.makerNote);
         const makerNote = db.getNoteByHash(userKey, order.makerNote);
+        
         if (makerNote) {
           order.makerInfo = {
             makerUserKey: userKey,
@@ -376,12 +390,13 @@ class ZkDexService extends EventEmitter {
           };
           db.addOrUpdateOrderByUser(userKey, order);
           db.updateOrder(order);
-          this.emit('order:created', order);
-          console.log('order:created fired', order);
-          return;
+          this.emit('order:created', null, order);
+          console.log(`[Order#${i}] maker info prepared`;
         }
       }
     }
+    this.queue.push(this._fetchOrders, PRIORITY_FETCH_ORDER);
+    return;
   }
 }
 
