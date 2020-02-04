@@ -39,6 +39,7 @@
     "bn.js": "^5.0.0",
     "bs58": "^4.0.1",
     "child-process-promise": "^2.2.1",
+    "debug": "^4.1.1",
     "dockerode": "^2.5.8",
     "dockerode-promise": "^0.1.0",
     "eccrypto": "^1.1.0",
