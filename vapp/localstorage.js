@@ -313,8 +313,6 @@ class TransferHistory {
 
   // by user
   static _keyHistoryByUser (userKey) {
-    console.error('_keyHistoryByUser', userKey);
-
     return `transfer-history-user-${marshal(userKey)}`;
   }
 
