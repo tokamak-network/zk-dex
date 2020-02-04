@@ -30,7 +30,7 @@ contract ZkDex is ZkDai {
     bytes32 parentNote;
 
     uint64 createdAt;
-    uint64 takendAt;
+    uint64 takenAt;
     uint64 settledAt;
 
     OrderState state;
@@ -195,7 +195,7 @@ contract ZkDex is ZkDai {
     order.parentNote = parentNote;
     order.takerNoteToMaker = takerNoteToMaker;
     order.state = OrderState.Taken;
-    order.takendAt = uint64(block.timestamp);
+    order.takenAt = uint64(block.timestamp);
 
     emit NoteStateChange(parentNote, State.Traiding);
     emit NoteStateChange(takerNoteToMaker, State.Traiding);
