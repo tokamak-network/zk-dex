@@ -63,7 +63,11 @@ function getTakeOrderCmd(
 ) {
   const parentNoteParams = noteHelper.getNoteParams(parentOwner0, parentOwner1, parentValue, parentType, parentViewKey, parentSalt);
   const makerToTakerNoteParams = noteHelper.getNoteParams(makerToTakerOwner0, makerToTakerOwner1, makerToTakerValue, makerToTakerType, makerToTakerViewKey, makerToTakerSalt);
-  const params = parentNoteParams.concat(makerToTakerNoteParams, sk);
+  const params = [].concat(
+    parentNoteParams,
+    makerToTakerNoteParams,
+    sk,
+  );
 
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);
@@ -72,13 +76,19 @@ function getTakeOrderCmd(
 }
 
 function getSettleOrderCmd(
-  makerNoteOwner0, makerNoteOwner1, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt, // makerNote's variables
-  takerToMakerOwner0, takerToMakerOwner1, takerToMakerValue, takerToMakerType, takerToMakerViewKey, takerToMakerSalt, // takerNoteToMakerNote's variables
-  newNoteToTakerOwner0, newNoteToTakerOwner1, newNoteToTakerValue, newNoteToTakerType, newNoteToTakerViewKey, newNoteToTakerSalt, // newNoteToTakerNote's variables
-  newNoteToMakerOwner0, newNoteToMakerOwner1, newNoteToMakerValue, newNoteToMakerType, newNoteToMakerViewKey, newNoteToMakerSalt, // newNoteToMakerNote's variables
-  changeOwner0, changeOwner1, changeValue, changeType, changeViewKey, changeSalt, // changeNote's variables
-  price, // price
-  quotient0, remainder0, // // makerNote.Value * price / 10**18, makerNote.Value * price % 10**18
+  // makerNote
+  makerNoteOwner0, makerNoteOwner1, makerNoteValue, makerNoteType, makerNoteViewKey, makerNoteSalt,
+  // takerNoteToMakerNote
+  takerToMakerOwner0, takerToMakerOwner1, takerToMakerValue, takerToMakerType, takerToMakerViewKey, takerToMakerSalt,
+  // newNoteToTakerNote
+  newNoteToTakerOwner0, newNoteToTakerOwner1, newNoteToTakerValue, newNoteToTakerType, newNoteToTakerViewKey, newNoteToTakerSalt,
+  // newNoteToMakerNote
+  newNoteToMakerOwner0, newNoteToMakerOwner1, newNoteToMakerValue, newNoteToMakerType, newNoteToMakerViewKey, newNoteToMakerSalt,
+  // changeNote
+  changeOwner0, changeOwner1, changeValue, changeType, changeViewKey, changeSalt,
+
+  price,
+  quotient0, remainder0, // makerNote.Value * price / 10**18, makerNote.Value * price % 10**18
   quotient1, remainder1, // stakeNote.Value / price, stakeNote.Value % price
   sk,
 ) {
@@ -88,7 +98,14 @@ function getSettleOrderCmd(
   const newNoteToMakerParams = noteHelper.getNoteParams(newNoteToMakerOwner0, newNoteToMakerOwner1, newNoteToMakerValue, newNoteToMakerType, newNoteToMakerViewKey, newNoteToMakerSalt);
   const changeNoteParams = noteHelper.getNoteParams(changeOwner0, changeOwner1, changeValue, changeType, changeViewKey, changeSalt);
 
-  const params = makerNoteParams.concat(takerToMakerNoteParams, newNoteToTakerParams, newNoteToMakerParams, changeNoteParams, price, quotient0, remainder0, quotient1, remainder1, sk);
+  const params = [].concat(
+    makerNoteParams,
+    takerToMakerNoteParams,
+    newNoteToTakerParams,
+    newNoteToMakerParams,
+    changeNoteParams,
+    price, quotient0, remainder0, quotient1, remainder1, sk,
+  );
 
   if (require.main === module) {
     zokratesHelper.printZokratesCommand(params);

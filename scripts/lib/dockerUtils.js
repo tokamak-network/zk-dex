@@ -3,7 +3,7 @@ const BN = require('bn.js');
 const Web3Utils = require('web3-utils');
 const util = require('./util');
 
-const { constants } = require('./Note');
+const { Note, constants } = require('./Note');
 const {
   getMintAndBurnCmd,
   getTransferCmd,
@@ -55,7 +55,7 @@ async function execute(circuitName, cmd) {
           proof = proof.slice(i);
           proof = JSON.parse(proof);
         } catch (e) {
-          console.log("proof chunks", proof);
+          console.error("chunks\n" + chunks.slice(-20).join('\n'));
           return reject(new Error(`Failed to parse proof json: ${e.message}`));
         }
 
@@ -75,11 +75,18 @@ async function execute(circuitName, cmd) {
 }
 
 const convert = v => Web3Utils.toBN(v || '0x00', 16);
+const wrapExecute = async (name, prom) => {
+  try {
+    return await prom;
+  } catch (error) {
+    throw new Error(`Failed to generate ${name} proof: ${error.message}`);
+  }
+}
 
 async function getMintNBurnProof(note, sk) {
   const cmdArgs = getMintAndBurnCmd(
-    convert(note.owner0),
-    convert(note.owner1),
+    convert(note.pubKey0),
+    convert(note.pubKey1),
     convert(note.value),
     convert(note.token),
     convert(note.viewingKey),
@@ -87,7 +94,7 @@ async function getMintNBurnProof(note, sk) {
     convert(sk),
   );
 
-  const proof = await execute('mintNBurnNote', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('mintNBurnNote', execute('mintNBurnNote', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 
@@ -102,26 +109,26 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
   }
 
   const cmdArgs = getTransferCmd(
-    convert(oldNote0.owner0),
-    convert(oldNote0.owner1),
+    convert(oldNote0.pubKey0),
+    convert(oldNote0.pubKey1),
     convert(oldNote0.value),
     convert(oldNote0.token),
     convert(oldNote0.viewingKey),
     convert(oldNote0.salt),
-    convert(oldNote1.owner0),
-    convert(oldNote1.owner1),
+    convert(oldNote1.pubKey0),
+    convert(oldNote1.pubKey1),
     convert(oldNote1.value),
     convert(oldNote1.token),
     convert(oldNote1.viewingKey),
     convert(oldNote1.salt),
-    convert(newNote.owner0),
-    convert(newNote.owner1),
+    convert(newNote.pubKey0),
+    convert(newNote.pubKey1),
     convert(newNote.value),
     convert(newNote.token),
     convert(newNote.viewingKey),
     convert(newNote.salt),
-    convert(changeNote.owner0),
-    convert(changeNote.owner1),
+    convert(changeNote.pubKey0),
+    convert(changeNote.pubKey1),
     convert(changeNote.value),
     convert(changeNote.token),
     convert(changeNote.viewingKey),
@@ -130,107 +137,111 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
     convert(sk1),
   );
 
-  const proof = await execute('transferNote', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('transferNote', execute('transferNote', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 
 async function getConvertProof(smartNote, originNote, note, sk) {
   const cmdArgs = getConvertCmd(
-    convert(smartNote.owner0),
-    null,
+    convert(smartNote.pubKey0),
+    convert(smartNote.pubKey1),
     convert(smartNote.value),
     convert(smartNote.token),
     convert(smartNote.viewingKey),
     convert(smartNote.salt),
-    convert(originNote.owner0),
-    convert(originNote.owner1),
+
+    convert(originNote.pubKey0),
+    convert(originNote.pubKey1),
     convert(originNote.value),
     convert(originNote.token),
     convert(originNote.viewingKey),
     convert(originNote.salt),
-    convert(note.owner0),
-    convert(note.owner1),
+
+    convert(note.pubKey0),
+    convert(note.pubKey1),
     convert(note.value),
     convert(note.token),
     convert(note.viewingKey),
     convert(note.salt),
+
     convert(sk),
   );
 
-  const proof = await execute('convertNote', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('convertNote', execute('convertNote', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 
 async function getMakeOrderProof(makerNote, sk) {
-  console.log("makerNote, sk", makerNote, sk);
   const cmdArgs = getMakeOrderCmd(
-    convert(makerNote.owner0),
-    convert(makerNote.owner1),
+    convert(makerNote.pubKey0),
+    convert(makerNote.pubKey1),
     convert(makerNote.value),
     convert(makerNote.token),
     convert(makerNote.viewingKey),
     convert(makerNote.salt),
+
     convert(sk),
   );
 
-  const proof = await execute('makeOrder', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('makeOrder', execute('makeOrder', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 
-async function getTakeOrderProof(parentNote, stakeNote, sk) {
-  console.log("parentNote, stakeNote, sk", parentNote, stakeNote, sk);
+async function getTakeOrderProof(parentNote, stakeNote, sk) {;
   const cmdArgs = getTakeOrderCmd(
-    convert(parentNote.owner0),
-    convert(parentNote.owner1),
+    convert(parentNote.pubKey0),
+    convert(parentNote.pubKey1),
     convert(parentNote.value),
     convert(parentNote.token),
     convert(parentNote.viewingKey),
     convert(parentNote.salt),
-    convert(stakeNote.owner0),
-    convert(stakeNote.owner1),
+
+    convert(stakeNote.pubKey0),
+    convert(stakeNote.pubKey1),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
     convert(stakeNote.salt),
+
     convert(sk),
   );
 
-  const proof = await execute('takeOrder', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('takeOrder', execute('takeOrder', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 
 async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, sk) {
   const cmdArgs = getSettleOrderCmd(
-    convert(makerNote.owner0),
-    convert(makerNote.owner1),
+    convert(makerNote.pubKey0),
+    convert(makerNote.pubKey1),
     convert(makerNote.value),
     convert(makerNote.token),
     convert(makerNote.viewingKey),
     convert(makerNote.salt),
 
-    convert(stakeNote.owner0),
-    null,
+    convert(stakeNote.pubKey0),
+    convert(stakeNote.pubKey1),
     convert(stakeNote.value),
     convert(stakeNote.token),
     convert(stakeNote.viewingKey),
     convert(stakeNote.salt),
 
-    convert(rewardNote.owner0),
-    null,
+    convert(rewardNote.pubKey0),
+    convert(rewardNote.pubKey1),
     convert(rewardNote.value),
     convert(rewardNote.token),
     convert(rewardNote.viewingKey),
     convert(rewardNote.salt),
 
-    convert(paymentNote.owner0),
-    null,
+    convert(paymentNote.pubKey0),
+    convert(paymentNote.pubKey1),
     convert(paymentNote.value),
     convert(paymentNote.token),
     convert(paymentNote.viewingKey),
     convert(paymentNote.salt),
 
-    convert(changeNote.owner0),
-    null,
+    convert(changeNote.pubKey0),
+    convert(changeNote.pubKey1),
     convert(changeNote.value),
     convert(changeNote.token),
     convert(changeNote.viewingKey),
@@ -245,7 +256,7 @@ async function getSettleOrderProof(makerNote, stakeNote, rewardNote, paymentNote
     convert(sk),
   );
 
-  const proof = await execute('settleOrder', `${cmdBase} ${cmdArgs}`);
+  const proof = await wrapExecute('settleOrder', execute('settleOrder', `${cmdBase} ${cmdArgs}`));
   return util.parseProofObj(proof);
 }
 

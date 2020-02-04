@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const Web3Utils = require('web3-utils');
+const { padLeft, toBN, toHex, fromAscii, toAscii, BN } = require('web3-utils');
 
 const {
   marshal,
@@ -10,38 +10,27 @@ const {
 
 const noteHelper = require('../helper/noteHelper');
 
-const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
-const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
+const ETH_TOKEN_TYPE = padLeft('0x0', 64);
+const DAI_TOKEN_TYPE = padLeft('0x1', 64);
 
-const { BN } = Web3Utils;
 const SCALING_FACTOR = new BN('1000000000000000000');
 
 const MODE = 'aes-256-cbc';
 const MAX_FIELD_VALUE = new BN('21888242871839275222246405745257275088548364400416034343698204186575808495616')
 
-const sampleProof = `{
-  "proof": {
-    "A": ["0x1ebd3ba93ae1f0a7cb61c4c0223b2d3f593cd9ea7976cd5e5b47c6761456c847", "0x2044c32f4c51c765693a20c65217290d7b3e2ad6ead397f9390b673a17e96079"],
-    "A_p": ["0x1df310dc80836414fb0332d06628eca5b172b56a4e6892a09f8a01069f47cc5a", "0x180361828a69a9b3165ef17661447d7b5b4061df0e1b2366e33e4b9765f0cfcc"],
-    "B": [
-      ["0x17a7b64179ee2c86f962a09a25ea39253401d0b054f159605118ce8ed83e22e5", "0x28c8b5151c180db95e9eb1ccba363fb798931f01d38591d3a6081328ce45c94c"],
-      ["0x194a069c0a2b7c0f198a3d2a6c7753de5d9abe8956348a07d611bc782ffb0146", "0x6800507968aa736f3ee6b10c8ea7f5fcfd157858f11d36ca800becf7a96e525"]
-    ],
+const PUBKEY_BYTES = 32;
+const VALUE_BYTES = 32;
+const TOKEN_BYTES = 32;
+const VK_BYTES = 32;
+const SALT_BYTES = 16;
 
-    "B_p": ["0x2886bcd342c57300ac74e2a3ec3870bd6d82b13a66ab2bd3425a8a423e28df6d", "0x1445d5c9b234318356cd23d5889f12704529b05a3777b67a2a468d4f05c4d853"],
-    "C": ["0x230a584beb0fcab0bfcde7ac17d4fe7b7399115018e1dffb2e3a42d68f84c90c", "0x24052feb5111e81d06043638d33a5d90bcc755ae22bafcef551d3ea8946b6ec7"],
-    "C_p": ["0x6e7f7364bea9aef0f94b9a7695be1f4860d9e952ba12c988c12ee502665563f", "0x88053e7a885b8b2a052d2db836a20f0e1da7c3e7e4da9007fafc70baf0513b"],
-    "H": ["0x2de3d197c35b71922e5f28d740f618e754c3385602ac096489c0d1cf0591b604", "0x11068548997da3e4631e1f8557fddc182ceab9b360e32377290d0d952367e624"],
-    "K": ["0x219fd00e97e37d2ebfa37c5a42766c3af1b855d702839df857bf907af66e39be", "0x9ded2a2660333cd94bea038de71504c76a5b5b28837ac9ce0a02b4f19f29f1a"]
-  },
-  "input": []
-}`;
+const IS_SMART_CHECKER = toBN('1').shln(128);
 
 const NoteState = {
-  Invalid: Web3Utils.toBN('0'),
-  Valid: Web3Utils.toBN('1'),
-  Traiding: Web3Utils.toBN('2'),
-  Spent: Web3Utils.toBN('3'),
+  Invalid: toBN('0'),
+  Valid: toBN('1'),
+  Traiding: toBN('2'),
+  Spent: toBN('3'),
 
   toString(s) {
     if (this.Invalid.cmp(s) === 0) { return 'Invalid'; }
@@ -64,15 +53,23 @@ class Note {
    * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
    */
   constructor(pubKey0, pubKey1, value, token, viewingKey, salt) {
-    this.pubKey0 = Web3Utils.padLeft(pubKey0, 64);
+    this.pubKey0 = padLeft(pubKey0, PUBKEY_BYTES*2);
 
-    this.pubKey1 = pubKey1 ? Web3Utils.padLeft(pubKey1, 64) : Web3Utils.padLeft(0, 64);
-    // this.pubKey1 = Web3Utils.padLeft(pubKey1 || 0, 64);
+    this.pubKey1 = padLeft(pubKey1 || 0, PUBKEY_BYTES*2);
+    // this.pubKey1 = pubKey1 ? padLeft(pubKey1 || 0, PUBKEY_BYTES*2) : padLeft(0, PUBKEY_BYTES*2);
 
-    this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
-    this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
-    this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
-    this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 32);
+    this.value = padLeft(toHex(value), VALUE_BYTES*2);
+    this.token = padLeft(toHex(token), TOKEN_BYTES*2);
+    this.viewingKey = padLeft(toHex(viewingKey), VK_BYTES*2);
+    this.salt = padLeft(toHex(salt), SALT_BYTES*2);
+  }
+
+  static createSmartNote(hash, value, token, viewingKey, salt) {
+    hash = unmarshal(padLeft(hash, PUBKEY_BYTES*2));
+    const pubKey0 = hash.slice(0, PUBKEY_BYTES);
+    const pubKey1 = hash.slice(PUBKEY_BYTES, PUBKEY_BYTES*2);
+
+    return new Note(marshal(pubKey0), marshal(pubKey1), value, token, viewingKey, salt);
   }
 
   static hashFromJSON(v) {
@@ -103,7 +100,7 @@ class Note {
   }
 
   isSmart() {
-    return this.pubKey1 === Web3Utils.padLeft(0, 64);
+    return toBN(this.pubKey0).lt(IS_SMART_CHECKER) && toBN(this.pubKey1).lt(IS_SMART_CHECKER)
   }
 
   /**
@@ -155,7 +152,7 @@ class Note {
     // console.warn(`Note#${this.hash()} is encrypted by ${encKey}`);
 
     return marshal(
-      Web3Utils.fromAscii(r1 + r2),
+      fromAscii(r1 + r2),
     );
   }
 }
@@ -201,7 +198,7 @@ function decrypt(v, _decKey) {
 
   try {
     decipher = crypto.createDecipher(MODE, decKey);
-    r1 = decipher.update(Web3Utils.toAscii(v), 'base64', 'utf8');
+    r1 = decipher.update(toAscii(v), 'base64', 'utf8');
     r2 = decipher.final('utf8');
   } catch (e) {
     throw new DecryptError(`Failed to decrypt`, v, decKey)
@@ -217,6 +214,24 @@ function decrypt(v, _decKey) {
     return null;
   }
 }
+
+const sampleProof = `{
+  "proof": {
+    "A": ["0x1ebd3ba93ae1f0a7cb61c4c0223b2d3f593cd9ea7976cd5e5b47c6761456c847", "0x2044c32f4c51c765693a20c65217290d7b3e2ad6ead397f9390b673a17e96079"],
+    "A_p": ["0x1df310dc80836414fb0332d06628eca5b172b56a4e6892a09f8a01069f47cc5a", "0x180361828a69a9b3165ef17661447d7b5b4061df0e1b2366e33e4b9765f0cfcc"],
+    "B": [
+      ["0x17a7b64179ee2c86f962a09a25ea39253401d0b054f159605118ce8ed83e22e5", "0x28c8b5151c180db95e9eb1ccba363fb798931f01d38591d3a6081328ce45c94c"],
+      ["0x194a069c0a2b7c0f198a3d2a6c7753de5d9abe8956348a07d611bc782ffb0146", "0x6800507968aa736f3ee6b10c8ea7f5fcfd157858f11d36ca800becf7a96e525"]
+    ],
+
+    "B_p": ["0x2886bcd342c57300ac74e2a3ec3870bd6d82b13a66ab2bd3425a8a423e28df6d", "0x1445d5c9b234318356cd23d5889f12704529b05a3777b67a2a468d4f05c4d853"],
+    "C": ["0x230a584beb0fcab0bfcde7ac17d4fe7b7399115018e1dffb2e3a42d68f84c90c", "0x24052feb5111e81d06043638d33a5d90bcc755ae22bafcef551d3ea8946b6ec7"],
+    "C_p": ["0x6e7f7364bea9aef0f94b9a7695be1f4860d9e952ba12c988c12ee502665563f", "0x88053e7a885b8b2a052d2db836a20f0e1da7c3e7e4da9007fafc70baf0513b"],
+    "H": ["0x2de3d197c35b71922e5f28d740f618e754c3385602ac096489c0d1cf0591b604", "0x11068548997da3e4631e1f8557fddc182ceab9b360e32377290d0d952367e624"],
+    "K": ["0x219fd00e97e37d2ebfa37c5a42766c3af1b855d702839df857bf907af66e39be", "0x9ded2a2660333cd94bea038de71504c76a5b5b28837ac9ce0a02b4f19f29f1a"]
+  },
+  "input": []
+}`;
 
 function dummyProofCreateNote(note) {
   note = Note.fromJSON(note);
@@ -343,7 +358,7 @@ function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote
     ...changeNote.hashArr(),
     changeNote.token,
 
-    Web3Utils.toHex(price),
+    toHex(price),
 
     1,
   ];
@@ -363,6 +378,11 @@ module.exports = {
     DAI_TOKEN_TYPE,
     EMPTY_NOTE_HASH,
     EMPTY_NOTE,
+    PUBKEY_BYTES,
+    VALUE_BYTES,
+    TOKEN_BYTES,
+    VK_BYTES,
+    SALT_BYTES,
   },
   NoteState,
   Note,

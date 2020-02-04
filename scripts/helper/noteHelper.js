@@ -41,11 +41,11 @@ function getNoteParams(owner0, owner1, value, type, viewKey, salt) {
 
 function _toPadedObject(owner0, owner1, value, type, viewKey, salt) {
   // all params should look like this "0001"(o), "0x0001"(x)
-  const noteHash = new BN(owner0, 16).toString(16, 64)
 
   let noteOwner0; // 256bits
   let noteOwner1; // 256bits
   if (owner1 == null) {
+    const noteHash = new BN(owner0, 16).toString(16, 64)
     noteOwner0 = splitNoteHash(noteHash)[0];
     noteOwner1 = splitNoteHash(noteHash)[1];
   } else {
@@ -84,17 +84,27 @@ function _checkLenAndReturn(targetHex) {
   const targetLen = targetHex.length;
   const remainLen = 64 - targetLen;
 
-  if (targetHex == '0') {
-    splittedData = ['0'.repeat(32), '0'.repeat(32)];
-  } else if (targetLen < 32) {
-    splittedData = ['0'.repeat(32), '0'.repeat(32 - targetLen).concat(targetHex.slice(0, 32))];
-  } else if (targetLen > 32 && targetLen < 64) {
-    splittedData = ['0'.repeat(remainLen).concat(targetHex.slice(0, 32 - remainLen)), targetHex.slice(32 - remainLen)];
-  } else {
-    splittedData = [targetHex.slice(0, 32), targetHex.slice(32)];
+  if (targetHex === '0') {
+    return ['0'.repeat(32), '0'.repeat(32)];
   }
 
-  return splittedData;
+  if (targetLen <= 32) {
+    return [
+      '0'.repeat(32),
+      '0'.repeat(32 - targetLen).concat(targetHex),
+    ];
+  }
+
+  if (targetLen > 32 && targetLen < 64) {
+    return [
+      '0'.repeat(remainLen).concat(targetHex.slice(0, 32 - remainLen)),
+      targetHex.slice(32 - remainLen),
+    ];
+  }
+
+  if (targetLen > 64) throw new Error(`viewing key length exceeds 32 bytes ${targetLen/2}`);
+
+  return [targetHex.slice(0, 32), targetHex.slice(32)];
 }
 
 function toHashed(encodedValue) {
