@@ -15,10 +15,7 @@ import "ecc/babyjubjubParams.code" as babyjubjubParams
 def main(field nh0, field nh1, private field owner0, private field owner1, field value, field type, private field vk0, private field vk1, private field salt, private field sk) -> (field):
   // check ownership of note
   field[10] params = babyjubjubParams()
-  field isOwner = proofOfOwnership([owner0, owner1], sk, params)
-
-  // TODO: activate
-  // isOwner == 1
+  proofOfOwnership([owner0, owner1], sk, params) == 1
 
   h = sha256([owner0, owner1, value, type, vk0, vk1, salt])
   h[0] == nh0
