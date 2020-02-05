@@ -376,7 +376,7 @@ class ZkDexService extends EventEmitter {
       db.increaseOrderCount();
       db.addOrder(order);
       this.emit('order', null, order);
-      console.log(`[Order#${i}] fetched`;
+      console.log(`[Order#${i}] fetched`);
 
       // find maker's order
       const userKeys = db.getUserKeys();
@@ -391,7 +391,7 @@ class ZkDexService extends EventEmitter {
           db.addOrUpdateOrderByUser(userKey, order);
           db.updateOrder(order);
           this.emit('order:created', null, order);
-          console.log(`[Order#${i}] maker info prepared`;
+          console.log(`[Order#${i}] maker info prepared`);
         }
       }
     }
