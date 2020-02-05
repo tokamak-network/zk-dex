@@ -37,12 +37,33 @@ const dummyGenerators = {
 const USE_DUMMY = process.env.USE_DUMMY === 'true';
 console.log('USE_DUMMY', USE_DUMMY);
 
+router.use('/', asyncWrap(
+  async function (req, res, next) {
+    const {
+      userKey = '',
+      address = '',
+    } = req.body;
+
+    if (!userKey || !address) throw new Error('/circuits requires userKey and address');
+
+    const privKey = req.app.zkdexService.getPrivateKey(userKey, address);
+
+    if (privKey) throw new Error('unlock account before making proof');
+
+    req.body.privKeyHex = privKey.toHex();
+  }
+));
+
 // TODO: get private key from DB.
 router.post('/:circuit', asyncWrap(
   async function (req, res) {
-    const circuit = req.params.circuit;
-    const params = req.body.params;
+    const { circuit } = req.params;
+    const {
+      params = [],
+      privKeyHex,
+    } = req.body;
 
+    params.append(privKeyHex);
 
     const generator = USE_DUMMY
       ? dummyGenerators[circuit]

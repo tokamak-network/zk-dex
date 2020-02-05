@@ -4,13 +4,19 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const keythereum = require('keythereum');
 const { range } = require('lodash');
-const Contract = require('truffle-contract');
 const rlp = require('rlp');
 
 const moxios = require('moxios');
 const request = require('supertest');
+
+const {
+  addZkPrefix,
+  removeZkPrefix,
+} = require('zk-dex-keystore/lib/utils');
+
 const Web3 = require('web3');
 const web3Utils = require('web3-utils');
+const Contract = require('truffle-contract');
 
 require('dotenv').config();
 
@@ -21,7 +27,7 @@ const { initialized } = require('../scripts/lib/dockerUtils');
 const { constants, Note } = require('../scripts/lib/Note');
 const { marshal, unmarshal } = require('../scripts/lib/util');
 const { ZkDexService } = require('./zkdex-service');
-const db = require('./localstorage');
+const DB = require('./localstorage');
 
 const PROVIDER_URL = 'ws://localhost:8545';
 const web3 = new Web3(PROVIDER_URL);
@@ -43,18 +49,12 @@ const initApp = async () => {
   const app = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  // app.use(router());
   router(app);
-  app.use(function (err, req, res, next) {
-    console.error(err.stack);
-    console.error('error', err.message);
-    res.status(400).json({
-      message: err.message,
-    });
-  });
 
   const zkdexService = new ZkDexService();
   await zkdexService.init(PROVIDER_URL);
+
+  app.zkdexService = zkdexService;
 
   return { app, zkdexService };
 };
@@ -142,13 +142,11 @@ describe('Vapp API Router', () => {
 
       test('it should fetch 2 accounts', done => request(app)
         .get(`/accounts/${userKey}`)
-        .send({ passphrase })
         .end((err, res) => {
           if (err) return done(err);
           expect(res.status).toEqual(200);
-          expect(res.body.accounts).toEqual(db.getAccounts(userKey));
-          expect(res.body.accounts.length).toEqual(2);
-          zkdexAccounts = res.body.accounts;
+          expect(res.body.addresses.length).toEqual(2);
+          zkdexAccounts = DB.getAccounts(userKey);
           done();
         }));
 
@@ -163,7 +161,7 @@ describe('Vapp API Router', () => {
             expect(res.status).toEqual(200);
             expect(res.body.address).toEqual(address);
             zkdexAddresses.shift(0);
-            zkdexAccounts = db.getAccounts(userKey);
+            zkdexAccounts = DB.getAccounts(userKey);
             done();
           });
       });
@@ -180,7 +178,7 @@ describe('Vapp API Router', () => {
             expect(res.status).toEqual(200);
             expect(res.body.address).toEqual(address);
             zkdexAddresses.shift(0);
-            zkdexAccounts = db.getAccounts(vk);
+            zkdexAccounts = DB.getAccounts(vk);
             done();
           });
       });
@@ -191,7 +189,7 @@ describe('Vapp API Router', () => {
         .end((err, res) => {
           if (err) return done(err);
           expect(res.status).toEqual(200);
-          expect(res.body.accounts).toEqual([]);
+          expect(res.body.addresses).toEqual([]);
           done();
         }));
 
@@ -217,17 +215,37 @@ describe('Vapp API Router', () => {
 
       test('it should fetch 2 accounts', done => request(app)
         .get(`/accounts/${userKey}`)
-        .send({ passphrase })
         .end((err, res) => {
           if (err) return done(err);
           expect(res.status).toEqual(200);
-          expect(res.body.accounts).toEqual(db.getAccounts(userKey));
-          expect(res.body.accounts.length).toEqual(2);
-          zkdexAccounts = res.body.accounts;
+
+          const accounts = DB.getAccounts(userKey);
+
+          expect(res.body.addresses).toEqual(accounts.map(account => addZkPrefix(account.address)));
+          expect(res.body.addresses.length).toEqual(2);
+
+          zkdexAccounts = accounts;
           done();
         }));
 
-    // TODO: import, unlock
+
+      test('it should unlock account', (done) => {
+        const address = zkdexAddresses[0];
+
+        return request(app)
+          .post(`/accounts/${userKey}/unlock`)
+          .send({ passphrase, address })
+          .end((err, res) => {
+            if (err) return done(err);
+            expect(res.status).toEqual(200);
+            expect(res.body.address).toEqual(address);
+            expect(res.body.success).toBeTruthy();
+            done();
+          });
+      });
+
+
+    // TODO: import
     });
   });
 
@@ -799,9 +817,6 @@ describe('Vapp API Router', () => {
             done();
           }), TIMEOUT);
       });
-
-
-      // test('should fetch creaetd order',);
     });
   });
 

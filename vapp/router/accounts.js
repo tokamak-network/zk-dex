@@ -8,7 +8,6 @@ const {
 const asyncWrap = require('../lib/asyncWrap');
 
 const {
-  localStorage: db,
   getAccounts,
   getAccountByAddress,
   addAccount,
@@ -26,9 +25,9 @@ const router = express.Router();
 router.get('/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
-    const accounts = getAccounts(userKey);
+    const addresses = getAccounts(userKey).map(account => addZkPrefix(account.address));
     return res.status(200).json({
-      accounts,
+      addresses,
     });
   }
 ));
@@ -45,6 +44,7 @@ router.post('/:userKey', asyncWrap(
   }
 ));
 
+// TODO: change /accounts/:userKey/orders to /orders?id&userKey
 router.get('/:userKey/orders', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
@@ -55,24 +55,31 @@ router.get('/:userKey/orders', asyncWrap(
   }
 ));
 
-router.post('/unlock/:userKey', asyncWrap(
+// changed: HTTP 200: {privateKey} --> {address, success}
+router.post('/:userKey/unlock', asyncWrap(
   async function (req, res) {
+    const { userKey } = req.params;
     const {
       passphrase,
       address,
+      duration = undefined,
     } = req.body;
 
-    const account = getAccountByAddress(removeZkPrefix(address));
+    const account = getAccountByAddress(userKey, address);
+    console.log('account', account);
     const privateKey = unlockAccount(passphrase, account);
 
+    req.app.zkdexService.setPrivateKey(userKey, privateKey);
+
     return res.status(200).json({
-      privateKey,
+      address: addZkPrefix(address),
+      success: true,
     });
   }
 ));
 
 // TODO: use zk-dex-keystore
-router.post('/import/:userKey', asyncWrap(
+router.post('/:userKey/import', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
     const account = req.body.account;
