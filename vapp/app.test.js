@@ -14,6 +14,8 @@ const {
   removeZkPrefix,
 } = require('zk-dex-keystore/lib/utils');
 
+const { ZkDexAddress, ZkDexPublicKey } = require('zk-dex-keystore/lib/Account');
+
 const Web3 = require('web3');
 const web3Utils = require('web3-utils');
 const Contract = require('truffle-contract');
@@ -297,6 +299,9 @@ describe('Vapp API Router', () => {
 
 
     beforeAll(async () => {
+      // clear other private keys
+      zkdexService._privKeys.clear();
+
       let res;
 
       // register maker / taker vk
@@ -308,7 +313,7 @@ describe('Vapp API Router', () => {
         .post(`/vk/${takerUserKey}`)
         .send({ vk: takerVk }).expect(200);
 
-      // create account for maker and taker
+      // create accounts
       res = await request(app)
         .post(`/accounts/${makerUserKey}`)
         .send({ passphrase })
@@ -321,18 +326,19 @@ describe('Vapp API Router', () => {
         .expect(200);
       takerZkAddress = res.body.address;
 
-      res = await request(app)
-        .get(`/accounts/${makerUserKey}`);
-      const makerAccount = res.body.accounts[0];
-      makerPrivKey = fromKeyStoreObject(makerAccount, passphrase);
-      makerPubKey = makerPrivKey.toPubKey();
+      // convert address to pubkey
+      makerPubKey = ZkDexAddress.fromBase58(removeZkPrefix(makerZkAddress)).toPubKey();
+      takerPubKey = ZkDexAddress.fromBase58(removeZkPrefix(takerZkAddress)).toPubKey();
 
-      res = await request(app)
-        .get(`/accounts/${takerUserKey}`);
-      const takerAccount = res.body.accounts[0];
-      takerPrivKey = fromKeyStoreObject(takerAccount, passphrase);
-      takerPubKey = takerPrivKey.toPubKey();
-
+      // unlock accounts
+      await request(app)
+        .post(`/accounts/${makerUserKey}/unlock`)
+        .send({ passphrase, address: makerZkAddress, duration: 0 })
+        .expect(200, { address: makerZkAddress, success: true });
+      await request(app)
+        .post(`/accounts/${takerUserKey}/unlock`)
+        .send({ passphrase, address: takerZkAddress, duration: 0 })
+        .expect(200, { address: takerZkAddress, success: true });
 
       console.log(`
       makerVk: ${makerVk}
@@ -341,20 +347,16 @@ describe('Vapp API Router', () => {
       makerUserKey: ${makerUserKey}
       takerUserKey: ${takerUserKey}
 
-      makerPrivKey: ${makerPrivKey.toHex()}
-      takerPrivKey: ${takerPrivKey.toHex()}
-
-
       makerPubKey: ${makerPubKey.xToHex()}, ${makerPubKey.yToHex()}
       takerPubKey: ${takerPubKey.xToHex()}, ${takerPubKey.yToHex()}
       `);
     });
 
     // helper functions
-    async function getProof (url, params) {
+    async function getProof (url, params, owners) {
       const res = await request(app)
         .post(url)
-        .send({ params })
+        .send({ params, owners })
         .expect(200);
       return res.body.proof;
     }
@@ -436,12 +438,24 @@ describe('Vapp API Router', () => {
     }
 
     async function createNote (
-      pubKey0, pubKey1, tokenType, value, privKey, from, encKey) {
+      // new note data
+      pubKey0, pubKey1, tokenType, value,
+      // zk-dex user key
+      userKey,
+      // ethereum transaction sender
+      from,
+      // note encryption key
+      encKey
+    ) {
       const note = new Note(pubKey0, pubKey1, value, tokenType, '0x00', getSalt());
-      const proof = await getProof('/circuits/mintNBurnNote', [
-        note,
-        privKey.toHex(),
-      ]);
+      const address = (new ZkDexPublicKey(pubKey0, pubKey1)).toAddress().toString();
+      const proof = await getProof(
+        '/circuits/mintNBurnNote',
+        [
+          note,
+        ],
+        [{ userKey, address }]
+      );
 
       const prom = waitNotes([note]);
 
@@ -455,13 +469,15 @@ describe('Vapp API Router', () => {
       return note;
     }
 
+    // TODO: add unlocked account test case
+
     describe('/notes', () => {
       test('it should create a DAI note', async () => {
         daiNote = await createNote(
           makerPubKey.xToHex(), makerPubKey.yToHex(),
           constants.DAI_TOKEN_TYPE,
           daiAmount,
-          makerPrivKey,
+          makerUserKey,
           ethAccounts[0],
           makerVk,
         );
@@ -482,7 +498,7 @@ describe('Vapp API Router', () => {
           takerPubKey.xToHex(), takerPubKey.yToHex(),
           constants.ETH_TOKEN_TYPE,
           ethAmount,
-          takerPrivKey,
+          takerUserKey,
           ethAccounts[1],
           takerVk,
         );
@@ -515,14 +531,19 @@ describe('Vapp API Router', () => {
           getSalt(),
         );
 
-        const proof = await getProof('/circuits/transferNote', [
-          daiNote,
-          null,
-          daiNote0,
-          daiNote1,
-          makerPrivKey.toHex(),
-          null,
-        ]);
+        const proof = await getProof(
+          '/circuits/transferNote',
+          [
+            daiNote,
+            null,
+            daiNote0,
+            daiNote1,
+          ],
+          [
+            { userKey: makerUserKey, address: makerZkAddress },
+            { userKey: null, address: null },
+          ]
+        );
 
         await zkdex.spend(
           ...proof,
@@ -604,10 +625,14 @@ describe('Vapp API Router', () => {
         test('it should make a new order#0', async () => {
           orderId = Number(await zkdex.getOrderCount());
 
-          const proof = await getProof('/circuits/makeOrder', [
-            makerNote,
-            makerPrivKey.toHex(),
-          ]);
+          const proof = await getProof('/circuits/makeOrder',
+            [
+              makerNote,
+            ],
+            [
+              { userKey: makerUserKey, address: makerZkAddress },
+            ]
+          );
 
           console.log(`
             makerNoteHash   : ${makerNote.hash()}
@@ -678,11 +703,14 @@ describe('Vapp API Router', () => {
 
       describe('Take Order', () => {
         test('it should take order', async () => {
-          const proof = await getProof('/circuits/takeOrder', [
-            takerNote,
-            stakeNote,
-            takerPrivKey.toHex(),
-          ]);
+          const proof = await getProof(
+            '/circuits/takeOrder',
+            [
+              takerNote,
+              stakeNote,
+            ],
+            [{ userKey: takerUserKey, address: takerZkAddress }],
+          );
           const prom = waitOrder(orderId, 'order:taken');
 
           await zkdex.takeOrder(
@@ -776,15 +804,18 @@ describe('Vapp API Router', () => {
         test('should settle order', async () => {
           console.log(JSON.stringify(order, null, 2));
 
-          const proof = await getProof('/circuits/settleOrder', [
-            order.makerInfo.makerNote,
-            order.makerInfo.stakeNote,
-            order.makerInfo.rewardNote,
-            order.makerInfo.paymentNote,
-            order.makerInfo.changeNote,
-            toHex(price),
-            makerPrivKey.toHex(),
-          ]);
+          const proof = await getProof(
+            '/circuits/settleOrder',
+            [
+              order.makerInfo.makerNote,
+              order.makerInfo.stakeNote,
+              order.makerInfo.rewardNote,
+              order.makerInfo.paymentNote,
+              order.makerInfo.changeNote,
+              toHex(price),
+            ],
+            [{ userKey: makerUserKey, address: makerZkAddress }],
+          );
 
 
           const prom = waitOrder(orderId, 'order:settled');
@@ -816,6 +847,8 @@ describe('Vapp API Router', () => {
             expect(res.body.order.taken).toEqual(true);
             done();
           }), TIMEOUT);
+
+        // TODO: convert note
       });
     });
   });

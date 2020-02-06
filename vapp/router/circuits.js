@@ -33,24 +33,49 @@ const dummyGenerators = {
   settleOrder: createProof.dummyProofSettleOrder,
 };
 
+const checkOwnersLength = {
+  mintNBurnNote: len => len === 1,
+  transferNote: len => len === 1 || len === 2,
+  makeOrder: len => len === 1,
+  takeOrder: len => len === 1,
+  settleOrder: len => len === 1,
+};
 
 const USE_DUMMY = process.env.USE_DUMMY === 'true';
 console.log('USE_DUMMY', USE_DUMMY);
 
-router.use('/', asyncWrap(
+router.use('/:circuit', asyncWrap(
   async function (req, res, next) {
-    const {
-      userKey = '',
-      address = '',
-    } = req.body;
+    const { circuit } = req.params;
+    const { owners = [] } = req.body;
 
-    if (!userKey || !address) throw new Error('/circuits requires userKey and address');
+    const checker = checkOwnersLength[circuit];
+    if (!checker) throw new Error('Unknown circuit ' + circuit);
 
-    const privKey = req.app.zkdexService.getPrivateKey(userKey, address);
+    console.log(`
+    circuit:        ${circuit}
+    owners.length:  ${owners.length}
+    owners:
+${JSON.stringify(owners, null, 2)}
+    `);
 
-    if (privKey) throw new Error('unlock account before making proof');
+    if (!checker(owners.length)) throw new Error(`circuits ${circuit} requires at least one owner`);
 
-    req.body.privKeyHex = privKey.toHex();
+    req.body.privKeyHexs = owners.map(({ userKey = '', address = '' }) => {
+      if (!userKey && !address) return null;
+
+      if (!userKey || !address) throw new Error(`circuits ${circuit} requires both userKey and address`);
+
+      if (!req.app.zkdexService.hasPrivateKey(userKey, address)) throw new Error('unlock account before making proof');
+
+      const privKey = req.app.zkdexService.getPrivateKey(userKey, address);
+
+      if (!privKey) throw new Error('unlock account before making proof');
+
+      return privKey.toHex();
+    });
+
+    next();
   }
 ));
 
@@ -60,10 +85,10 @@ router.post('/:circuit', asyncWrap(
     const { circuit } = req.params;
     const {
       params = [],
-      privKeyHex,
+      privKeyHexs = [],
     } = req.body;
 
-    params.append(privKeyHex);
+    params.push(...privKeyHexs);
 
     const generator = USE_DUMMY
       ? dummyGenerators[circuit]
@@ -72,8 +97,6 @@ router.post('/:circuit', asyncWrap(
     if (!generator) {
       throw new Error('Unknown circuit ' + circuit);
     }
-
-    if (circuit === 'takeOrder') console.log('params', JSON.stringify(params, null, 2));
 
     const proof = await generator(...params);
 

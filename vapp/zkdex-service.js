@@ -87,14 +87,18 @@ class ZkDexService extends EventEmitter {
 
   /**
    * set unlocked private key
+   * @param {string} userKey zk-dex user.
    * @param {ZkDexPrivateKey} privKey Unlocked private key.
    * @param {Number} duration Unlock duration. if duration is `0`, unlock during 30 days (almost infinite)
    */
   setPrivateKey (userKey, privKey, duration = DEFAULT_UNLOCK_DURATION) {
-    const address = privKey.toAddress().toString();
-    const expiredAt = moment().add(duration || MAX_UNLOCK_DURATION, 'min');
+    duration = duration || MAX_UNLOCK_DURATION;
 
-    debug(`set private key (address=${address}, expiredAt=${expiredAt.toLocaleString()})`);
+    const address = privKey.toAddress().toString();
+    const expiredAt = moment().add(duration, 'minute');
+
+    debug(`set private key (user=${userKey}, address=${address}, expiredAt=${expiredAt.toLocaleString()}), duration=${duration}`);
+    console.warn(`set private key (user=${userKey}, address=${address}, expiredAt=${expiredAt.toLocaleString()}), duration=${duration}`);
 
     const key = _accountKey(userKey, address);
     this._privKeys.set(key, { privKey, expiredAt });
@@ -102,6 +106,7 @@ class ZkDexService extends EventEmitter {
 
   /**
    * get unlocked private key
+   * @param {string} userKey zk-dex user.
    * @param {string} address zk-dex address with `zk` prefix.
    * @returns {ZkDexPrivateKey || null} Unlocked private key.
    */
@@ -114,12 +119,38 @@ class ZkDexService extends EventEmitter {
     const { privKey, expiredAt } = this._privKeys.get(key);
 
     // short circuit if private key was expired
-    if (expiredAt < moment()) {
+    const now = moment();
+    if (expiredAt < now) {
       this._privKeys.delete(address);
-      return null;
+      throw new Error(`private key expired: expiredAt=${expiredAt} now=${now} diff=${expiredAt - now}`);
     }
 
     return privKey;
+  }
+
+  /**
+   * check if user has unlocked private key
+   * @param {string} userKey zk-dex user.
+   * @param {string} address zk-dex address with `zk` prefix.
+   * @returns {boolean}
+   */
+  hasPrivateKey (userKey, address) {
+    const key = _accountKey(userKey, address);
+    return this._privKeys.has(key);
+  }
+
+  /**
+   * clear unlocked private key
+   * @param {string} userKey zk-dex user.
+   * @param {string} address zk-dex address with `zk` prefix.
+   * @returns {boolean} Map.delete result
+   */
+  removePrivateKey (userKey, address) {
+    const key = _accountKey(userKey, address);
+
+    // short circuit if private key was not set
+    if (!this._privKeys.has(key)) return;
+    return this._privKeys.delete(key);
   }
 
   async init (providerUrl, zkdexAddress = '') {
