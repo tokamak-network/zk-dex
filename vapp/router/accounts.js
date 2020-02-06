@@ -22,6 +22,7 @@ const {
 
 const router = express.Router();
 
+// changed: HTTP 200 {accounts} -> {addresses}
 router.get('/:userKey', asyncWrap(
   async function (req, res) {
     const userKey = req.params.userKey;
@@ -66,14 +67,29 @@ router.post('/:userKey/unlock', asyncWrap(
     } = req.body;
 
     const account = getAccountByAddress(userKey, address);
-    console.log('account', account);
+    if (!account) throw new Error(`User#${userKey} does not have account ${address}`);
+
     const privateKey = unlockAccount(passphrase, account);
 
-    req.app.zkdexService.setPrivateKey(userKey, privateKey);
+    req.app.zkdexService.setPrivateKey(userKey, privateKey, duration);
 
     return res.status(200).json({
       address: addZkPrefix(address),
       success: true,
+    });
+  }
+));
+
+router.post('/:userKey/lock', asyncWrap(
+  async function (req, res) {
+    const { userKey } = req.params;
+    const {
+      address,
+    } = req.body;
+
+    return res.status(200).json({
+      address: addZkPrefix(address),
+      success: req.app.zkdexService.setPrivateKey(userKey, address),
     });
   }
 ));
