@@ -12,12 +12,12 @@ const Web3 = require('web3');
 const { toHex, toBN, hexToNumberString, randomHex } = require('web3-utils');
 
 const DB = require('./localstorage');
-const ZkDex = require('truffle-contract')(require('../build/contracts/ZkDex.json'));
+const ZkDex = require('truffle-contract')(require('../../build/contracts/ZkDex.json'));
 
 const {
   marshal,
   unmarshal,
-} = require('../scripts/lib/util');
+} = require('../../scripts/lib/util');
 
 const {
   constants,
@@ -25,7 +25,7 @@ const {
   DecryptError,
   NoteState,
   decrypt,
-} = require('../scripts/lib/Note');
+} = require('../../scripts/lib/Note');
 
 const { TransferHistory, TransferHistoryState } = DB;
 
@@ -98,7 +98,7 @@ class ZkDexService extends EventEmitter {
     const expiredAt = moment().add(duration, 'minute');
 
     debug(`set private key (user=${userKey}, address=${address}, expiredAt=${expiredAt.toLocaleString()}), duration=${duration}`);
-    console.warn(`set private key (user=${userKey}, address=${address}, expiredAt=${expiredAt.toLocaleString()}), duration=${duration}`);
+    debug(`set private key (user=${userKey}, address=${address}, expiredAt=${expiredAt.toLocaleString()}), duration=${duration}`);
 
     const key = _accountKey(userKey, address);
     this._privKeys.set(key, { privKey, expiredAt });
@@ -198,7 +198,7 @@ class ZkDexService extends EventEmitter {
       self.queue.push(data, PRIORITY_NOTE_STATE_CHANGE);
     });
 
-    debug('listening OrderSettled event');
+    debug('listening OrderTaken event');
     OrderTaken.on('data', async function (data) {
       self.emitters.OrderTaken = this;
       // await wait(5);
@@ -220,29 +220,29 @@ class ZkDexService extends EventEmitter {
 
     const isSpent = state.cmp(NoteState.Spent) === 0;
 
-    console.log(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
+    debug(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
 
     const userKeys = DB.getUserKeys();
     let found = false;
-    // console.log('userKeys', userKeys);
+    // debug('userKeys', userKeys);
 
     for (const userKey of userKeys) {
       if (found) return;
 
       const note = DB.getNoteByHash(userKey, noteHash);
-      // console.log(`getNoteByHash User${userKey} Note${noteHash}`);
+      // debug(`getNoteByHash User${userKey} Note${noteHash}`);
 
       if (note) {
         found = true;
 
-        // console.log('NOTE STATE, ', state);
-        // console.log(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
-        // console.log('isSpent', isSpent);
+        // debug('NOTE STATE, ', state);
+        // debug(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
+        // debug('isSpent', isSpent);
 
         if (isSpent) {
           // send history
           const history = TransferHistory.getHistory(noteHash);
-          // console.log(`history: ${history && history.toString()}`);
+          // debug(`history: ${history && history.toString()}`);
 
           if (history && history.state === TransferHistoryState.Init) {
             const timestamp = await this.web3.eth.getBlock(data.blockNumber);
@@ -267,7 +267,7 @@ class ZkDexService extends EventEmitter {
           if (!decryptedNote) return;
 
           if (DB.addNote(userKey, decryptedNote)) {
-            console.log(`[User ${userKey}] has Note#${noteHash} isSpent=${isSpent} isSmart=${decryptedNote.isSmart()}`);
+            debug(`[User ${userKey}] has Note#${noteHash} isSpent=${isSpent} isSmart=${decryptedNote.isSmart()}`);
             this.emit('note', null, decryptedNote);
           }
         } catch (e) {
@@ -280,13 +280,13 @@ class ZkDexService extends EventEmitter {
       };
 
       const vks = DB.getViewingKeys(userKey);
-      // console.log('decrypt with view keys', vks);
+      // debug('decrypt with view keys', vks);
       vks.forEach(f);
 
       if (found) return;
 
       const accounts = DB.getAccounts(userKey);
-      // console.log('decrypt with view address', accounts.map(({ address }) => address));
+      // debug('decrypt with view address', accounts.map(({ address }) => address));
       accounts.map(({ address }) => address).forEach(f);
     }
 
@@ -310,7 +310,7 @@ class ZkDexService extends EventEmitter {
 
     const order = DB.getOrder(orderId);
     if (!order) {
-      console.error('Failed to get order!');
+      debug('Failed to get order!');
       return;
     }
 
@@ -325,7 +325,7 @@ class ZkDexService extends EventEmitter {
       // for taker
       const takerNote = DB.getNoteByHash(userKey, takerNoteHash);
       if (takerNote) {
-        // console.log('_handleOrderTaken - taker');
+        // debug('_handleOrderTaken - taker');
         order.takerInfo = {
           takerUserKey: userKey,
           takerNote: takerNote,
@@ -470,7 +470,7 @@ class ZkDexService extends EventEmitter {
 
     for (let i = numOrdersDB; i < numOrdersContract; i++) {
       const order = await this.zkdex.orders(i);
-      console.info(`Order#${i} fetched`);
+      debug(`Order#${i} fetched`);
 
       order.sourceToken = hexToNumberString(toHex(order.sourceToken));
       order.targetToken = hexToNumberString(toHex(order.targetToken));
@@ -480,7 +480,7 @@ class ZkDexService extends EventEmitter {
       DB.increaseOrderCount();
       DB.addOrder(order);
       this.emit('order', null, order);
-      console.log(`[Order#${i}] fetched`);
+      debug(`[Order#${i}] fetched`);
 
       // find maker's order
       const userKeys = DB.getUserKeys();
@@ -495,7 +495,7 @@ class ZkDexService extends EventEmitter {
           DB.addOrUpdateOrderByUser(userKey, order);
           DB.updateOrder(order);
           this.emit('order:created', null, order);
-          console.log(`[Order#${i}] maker info prepared`);
+          debug(`[Order#${i}] maker info prepared`);
         }
       }
     }

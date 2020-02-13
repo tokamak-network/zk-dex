@@ -24,23 +24,22 @@ require('dotenv').config();
 
 const router = require('./router');
 
-const { initialized } = require('../scripts/lib/dockerUtils');
-const { constants, Note, NoteState } = require('../scripts/lib/Note');
-const { marshal, unmarshal } = require('../scripts/lib/util');
+const { initialized } = require('../../scripts/lib/dockerUtils');
+const { constants, Note, NoteState } = require('../../scripts/lib/Note');
+const { marshal, unmarshal } = require('../../scripts/lib/util');
 const { ZkDexService } = require('./zkdex-service');
 const DB = require('./localstorage');
 
 const PROVIDER_URL = 'ws://localhost:8545';
 const web3 = new Web3(PROVIDER_URL);
 
-const ZkDex = Contract(require('../build/contracts/ZkDex.json'));
-const Dai = Contract(require('../build/contracts/MockDai.json'));
+const ZkDex = Contract(require('../../build/contracts/ZkDex.json'));
+const Dai = Contract(require('../../build/contracts/MockDai.json'));
 
 ZkDex.setProvider(web3.currentProvider);
 Dai.setProvider(web3.currentProvider);
 
 const { BN, toHex, toBN, padRight } = web3Utils;
-
 
 const USE_DUMMY = process.env.USE_DUMMY === 'true';
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+
 const router = require('./router');
 
 const app = express();
@@ -9,6 +10,4 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 router(app);
 
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
-});
+module.exports = app;

@@ -8,8 +8,8 @@ const {
 } = require('zk-dex-keystore/lib/utils');
 
 
-const { marshal } = require('../scripts/lib/util');
-const { Note, constants: { EMPTY_NOTE_HASH } } = require('../scripts/lib/Note');
+const { marshal } = require('../../scripts/lib/util');
+const { Note, constants: { EMPTY_NOTE_HASH } } = require('../../scripts/lib/Note');
 
 localStorage = new LocalStorage('./localstorage');
 if (typeof localStorage === 'undefined' || localStorage === null) {
@@ -216,6 +216,7 @@ const TransferHistoryState = {
 };
 
 class TransferHistory {
+
   /**
    *
    * @param {String} oldNote0Hash hash of old note 0
