@@ -90,12 +90,12 @@ contract ZkDex is ZkDai {
     require(notes[originalNote] != State.Invalid, "Original note doesn't exist");
     require(notes[newNote] == State.Invalid, "New note was already mint");
 
-    notes[smartNote] = State.Invalid;
+    notes[smartNote] = State.Spent;
     notes[newNote] = State.Valid;
 
     encryptedNotes[newNote] = encryptedNote;
 
-    emit NoteStateChange(smartNote, State.Invalid);
+    emit NoteStateChange(smartNote, State.Spent);
     emit NoteStateChange(newNote, State.Valid);
   }
 
