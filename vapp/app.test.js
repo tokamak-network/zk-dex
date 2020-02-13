@@ -353,11 +353,15 @@ describe('Vapp API Router', () => {
 
     // helper functions
     async function getProof (url, params, owners) {
-      const res = await request(app)
-        .post(url)
-        .send({ params, owners })
-        .expect(200);
-      return res.body.proof;
+      try {
+        const res = await request(app)
+          .post(url)
+          .send({ params, owners })
+          .expect(200);
+        return res.body.proof;
+      } catch (e) {
+        throw e;
+      }
     }
 
     function waitNotes (notes, checkHash = true) {

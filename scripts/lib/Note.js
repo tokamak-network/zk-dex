@@ -276,9 +276,9 @@ function dummyProofConvertNote(smartNote, originNote, convertedNote) {
   const proof = JSON.parse(sampleProof);
 
   proof.input = [
-    ...smartNote.hashArr(),
-    ...originNote.hashArr(),
-    ...convertedNote.hashArr(),
+    ...Note.fromJSON(smartNote).hashArr(),
+    ...Note.fromJSON(originNote).hashArr(),
+    ...Note.fromJSON(convertedNote).hashArr(),
     1,
   ];
 
@@ -302,6 +302,11 @@ function dummyProofMakeOrder(_makerNote) {
 function dummyProofTakeOrder(_parentNote, _stakeNote) {
   const proof = JSON.parse(sampleProof);
 
+  console.log(`
+  _parentNote       : ${JSON.stringify(_parentNote, null, 2)}
+  _stakeNote        : ${JSON.stringify(_stakeNote, null, 2)}
+  `);
+
   const parentNote = Note.fromJSON(_parentNote);
   const stakeNote = Note.fromJSON(_stakeNote);
 
@@ -310,7 +315,7 @@ function dummyProofTakeOrder(_parentNote, _stakeNote) {
     parentNote.token,
 
     ...stakeNote.hashArr(),
-    ...split32BytesTo16BytesArr(stakeNote.pubKey0),
+    stakeNote.pubKey0, stakeNote.pubKey1,
     stakeNote.token,
 
     1,
@@ -348,11 +353,11 @@ function dummyProofSettleOrder(_makerNote, _stakeNote, _rewardNote, _paymentNote
     stakeNote.token,
 
     ...rewardNote.hashArr(),
-    ...split32BytesTo16BytesArr(rewardNote.pubKey0),
+    rewardNote.pubKey0, rewardNote.pubKey1,
     rewardNote.token,
 
     ...paymentNote.hashArr(),
-    ...split32BytesTo16BytesArr(paymentNote.pubKey0),
+    paymentNote.pubKey0, paymentNote.pubKey1,
     paymentNote.token,
 
     ...changeNote.hashArr(),
