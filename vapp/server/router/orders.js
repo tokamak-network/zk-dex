@@ -1,6 +1,6 @@
 const express = require('express');
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../asyncWrap');
 
 const {
   getOrder,

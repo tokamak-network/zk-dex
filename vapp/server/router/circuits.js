@@ -1,7 +1,7 @@
 const express = require('express');
 const isEmpty = require('lodash/isEmpty');
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../asyncWrap');
 
 const {
   getMintNBurnProof,
@@ -10,9 +10,9 @@ const {
   getMakeOrderProof,
   getTakeOrderProof,
   getSettleOrderProof,
-} = require('../../scripts/lib/dockerUtils');
+} = require('../../../scripts/lib/dockerUtils');
 
-const { Note, createProof, constants: { EMPTY_NOTE } } = require('../../scripts/lib/Note');
+const { Note, createProof, constants: { EMPTY_NOTE } } = require('../../../scripts/lib/Note');
 
 const { TransferHistory, TransferHistoryState } = require('../localstorage');
 

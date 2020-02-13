@@ -5,7 +5,7 @@ const {
 } = require('zk-dex-keystore/lib/utils');
 
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../asyncWrap');
 
 const {
   getAccounts,
@@ -18,7 +18,7 @@ const {
 const {
   createAccount,
   unlockAccount,
-} = require('../lib/accounts');
+} = require('../../lib/accounts');
 
 const router = express.Router();
 
