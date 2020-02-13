@@ -24,9 +24,8 @@ require('dotenv').config();
 
 const router = require('./router');
 
-const { fromKeyStoreObject } = require('./lib/accounts');
 const { initialized } = require('../scripts/lib/dockerUtils');
-const { constants, Note } = require('../scripts/lib/Note');
+const { constants, Note, NoteState } = require('../scripts/lib/Note');
 const { marshal, unmarshal } = require('../scripts/lib/util');
 const { ZkDexService } = require('./zkdex-service');
 const DB = require('./localstorage');
@@ -277,8 +276,8 @@ describe('Vapp API Router', () => {
     const ethAmount = ether('100');
 
     // spend note
-    let daiNote0; // maker note
-    let daiNote1; // taker note
+    let daiNote0; // maker note --> make order
+    let daiNote1; // taker note --> liquidated
     const spendDaiNoteAmount = daiAmount.div(toBN('2'));
 
     // over payment order
@@ -579,7 +578,6 @@ describe('Vapp API Router', () => {
           done();
         }));
 
-      // conflict with make order?
       test('it should fetch maker\'s transfer history', done => request(app)
         .get(`/notes/${makerUserKey}/history`)
         .end((err, res) => {
@@ -596,7 +594,20 @@ describe('Vapp API Router', () => {
           done();
         }));
 
-      // TODO: test taker's note and transfer history
+      test('it should liquidate dai note 1', async () => {
+        const proof = await getProof(
+          '/circuits/mintNBurnNote',
+          [daiNote1],
+          [{ userKey: takerUserKey, address: takerZkAddress }],
+        );
+
+        const from = ethAccounts[2];
+        const daiBalance0 = await dai.balanceOf(from);
+        await zkdex.liquidate(from, ...proof, { from });
+        const daiBalance1 = await dai.balanceOf(from);
+
+        expect(daiBalance1.sub(daiBalance0).toString('hex', 64)).toEqual(unmarshal(daiNote1.value));
+      }, TIMEOUT);
     });
 
     describe('/orders', () => {
@@ -768,8 +779,6 @@ describe('Vapp API Router', () => {
             expect(order.orderId).toEqual(orderId);
             expect(order.taken).toEqual(true);
 
-            console.log('order?', JSON.stringify(order, null, 2));
-
             // maker info
             expect(order.makerInfo.makerUserKey).toEqual(makerUserKey);
             expect(Note.hashFromJSON(order.makerInfo.stakeNote)).toEqual(stakeNote.hash());
@@ -786,13 +795,8 @@ describe('Vapp API Router', () => {
               unmarshal(order.makerInfo.changeNote.pubKey0).slice(constants.PUBKEY_BYTES, constants.PUBKEY_BYTES * 2)
               + unmarshal(order.makerInfo.changeNote.pubKey1).slice(constants.PUBKEY_BYTES, constants.PUBKEY_BYTES * 2)
             );
+
             expect(e).toEqual(changeNoteOwner);
-
-
-            console.log(`
-
-            order: ${JSON.stringify(order, null, 2)}
-            `);
 
             done();
           })
@@ -802,8 +806,6 @@ describe('Vapp API Router', () => {
 
       describe('Settle Order', () => {
         test('should settle order', async () => {
-          console.log(JSON.stringify(order, null, 2));
-
           const proof = await getProof(
             '/circuits/settleOrder',
             [
@@ -845,44 +847,84 @@ describe('Vapp API Router', () => {
             if (err) return done(err);
             expect(res.body.order.settled).toEqual(true);
             expect(res.body.order.taken).toEqual(true);
+            order = res.body.order;
+
             done();
           }), TIMEOUT);
 
-        // TODO: convert note
+        test('should convert smart notes', async () => {
+          console.log(`
+------------------------------
+------------------------------
+
+
+          order:
+${JSON.stringify(order, null, 2)}
+
+------------------------------
+------------------------------
+`);
+
+          // smart notes
+          const rewardNote = order.takerInfo.rewardNote; // owned by takerNote
+          const paymentNote = order.makerInfo.paymentNote; // owned by makerNote
+
+          // converted notes
+          const convertedNote0 = new Note(
+            takerPubKey.xToHex(), takerPubKey.yToHex(),
+            rewardNote.value,
+            rewardNote.token,
+            '0x00',
+            getSalt(),
+          );
+          const convertedNote1 = new Note(
+            makerPubKey.xToHex(), makerPubKey.yToHex(),
+            paymentNote.value,
+            paymentNote.token,
+            '0x00',
+            getSalt(),
+          );
+
+          const proof0 = await getProof(
+            '/circuits/convertNote',
+            [rewardNote, takerNote, convertedNote0],
+            [{ userKey: takerUserKey, address: takerZkAddress }]
+          );
+
+          const proof1 = await getProof(
+            '/circuits/convertNote',
+            [paymentNote, makerNote, convertedNote1],
+            [{ userKey: makerUserKey, address: makerZkAddress }]
+          );
+
+          const prom = waitNotes([convertedNote0, convertedNote1]);
+
+          await zkdex.convertNote(
+            ...proof0,
+            convertedNote0.encrypt(takerVk),
+            {
+              from: ethAccounts[0],
+            },
+          );
+
+          await zkdex.convertNote(
+            ...proof1,
+            convertedNote1.encrypt(makerVk),
+            {
+              from: ethAccounts[0],
+            },
+          );
+
+          await prom;
+
+          expect(await zkdex.notes(order.rewardNote)).toEqual(NoteState.Spent);
+          expect(await zkdex.notes(order.paymentNote)).toEqual(NoteState.Spent);
+          expect(await zkdex.notes(convertedNote0.hash())).toEqual(NoteState.Valid);
+          expect(await zkdex.notes(convertedNote1.hash())).toEqual(NoteState.Valid);
+        }, TIMEOUT);
       });
     });
   });
-
-
-  // describe('/accounts', () => {
-  //   test('it should create new account', async () => {
-  //     key = pks[0];
-
-  //     const res = await request(app).post('/accounts')
-  //       .send({ key });
-
-  //     if (res.status !== 200) {
-  //       console.log(res.text);
-  //     }
-
-  //     expect(res.status).toEqual(200);
-  //   });
-  // });
-
-
-  // test('it should fetch empty accounts list', async () => {
-  //     moxios.stubRequest('/accounts', {
-  //       status: 200,
-  //       response: {
-  //         accounts: [],
-  //       },
-  //     });
-
-
-  //     const res = await request(app).get('/accounts');
-  //     expect(res.status).toEqual(200);
-  //   });
-  // });
 });
 
 function getSalt () {

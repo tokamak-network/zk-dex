@@ -43,10 +43,10 @@ const TARGET_EVENTS = [
   'OrderSettled',
 ];
 
-// priorities of each actions
+// priorities of each events
 const PRIORITY_FETCH_ORDER = 1;
-const PRIORITY_NOTE_STATE_CHANGE = 3;
-const PRIORITY_ORDER_TAKEN = 4;
+const PRIORITY_NOTE_STATE_CHANGE = 2;
+const PRIORITY_ORDER_TAKEN = 3;
 const PRIORITY_ORDER_SETTLED = 4;
 
 // helper functions
@@ -201,20 +201,23 @@ class ZkDexService extends EventEmitter {
     debug('listening OrderSettled event');
     OrderTaken.on('data', async function (data) {
       self.emitters.OrderTaken = this;
-      await wait(5);
+      // await wait(5);
+      await wait(1);
       self.queue.push(data, PRIORITY_ORDER_TAKEN);
     });
 
     debug('listening OrderSettled event');
     OrderSettled.on('data', async function (data) {
       self.emitters.OrderSettled = this;
-      await wait(5);
+      // await wait(5);
+      await wait(1);
       self.queue.push(data, PRIORITY_ORDER_SETTLED);
     });
   }
 
   async _handleNoteStateChange (data) {
     const { note: noteHash, state } = data.args;
+
     const isSpent = state.cmp(NoteState.Spent) === 0;
 
     console.log(`[Note#${noteHash}] ${NoteState.toString(state)} isSpent(${isSpent})`);
@@ -264,7 +267,7 @@ class ZkDexService extends EventEmitter {
           if (!decryptedNote) return;
 
           if (DB.addNote(userKey, decryptedNote)) {
-            console.log(`[User ${userKey}] has Note#${noteHash} isSmart=${decryptedNote.isSmart()}`);
+            console.log(`[User ${userKey}] has Note#${noteHash} isSpent=${isSpent} isSmart=${decryptedNote.isSmart()}`);
             this.emit('note', null, decryptedNote);
           }
         } catch (e) {
@@ -382,9 +385,9 @@ class ZkDexService extends EventEmitter {
           changeNoteEncKey = order.makerInfo.takerViewingKey;
         }
 
-        order.makerInfo.rewardNote = Note.createSmartNote(takerNoteHash, rewardAmount, order.sourceToken, '0x00', getSalt(), true);
-        order.makerInfo.paymentNote = Note.createSmartNote(makerNote.hash(), paymentAmount, order.targetToken, '0x00', getSalt(), true);
-        order.makerInfo.changeNote = Note.createSmartNote(changeNoteOwner, changeAmount, changeTokenType, '0x00', getSalt(), true);
+        order.makerInfo.rewardNote = Note.createSmartNote(takerNoteHash, rewardAmount, order.sourceToken, '0x00', getSalt());
+        order.makerInfo.paymentNote = Note.createSmartNote(makerNote.hash(), paymentAmount, order.targetToken, '0x00', getSalt());
+        order.makerInfo.changeNote = Note.createSmartNote(changeNoteOwner, changeAmount, changeTokenType, '0x00', getSalt());
 
         order.makerInfo.rewardNoteEncKey = order.makerInfo.takerViewingKey;
         order.makerInfo.paymentNoteEncKey = newMakerVk;

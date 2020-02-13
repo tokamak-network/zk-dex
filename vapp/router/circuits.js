@@ -6,6 +6,7 @@ const asyncWrap = require('../lib/asyncWrap');
 const {
   getMintNBurnProof,
   getTransferProof,
+  getConvertProof,
   getMakeOrderProof,
   getTakeOrderProof,
   getSettleOrderProof,
@@ -20,6 +21,7 @@ const router = express.Router();
 const generators = {
   mintNBurnNote: getMintNBurnProof,
   transferNote: getTransferProof,
+  convertNote: getConvertProof,
   makeOrder: getMakeOrderProof,
   takeOrder: getTakeOrderProof,
   settleOrder: getSettleOrderProof,
@@ -28,22 +30,27 @@ const generators = {
 const dummyGenerators = {
   mintNBurnNote: createProof.dummyProofCreateNote,
   transferNote: createProof.dummyProofSpendNote,
+  convertNote: createProof.dummyProofConvertNote,
   makeOrder: createProof.dummyProofMakeOrder,
   takeOrder: createProof.dummyProofTakeOrder,
   settleOrder: createProof.dummyProofSettleOrder,
 };
 
+const lengthChecker = (min, max) => len => min <= len && len <= max;
+
 const checkOwnersLength = {
-  mintNBurnNote: len => len === 1,
-  transferNote: len => len === 1 || len === 2,
-  makeOrder: len => len === 1,
-  takeOrder: len => len === 1,
-  settleOrder: len => len === 1,
+  mintNBurnNote: lengthChecker(1, 1),
+  transferNote: lengthChecker(1, 2),
+  convertNote: lengthChecker(1, 1),
+  makeOrder: lengthChecker(1, 1),
+  takeOrder: lengthChecker(1, 1),
+  settleOrder: lengthChecker(1, 1),
 };
 
 const USE_DUMMY = process.env.USE_DUMMY === 'true';
 console.log('USE_DUMMY', USE_DUMMY);
 
+// /circuits/:circuit requires { owners: [{userKey, address}], params }
 router.use('/:circuit', asyncWrap(
   async function (req, res, next) {
     const { circuit } = req.params;
@@ -51,13 +58,6 @@ router.use('/:circuit', asyncWrap(
 
     const checker = checkOwnersLength[circuit];
     if (!checker) throw new Error('Unknown circuit ' + circuit);
-
-    console.log(`
-    circuit:        ${circuit}
-    owners.length:  ${owners.length}
-    owners:
-${JSON.stringify(owners, null, 2)}
-    `);
 
     if (!checker(owners.length)) throw new Error(`circuits ${circuit} requires at least one owner`);
 

@@ -172,6 +172,9 @@ function addNote (_userKey, _note) {
 module.exports.addNote = addNote;
 
 function keyNoteByHash (userKey, noteHash) {
+  if (!userKey) throw new Error('empty user key');
+  if (!noteHash) throw new Error('empty note hash');
+
   return `user-${marshal(userKey)}-note-${marshal(noteHash)}`;
 }
 function getNoteByHash (userKey, noteHash) {
