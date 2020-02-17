@@ -8,10 +8,15 @@ const moment = require('moment');
 const { ZkDexPrivateKey } = require('zk-dex-keystore/lib/Account');
 const { addZkPrefix } = require('zk-dex-keystore/lib/utils');
 
-
 const Web3 = require('web3');
 const { toHex, toBN, hexToNumberString, randomHex } = require('web3-utils');
 
+const {
+  zkdexService: {
+    contractEvents, // ZkDex events to listen
+    events, // zk-dex-service evnets
+  },
+} = require('./constants');
 const DB = require('./localstorage');
 const ZkDex = require('truffle-contract')(require('../../build/contracts/ZkDex.json'));
 
@@ -37,26 +42,30 @@ const SCALING_FACTOR = toBN('1000000000000000000');
 const DEFAULT_UNLOCK_DURATION = 5;
 const MAX_UNLOCK_DURATION = 43200; // 30 days
 
-// ZkDex events to listen
-const TARGET_EVENTS = [
-  'NoteStateChange',
-  'OrderTaken',
-  'OrderSettled',
-];
-
 // priorities of each events
 const PRIORITY_FETCH_ORDER = 1;
 const PRIORITY_NOTE_STATE_CHANGE = 2;
 const PRIORITY_ORDER_TAKEN = 3;
 const PRIORITY_ORDER_SETTLED = 4;
 
-// zk-dex-service evnets
-const events = {
-  NOTE: 'note',
-  ORDER: 'order',
-  ORDER_CREATED: 'order:created',
-  ORDER_TAKEN: 'order:taken',
-  ORDER_SETTLED: 'order:settled',
+const OrderState = {
+  Created: hexToNumberString('0x0'),
+  Taken: hexToNumberString('0x1'),
+  Settled: hexToNumberString('0x2'),
+
+  toString (s) {
+    if (this.Created === s) {
+      return 'Created';
+    }
+    if (this.Taken === s) {
+      return 'Taken';
+    }
+    if (this.Settled === s) {
+      return 'Settled';
+    }
+
+    throw new Error(`Undefined state: ${s}`);
+  },
 };
 
 // helper functions
@@ -75,7 +84,7 @@ class ZkDexService extends EventEmitter {
     this.emitters = {};
 
     // bind event handlers
-    for (const eventName of TARGET_EVENTS) {
+    for (const eventName of contractEvents) {
       this._handlers[eventName] = this[getHandlerName(eventName)];
     }
     this._fetchOrders = throttle(this._fetchOrders, 500);
@@ -280,7 +289,6 @@ class ZkDexService extends EventEmitter {
 
           if (DB.addNote(userKey, decryptedNote)) {
             debug(`[User ${userKey}] has Note#${noteHash} isSpent=${isSpent} isSmart=${decryptedNote.isSmart()}`);
-            debug('emitting', events.NOTE);
             this.emit(events.NOTE, null, decryptedNote);
           }
         } catch (e) {
@@ -304,7 +312,6 @@ class ZkDexService extends EventEmitter {
     }
 
     if (!found) {
-      debug('emitting', events.NOTE);
       this.emit(
         events.NOTE,
         new Error(`Note#${noteHash} cannot be decrypted`),
@@ -330,7 +337,10 @@ class ZkDexService extends EventEmitter {
 
     order.takerNoteToMaker = stakeNoteHash;
     order.parentNote = takerNoteHash;
+
     order.takenAt = takenAt;
+    order.taken = true;
+    order.state = OrderState.Taken;
 
     const userKeys = DB.getUserKeys();
 
@@ -339,7 +349,6 @@ class ZkDexService extends EventEmitter {
       // for taker
       const takerNote = DB.getNoteByHash(userKey, takerNoteHash);
       if (takerNote) {
-        // debug('_handleOrderTaken - taker');
         order.takerInfo = {
           takerUserKey: userKey,
           takerNote: takerNote,
@@ -411,7 +420,6 @@ class ZkDexService extends EventEmitter {
 
         DB.addOrUpdateOrderByUser(userKey, order);
         DB.updateOrder(order);
-        debug('emitting', events.ORDER_TAKEN);
         this.emit(
           events.ORDER_TAKEN,
           null,
@@ -432,7 +440,6 @@ class ZkDexService extends EventEmitter {
     const order = DB.getOrder(orderId);
 
     if (!order) {
-      debug('emitting', events.ORDER_SETTLED);
       this.emit(
         events.ORDER_SETTLED,
         new Error(`failed to read Order#${orderId}`),
@@ -445,8 +452,10 @@ class ZkDexService extends EventEmitter {
     order.rewardNote = rewardNoteHash;
     order.paymentNote = paymentNoteHash;
     order.changeNote = changeNoteHash;
+
     order.settledAt = settledAt;
     order.settled = true;
+    order.state = OrderState.Settled;
 
     DB.updateOrder(order);
 
@@ -470,7 +479,6 @@ class ZkDexService extends EventEmitter {
       DB.updateOrder(order);
     }
 
-    debug('emitting', events.ORDER_SETTLED);
     this.emit(
       events.ORDER_SETTLED,
       null,
@@ -489,14 +497,15 @@ class ZkDexService extends EventEmitter {
       const order = await this.zkdex.orders(i);
       debug(`Order#${i} fetched`);
 
+      order.orderId = i;
+
       order.sourceToken = hexToNumberString(toHex(order.sourceToken));
       order.targetToken = hexToNumberString(toHex(order.targetToken));
+
       order.state = hexToNumberString(toHex(order.state));
-      order.orderId = i;
 
       DB.increaseOrderCount();
       DB.addOrder(order);
-      debug('emitting', events.ORDER);
       this.emit(events.ORDER, null, order);
       debug(`[Order#${i}] fetched`);
 
@@ -512,7 +521,6 @@ class ZkDexService extends EventEmitter {
           };
           DB.addOrUpdateOrderByUser(userKey, order);
           DB.updateOrder(order);
-          debug('emitting', events.ORDER_CREATED);
           this.emit(events.ORDER_CREATED, null, order);
           debug(`[Order#${i}] maker info prepared`);
         }
@@ -536,5 +544,6 @@ function wait (t) {
 
 module.exports = {
   ZkDexService,
+  OrderState,
   events,
 };

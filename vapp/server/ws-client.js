@@ -1,5 +1,9 @@
 const io = require('socket.io-client');
-const { events } = require('./zkdex-service');
+const {
+  zkdexService: {
+    events, // zk-dex-service evnets
+  },
+} = require('./constants');
 
 const PORT = process.env.PORT || 3000;
 const url = `http://localhost:${PORT}`;

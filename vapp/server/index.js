@@ -8,7 +8,6 @@ const ws = require('./ws');
 const server = http.Server(app);
 
 const zkdexService = new ZkDexService();
-
 app.zkdexService = zkdexService;
 
 const PORT = process.env.PORT || 3000;
