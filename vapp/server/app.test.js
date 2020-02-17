@@ -1,11 +1,6 @@
 //  run with jest
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const keythereum = require('keythereum');
-const { range } = require('lodash');
 const rlp = require('rlp');
-
 const moxios = require('moxios');
 const request = require('supertest');
 
@@ -22,12 +17,12 @@ const Contract = require('truffle-contract');
 
 require('dotenv').config();
 
-const router = require('./router');
-
 const { initialized } = require('../../scripts/lib/dockerUtils');
 const { constants, Note, NoteState } = require('../../scripts/lib/Note');
 const { marshal, unmarshal } = require('../../scripts/lib/util');
-const { ZkDexService } = require('./zkdex-service');
+
+const { app, zkdexService } = require('./index');
+
 const DB = require('./localstorage');
 
 const PROVIDER_URL = 'ws://localhost:8545';
@@ -45,31 +40,12 @@ const USE_DUMMY = process.env.USE_DUMMY === 'true';
 
 console.log('USE_DUMMY', USE_DUMMY);
 
-const initApp = async () => {
-  const app = express();
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
-  router(app);
-
-  const zkdexService = new ZkDexService();
-  await zkdexService.init(PROVIDER_URL);
-
-  app.zkdexService = zkdexService;
-
-  return { app, zkdexService };
-};
-
 const ether = n => web3Utils.toBN(n).mul(web3Utils.toBN(1e18.toString(10)));
 
-describe('Vapp API Router', () => {
+describe('zk-dex express app', () => {
   // contract instances
   let zkdex;
   let dai;
-
-  // express app
-  let app;
-
-  let zkdexService;
 
   const userKey = web3Utils.randomHex(16);
 
@@ -83,9 +59,9 @@ describe('Vapp API Router', () => {
   let ethAccounts;
 
   beforeAll(async () => {
-    const res = await initApp();
-    app = res.app;
-    zkdexService = res.zkdexService;
+    // const res = await initApp();
+    // app = res.app;
+    // zkdexService = res.zkdexService;
 
     await initialized();
     moxios.install();
@@ -368,22 +344,16 @@ describe('Vapp API Router', () => {
       const len = notes.length;
 
       return new Promise((resolve, reject) => {
-        zkdexService.on('note', function (err, decryptedNote) {
+        const f = function (err, decryptedNote) {
           cnt++;
 
           if (cnt === len) {
-            this.removeAllListeners();
+            zkdexService.removeListener('note', f);
           }
 
           const note = notes.shift();
 
           if (err) return reject(err);
-
-          // console.error(`
-          //   expected note:  ${note.toString()}
-          //   decrypted note: ${decryptedNote.toString()}
-          //   `);
-
 
           if (checkHash && (note.hash() !== decryptedNote.hash())) {
             return reject(new Error('decrypted hash mismatch'));
@@ -392,7 +362,9 @@ describe('Vapp API Router', () => {
           if (cnt === len) {
             resolve();
           }
-        });
+        };
+
+        zkdexService.on('note', f);
 
         wait(15 * len).then(() => {
           if (cnt !== len) reject(new Error(`ZkDex service did not received Note#${notes[0].hash()}`));
@@ -410,18 +382,10 @@ describe('Vapp API Router', () => {
       return new Promise((resolve, reject) => {
         zkdexService.on(e, function (err, order) {
           if (err) {
-            this.removeAllListeners();
             return reject(err);
           }
 
-          console.log(`
-          eventName    : ${e}
-          emitteOrderId: ${order.orderId}
-          targetOrderId: ${orderId}
-          same?        : ${order.orderId === orderId}
-          `);
           if (order.orderId === orderId) {
-            this.removeAllListeners();
             resolved = true;
 
             console.warn(`

@@ -1,30 +1,25 @@
 // implements websocket communication
-
 const debug = require('debug')('socket');
-const socket = require('socket.io');
-const http = require('http');
 
 // zk-dex-service events to forward
-const events = [
-  'note',
-  'order',
-  'order:taken',
-  'order:settled',
-];
+const { events } = require('./zkdex-service');
 
 // connect express app and zk-dex-service to socket.io
-module.exports = (app, zkdexService) => {
-  const io = socket(http.createServer(app));
+module.exports = (server, zkdexService) => {
+  const io = require('socket.io')(server);
 
   // forward events from zk-dex-service to websocket client
-  const forward = event => zkdexService.on(event, (...args) => {
-    // console.log(...args);
-    debug(event, ...args.map(arg => JSON.stringify(arg, null, 0)));
-
-    io.emit(event, [...args.map(arg => JSON.stringify(arg, null, 0))]);
+  Object.values(events).forEach((event) => {
+    zkdexService.on(event, (err, data) => {
+      let errMsg = '';
+      if (err && err.stack && err.message) {
+        errMsg = err.message;
+      }
+      const params = [errMsg, data].map(arg => JSON.stringify(arg, null, 0));
+      debug(event, params);
+      io.emit(event, params);
+    });
   });
-
-  events.forEach(forward);
 
   debug('forward zk-dex-service event');
 

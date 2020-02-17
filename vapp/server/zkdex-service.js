@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+const autoBind = require('auto-bind');
 const debug = require('debug')('zk-dex-service');
 const { throttle } = require('lodash');
 const PQ = require('async/priorityQueue');
@@ -49,12 +50,24 @@ const PRIORITY_NOTE_STATE_CHANGE = 2;
 const PRIORITY_ORDER_TAKEN = 3;
 const PRIORITY_ORDER_SETTLED = 4;
 
+// zk-dex-service evnets
+const events = {
+  NOTE: 'note',
+  ORDER: 'order',
+  ORDER_CREATED: 'order:created',
+  ORDER_TAKEN: 'order:taken',
+  ORDER_SETTLED: 'order:settled',
+};
+
 // helper functions
 const _accountKey = (userKey, address) => `${marshal(userKey)}-${addZkPrefix(address)}`;
 
 class ZkDexService extends EventEmitter {
   constructor () {
     super();
+    autoBind(this);
+
+    this.setMaxListeners(10);
 
     const getHandlerName = e => `_handle${e}`;
 
@@ -63,10 +76,9 @@ class ZkDexService extends EventEmitter {
 
     // bind event handlers
     for (const eventName of TARGET_EVENTS) {
-      this._handlers[eventName] = this[getHandlerName(eventName)].bind(this);
+      this._handlers[eventName] = this[getHandlerName(eventName)];
     }
-    this._fetchOrders = throttle(this._fetchOrders.bind(this), 500);
-    // this._fetchOrders = this._fetchOrders.bind(this);
+    this._fetchOrders = throttle(this._fetchOrders, 500);
 
     // OrderCreated event is handled in a different way...
     this.queue = PQ(async (data) => {
@@ -180,7 +192,7 @@ class ZkDexService extends EventEmitter {
       emitter.removeAllListeners();
     }
 
-    this.removeAllListeners();
+    // this.removeAllListeners();
   }
 
   _listenContractEvents () {
@@ -268,7 +280,8 @@ class ZkDexService extends EventEmitter {
 
           if (DB.addNote(userKey, decryptedNote)) {
             debug(`[User ${userKey}] has Note#${noteHash} isSpent=${isSpent} isSmart=${decryptedNote.isSmart()}`);
-            this.emit('note', null, decryptedNote);
+            debug('emitting', events.NOTE);
+            this.emit(events.NOTE, null, decryptedNote);
           }
         } catch (e) {
           if (e instanceof DecryptError) {
@@ -291,8 +304,9 @@ class ZkDexService extends EventEmitter {
     }
 
     if (!found) {
+      debug('emitting', events.NOTE);
       this.emit(
-        'note',
+        events.NOTE,
         new Error(`Note#${noteHash} cannot be decrypted`),
         null
       );
@@ -397,8 +411,9 @@ class ZkDexService extends EventEmitter {
 
         DB.addOrUpdateOrderByUser(userKey, order);
         DB.updateOrder(order);
+        debug('emitting', events.ORDER_TAKEN);
         this.emit(
-          'order:taken',
+          events.ORDER_TAKEN,
           null,
           order,
         );
@@ -417,8 +432,9 @@ class ZkDexService extends EventEmitter {
     const order = DB.getOrder(orderId);
 
     if (!order) {
+      debug('emitting', events.ORDER_SETTLED);
       this.emit(
-        'order:settled',
+        events.ORDER_SETTLED,
         new Error(`failed to read Order#${orderId}`),
         null,
       );
@@ -454,8 +470,9 @@ class ZkDexService extends EventEmitter {
       DB.updateOrder(order);
     }
 
+    debug('emitting', events.ORDER_SETTLED);
     this.emit(
-      'order:settled',
+      events.ORDER_SETTLED,
       null,
       order,
     );
@@ -479,7 +496,8 @@ class ZkDexService extends EventEmitter {
 
       DB.increaseOrderCount();
       DB.addOrder(order);
-      this.emit('order', null, order);
+      debug('emitting', events.ORDER);
+      this.emit(events.ORDER, null, order);
       debug(`[Order#${i}] fetched`);
 
       // find maker's order
@@ -494,7 +512,8 @@ class ZkDexService extends EventEmitter {
           };
           DB.addOrUpdateOrderByUser(userKey, order);
           DB.updateOrder(order);
-          this.emit('order:created', null, order);
+          debug('emitting', events.ORDER_CREATED);
+          this.emit(events.ORDER_CREATED, null, order);
           debug(`[Order#${i}] maker info prepared`);
         }
       }
@@ -517,4 +536,5 @@ function wait (t) {
 
 module.exports = {
   ZkDexService,
+  events,
 };
