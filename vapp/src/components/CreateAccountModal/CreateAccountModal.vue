@@ -28,10 +28,11 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
+import api from '../../api/index';
+
 import InputAccount from '../../components/Inputs/InputAccount';
 import StandardButton from '../../components/StandardButton';
-
-import api from '../../api/index';
 
 export default {
   data () {
@@ -42,6 +43,11 @@ export default {
   components: {
     InputAccount,
     StandardButton,
+  },
+  computed: {
+    ...mapState([
+      'userKey',
+    ]),
   },
   mounted () {
     this.$refs.password1.$refs.input.focus();
@@ -59,11 +65,16 @@ export default {
         return;
       }
 
-      this.$emit('newAccountRequested', password1);
+      await this.addAccount(password1);
+      this.$emit('newAccountAdded');
 
-      // TODO: get synchronously event
-      await new Promise(r => setTimeout(r, 2000));
       this.loading = false;
+    },
+    async addAccount (passphrase) {
+      await api.addAccount(this.userKey, passphrase);
+
+      const accounts = await api.getAccounts(this.userKey);
+      this.$store.dispatch('setAccounts', accounts);
     },
     isValidPassword (password1, password2) {
       if (password1 !== '' &&

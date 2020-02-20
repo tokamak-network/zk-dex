@@ -3,7 +3,7 @@
     <create-account-modal
       v-if="showModal"
       @modalClosed="showModal=false"
-      v-on:newAccountRequested="addAccount"
+      v-on:newAccountAdded="closeModal"
     />
     <div class="container-header">
       <img src="../../../../assets/icons/menu/account.png" />
@@ -59,12 +59,7 @@ export default {
     ]),
   },
   methods: {
-    async addAccount (passphrase) {
-      await api.createAndAddAccount(this.userKey, passphrase);
-
-      const accounts = await api.getAccounts(this.userKey);
-      this.$store.dispatch('setAccounts', accounts);
-
+    async closeModal () {
       this.showModal = false;
     },
   },

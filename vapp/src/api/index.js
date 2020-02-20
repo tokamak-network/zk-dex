@@ -62,12 +62,10 @@ async function getOrders () {
 }
 
 // post
-async function addAccount (key, account) {
-  const res = await instance.post('/accounts/import', {
-    key,
-    account,
+function addAccount (userKey, passphrase) {
+  return instance.post(`/accounts/${userKey}`, {
+    passphrase,
   });
-  return res.data.accounts;
 }
 
 async function addNote (account, note) {
@@ -107,10 +105,12 @@ async function setViewingKey (key, vk) {
   });
 }
 
-function createAccount (passphrase) {
-  return instance.post('/accounts', {
-    passphrase,
+async function importAccount (key, account) {
+  const res = await instance.post('/accounts/import', {
+    key,
+    account,
   });
+  return res.data.accounts;
 }
 
 function unlockAccount (passphrase, keystore) {
@@ -185,13 +185,13 @@ export default {
   getOrdersByUser,
   getOrders,
   addAccount,
+  importAccount,
   unlockAccount,
   addNote,
   addTransferNote,
   addOrderHistory,
   addOrder,
   setViewingKey,
-  createAccount,
   generateProof,
   updateNoteState,
   updateOrderHistory,
