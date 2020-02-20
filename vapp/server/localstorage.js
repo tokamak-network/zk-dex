@@ -11,7 +11,8 @@ const {
 const { marshal } = require('../../scripts/lib/util');
 const { Note, constants: { EMPTY_NOTE_HASH } } = require('../../scripts/lib/Note');
 
-localStorage = new LocalStorage('./localstorage');
+const path = `${__dirname}/localstorage`;
+localStorage = new LocalStorage(path);
 if (typeof localStorage === 'undefined' || localStorage === null) {
   global.localStorage = new LocalStorage('./scratch');
 }
@@ -216,7 +217,6 @@ const TransferHistoryState = {
 };
 
 class TransferHistory {
-
   /**
    *
    * @param {String} oldNote0Hash hash of old note 0
