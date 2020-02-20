@@ -16,7 +16,7 @@ async function getViewingKey (key) {
 
 async function getAccounts (key) {
   const res = await instance.get(`/accounts/${key}`);
-  return JSON.parse(res.data.accounts);
+  return res.data.addresses;
 }
 
 async function getNoteByNoteHash (account, hash) {
@@ -26,12 +26,12 @@ async function getNoteByNoteHash (account, hash) {
 
 async function getNotes (account) {
   const res = await instance.get(`/notes/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getTransferNotes (account) {
   const res = await instance.get(`/notes/transfer/${account}`);
-  return JSON.parse(res.data.notes);
+  return res.data.notes;
 }
 
 async function getOrdersByUser (account) {
@@ -39,7 +39,7 @@ async function getOrdersByUser (account) {
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -57,7 +57,7 @@ async function getOrders () {
   if (res.data === null) {
     return null;
   } else {
-    return JSON.parse(res.data.orders);
+    return res.data.orders;
   }
 }
 
@@ -175,7 +175,7 @@ async function deleteAccount (key, address) {
   return res.data.accounts;
 }
 
-export {
+export default {
   getViewingKey,
   getAccounts,
   getNoteByNoteHash,

@@ -60,6 +60,7 @@ export default {
     return {
       account: '',
       address: '',
+      amount: '',
       token: '',
       loading: false,
     };
