@@ -89,14 +89,6 @@ export default {
       // TODO: history
       // const histories = await api.getTransferNotes(this.userKey);
 
-      // console.log(`
-      // accounts    : ${accounts},
-      // notes       : ${notes},
-      // orders      : ${orders},
-      // ordersByUser: ${ordersByUser},
-      // histories   : ${histories},
-      // `);
-
       if (accounts) this.$store.dispatch('setAccounts', accounts);
       if (notes) this.$store.dispatch('setNotes', notes);
       if (orders) this.$store.dispatch('setOrders', orders);
