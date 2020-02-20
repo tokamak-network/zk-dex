@@ -1,0 +1,51 @@
+.footer {
+  padding-top: 64px;
+  padding-bottom: 64px;
+  background-color: #07070f;
+  display: flex;
+  justify-content: center;
+
+  h1 {
+    font-family: DINPro;
+    font-size: 28px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.14;
+    letter-spacing: -0.34px;
+    color: #f7f8f9;
+  }
+
+  h3 {
+    font-family: DINPro;
+    font-size: 18px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.78;
+    letter-spacing: -0.11px;
+    color: #6e8dff;
+  }
+
+  p {
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.43;
+    letter-spacing: -0.34px;
+    color: #9ea4aa;
+  }
+
+  .content--1 {
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.71;
+    letter-spacing: -0.34px;
+    color: #757794;
+  }
+}

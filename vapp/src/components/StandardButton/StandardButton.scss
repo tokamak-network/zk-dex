@@ -1,0 +1,37 @@
+.button-container {
+  width: 135px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 30px;
+  box-shadow: 4px 4px 10px 0 rgba(7, 7, 15, 0.3);
+  border: solid 1px #9da3ae;
+  background-color: #f7f8f9;
+}
+
+.button-container:hover {
+  cursor: pointer;
+  background-color: #f7f8f9e0;
+}
+
+.button-container[disabled]:hover {
+  cursor: not-allowed;
+  background-color: #f7f8f9;
+}
+
+.button-text {
+  font-family: DINPro;
+  font-size: 18px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.39;
+  letter-spacing: -0.34px;
+  text-align: center;
+  color: #3753d5;
+}
+
+.mini {
+  width: 65px;
+}

@@ -18,6 +18,7 @@
     "initialize:zokrates": "docker exec -it --workdir /home/zokrates/circuit zokrates /bin/bash /home/zokrates/circuit/zk-initialize.sh"
   },
   "dependencies": {
+    "apexcharts": "^3.15.6",
     "async": "^3.1.0",
     "auto-bind": "^4.0.0",
     "axios": "^0.19.0",
@@ -35,6 +36,7 @@
     "socket.io-client": "^2.3.0",
     "truffle-contract": "^4.0.30",
     "vue": "^2.6.10",
+    "vue-apexcharts": "^1.5.2",
     "vue-router": "^3.0.7",
     "vue-template-compiler": "^2.6.10",
     "vuex": "^3.1.1",

@@ -1,0 +1,110 @@
+.modal-mask {
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .5);
+  display: table;
+  transition: opacity .3s ease;
+}
+
+.modal-wrapper {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.modal-container {
+  width: 847px;
+  height: 315px;
+  border-radius: 20px;
+  box-shadow: 4px 8px 40px 0 rgba(7, 7, 15, 0.5);
+  background-color: #2a2c3c;
+  margin: 0px auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
+  transition: all .3s ease;
+  font-family: Helvetica, Arial, sans-serif;
+
+  h1 {
+    font-family: DINPro;
+    font-size: 32px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1;
+    letter-spacing: -0.45px;
+    text-align: center;
+    color: #f7f8f9;
+    padding-top: 36px;
+  }
+}
+
+.modal-body {
+  margin-left: auto;
+  margin-right: auto;
+  width: 630px;
+
+  h1 {
+    margin-bottom: 44px;
+  }
+}
+
+.modal-body > :nth-child(3) {
+  margin-top: 10px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 28px;
+
+  p {
+    font-family: DINPro;
+    font-size: 14px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.5;
+    letter-spacing: -0.32px;
+    color: #6d93ff;
+  }
+
+  p:nth-child(2) {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: #e3e5e9;
+  }
+}
+
+/*
+ * The following styles are auto-applied to elements with
+ * transition="modal" when their visibility is toggled
+ * by Vue.js.
+ *
+ * You can easily play with the modal transition by editing
+ * these styles.
+ */
+
+.modal-enter {
+  opacity: 0;
+}
+
+.modal-leave-active {
+  opacity: 0;
+}
+
+.modal-enter .modal-container,
+.modal-leave-active .modal-container {
+  -webkit-transform: scale(1.1);
+  transform: scale(1.1);
+}
+
+.button-container {
+  padding-left: 50px;
+  padding-right: 50px;
+  margin-top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+}
