@@ -105,7 +105,11 @@ export default {
       if (!this.check()) return alert('empty params');
       this.loading = true;
 
-      await this.createNote();
+      try {
+        await this.createNote();
+      } catch (e) {
+        console.log(e.message);
+      }
 
       this.loading = false;
       this.clear();

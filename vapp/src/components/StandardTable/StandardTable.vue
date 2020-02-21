@@ -46,6 +46,7 @@ import { mapState } from 'vuex';
 import Web3Utils from 'web3-utils';
 import { Note } from '../../../../scripts/lib/Note';
 import { generateProof } from '../../api/index';
+import { ZkDexPublicKey } from 'zk-dex-keystore/lib/Account';
 
 import StandardButton from '../StandardButton';
 
@@ -122,12 +123,15 @@ export default {
           return data;
         }
       } else if (this.type === 'note') {
+        const note = data;
         switch (column) {
         case 'noteHash':
-          const note = data;
           const noteHash = this.$options.filters.toNoteHash(note);
           // return this.$options.filters.hexSlicer(noteHash);
           return noteHash;
+
+        case 'owner':
+          return (new ZkDexPublicKey(note.pubKey0, note.pubKey1)).toAddress().toString();
 
         case 'token':
           const type = parseInt(columnData);

@@ -46,6 +46,8 @@ export default {
         this.dropdownOpen = false;
       }
     });
+    // TODO: opt
+    this.$emit('tokenSelected', this.tokens[0]);
   },
   beforeDestroy () {
     document.removeEventListener('click', (e) => {
