@@ -123,10 +123,16 @@ export default {
         }
       } else if (this.type === 'note') {
         switch (column) {
+        case 'noteHash':
+          const note = data;
+          const noteHash = this.$options.filters.toNoteHash(note);
+          // return this.$options.filters.hexSlicer(noteHash);
+          return noteHash;
+
         case 'token':
           const type = parseInt(columnData);
-          if (type === 0) return 'Ether';
-          else if (type === 1) return 'Dai';
+          if (type === 0) return 'ETH';
+          else if (type === 1) return 'DAI';
 
         case 'value':
           return parseInt(columnData);

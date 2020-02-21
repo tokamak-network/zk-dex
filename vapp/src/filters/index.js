@@ -100,3 +100,26 @@ export function abbreviate (a) {
     return `${pre}...${pos}`;
   }
 }
+
+import { getNoteHash } from '../../../scripts/helper/noteHelper';
+import { marshal, unmarshal } from '../../../scripts/lib/util';
+export function toNoteHash (note) {
+  const noteHash = getNoteHash(
+    unmarshal(note.pubKey0),
+    unmarshal(note.pubKey1),
+    unmarshal(note.value),
+    unmarshal(note.token),
+    unmarshal(note.viewingKey),
+    unmarshal(note.salt),
+  );
+
+  return marshal(noteHash.toString());
+}
+
+export function hexSlicer (str = '') {
+  if (str.length < 11) {
+    return str;
+  }
+
+  return `${str.slice(0, 6)}...${str.slice(-4)}`;
+}
