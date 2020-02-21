@@ -9,9 +9,9 @@ function createInstance () {
 const instance = createInstance();
 
 // get
-async function getViewingKey (key) {
+async function getViewingKeys (key) {
   const res = await instance.get(`/vk/${key}`);
-  return res.data.vk;
+  return res.data.vks;
 }
 
 async function getAccounts (key) {
@@ -98,11 +98,11 @@ async function addOrder (order) {
   return res.data.orders;
 }
 
-async function setViewingKey (key, vk) {
-  return instance.post('/vk', {
-    key,
+async function addViewingKey (userKey, vk) {
+  const res = await instance.post(`/vk/${userKey}`, {
     vk,
   });
+  return res.data.vks;
 }
 
 async function importAccount (key, account) {
@@ -113,15 +113,22 @@ async function importAccount (key, account) {
   return res.data.accounts;
 }
 
-function unlockAccount (passphrase, keystore) {
-  return instance.post('/accounts/unlock', {
+function unlockAccount (userKey, passphrase, address, duration = undefined) {
+  return instance.post(`/accounts/${userKey}/unlock`, {
     passphrase,
-    keystore,
+    address,
+    duration,
   });
 }
 
-function generateProof (params) {
-  return instance.post('/circuits', params);
+function generateProof (url, params, owners) {
+  return instance.post(
+    `/circuits/${url}`,
+    {
+      params,
+      owners,
+    }
+  );
 }
 
 // put
@@ -176,7 +183,7 @@ async function deleteAccount (key, address) {
 }
 
 export default {
-  getViewingKey,
+  getViewingKeys,
   getAccounts,
   getNoteByNoteHash,
   getNotes,
@@ -191,7 +198,7 @@ export default {
   addTransferNote,
   addOrderHistory,
   addOrder,
-  setViewingKey,
+  addViewingKey,
   generateProof,
   updateNoteState,
   updateOrderHistory,
