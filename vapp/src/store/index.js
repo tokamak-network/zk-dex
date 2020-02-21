@@ -2,6 +2,8 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 Vue.use(Vuex);
 
+import api from '../api/index';
+
 const initialState = {
 
   /**
@@ -114,7 +116,32 @@ const actions = {
   setOrdersByUser ({ commit }, orders) {
     commit('SET_ORDERS_BY_USER', orders);
   },
+  async set (context, requests = []) {
+    const userKey = context.state.userKey;
+
+    const getAccounts = async () => {
+      const accounts = await api.getAccounts(userKey);
+      if (accounts) context.dispatch('setAccounts', accounts);
+    };
+    const getNotes = async () => {
+      const notes = await api.getNotes(userKey);
+      if (notes) context.dispatch('setNotes', notes);
+    };
+    const getOrders = async () => {
+      const orders = await api.getOrders();
+      if (orders) context.dispatch('setOrders', orders);
+    };
+
+    const funcs = {
+      accounts: getAccounts,
+      notes: getNotes,
+      orders: getOrders,
+    };
+
+    requests.map(async request => await funcs[request]());
+  },
 };
+
 export default new Vuex.Store({
   state,
   mutations,

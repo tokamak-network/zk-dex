@@ -33,7 +33,7 @@
       <standard-button
         :text="'Create'"
         :loading="loading"
-        @click.native="createNote"
+        @click.native="requestCreateNote"
       />
     </div>
   </div>
@@ -58,7 +58,6 @@ const {
 export default {
   data () {
     return {
-      account: '',
       address: '',
       amount: '',
       token: '',
@@ -68,7 +67,7 @@ export default {
   computed: {
     ...mapState([
       'daiContract',
-      'dexcontract',
+      'dexContract',
       'userKey',
       'metamaskAccount',
     ]),
@@ -82,86 +81,67 @@ export default {
     tokenSelected (token) {
       this.token = token;
     },
-    // async createNewNote () {
-    //   if (this.loading === true) return;
-    //   this.loading = true;
+    clear () {
+      this.address = '';
+      this.amount = '';
+      this.token = '';
+    },
+    async requestCreateNote () {
+      this.loading = true;
 
-    //   const getSalt = () => web3Utils.randomHex(16);
+      await this.createNote();
 
-    //   // TODO: set correct parameter
-    //   // Create new note.
-
-    //   const pubKey = ZkDexAddress.fromBase58(removeZkPrefix(this.account)).toPubKey();
-    //   const note = new Note(pubKey.xToHex(), pubKey.yToHex(), this.amount, this.token.type, '0x00', getSalt());
-
-    //   // Generate proof.
-    //   const circuit = 'mintNBurnNote';
-    //   const params = [note];
-    //   // const proof = (await api.generateProof(circuit, [note], [{ userKey, address }])).data.proof;
-
-    //   // Validate proof and make note.
-    //   let tx;
-    //   if (this.token.symbol === 'DAI') {
-    //     await this.daiContract.approve(this.dexContract.address, this.amount, {
-    //       from: this.metamaskAccount,
-    //     });
-    //     tx = await this.dexContract.mint(...proof, note.encrypt(note.owner), {
-    //       from: this.metamaskAccount,
-    //     });
-    //   } else if (this.token.symbol === 'ETH') {
-    //     tx = await this.dexContract.mint(...proof, note.encrypt(note.owner), {
-    //       from: this.metamaskAccount,
-    //       value: this.amount,
-    //     });
-    //   }
-
-    //   if (!tx.receipt.status) {
-    //     alert('revert transaction');
-    //     return;
-    //   }
-
-    //   await new Promise(r => setTimeout(r, 5000));
-
-    //   const notes = api.getNotes(this.userKey);
-    //   this.$store.dispatch('setNotes', notes);
-    // },
+      this.loading = false;
+      this.clear();
+    },
     async createNote () {
-      const encKey = '0x00'; // vk
+      const viewingKey = '1234';
       const getSalt = () => web3Utils.randomHex(16);
 
       const pubKey = ZkDexAddress.fromBase58(removeZkPrefix(this.address)).toPubKey();
       const pubKey0 = pubKey.xToHex();
       const pubKey1 = pubKey.yToHex();
 
-      const note = new Note(pubKey0, pubKey1, this.amount, this.token.type, '0x00', getSalt());
+      const note = new Note(pubKey0, pubKey1, this.amount, this.token.type, viewingKey, getSalt());
 
       await this.unlockAccount(this.address);
-      const proof = (await api.generateProof(
-        '/mintNBurnNote',
-        [note],
-        [{
-          userKey: this.userKey,
-          address: this.account,
-        }])).data.proof;
 
-      // let tx;
-      // if (this.token.symbol === 'DAI') {
-      //   await this.daiContract.approve(this.dexContract.address, this.amount, {
-      //     from: this.metamaskAccount,
-      //   });
-      //   tx = await this.dexContract.mint(...proof, note.encrypt(note.owner), {
-      //     from: this.metamaskAccount,
-      //   });
-      // } else if (this.token.symbol === 'ETH') {
-      //   tx = await this.dexContract.mint(...proof, note.encrypt(note.owner), {
-      //     from: this.metamaskAccount,
-      //     value: this.amount,
-      //   });
-      // }
+      console.log('generating proof...');
+      const proof = (await api.generateProof('/mintNBurnNote', [note], [{
+        userKey: this.userKey,
+        address: this.address,
+      }])).data.proof;
+
+      let tx;
+      if (this.token.symbol === 'DAI') {
+        await this.daiContract.approve(this.dexContract.address, this.amount, {
+          from: this.metamaskAccount,
+        });
+        try {
+          tx = await this.dexContract.mint(...proof, note.encrypt(viewingKey), {
+            from: this.metamaskAccount,
+          });
+        } catch (e) {
+          console.log(e.message);
+        }
+      } else if (this.token.symbol === 'ETH') {
+        try {
+          tx = await this.dexContract.mint(...proof, note.encrypt(viewingKey), {
+            from: this.metamaskAccount,
+            value: this.amount,
+          });
+        } catch (e) {
+          console.log(e.message);
+        }
+      }
+      await this.$store.dispatch('set', ['notes']);
     },
-    async unlockAccount (address) {
-      const passphrase = '1234';
-      await api.unlockAccount(this.userKey, passphrase, address);
+    async unlockAccount (address, passphrase = '1234') {
+      try {
+        await api.unlockAccount(this.userKey, passphrase, address);
+      } catch (e) {
+        console.log('failed to unlock');
+      }
     },
   },
 };

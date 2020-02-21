@@ -82,9 +82,9 @@ export default {
     async setState (metamaskAccount) {
       const userKey = metamaskAccount;
 
-      const accounts = await api.getAccounts(userKey);
-      const notes = await api.getNotes(userKey);
-      const orders = await api.getOrders();
+      let viewingKeys = await api.getViewingKeys(userKey);
+      if (!viewingKeys || viewingKeys.length === 0) viewingKeys = await api.addViewingKey(userKey, '1234');
+
       const ordersByUser = await api.getOrdersByUser(this.userKey);
       // TODO: history
       // const histories = await api.getTransferNotes(this.userKey);
@@ -94,6 +94,7 @@ export default {
       if (orders) this.$store.dispatch('setOrders', orders);
       if (ordersByUser) this.$store.dispatch('setOrdersByUser', ordersByUser);
       // if (histories) this.$store.dispatch('setNoteTransferHistories', histories);
+      await this.$store.dispatch('set', ['accounts', 'notes', 'orders']);
     },
   },
 };

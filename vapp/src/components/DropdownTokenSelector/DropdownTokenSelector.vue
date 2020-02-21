@@ -7,6 +7,7 @@
       <ul>
         <li
           v-for="token in tokens"
+          :key="token.symbol"
           @click="selectToken(token)"
         >
           {{ token.symbol }}
@@ -35,7 +36,7 @@ export default {
           type: DAI_TOKEN_TYPE,
         },
       ],
-      selectedToken: 'Select Token',
+      selectedToken: 'ETH',
       dropdownOpen: false,
     };
   },
