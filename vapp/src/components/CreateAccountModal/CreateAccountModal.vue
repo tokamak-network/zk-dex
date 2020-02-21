@@ -65,7 +65,8 @@ export default {
         return;
       }
 
-      await this.addAccount(password1);
+      // TODO: fix
+      await this.addAccount('1234');
       this.$emit('newAccountAdded');
 
       this.loading = false;

@@ -13,7 +13,8 @@
         :isStaticValue="false"
       >
         <template v-slot:input>
-          <input type="text"
+          <input
+            type="text"
             v-model="address"
           />
         </template>
@@ -23,8 +24,9 @@
         :isStaticValue="false"
       >
         <template v-slot:input>
-          <input type="text"
+          <input
             v-model="amount"
+            @keypress="isNumber"
           />
         </template>
       </input-text>
@@ -86,7 +88,21 @@ export default {
       this.amount = '';
       this.token = '';
     },
+    isNumber (evt) {
+      evt = (evt) ? evt : window.event;
+      const charCode = (evt.which) ? evt.which : evt.keyCode;
+      if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
+        evt.preventDefault();
+      } else {
+        return true;
+      }
+    },
+    check () {
+      if (this.address === '' || this.amount === '') return false;
+      return true;
+    },
     async requestCreateNote () {
+      if (!this.check()) return alert('empty params');
       this.loading = true;
 
       await this.createNote();
@@ -95,6 +111,7 @@ export default {
       this.clear();
     },
     async createNote () {
+      // TODO: fix
       const viewingKey = '1234';
       const getSalt = () => web3Utils.randomHex(16);
 
