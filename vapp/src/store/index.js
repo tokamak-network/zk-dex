@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 Vue.use(Vuex);
 
 import api from '../api/index';
+import { toNoteHash } from '../filters/index';
 
 import { ZkDexAddress } from 'zk-dex-keystore/lib/Account';
 import { removeZkPrefix } from 'zk-dex-keystore/lib/utils';
@@ -120,6 +121,7 @@ const actions = {
     commit('SET_ORDERS_BY_USER', orders);
   },
   async set (context, requests = []) {
+    const dexContract = context.state.dexContract;
     const userKey = context.state.userKey;
 
     const getAccounts = async () => {
@@ -127,8 +129,25 @@ const actions = {
       if (accounts) context.dispatch('setAccounts', accounts);
     };
     const getNotes = async () => {
+      const getNoteState = async (note) => {
+        const noteHash = toNoteHash(note);
+        const state = await dexContract.notes(noteHash);
+        return state;
+      };
+
       const notes = await api.getNotes(userKey);
-      if (notes) context.dispatch('setNotes', notes);
+      if (notes) {
+        const notesWithState = notes.map(async (note) => {
+          const state = await getNoteState(note);
+
+          Object.defineProperty(note, 'state', {
+            value: state,
+          });
+
+          return note;
+        });
+        context.dispatch('setNotes', await Promise.all(notesWithState));
+      }
     };
     const getOrders = async () => {
       const orders = await api.getOrders();
