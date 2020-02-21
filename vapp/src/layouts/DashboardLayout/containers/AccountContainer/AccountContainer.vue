@@ -18,7 +18,24 @@
     <div class="table-container">
       <standard-table
         :type="'account'"
-        :clickable=clickable
+        :clickable="clickable"
+        :columns="[
+          {
+            title: 'Index',
+            data: 'index',
+            options: [],
+          },
+          {
+            title: 'Address',
+            data: 'address',
+            options: [],
+          },
+          {
+            title: 'Total Note',
+            data: 'numNotes',
+            options: [],
+          },
+        ]"
         :datas="accounts"
       />
     </div>

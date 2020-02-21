@@ -51,11 +51,11 @@ import { Note } from '../../../../../../scripts/lib/Note';
 import api from '../../../../api/index';
 import web3Utils from 'web3-utils';
 
-const { ZkDexAddress, ZkDexPublicKey } = require('zk-dex-keystore/lib/Account');
-const {
+import { ZkDexAddress, ZkDexPublicKey } from 'zk-dex-keystore/lib/Account';
+import {
   addZkPrefix,
   removeZkPrefix,
-} = require('zk-dex-keystore/lib/utils');
+} from 'zk-dex-keystore/lib/utils';
 
 export default {
   data () {

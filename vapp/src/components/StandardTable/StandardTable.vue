@@ -53,15 +53,14 @@ export default {
   components: {
     StandardButton,
   },
-  data () {
-    return {
-      columns: [],
-    };
-  },
   props: {
     clickable: {
       type: Boolean,
       default: false,
+    },
+    columns: {
+      type: Array,
+      default: () => [],
     },
     datas: {
       type: Array,
@@ -80,9 +79,6 @@ export default {
     dexContract: state => state.app.dexContract,
     metamaskAccount: state => state.app.metamaskAccount,
   }),
-  created () {
-    this.columns = columns[this.type];
-  },
   methods: {
     setWidth (columns) {
       const length = columns.length;
@@ -118,6 +114,9 @@ export default {
         switch (column) {
         case 'index':
           return this.datas.indexOf(data);
+        case 'numNotes':
+          const address = data;
+          return this.$store.getters.numNotes(address);
 
         default:
           return data;
