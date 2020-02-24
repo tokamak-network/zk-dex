@@ -7,7 +7,34 @@
     <div class="table-container">
       <standard-table
         :type="'note'"
-        :clickable=true
+        :clickable="true"
+        :columns="[
+          {
+            title: 'Note Hash',
+            data: 'noteHash',
+            options: [],
+          },
+          {
+            title: 'Owner',
+            data: 'owner',
+            options: [],
+          },
+          {
+            title: 'Token',
+            data: 'token',
+            options: [],
+          },
+          {
+            title: 'Value',
+            data: 'value',
+            options: [],
+          },
+          {
+            title: 'State',
+            data: 'state',
+            options: [],
+          },
+        ]"
         :datas="$store.state.notes"
       />
     </div>

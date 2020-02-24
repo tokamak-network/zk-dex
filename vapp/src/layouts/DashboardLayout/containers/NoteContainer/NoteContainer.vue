@@ -7,7 +7,7 @@
     <div class="table-container">
       <standard-table
         :type="'note'"
-        :clickable="clickable"
+        :clickable="false"
         :columns="[
           {
             title: 'Note Hash',
@@ -45,12 +45,6 @@
 import StandardTable from '../../../../components/StandardTable';
 
 export default {
-  props: {
-    clickable: {
-      type: Boolean,
-      default: false,
-    },
-  },
   components: {
     StandardTable,
   },
