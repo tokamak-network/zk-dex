@@ -116,6 +116,11 @@ export function toNoteHash (note) {
   return marshal(noteHash.toString());
 }
 
+import { ZkDexPublicKey } from 'zk-dex-keystore/lib/Account';
+export function toZkAddress (pubKey0, pubKey1) {
+  return (new ZkDexPublicKey(pubKey0, pubKey1)).toAddress().toString();
+}
+
 export function hexSlicer (str = '') {
   if (str.length < 11) {
     return str;
