@@ -7,7 +7,19 @@
     <div class="table-container">
       <standard-table
         :type="'orderBook'"
-        :clickable=true
+        :clickable="true"
+        :columns="[
+          {
+            title: 'Price',
+            data: 'price',
+            options: [],
+          },
+          {
+            title: 'Orders',
+            data: 'numOrders',
+            options: [],
+          }
+        ]"
         :datas="$store.getters.orderBook"
       />
     </div>

@@ -164,7 +164,6 @@ const actions = {
   },
 };
 
-
 const getters = {
   numNotes: state => (address) => {
     const reducer = (accumulator, note) => {
@@ -177,6 +176,24 @@ const getters = {
     };
 
     return state.notes.reduce(reducer, 0);
+  },
+  orderBook: (state) => {
+    const orderBook = [];
+    state.orders.map((order) => {
+      const found = orderBook.find(o => o.price === order.price);
+      if (order.state !== '0') return;
+      if (found) {
+        found.orders.push(order);
+        found.numOrders++;
+      } else {
+        orderBook.push({
+          orders: [order],
+          numOrders: 1,
+          price: order.price,
+        });
+      }
+    });
+    return orderBook;
   },
 };
 
