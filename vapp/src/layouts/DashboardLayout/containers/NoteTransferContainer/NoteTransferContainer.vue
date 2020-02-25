@@ -78,86 +78,96 @@ export default {
   created () {
     this.$bus.$on('noteSelected', (note) => {
       this.note = note;
-      this.from = note.owner;
-      this.noteHash = note.hash;
+      this.from = this.$options.filters.toZkAddress(note.pubKey0, note.pubKey1);
+      this.noteHash = this.$options.filters.toNoteHash(note);
       this.noteValue = Web3Utils.toBN(note.value);
     });
   },
   beforeDestroy () {
     this.$bus.$off('noteSelected', () => {});
   },
-  computed: mapState({
-    accounts: state => state.account.accounts,
-    dexContract: state => state.app.dexContract,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'dexContract',
+      'userKey',
+      'metamaskAccount',
+    ]),
+  },
   methods: {
+    async unlockAccount (address, passphrase = '1234') {
+      try {
+        await api.unlockAccount(this.userKey, passphrase, address);
+      } catch (e) {
+        console.log('failed to unlock: ', e.message);
+      }
+    },
     async transferNote () {
       if (this.loading === true) return;
       this.loading = true;
 
-      const { originalNote, paymentNote, changeNote } = this.makeNotes(this.note);
+      console.log(this.from, this.to);
+      await this.unlockAccount(this.from);
 
-      const circuit = 'transferNote';
-      const params = [originalNote, paymentNote, changeNote, null];
-      const proof = (await api.generateProof(circuit, params)).data.proof;
+      const { newNote, changeNote } = this.makeNotes(this.note);
 
-      let tx;
-      try {
-        tx = await this.dexContract.spend(
-          ...proof,
-          paymentNote.encrypt(paymentNote.owner),
-          changeNote.encrypt(changeNote.owner),
-          {
-            from: this.metamaskAccount,
-          }
-        );
-      } catch (err) {
-        console.log('err:', err);
-      }
+      console.log('generating proof...');
+      const proof = (await api.generateProof('/transferNote', [
+        this.note,
+        null,
+        newNote,
+        changeNote,
+      ],
+      [
+        { userKey: this.userKey, address: this.from },
+        { userKey: null, address: null },
+      ])).data.proof;
 
-      if (!tx.receipt.status) {
-        alert('revert transaction');
-        return;
-      }
+      const tx = await this.dexContract.spend(
+        ...proof,
+        newNote.encrypt('1234'),
+        changeNote.encrypt('1234'),
+        {
+          from: this.metamaskAccount,
+        }
+      );
 
-      await new Promise(r => setTimeout(r, 5000));
+      console.log(tx);
 
-      const notes = await api.getNotes(this.userKey);
-      const histories = await api.getNoteTransferHistories(this.userKey);
-
-      this.$store.dispatch('setNotes', notes);
-      this.$store.dispatch('setNoteTransferHistories', histories);
-
-      this.clear();
+      // this.clear();
     },
-    makeNotes (originalNote) {
-      if (this.note.state !== '0x1') {
-        throw 'invalid note state';
-      }
+    makeNotes () {
+      const oldNote0 = this.note;
+      const oldNote1 = null;
+
       const type = this.note.token;
       const noteAmount = Web3Utils.toBN(this.note.value);
       const wantToTransferAmount = Web3Utils.toBN(Web3Utils.toHex(this.amount));
       if (noteAmount.cmp(wantToTransferAmount) < 0) {
         throw 'invalid amount';
       }
-
       const change = noteAmount.sub(wantToTransferAmount);
-      const paymentNote = new Note(
-        this.to,
+
+      const pubKey = this.$options.filters.toPubKey(this.to);
+      const newNote = new Note(
+        pubKey.xToHex(),
+        pubKey.yToHex(),
         this.amount,
         type,
         '0x0',
         Web3Utils.randomHex(16)
       );
+      console.log(newNote);
+      console.log(change);
       const changeNote = new Note(
-        this.note.owner,
+        oldNote0.pubKey0,
+        oldNote0.pubKey1,
         change,
         type,
         '0x0',
         Web3Utils.randomHex(16)
       );
-      return { originalNote, paymentNote, changeNote };
+      console.log(changeNote);
+      return { newNote, changeNote };
     },
     clear () {
       this.note = null;

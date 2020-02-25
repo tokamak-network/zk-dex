@@ -103,6 +103,11 @@ export function abbreviate (a) {
 
 import { getNoteHash } from '../../../scripts/helper/noteHelper';
 import { marshal, unmarshal } from '../../../scripts/lib/util';
+import {
+  addZkPrefix,
+  removeZkPrefix,
+} from 'zk-dex-keystore/lib/utils';
+import { ZkDexAddress, ZkDexPublicKey } from 'zk-dex-keystore/lib/Account';
 export function toNoteHash (note) {
   const noteHash = getNoteHash(
     unmarshal(note.pubKey0),
@@ -116,9 +121,12 @@ export function toNoteHash (note) {
   return marshal(noteHash.toString());
 }
 
-import { ZkDexPublicKey } from 'zk-dex-keystore/lib/Account';
 export function toZkAddress (pubKey0, pubKey1) {
   return (new ZkDexPublicKey(pubKey0, pubKey1)).toAddress().toString();
+}
+
+export function toPubKey (zkAddress) {
+  return ZkDexAddress.fromBase58(removeZkPrefix(zkAddress)).toPubKey();
 }
 
 export function hexSlicer (str = '') {

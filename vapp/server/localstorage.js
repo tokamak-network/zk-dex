@@ -247,7 +247,7 @@ class TransferHistory {
   }
 
   toString () {
-    JSON.stringify(this);
+    return JSON.stringify(this);
   }
 
   static _keyHistory (oldNote0Hash, oldNote1Hash) {

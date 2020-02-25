@@ -80,6 +80,9 @@ const mutations = {
   SET_ORDERS_BY_USER: (state, orders) => {
     state.ordersByUser = orders;
   },
+  SET_HISTORIES: (state, histories) => {
+    state.histories = histories;
+  },
 };
 
 const actions = {
@@ -120,6 +123,9 @@ const actions = {
   setOrdersByUser ({ commit }, orders) {
     commit('SET_ORDERS_BY_USER', orders);
   },
+  setHistories ({ commit }, histories) {
+    commit('SET_HISTORIES', histories);
+  },
   async set (context, requests = []) {
     const dexContract = context.state.dexContract;
     const userKey = context.state.userKey;
@@ -153,11 +159,21 @@ const actions = {
       const orders = await api.getOrders();
       if (orders) context.dispatch('setOrders', orders);
     };
+    const getOrdersByUser = async () => {
+      const ordersByUser = await api.getOrdersByUser(userKey);
+      context.dispatch('setOrdersByUser', ordersByUser);
+    };
+    const getHistories = async () => {
+      const histories = await api.getHistories(userKey);
+      context.dispatch('setHistories', histories);
+    };
 
     const funcs = {
       accounts: getAccounts,
       notes: getNotes,
       orders: getOrders,
+      ordersByUser: getOrdersByUser,
+      histories: getHistories,
     };
 
     requests.map(async request => await funcs[request]());

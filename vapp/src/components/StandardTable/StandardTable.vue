@@ -134,7 +134,7 @@ export default {
           return noteHash;
 
         case 'owner':
-          return (new ZkDexPublicKey(note.pubKey0, note.pubKey1)).toAddress().toString();
+          return this.$options.filters.toZkAddress(note.pubKey0, note.pubKey1);
 
         case 'token':
           const type = parseInt(columnData);

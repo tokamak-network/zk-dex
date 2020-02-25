@@ -29,9 +29,9 @@ async function getNotes (account) {
   return res.data.notes;
 }
 
-async function getTransferNotes (account) {
-  const res = await instance.get(`/notes/transfer/${account}`);
-  return res.data.notes;
+async function getHistories (userKey) {
+  const res = await instance.get(`/notes/${userKey}/history`);
+  return res.data.histories;
 }
 
 async function getOrders () {
@@ -187,7 +187,7 @@ export default {
   getAccounts,
   getNoteByNoteHash,
   getNotes,
-  getTransferNotes,
+  getHistories,
   getOrder,
   getOrdersByUser,
   getOrders,

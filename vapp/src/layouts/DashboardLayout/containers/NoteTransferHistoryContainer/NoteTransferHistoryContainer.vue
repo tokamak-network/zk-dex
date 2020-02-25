@@ -6,8 +6,25 @@
     </div>
     <div class="table-container">
       <standard-table
-        :type="'noteTransferHistory'"
-        :datas="$store.state.note.noteTransferHistories"
+        :type="'history'"
+        :columns="[
+          {
+            title: 'Old Note',
+            data: 'oldNote0Hash',
+            options: [],
+          },
+          {
+            title: 'New Note',
+            data: 'newNote0Hash',
+            options: [],
+          },
+          {
+            title: 'Change Note',
+            data: 'newNote1Hash',
+            options: [],
+          },
+        ]"
+        :datas="$store.state.histories"
       />
     </div>
   </div>
