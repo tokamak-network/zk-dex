@@ -22,7 +22,7 @@
           :key="column.title"
           :style="[setWidth(columns), setColor(column, data)]"
         >
-          <div v-if="column.options.includes('action') && data.state === '1' && data.orderMaker === metamaskAccount">
+          <div v-if="column.options.includes('action') && data.state === '1' && data.makerInfo.makerUserKey === userKey">
             <div class="button-container">
               <standard-button
                 @click.native="clickButton(data)"
@@ -76,10 +76,13 @@ export default {
       default: false,
     },
   },
-  computed: mapState({
-    dexContract: state => state.app.dexContract,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'dexContract',
+      'userKey',
+      'metamaskAccount',
+    ]),
+  },
   methods: {
     setWidth (columns) {
       const length = columns.length;
@@ -189,17 +192,28 @@ export default {
           return parseInt(`0x${columnData}`);
 
         case 'type':
-          if (this.metamaskAccount === order.orderMaker) {
-            return 'Buy';
-          } else if (this.metamaskAccount === order.orderTaker) {
+          if (this.userKey === order.makerInfo.makerUserKey) {
             return 'Sell';
+          } else if (this.userKey === order.takerInfo.takerUserKey) {
+            return 'Buy';
           }
           return '';
 
-        case 'makerNoteValue':
-        case 'takerNoteValue':
-          if (!columnData) return '';
-          return parseInt(columnData);
+        case 'ethNoteHash':
+          if (order.sourceToken === '0') {
+            return order.makerNote;
+          } else {
+            if (!order.taken) return '-';
+            return order.takerNoteToMaker;
+          }
+
+        case 'daiNoteHash':
+          if (order.sourceToken === '1') {
+            return order.makerNote;
+          } else {
+            if (!order.taken) return '-';
+            return order.takerNoteToMaker;
+          }
 
         case 'state':
           const state = parseInt(columnData);

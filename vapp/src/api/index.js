@@ -34,8 +34,8 @@ async function getTransferNotes (account) {
   return res.data.notes;
 }
 
-async function getOrdersByUser (account) {
-  const res = await instance.get(`/orders/${account}`);
+async function getOrders () {
+  const res = await instance.get('/orders');
   if (res.data === null) {
     return null;
   } else {
@@ -52,8 +52,8 @@ async function getOrder (id) {
   }
 }
 
-async function getOrders () {
-  const res = await instance.get('/orders');
+async function getOrdersByUser (userKey) {
+  const res = await instance.get(`/accounts/${userKey}/orders`);
   if (res.data === null) {
     return null;
   } else {

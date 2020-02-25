@@ -8,7 +8,44 @@
       <standard-table
         v-on:settleOrderRequested="settleOrder"
         :type="'ongoingOrder'"
-        :datas="$store.getters.ongoingOrders"
+        :datas="$store.state.ordersByUser"
+        :columns="[
+          {
+            title: 'Order ID',
+            data: 'orderId',
+            options: [],
+          },
+          {
+            title: 'Type',
+            data: 'type',
+            options: [],
+          },
+          {
+            title: 'Price',
+            data: 'price',
+            options: [],
+          },
+          {
+            title: 'ETH Note Hash',
+            data: 'ethNoteHash',
+            options: [],
+          },
+          {
+            title: 'DAI Note Hash',
+            data: 'daiNoteHash',
+            options: [],
+          },
+          {
+            title: 'State',
+            data: 'state',
+            options: [],
+          },
+          {
+            title: 'Action',
+            options: ['action'],
+            action: 'Settle',
+          },
+        ]"
         :loading=loading
       />
     </div>

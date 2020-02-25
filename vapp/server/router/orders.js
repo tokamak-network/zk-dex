@@ -25,6 +25,16 @@ router.get('/', asyncWrap(
   }
 ));
 
+router.get('/:id', asyncWrap(
+  async function (req, res) {
+    const id = req.params.id;
+    const order = getOrder(id);
+    return res.status(200).json({
+      order,
+    });
+  }
+));
+
 router.post('/', asyncWrap(
   async function (req, res) {
     const order = req.body.order;
@@ -35,15 +45,6 @@ router.post('/', asyncWrap(
   }
 ));
 
-router.get('/:id', asyncWrap(
-  async function (req, res) {
-    const id = req.params.id;
-    const order = getOrder(id);
-    return res.status(200).json({
-      order,
-    });
-  }
-));
 
 router.put('/', asyncWrap(
   async function (req, res) {

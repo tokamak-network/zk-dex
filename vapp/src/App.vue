@@ -85,16 +85,18 @@ export default {
       let viewingKeys = await api.getViewingKeys(userKey);
       if (!viewingKeys || viewingKeys.length === 0) viewingKeys = await api.addViewingKey(userKey, '1234');
 
-      const ordersByUser = await api.getOrdersByUser(this.userKey);
+      // const ordersByUser = await api.getOrdersByUser(this.userKey);
       // TODO: history
       // const histories = await api.getTransferNotes(this.userKey);
 
-      if (accounts) this.$store.dispatch('setAccounts', accounts);
-      if (notes) this.$store.dispatch('setNotes', notes);
-      if (orders) this.$store.dispatch('setOrders', orders);
-      if (ordersByUser) this.$store.dispatch('setOrdersByUser', ordersByUser);
+      // if (ordersByUser) this.$store.dispatch('setOrdersByUser', ordersByUser);
       // if (histories) this.$store.dispatch('setNoteTransferHistories', histories);
-      await this.$store.dispatch('set', ['accounts', 'notes', 'orders']);
+      await this.$store.dispatch('set', [
+        'accounts',
+        'notes',
+        'orders',
+        'ordersByUser',
+      ]);
     },
   },
 };

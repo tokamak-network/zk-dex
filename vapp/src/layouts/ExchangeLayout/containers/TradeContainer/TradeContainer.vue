@@ -179,7 +179,7 @@ export default {
         }
       );
 
-      await this.$store.dispatch('set', ['notes', 'orders']);
+      await this.$store.dispatch('set', ['notes', 'orders', 'ordersByUser']);
       this.clear();
     },
     async takeOrder () {
@@ -213,7 +213,7 @@ export default {
         }
       );
 
-      await this.$store.dispatch('set', ['notes', 'orders']);
+      await this.$store.dispatch('set', ['notes', 'orders', 'ordersByUser']);
       this.clear();
     },
   },

@@ -217,6 +217,7 @@ const TransferHistoryState = {
 };
 
 class TransferHistory {
+
   /**
    *
    * @param {String} oldNote0Hash hash of old note 0
