@@ -8,6 +8,8 @@ import { toNoteHash } from '../filters/index';
 import { ZkDexAddress } from 'zk-dex-keystore/lib/Account';
 import { removeZkPrefix } from 'zk-dex-keystore/lib/utils';
 
+import { Note } from '../../../scripts/lib/Note';
+
 const initialState = {
 
   /**
@@ -210,6 +212,14 @@ const getters = {
       }
     });
     return orderBook;
+  },
+  smartNotes: (state) => {
+    const smartNotes = state.notes.filter((n) => {
+      const note = new Note(...Object.values(n));
+      return note.isSmart();
+    });
+    console.log(smartNotes);
+    return smartNotes;
   },
 };
 

@@ -153,7 +153,7 @@ export default {
         pubKey.yToHex(),
         this.amount,
         type,
-        '0x0',
+        '1234',
         Web3Utils.randomHex(16)
       );
       console.log(newNote);
@@ -163,7 +163,7 @@ export default {
         oldNote0.pubKey1,
         change,
         type,
-        '0x0',
+        '1234',
         Web3Utils.randomHex(16)
       );
       console.log(changeNote);

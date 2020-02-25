@@ -1,8 +1,10 @@
 <template>
   <div class="note-transfer-layout">
-    <balance-container />
-    <note-container style="margin-top: 24px;"
-      :clickable=true
+    <!-- <balance-container /> -->
+    <note-container
+      style="margin-top: 24px;"
+      :clickable="true"
+      :datas="$store.state.notes"
     />
     <note-transfer-container style="margin-top: 24px; padding-bottom: 24px;" />
   </div>
@@ -15,8 +17,8 @@ import NoteTransferContainer from '../DashboardLayout/containers/NoteTransferCon
 
 export default {
   components: {
+    // BalanceContainer,
     NoteContainer,
-    BalanceContainer,
     NoteTransferContainer,
   },
 };

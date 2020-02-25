@@ -35,7 +35,7 @@
             options: [],
           },
         ]"
-        :datas="$store.state.notes"
+        :datas="datas"
       />
     </div>
   </div>
@@ -46,6 +46,10 @@ import StandardTable from '../../../../components/StandardTable';
 
 export default {
   props: {
+    datas: {
+      type: Array,
+      default: () => [],
+    },
     clickable: {
       type: Boolean,
       default: false,

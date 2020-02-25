@@ -57,6 +57,12 @@
       <p>Transfer</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
     </router-link>
+    <router-link to="/notes/convert" class="menu-item"
+      :class="{ selected: path === '/notes/convert'}"
+    >
+      <p>Convert</p>
+      <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
+    </router-link>
     <!-- <router-link to="/notes/combine" class="menu-item"
       :class="{ selected: path === '/notes/combine'}"
     >
