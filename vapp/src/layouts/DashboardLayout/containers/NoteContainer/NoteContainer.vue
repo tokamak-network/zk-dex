@@ -34,6 +34,11 @@
             data: 'state',
             options: [],
           },
+          {
+            title: 'Smart Note',
+            data: 'isSmart',
+            options: [],
+          },
         ]"
         :datas="datas"
       />
