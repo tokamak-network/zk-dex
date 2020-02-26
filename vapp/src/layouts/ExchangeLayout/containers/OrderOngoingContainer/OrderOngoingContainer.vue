@@ -46,7 +46,7 @@
             action: 'Settle',
           },
         ]"
-        :loading=loading
+        :loading="loading"
       />
     </div>
   </div>
@@ -57,7 +57,7 @@
 import StandardTable from '../../../../components/StandardTable';
 
 import { mapState } from 'vuex';
-import Web3Utils from 'web3-utils';
+import { toHex } from 'web3-utils';
 import api from '../../../../api/index';
 
 import { Note } from '../../../../../../scripts/lib/Note';
@@ -72,119 +72,58 @@ export default {
   components: {
     StandardTable,
   },
-  computed: mapState({
-    dexContract: state => state.app.dexContract,
-    metamaskAccount: state => state.app.metamaskAccount,
-  }),
+  computed: {
+    ...mapState([
+      'dexContract',
+      'userKey',
+      'metamaskAccount',
+    ]),
+  },
   methods: {
-    async settleOrder (order) {
-      this.loading = true;
-      const makerNote = order.makerNoteObject;
-      const takerNote = order.takerNoteObject;
-      const stakeNote = order.stakeNoteObject;
-      const { rewardNote, paymentNote, changeNote } = this.makeNotes(order);
-
-      const circuit = 'settleOrder';
-      const params = [
-        makerNote,
-        stakeNote,
-        rewardNote,
-        paymentNote,
-        changeNote,
-        order.price,
-      ];
-      const proof = (await api.generateProof(circuit, params)).data.proof;
-
-      const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
-      const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
-      const price = Web3Utils.toBN(order.price);
-      const encoded = encode([
-        rewardNote.encrypt(stakeNote.viewingKey),
-        paymentNote.encrypt(makerNote.owner),
-        (makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0 ? changeNote.encrypt(makerNote.owner) : changeNote.encrypt(stakeNote.viewingKey),
-      ]);
-
-      const tx = await this.dexContract.settleOrder(order.orderId, ...proof, encoded, {
-        from: this.metamaskAccount,
-      });
-
-      await new Promise(r => setTimeout(r, 5000));
-
-      const notes = await api.getNotes(this.userKey);
-      const orders = await api.getOrders();
-      const ordersByUser = await api.getOrdersByUser(this.userKey);
-
-      this.$store.dispatch('setNotes', notes);
-      this.$store.dispatch('setOrders', orders);
-      this.$store.dispatch('setOrdersByUser', ordersByUser);
-
-      this.loading = false;
-    },
-    makeNotes (order) {
-      const makerNoteValue = Web3Utils.toBN(order.makerNoteValue);
-      const stakeNoteValue = Web3Utils.toBN(order.takerNoteValue);
-      const price = Web3Utils.toBN(order.price);
-
-      let rewardNote;
-      let paymentNote;
-      let changeNote;
-
-      if ((makerNoteValue.mul(price)).cmp(stakeNoteValue) >= 0) {
-        rewardNote = new Note(
-          order.parentNote,
-          stakeNoteValue.div(price),
-          order.sourceToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
-        paymentNote = new Note(
-          order.makerNote,
-          stakeNoteValue,
-          order.targetToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
-        changeNote = new Note(
-          order.makerNote,
-          makerNoteValue.sub(stakeNoteValue.div(price)),
-          order.sourceToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
-      } else {
-        rewardNote = new Note(
-          order.parentNote,
-          makerNoteValue,
-          order.sourceToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
-        paymentNote = new Note(
-          order.makerNote,
-          makerNoteValue.mul(price),
-          order.targetToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
-        changeNote = new Note(
-          order.parentNote,
-          stakeNoteValue.sub(makerNoteValue.mul(price)),
-          order.targetToken,
-          '0x0',
-          Web3Utils.randomHex(8),
-          true
-        );
+    async unlockAccount (address, passphrase = '1234') {
+      try {
+        await api.unlockAccount(this.userKey, passphrase, address);
+      } catch (e) {
+        console.log('failed to unlock');
       }
-      return {
-        rewardNote,
-        paymentNote,
-        changeNote,
-      };
+    },
+    async settleOrder (order) {
+      if (this.loading) return;
+      this.loading = true;
+
+      const makerNote = order.makerInfo.makerNote;
+      const makerZkAddress = this.$options.filters.toZkAddress(makerNote.pubKey0, makerNote.pubKey1);
+
+      await this.unlockAccount(makerZkAddress);
+
+      console.log('generating proof...');
+      const proof = (await api.generateProof('/settleOrder', [
+        order.makerInfo.makerNote,
+        order.makerInfo.stakeNote,
+        order.makerInfo.rewardNote,
+        order.makerInfo.paymentNote,
+        order.makerInfo.changeNote,
+        toHex(order.price),
+      ], [{
+        userKey: this.userKey,
+        address: makerZkAddress,
+      }])).data.proof;
+
+      const tx = await this.dexContract.settleOrder(
+        order.orderId,
+        ...proof,
+        encode([
+          Note.fromJSON(order.makerInfo.rewardNote).encrypt(order.makerInfo.rewardNoteEncKey),
+          Note.fromJSON(order.makerInfo.paymentNote).encrypt(order.makerInfo.paymentNoteEncKey),
+          Note.fromJSON(order.makerInfo.changeNote).encrypt(order.makerInfo.changeNoteEncKey),
+        ]),
+        { from: this.metamaskAccount }
+      );
+
+      await new Promise(r => setTimeout(r, 3000));
+
+      await this.$store.dispatch('set', ['notes', 'orders', 'ordersByUser']);
+      this.loading = false;
     },
   },
 };
