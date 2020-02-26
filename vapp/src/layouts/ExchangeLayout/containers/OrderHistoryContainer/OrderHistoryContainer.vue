@@ -2,7 +2,7 @@
   <div class="container">
     <div class="container-header">
       <img src="../../../../assets/icons/exchange/orderhistory.png" />
-      <h3>ORDER HISTORY</h3>
+      <h3>Order History</h3>
     </div>
     <div class="table-container">
       <standard-table
