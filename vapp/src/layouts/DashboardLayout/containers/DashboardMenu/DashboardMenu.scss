@@ -1,6 +1,6 @@
 .dashboard-menu {
   min-width: 280px;
-  height: 600px;
+  height: 650px;
   background-color: rgba(42, 44, 60, 1.000);
   padding-right: 20px;
 
@@ -47,12 +47,18 @@
   margin-top: 8px;
 }
 
+.dashboard-menu > :nth-child(4) {
+  margin-top: 4px;
+}
+.dashboard-menu > :nth-child(5) {
+  margin-top: 4px;
+}
 .dashboard-menu > :nth-child(6) {
-  margin-top: 16px;
+  margin-top: 4px;
 }
 
 .dashboard-menu > :nth-child(7) {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .dashboard-menu > :nth-child(10) {

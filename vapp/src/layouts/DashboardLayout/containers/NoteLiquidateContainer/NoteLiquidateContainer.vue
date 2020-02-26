@@ -92,18 +92,18 @@ export default {
       await this.unlockAccount(zkAddress);
 
       console.log('generating proof...');
-      const proof = (await api.generateProof('/mintNBurnNote', [
-        this.note,
-      ],
-      [
-        { userKey: this.userKey, address: zkAddress },
-      ])).data.proof;
+      const proof = (await api.generateProof('/mintNBurnNote',
+        [
+          this.note,
+        ],
+        [
+          { userKey: this.userKey, address: zkAddress },
+        ])).data.proof;
 
       // TODO: this.account must be address type
       const tx = await this.dexContract.liquidate(this.account, ...proof, {
         from: this.metamaskAccount,
       });
-
 
       await new Promise(r => setTimeout(r, 1500));
 
@@ -122,5 +122,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "LiquidateNoteContainer.scss";
+@import "NoteLiquidateContainer.scss";
 </style>

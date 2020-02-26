@@ -13,6 +13,7 @@ import AccountDeleteLayout from '../layouts/AccountDeleteLayout';
 import WalletLayout from '../layouts/WalletLayout';
 import NoteTransferLayout from '../layouts/NoteTransferLayout';
 import NoteConvertLayout from '../layouts/NoteConvertLayout';
+import NoteLiquidateLayout from '../layouts/NoteLiquidateLayout';
 import NoteCombineLayout from '../layouts/NoteCombineLayout';
 import NoteTransferHistoryLayout from '../layouts/NoteTransferHistoryLayout';
 import OrderHistoryLayout from '../layouts/OrderHistoryLayout';
@@ -49,6 +50,10 @@ const routes = [
       {
         path: '/notes/convert',
         component: NoteConvertLayout,
+      },
+      {
+        path: '/notes/liquidate',
+        component: NoteLiquidateLayout,
       },
       {
         path: 'notes/combine',

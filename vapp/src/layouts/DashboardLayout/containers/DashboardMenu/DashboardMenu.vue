@@ -63,13 +63,12 @@
       <p>Convert</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
     </router-link>
-    <!-- <router-link to="/notes/combine" class="menu-item"
-      :class="{ selected: path === '/notes/combine'}"
+    <router-link to="/notes/liquidate" class="menu-item"
+      :class="{ selected: path === '/notes/liquidate'}"
     >
-      <p>Combine</p>
+      <p>Liquidate</p>
       <img class="arrow" src="../../../../assets/icons/menu/arrow.png" />
-    </router-link> -->
-
+    </router-link>
     <div class="menu-item-with-icon" style="padding-top: 24px;">
       <div class="icon-container"
         :class="{ 'icon-selected-container': path === '/notes/history' || path === '/orders/history'}"
