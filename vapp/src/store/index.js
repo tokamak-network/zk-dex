@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 Vue.use(Vuex);
 
 import api from '../api/index';
+import { BN } from 'web3-utils';
 import { toNoteHash } from '../filters/index';
 
 import { ZkDexAddress } from 'zk-dex-keystore/lib/Account';
@@ -211,6 +212,35 @@ const getters = {
   },
   ongoingOrders: state => state.ordersByUser.filter(o => o.state !== '2'),
   settledOrders: state => state.ordersByUser.filter(o => o.state === '2'),
+  balanceOfNotes: (state) => {
+    const balanceOfNotes = [
+      {
+        name: 'Ethereum',
+        symbol: 'ETH',
+        numNotes: 0,
+        totalBalance: new BN('0'),
+      },
+      {
+        name: 'Dai',
+        symbol: 'DAI',
+        numNotes: 0,
+        totalBalance: new BN('0'),
+      },
+    ];
+    state.notes.map((note) => {
+      if (note.state.toNumber() === 1) {
+        if (parseInt(note.token) === 0) {
+          balanceOfNotes[0].numNotes += 1;
+          // TODO: use BN.
+          balanceOfNotes[0].totalBalance = balanceOfNotes[0].totalBalance.add(new BN(parseInt(note.value)));
+        } else if (parseInt(note.token) === 1) {
+          balanceOfNotes[1].numNotes += 1;
+          balanceOfNotes[1].totalBalance = balanceOfNotes[1].totalBalance.add(new BN(parseInt(note.value)));
+        }
+      }
+    });
+    return balanceOfNotes;
+  },
 };
 
 export default new Vuex.Store({

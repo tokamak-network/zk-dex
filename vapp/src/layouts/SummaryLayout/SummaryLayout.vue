@@ -22,10 +22,10 @@ import NoteContainer from '../DashboardLayout/containers/NoteContainer';
 export default {
   components: {
     AccountContainer,
-    BalanceContainer,
     CreateNoteContainer,
-    LiquidateNoteContainer,
     NoteContainer,
+    BalanceContainer,
+    // LiquidateNoteContainer,
   },
 };
 </script>
