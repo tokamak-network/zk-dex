@@ -143,19 +143,23 @@ const actions = {
         const state = await dexContract.notes(noteHash);
         return state;
       };
+      const isSmart = note => (new Note(...Object.values(note))).isSmart();
 
-      const notes = await api.getNotes(userKey);
-      if (notes) {
-        const notesWithState = notes.map(async (note) => {
+      const sourceNotes = await api.getNotes(userKey);
+      if (sourceNotes) {
+        const destNotes = sourceNotes.map(async (note) => {
           const state = await getNoteState(note);
 
           Object.defineProperty(note, 'state', {
             value: state,
           });
+          Object.defineProperty(note, 'isSmart', {
+            value: isSmart(note),
+          });
 
           return note;
         });
-        context.dispatch('setNotes', await Promise.all(notesWithState));
+        context.dispatch('setNotes', await Promise.all(destNotes));
       }
     };
     const getOrders = async () => {
@@ -203,13 +207,8 @@ const getters = {
     });
     return orderBook;
   },
-  smartNotes: (state) => {
-    const smartNotes = state.notes.filter((n) => {
-      const note = new Note(...Object.values(n));
-      return note.isSmart();
-    });
-    return smartNotes;
-  },
+  validNotes: state => state.notes.filter(note => note.state.toNumber() === 1),
+  smartNotes: state => state.notes.filter(note => note.isSmart),
   ongoingOrders: state => state.ordersByUser.filter(o => o.state !== '2'),
   settledOrders: state => state.ordersByUser.filter(o => o.state === '2'),
   balanceOfNotes: (state) => {
