@@ -7,7 +7,7 @@
     </div>
     <div class="input-text-container">
       <input-text
-        :label="'Account'"
+        :label="'Owner'"
         :isStaticValue="false"
       >
         <template v-slot:input>
@@ -52,6 +52,7 @@ export default {
   },
   data () {
     return {
+      note: '',
       account: '',
       noteHash: '',
       noteValue: '',
@@ -60,14 +61,15 @@ export default {
   },
   computed: {
     ...mapState([
-      'dexcontract',
+      'userKey',
+      'dexContract',
       'metamaskAccount',
     ]),
   },
   created () {
     this.$bus.$on('noteSelected', (note) => {
       this.note = note;
-      this.noteHash = note.hash;
+      this.noteHash = this.$options.filters.toNoteHash(note);
       this.noteValue = Web3Utils.toBN(note.value);
     });
   },
@@ -75,29 +77,37 @@ export default {
     this.$bus.$off('noteSelected', () => {});
   },
   methods: {
+    async unlockAccount (address, passphrase = '1234') {
+      try {
+        await api.unlockAccount(this.userKey, passphrase, address);
+      } catch (e) {
+        console.log('failed to unlock');
+      }
+    },
     async liquidateNote () {
       if (this.loading) return;
       this.loading = true;
 
-      const circuit = 'mintNBurnNote';
-      const params = [this.note];
-      const proof = (await api.generateProof(circuit, params)).data.proof;
+      const zkAddress = this.$options.filters.toZkAddress(this.note.pubKey0, this.note.pubKey1);
+      await this.unlockAccount(zkAddress);
+
+      console.log('generating proof...');
+      const proof = (await api.generateProof('/mintNBurnNote', [
+        this.note,
+      ],
+      [
+        { userKey: this.userKey, address: zkAddress },
+      ])).data.proof;
 
       // TODO: this.account must be address type
       const tx = await this.dexContract.liquidate(this.account, ...proof, {
         from: this.metamaskAccount,
       });
 
-      if (!tx.receipt.status) {
-        alert('revert transaction');
-        return;
-      }
 
-      await new Promise(r => setTimeout(r, 5000));
+      await new Promise(r => setTimeout(r, 1500));
 
-      const notes = await api.getNotes(this.userKey);
-      this.$store.dispatch('setNotes', notes);
-
+      await this.$store.dispatch('set', ['notes']);
       this.clear();
     },
     clear () {

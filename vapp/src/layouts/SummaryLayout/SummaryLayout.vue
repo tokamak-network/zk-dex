@@ -4,7 +4,9 @@
       :withModal="true"
     />
     <create-note-container style="margin-top: 24px; "/>
-    <note-container style="margin-top: 24px;"
+    <note-container
+      style="margin-top: 24px;"
+      :datas="$store.state.notes"
       :clickable="true"
     />
     <liquidate-note-container style="margin-top: 24px;"/>
@@ -25,7 +27,7 @@ export default {
     CreateNoteContainer,
     NoteContainer,
     BalanceContainer,
-    // LiquidateNoteContainer,
+    LiquidateNoteContainer,
   },
 };
 </script>
