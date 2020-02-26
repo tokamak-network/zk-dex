@@ -4,13 +4,15 @@
     <note-container
       style="margin-top: 24px;"
       :clickable="true"
-      :datas="$store.state.notes"
+      :datas="validNotes"
     />
     <note-transfer-container style="margin-top: 24px; padding-bottom: 24px;" />
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 import NoteContainer from '../DashboardLayout/containers/NoteContainer';
 import BalanceContainer from '../DashboardLayout/containers/BalanceContainer';
 import NoteTransferContainer from '../DashboardLayout/containers/NoteTransferContainer';
@@ -20,6 +22,11 @@ export default {
     BalanceContainer,
     NoteContainer,
     NoteTransferContainer,
+  },
+  computed: {
+    ...mapGetters([
+      'validNotes',
+    ]),
   },
 };
 </script>

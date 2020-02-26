@@ -105,7 +105,6 @@ export default {
       if (this.loading === true) return;
       this.loading = true;
 
-      console.log(this.from, this.to);
       await this.unlockAccount(this.from);
 
       const { newNote, changeNote } = this.makeNotes(this.note);
@@ -131,9 +130,10 @@ export default {
         }
       );
 
-      console.log(tx);
+      await new Promise(r => setTimeout(r, 2000));
 
-      // this.clear();
+      await this.$store.dispatch('set', ['notes', 'histories']);
+      this.clear();
     },
     makeNotes () {
       const oldNote0 = this.note;
@@ -156,8 +156,6 @@ export default {
         '1234',
         Web3Utils.randomHex(16)
       );
-      console.log(newNote);
-      console.log(change);
       const changeNote = new Note(
         oldNote0.pubKey0,
         oldNote0.pubKey1,
@@ -166,7 +164,6 @@ export default {
         '1234',
         Web3Utils.randomHex(16)
       );
-      console.log(changeNote);
       return { newNote, changeNote };
     },
     clear () {
