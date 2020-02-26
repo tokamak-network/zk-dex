@@ -68,9 +68,9 @@ function addAccount (userKey, passphrase) {
   });
 }
 
-async function addNote (account, note) {
+async function addNote (userKey, note) {
   const res = await instance.post('/notes', {
-    account,
+    userKey,
     note,
   });
   return res.data.notes;

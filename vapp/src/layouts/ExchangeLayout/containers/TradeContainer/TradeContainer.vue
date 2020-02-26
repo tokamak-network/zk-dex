@@ -179,6 +179,9 @@ export default {
         }
       );
 
+      // TODO: fix
+      await new Promise(r => setTimeout(r, 1500));
+
       await this.$store.dispatch('set', ['notes', 'orders', 'ordersByUser']);
       this.clear();
     },
@@ -192,6 +195,9 @@ export default {
       const makerNote = new Note(...Object.values(this.order.makerInfo.makerNote));
       const takerNote = new Note(...Object.values(this.takerNote));
       const stakeNote = Note.createSmartNote(this.order.makerNote, takerNote.value, this.order.targetToken, viewingKey, getSalt());
+
+      // TODO: delete note if tx failed.
+      await api.addNote(this.order.makerInfo.makerUserKey, stakeNote);
 
       // TODO: check unlock or not.
       await this.unlockAccount(this.makerZkAddress);
@@ -212,6 +218,8 @@ export default {
           from: this.metamaskAccount,
         }
       );
+
+      await new Promise(r => setTimeout(r, 1500));
 
       await this.$store.dispatch('set', ['notes', 'orders', 'ordersByUser']);
       this.clear();
