@@ -218,9 +218,10 @@ const getters = {
       const note = new Note(...Object.values(n));
       return note.isSmart();
     });
-    console.log(smartNotes);
     return smartNotes;
   },
+  ongoingOrders: state => state.ordersByUser.filter(o => o.state !== '2'),
+  settledOrders: state => state.ordersByUser.filter(o => o.state === '2'),
 };
 
 export default new Vuex.Store({

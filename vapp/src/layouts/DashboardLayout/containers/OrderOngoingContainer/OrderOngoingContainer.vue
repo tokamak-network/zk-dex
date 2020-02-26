@@ -6,20 +6,58 @@
     </div>
     <div class="table-container">
       <standard-table
-        :type="'ongoingOrder'"
-        :datas="$store.state.order.orders"
+        :type="'order'"
+        :datas="ongoingOrders"
+        :columns="[
+          {
+            title: 'Order ID',
+            data: 'orderId',
+            options: [],
+          },
+          {
+            title: 'Type',
+            data: 'type',
+            options: [],
+          },
+          {
+            title: 'Price',
+            data: 'price',
+            options: [],
+          },
+          {
+            title: 'ETH Note Hash',
+            data: 'ethNoteHash',
+            options: [],
+          },
+          {
+            title: 'DAI Note Hash',
+            data: 'daiNoteHash',
+            options: [],
+          },
+          {
+            title: 'State',
+            data: 'state',
+            options: [],
+          },
+        ]"
       />
     </div>
   </div>
 </template>
 
 <script>
-// TODO: if header 2 line, weirde tbody
 import StandardTable from '../../../../components/StandardTable';
+
+import { mapGetters } from 'vuex';
 
 export default {
   components: {
     StandardTable,
+  },
+  computed: {
+    ...mapGetters([
+      'ongoingOrders',
+    ]),
   },
 };
 </script>

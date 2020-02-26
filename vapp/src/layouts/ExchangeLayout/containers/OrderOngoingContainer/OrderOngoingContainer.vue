@@ -7,8 +7,8 @@
     <div class="table-container">
       <standard-table
         v-on:settleOrderRequested="settleOrder"
-        :type="'ongoingOrder'"
-        :datas="$store.state.ordersByUser"
+        :type="'order'"
+        :datas="ongoingOrders"
         :columns="[
           {
             title: 'Order ID',
@@ -56,7 +56,7 @@
 // TODO: if header 2 line, weirde tbody
 import StandardTable from '../../../../components/StandardTable';
 
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import { toHex } from 'web3-utils';
 import api from '../../../../api/index';
 
@@ -77,6 +77,9 @@ export default {
       'dexContract',
       'userKey',
       'metamaskAccount',
+    ]),
+    ...mapGetters([
+      'ongoingOrders',
     ]),
   },
   methods: {

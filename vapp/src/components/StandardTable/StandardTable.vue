@@ -162,15 +162,6 @@ export default {
         default:
           return columnData;
         }
-      } else if (this.type === 'order') {
-        const order = data;
-        switch (column) {
-        case '1':
-          return 1;
-
-        default:
-          return columnData;
-        }
       } else if (this.type === 'orderBook') {
         switch (column) {
         case 'orderId':
@@ -182,7 +173,7 @@ export default {
         default:
           return columnData;
         }
-      } else if (this.type === 'ongoingOrder') {
+      } else if (this.type === 'order') {
         const order = data;
         switch (column) {
         case 'orderId':
