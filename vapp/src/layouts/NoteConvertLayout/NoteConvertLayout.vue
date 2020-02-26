@@ -1,10 +1,9 @@
 <template>
   <div>
     <note-container
-      :datas="$store.state.notes"
+      :datas="smartAndValidNotes"
       :clickable="true"
     />
-    <!-- :datas="smartNotes" -->
     <note-convert-container
       style="margin-top: 24px;"
     />
@@ -20,7 +19,7 @@ import NoteConvertContainer from '../DashboardLayout/containers/NoteConvertConta
 export default {
   computed: {
     ...mapGetters([
-      'smartNotes',
+      'smartAndValidNotes',
     ]),
   },
   components: {

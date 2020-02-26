@@ -208,7 +208,7 @@ const getters = {
     return orderBook;
   },
   validNotes: state => state.notes.filter(note => note.state.toNumber() === 1),
-  smartNotes: state => state.notes.filter(note => note.isSmart),
+  smartAndValidNotes: state => state.notes.filter(note => note.state.toNumber() === 1 && note.isSmart),
   ongoingOrders: state => state.ordersByUser.filter(o => o.state !== '2'),
   settledOrders: state => state.ordersByUser.filter(o => o.state === '2'),
   balanceOfNotes: (state) => {

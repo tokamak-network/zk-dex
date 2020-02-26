@@ -54,7 +54,7 @@ export default {
     this.$bus.$on('noteSelected', (note) => {
       this.note = note;
       this.noteHash = this.$options.filters.toNoteHash(note);
-      this.noteValue = Web3Utils.toBN(note.value);
+      this.noteValue = web3Utils.toBN(note.value);
     });
   },
   beforeDestroy () {
@@ -68,14 +68,21 @@ export default {
     ]),
   },
   methods: {
+    async unlockAccount (address, passphrase = '1234') {
+      try {
+        await api.unlockAccount(this.userKey, passphrase, address);
+      } catch (e) {
+        console.log('failed to unlock');
+      }
+    },
     async convertNote (note) {
       if (this.loading === true) return;
       this.loading = true;
 
-      await this.unlockAccount(this.from);
-
       const getSalt = () => web3Utils.randomHex(16);
       const { newNote, changeNote } = this.makeNotes(this.note);
+
+      await this.unlockAccount(this.from);
 
       const convertedNote = new Note(
         this.note.pubKey0, this.note.pubKey1,
@@ -103,7 +110,19 @@ export default {
         }
       );
 
-      console.log(tx);
+      await new Promise(r => setTimeout(r, 1500));
+
+      await this.$store.dispatch('set', ['notes']);
+      this.clear();
+    },
+    clear () {
+      this.note = null;
+      this.from = '';
+      this.noteHash = '';
+      this.noteValue = '';
+      this.to = '';
+      this.amount = '';
+      this.loading = false;
     },
   },
 };
