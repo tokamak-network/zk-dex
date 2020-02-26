@@ -119,8 +119,7 @@ export default {
         case 'index':
           return this.datas.indexOf(data);
         case 'numNotes':
-          const address = data;
-          return this.$store.getters.numNotes(address);
+          return this.$store.getters.numNotes;
 
         default:
           return data;
@@ -156,9 +155,6 @@ export default {
         }
       } else if (this.type === 'balance') {
         switch (column) {
-        case 'totalBalance':
-          return parseInt(columnData);
-
         default:
           return columnData;
         }

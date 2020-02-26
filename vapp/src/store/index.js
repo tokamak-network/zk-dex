@@ -183,18 +183,7 @@ const actions = {
 };
 
 const getters = {
-  numNotes: state => (address) => {
-    const reducer = (accumulator, note) => {
-      const pubKey = ZkDexAddress.fromBase58(removeZkPrefix(address)).toPubKey();
-      const pubKey0 = pubKey.xToHex();
-      const pubKey1 = pubKey.yToHex();
-
-      if (note.pubKey0 === pubKey0 && note.pubKey1 === pubKey1) return accumulator += 1;
-      return accumulator;
-    };
-
-    return state.notes.reduce(reducer, 0);
-  },
+  numNotes: state => state.notes.length,
   orderBook: (state) => {
     const orderBook = [];
     state.orders.map((order) => {
