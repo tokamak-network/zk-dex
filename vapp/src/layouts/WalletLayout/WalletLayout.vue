@@ -1,7 +1,10 @@
 <template>
   <div>
     <balance-container />
-    <note-container style="margin-top: 24px;" />
+    <note-container
+      :datas="$store.state.notes"
+      style="margin-top: 24px;"
+    />
   </div>
 </template>
 

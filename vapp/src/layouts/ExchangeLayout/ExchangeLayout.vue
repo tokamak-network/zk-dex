@@ -3,7 +3,7 @@
     <market />
     <div class="group">
       <price-chart-container class="wide" />
-      <trade-history-container class="short" />
+      <!-- <trade-history-container class="short" /> -->
     </div>
     <div class="group">
       <div class="wide">
@@ -31,7 +31,7 @@ export default {
   components: {
     Market,
     PriceChartContainer,
-    TradeHistoryContainer,
+    // TradeHistoryContainer,
     TradeContainer,
     OrderBookContainer,
     NoteContainer,
