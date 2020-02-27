@@ -62,7 +62,10 @@ export default {
     return {
       address: '',
       amount: '',
-      token: '',
+      token: {
+        symbol: 'ETH',
+        type: web3Utils.padLeft('0x0', 32),
+      },
       loading: false,
     };
   },
@@ -155,6 +158,8 @@ export default {
           console.log(e.message);
         }
       }
+
+      await new Promise(r => setTimeout(r, 1500));
       await this.$store.dispatch('set', ['notes']);
     },
     async unlockAccount (address, passphrase = '1234') {

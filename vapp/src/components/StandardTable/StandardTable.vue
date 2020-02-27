@@ -119,7 +119,7 @@ export default {
         case 'index':
           return this.datas.indexOf(data);
         case 'numNotes':
-          return this.$store.getters.numNotes;
+          return this.$store.getters.numNotes(data);
 
         default:
           return data;

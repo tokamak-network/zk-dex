@@ -66,12 +66,12 @@ export default {
       }
 
       // TODO: fix
-      await this.addAccount('1234');
+      await this.addAccount();
       this.$emit('newAccountAdded');
 
       this.loading = false;
     },
-    async addAccount (passphrase) {
+    async addAccount (passphrase = '1234') {
       await api.addAccount(this.userKey, passphrase);
 
       const accounts = await api.getAccounts(this.userKey);
