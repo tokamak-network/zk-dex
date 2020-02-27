@@ -9,7 +9,7 @@
       :datas="$store.state.notes"
       :clickable="true"
     />
-    <balance-container style="margin-top: 24px;"/>
+    <!-- <balance-container style="margin-top: 24px;"/> -->
   </div>
 </template>
 
@@ -24,7 +24,7 @@ export default {
     AccountContainer,
     CreateNoteContainer,
     NoteContainer,
-    BalanceContainer,
+    // BalanceContainer,
   },
 };
 </script>

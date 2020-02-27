@@ -160,17 +160,20 @@ export default {
       // TODO: check unlock or not.
       await this.unlockAccount(this.makerZkAddress);
 
+      const vks = await api.getViewingKeys(this.userKey);
+      const makerVk = vks[0];
+
       console.log('generating proof...');
       const proof = (await api.generateProof('/makeOrder', [this.makerNote], [{
         userKey: this.userKey,
         address: this.makerZkAddress,
       }])).data.proof;
-
+      
       // validate proof and make order.
       const tokenType = parseInt(this.makerNote.token);
       const wantToBuyTokenType = tokenType === 0 ? 1 : 0;
       const tx = await this.dexContract.makeOrder(
-        '0x0',
+        makerVk,
         wantToBuyTokenType,
         this.price,
         ...proof,
@@ -189,12 +192,20 @@ export default {
       if (this.waitingForTakingOrder === true) return;
       this.waitingForTakingOrder = true;
 
-      const viewingKey = '1234';
       const getSalt = () => Web3Utils.randomHex(16);
+      const vks = await api.getViewingKeys(this.userKey);
+      const takerVk = vks[0];
+      // const makerVk = this.order.makerViewingKey.slice(0, 34);
 
       const makerNote = new Note(...Object.values(this.order.makerInfo.makerNote));
       const takerNote = new Note(...Object.values(this.takerNote));
-      const stakeNote = Note.createSmartNote(this.order.makerNote, takerNote.value, this.order.targetToken, viewingKey, getSalt());
+      const stakeNote = Note.createSmartNote(
+        makerNote.hash(),
+        takerNote.value,
+        this.order.targetToken,
+        takerVk,
+        getSalt()
+      );
 
       // TODO: delete note if tx failed.
       await api.addNote(this.order.makerInfo.makerUserKey, stakeNote);
@@ -231,4 +242,3 @@ export default {
 <style lang="scss" scoped>
 @import "TradeContainer.scss";
 </style>
-00

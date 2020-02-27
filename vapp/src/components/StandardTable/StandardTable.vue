@@ -181,7 +181,7 @@ export default {
         case 'type':
           if (this.userKey === order.makerInfo.makerUserKey) {
             return 'Sell';
-          } else if (this.userKey === order.takerInfo.takerUserKey) {
+          } else if (order.takerInfo && this.userKey === order.takerInfo.takerUserKey) {
             return 'Buy';
           }
           return '';

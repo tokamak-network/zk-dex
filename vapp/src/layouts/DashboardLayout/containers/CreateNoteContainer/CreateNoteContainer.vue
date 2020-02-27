@@ -108,25 +108,21 @@ export default {
       if (!this.check()) return alert('empty params');
       this.loading = true;
 
-      try {
-        await this.createNote();
-      } catch (e) {
-        console.log(e.message);
-      }
+      await this.createNote();
 
       this.loading = false;
       this.clear();
     },
     async createNote () {
       // TODO: fix
-      const viewingKey = '1234';
       const getSalt = () => web3Utils.randomHex(16);
 
       const pubKey = ZkDexAddress.fromBase58(removeZkPrefix(this.address)).toPubKey();
       const pubKey0 = pubKey.xToHex();
       const pubKey1 = pubKey.yToHex();
 
-      const note = new Note(pubKey0, pubKey1, this.amount, this.token.type, viewingKey, getSalt());
+      const vks = await api.getViewingKeys(this.userKey);
+      const note = new Note(pubKey0, pubKey1, this.amount, this.token.type, vks[0], getSalt());
 
       await this.unlockAccount(this.address);
 
@@ -136,13 +132,16 @@ export default {
         address: this.address,
       }])).data.proof;
 
+      // const ether = n => web3Utils.toBN(n).mul(web3Utils.toBN(1e18.toString(10)));
+      // const value = ether(this.amount);
+
       let tx;
       if (this.token.symbol === 'DAI') {
         await this.daiContract.approve(this.dexContract.address, this.amount, {
           from: this.metamaskAccount,
         });
         try {
-          tx = await this.dexContract.mint(...proof, note.encrypt(viewingKey), {
+          tx = await this.dexContract.mint(...proof, note.encrypt(vks[0]), {
             from: this.metamaskAccount,
           });
         } catch (e) {
@@ -150,7 +149,7 @@ export default {
         }
       } else if (this.token.symbol === 'ETH') {
         try {
-          tx = await this.dexContract.mint(...proof, note.encrypt(viewingKey), {
+          tx = await this.dexContract.mint(...proof, note.encrypt(vks[0]), {
             from: this.metamaskAccount,
             value: this.amount,
           });

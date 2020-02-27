@@ -12,6 +12,7 @@ import HeaderContainer from './containers/HeaderContainer';
 import FooterContainer from './containers/FooterContainer';
 
 import Web3 from 'web3';
+import { randomHex } from 'web3-utils';
 import Contract from 'truffle-contract';
 import ZkDexContractJSON from '../../build/contracts/ZkDex.json';
 import DaiContractJSON from '../../build/contracts/MockDai.json';
@@ -83,7 +84,7 @@ export default {
       const userKey = metamaskAccount;
 
       let viewingKeys = await api.getViewingKeys(userKey);
-      if (!viewingKeys || viewingKeys.length === 0) viewingKeys = await api.addViewingKey(userKey, '1234');
+      if (!viewingKeys || viewingKeys.length === 0) viewingKeys = await api.addViewingKey(userKey, randomHex(16));
 
       await this.$store.dispatch('set', [
         'accounts',

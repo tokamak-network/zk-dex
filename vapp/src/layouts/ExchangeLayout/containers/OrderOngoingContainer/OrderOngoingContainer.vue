@@ -58,7 +58,7 @@ import StandardTable from '../../../../components/StandardTable';
 
 import { mapState, mapGetters } from 'vuex';
 import api from '../../../../api/index';
-import { toHex } from 'web3-utils';
+import { toHex, toBN } from 'web3-utils';
 import { Note } from '../../../../../../scripts/lib/Note';
 import { encode } from 'rlp';
 
@@ -105,14 +105,14 @@ export default {
         order.makerInfo.rewardNote,
         order.makerInfo.paymentNote,
         order.makerInfo.changeNote,
-        order.price,
+        toHex(order.price),
       ], [{
         userKey: this.userKey,
         address: makerZkAddress,
       }])).data.proof;
 
       const tx = await this.dexContract.settleOrder(
-        toHex(order.orderId),
+        toBN(order.orderId).toNumber(),
         ...proof,
         encode([
           Note.fromJSON(order.makerInfo.rewardNote).encrypt(order.makerInfo.rewardNoteEncKey),
