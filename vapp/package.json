@@ -51,7 +51,6 @@
     "eslint": "^5.16.0",
     "eslint-plugin-es-beautifier": "^1.0.1",
     "eslint-plugin-vue": "^5.2.3",
-    "ganache-cli": "^6.6.0",
     "jest": "^24.9.0",
     "lodash": "^4.17.15",
     "moxios": "^0.4.0",
