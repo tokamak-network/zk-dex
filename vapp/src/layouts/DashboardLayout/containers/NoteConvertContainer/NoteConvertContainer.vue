@@ -62,6 +62,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'notes',
       'dexContract',
       'userKey',
       'metamaskAccount',
@@ -80,31 +81,34 @@ export default {
       this.loading = true;
 
       const getSalt = () => web3Utils.randomHex(16);
-      const { newNote, changeNote } = this.makeNotes(this.note);
+      const vks = await api.getViewingKeys(this.userKey);
+      const vk = vks[0];
 
-      await this.unlockAccount(this.from);
+      const parentNote = await this.getParentNote(this.note);
+      const zkAddress = this.$options.filters.toZkAddress(parentNote.pubKey0, parentNote.pubKey1);
+      await this.unlockAccount(zkAddress);
 
       const convertedNote = new Note(
         this.note.pubKey0, this.note.pubKey1,
         this.note.value,
         this.note.token,
-        '1234',
+        vk,
         getSalt(),
       );
 
       console.log('generating proof...');
       const proof = (await api.generateProof('/convertNote', [
         this.note,
-        this.parentNote,
+        parentNote,
         convertedNote,
       ],
       [
-        { userKey: this.userKey, address: this.from },
+        { userKey: this.userKey, address: zkAddress },
       ])).data.proof;
 
       const tx = await this.dexContract.convertNote(
         ...proof,
-        convertedNote.encrypt('1234'),
+        convertedNote.encrypt(vk),
         {
           from: this.metamaskAccount,
         }
@@ -114,6 +118,10 @@ export default {
 
       await this.$store.dispatch('set', ['notes']);
       this.clear();
+    },
+    async getParentNote (smartNote) {
+      const noteHash = `0x${smartNote.pubKey0.slice(-32)}${smartNote.pubKey1.slice(-32)}`;
+      return this.notes.find(note => this.$options.filters.toNoteHash(note) === noteHash);
     },
     clear () {
       this.note = null;
