@@ -8,7 +8,8 @@ const SettleOrderVerifier = artifacts.require('settleOrder_Verifier.sol');
 const ZkDex = artifacts.require('ZkDex.sol');
 const MockDai = artifacts.require('MockDai.sol');
 
-const USE_DUMMY = process.env.USE_DUMMY === 'true';
+// const USE_DUMMY = process.env.USE_DUMMY === 'true';
+const USE_DUMMY = true;
 
 console.log('USE_DUMMY', USE_DUMMY);
 

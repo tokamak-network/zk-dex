@@ -47,7 +47,8 @@ const checkOwnersLength = {
   settleOrder: lengthChecker(1, 1),
 };
 
-const USE_DUMMY = process.env.USE_DUMMY === 'true';
+// const USE_DUMMY = process.env.USE_DUMMY === 'true';
+const USE_DUMMY = true;
 console.log('USE_DUMMY', USE_DUMMY);
 
 // /circuits/:circuit requires { owners: [{userKey, address}], params }
