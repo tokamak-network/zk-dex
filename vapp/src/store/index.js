@@ -3,7 +3,7 @@ import Vuex from 'vuex';
 Vue.use(Vuex);
 
 import api from '../api/index';
-import { BN } from 'web3-utils';
+import { BN, hexToNumberString } from 'web3-utils';
 import { toNoteHash } from '../filters/index';
 
 import { ZkDexAddress } from 'zk-dex-keystore/lib/Account';
@@ -239,14 +239,14 @@ const getters = {
       },
     ];
     state.notes.map((note) => {
+      const value = hexToNumberString(`0x${note.value.slice(2).replace(/^0+/, '')}`);
       if (note.state.toNumber() === 1) {
         if (parseInt(note.token) === 0) {
           balanceOfNotes[0].numNotes += 1;
-          // TODO: use BN.
-          balanceOfNotes[0].totalBalance = balanceOfNotes[0].totalBalance.add(new BN(parseInt(note.value)));
+          balanceOfNotes[0].totalBalance = (balanceOfNotes[0].totalBalance).add(new BN(value));
         } else if (parseInt(note.token) === 1) {
           balanceOfNotes[1].numNotes += 1;
-          balanceOfNotes[1].totalBalance = balanceOfNotes[1].totalBalance.add(new BN(parseInt(note.value)));
+          balanceOfNotes[1].totalBalance = (balanceOfNotes[1].totalBalance).add(new BN(value));
         }
       }
     });

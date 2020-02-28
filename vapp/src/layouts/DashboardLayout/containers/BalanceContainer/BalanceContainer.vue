@@ -6,6 +6,7 @@
     </div>
     <div class="table-container">
       <standard-table
+        :type="'balance'"
         :clickable="false"
         :columns="[
           {
