@@ -39,7 +39,7 @@
 
     <div class="menu-item-with-icon">
       <div class="icon-container"
-        :class="{ 'icon-selected-container': path === '/wallet' || path === '/notes/transfer' || path === '/notes/combine'}"
+        :class="{ 'icon-selected-container': path === '/wallet' || path === '/notes/transfer' || path === '/notes/convert' || path === '/notes/liquidate'}"
       >
         <img src="../../../../assets/icons/menu/wallet.png" />
       </div>

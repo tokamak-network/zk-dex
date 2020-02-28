@@ -132,13 +132,11 @@ function generateProof (url, params, owners) {
 }
 
 // put
-async function updateNoteState (noteOwner, noteHash, noteState) {
-  const res = await instance.put('/notes', {
-    noteOwner,
-    noteHash,
-    noteState,
+async function updateNote (userKey, note) {
+  await instance.put('/notes', {
+    userKey,
+    note,
   });
-  return res.data.notes;
 }
 
 async function updateOrderHistory (account, order) {
@@ -200,7 +198,7 @@ export default {
   addOrder,
   addViewingKey,
   generateProof,
-  updateNoteState,
+  updateNote,
   updateOrderHistory,
   updateOrderHistoryState,
   updateOrderState,

@@ -89,7 +89,6 @@ export default {
     clear () {
       this.address = '';
       this.amount = '';
-      this.token = '';
     },
     isNumber (evt) {
       evt = (evt) ? evt : window.event;
