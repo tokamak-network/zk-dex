@@ -122,7 +122,9 @@ export default {
       const pubKey1 = pubKey.yToHex();
 
       const vks = await api.getViewingKeys(this.userKey);
-      const note = new Note(pubKey0, pubKey1, this.amount, this.token.type, vks[0], getSalt());
+      const amount = web3Utils.toWei(this.amount);
+
+      const note = new Note(pubKey0, pubKey1, amount, this.token.type, vks[0], getSalt());
 
       await this.unlockAccount(this.address);
 
@@ -132,12 +134,9 @@ export default {
         address: this.address,
       }])).data.proof;
 
-      // const ether = n => web3Utils.toBN(n).mul(web3Utils.toBN(1e18.toString(10)));
-      // const value = ether(this.amount);
-
       let tx;
       if (this.token.symbol === 'DAI') {
-        await this.daiContract.approve(this.dexContract.address, this.amount, {
+        await this.daiContract.approve(this.dexContract.address, amount, {
           from: this.metamaskAccount,
         });
         try {
@@ -151,7 +150,7 @@ export default {
         try {
           tx = await this.dexContract.mint(...proof, note.encrypt(vks[0]), {
             from: this.metamaskAccount,
-            value: this.amount,
+            value: amount,
           });
         } catch (e) {
           console.log(e.message);

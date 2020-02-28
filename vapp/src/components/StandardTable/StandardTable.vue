@@ -141,7 +141,7 @@ export default {
           else if (type === 1) return 'DAI';
 
         case 'value':
-          return parseInt(columnData);
+          return this.$options.filters.fromWei(columnData);
 
         case 'state':
           const state = parseInt(columnData);
@@ -155,6 +155,9 @@ export default {
         }
       } else if (this.type === 'balance') {
         switch (column) {
+        case 'totalBalance':
+          return this.$options.filters.fromWei(data.totalBalance.toString());
+
         default:
           return columnData;
         }
@@ -164,7 +167,8 @@ export default {
           return parseInt(columnData);
 
         case 'price':
-          return parseInt(`0x${columnData}`);
+          return this.$options.filters.fromWei(columnData);
+          ㄷ;
 
         default:
           return columnData;
@@ -176,7 +180,7 @@ export default {
           return parseInt(columnData);
 
         case 'price':
-          return parseInt(`0x${columnData}`);
+          return this.$options.filters.fromWei(columnData);
 
         case 'type':
           if (this.userKey === order.makerInfo.makerUserKey) {

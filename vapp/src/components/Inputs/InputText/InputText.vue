@@ -5,8 +5,14 @@
     </div>
     <div class="input-container">
       <div v-if="isStaticValue" class="static">
-        <div v-if="label === 'Note Amount' || label === 'Order ID'">
+        <div v-if="label === 'Order ID'">
           {{ value | toNumber }}
+        </div>
+        <div v-if="label === 'Note Amount'">
+          {{ value | fromWei }}
+        </div>
+        <div v-else-if="type === 'priceToTake'">
+          {{ value | fromWei }}
         </div>
         <div v-else-if="label === 'Price'">
           {{ value | stringToHex | toNumber }}
@@ -25,6 +31,10 @@
 export default {
   props: {
     label: {
+      type: String,
+      default: '',
+    },
+    type: {
       type: String,
       default: '',
     },
