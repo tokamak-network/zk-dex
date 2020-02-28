@@ -89,10 +89,11 @@ export default {
       await this.unlockAccount(zkAddress);
 
       const convertedNote = new Note(
-        this.note.pubKey0, this.note.pubKey1,
+        parentNote.pubKey0,
+        parentNote.pubKey1,
         this.note.value,
         this.note.token,
-        vk,
+        '0x00',
         getSalt(),
       );
 
