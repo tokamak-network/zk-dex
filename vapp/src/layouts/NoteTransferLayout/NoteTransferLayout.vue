@@ -2,7 +2,7 @@
   <div class="note-transfer-layout">
     <note-container
       :clickable="true"
-      :datas="validNotes"
+      :datas="generalAndValidNotes"
     />
     <note-transfer-container style="margin-top: 24px; padding-bottom: 24px;" />
   </div>
@@ -21,7 +21,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'validNotes',
+      'generalAndValidNotes',
     ]),
   },
 };

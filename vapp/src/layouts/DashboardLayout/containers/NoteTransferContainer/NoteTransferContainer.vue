@@ -107,6 +107,9 @@ export default {
 
       await this.unlockAccount(this.from);
 
+      const vks = await api.getViewingKeys(this.userKey);
+      const vk = vks[0];
+      
       const { newNote, changeNote } = this.makeNotes(this.note);
 
       console.log('generating proof...');
@@ -123,7 +126,7 @@ export default {
 
       const tx = await this.dexContract.spend(
         ...proof,
-        newNote.encrypt('1234'),
+        newNote.encrypt(vk),
         changeNote.encrypt('1234'),
         {
           from: this.metamaskAccount,
@@ -141,7 +144,7 @@ export default {
 
       const type = this.note.token;
       const noteAmount = Web3Utils.toBN(this.note.value);
-      const wantToTransferAmount = Web3Utils.toBN(Web3Utils.toHex(this.amount));
+      const wantToTransferAmount = Web3Utils.toBN(Web3Utils.toHex(Web3Utils.toWei(this.amount)));
       if (noteAmount.cmp(wantToTransferAmount) < 0) {
         throw 'invalid amount';
       }
@@ -151,9 +154,9 @@ export default {
       const newNote = new Note(
         pubKey.xToHex(),
         pubKey.yToHex(),
-        this.amount,
+        wantToTransferAmount,
         type,
-        '1234',
+        '0x00',
         Web3Utils.randomHex(16)
       );
       const changeNote = new Note(
@@ -161,7 +164,7 @@ export default {
         oldNote0.pubKey1,
         change,
         type,
-        '1234',
+        '0x00',
         Web3Utils.randomHex(16)
       );
       return { newNote, changeNote };
