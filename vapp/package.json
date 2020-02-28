@@ -8,6 +8,7 @@
     "compile": "truffle compile",
     "migrate": "truffle migrate --reset",
     "server": "DEBUG=* node server",
+    "server:init": "rm -rf server/localstorage && npm run server",
     "test": "truffle test",
     "test:server": "npx jest ./app.test.js --bail",
     "test:server:debug": "node --inspect-brk node_modules/.bin/jest ./app.test.js --bail --runInBand --forceExit --detectOpenHandles",
