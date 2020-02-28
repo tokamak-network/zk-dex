@@ -13,7 +13,7 @@
     <div class="input-text-container"
       v-if="whichRadioButtonClicked == 'left'">
       <input-text
-        :label="'Price (DAI)'"
+        :label="'Price'"
         :isStaticValue="false"
       >
         <template v-slot:input>
@@ -49,6 +49,7 @@
       /> -->
       <input-text
         :label="'Price'"
+        :type="'priceToTake'"
         :isStaticValue="true"
         :value="price"
       />
@@ -82,6 +83,9 @@ import { mapState } from 'vuex';
 import api from '../../../../api/index';
 import Web3Utils from 'web3-utils';
 import { Note } from '../../../../../../scripts/lib/Note';
+
+const ETH_TOKEN_TYPE = Web3Utils.padLeft('0x0', 64);
+const DAI_TOKEN_TYPE = Web3Utils.padLeft('0x1', 64);
 
 export default {
   data () {
@@ -122,7 +126,7 @@ export default {
       this.takerZkAddress = this.$options.filters.toZkAddress(note.pubKey0, note.pubKey1);
     });
     this.$bus.$on('orderSelected', (orderBook) => {
-      this.order = orderBook.orders[0];
+      this.order = orderBook.orders[1];
       if (this.whichRadioButtonClicked !== 'left') {
         this.price = this.order.price;
       }
@@ -168,14 +172,15 @@ export default {
         userKey: this.userKey,
         address: this.makerZkAddress,
       }])).data.proof;
-      
-      // validate proof and make order.
+
       const tokenType = parseInt(this.makerNote.token);
-      const wantToBuyTokenType = tokenType === 0 ? 1 : 0;
+      const wantToBuyTokenType = tokenType === 0 ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE;
+      const price = Web3Utils.toWei(this.price);
+
       const tx = await this.dexContract.makeOrder(
         makerVk,
         wantToBuyTokenType,
-        this.price,
+        Web3Utils.toHex(price),
         ...proof,
         {
           from: this.metamaskAccount,
@@ -195,7 +200,6 @@ export default {
       const getSalt = () => Web3Utils.randomHex(16);
       const vks = await api.getViewingKeys(this.userKey);
       const takerVk = vks[0];
-      // const makerVk = this.order.makerViewingKey.slice(0, 34);
 
       const makerNote = new Note(...Object.values(this.order.makerInfo.makerNote));
       const takerNote = new Note(...Object.values(this.takerNote));

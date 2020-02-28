@@ -105,7 +105,7 @@ export default {
         order.makerInfo.rewardNote,
         order.makerInfo.paymentNote,
         order.makerInfo.changeNote,
-        toHex(order.price),
+        `0x${order.price}`,
       ], [{
         userKey: this.userKey,
         address: makerZkAddress,
