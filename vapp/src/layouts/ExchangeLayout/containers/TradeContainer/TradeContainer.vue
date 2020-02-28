@@ -126,7 +126,7 @@ export default {
       this.takerZkAddress = this.$options.filters.toZkAddress(note.pubKey0, note.pubKey1);
     });
     this.$bus.$on('orderSelected', (orderBook) => {
-      this.order = orderBook.orders[1];
+      this.order = orderBook.orders[0];
       if (this.whichRadioButtonClicked !== 'left') {
         this.price = this.order.price;
       }

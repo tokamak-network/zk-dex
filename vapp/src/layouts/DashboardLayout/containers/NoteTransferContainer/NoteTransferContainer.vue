@@ -126,8 +126,8 @@ export default {
 
       const tx = await this.dexContract.spend(
         ...proof,
-        newNote.encrypt(vk),
-        changeNote.encrypt('1234'),
+        newNote.encrypt('1234'),
+        changeNote.encrypt(vk),
         {
           from: this.metamaskAccount,
         }
