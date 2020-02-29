@@ -109,7 +109,7 @@ export default {
 
       const vks = await api.getViewingKeys(this.userKey);
       const vk = vks[0];
-      
+
       const { newNote, changeNote } = this.makeNotes(this.note);
 
       console.log('generating proof...');
@@ -126,7 +126,7 @@ export default {
 
       const tx = await this.dexContract.spend(
         ...proof,
-        newNote.encrypt('1234'),
+        newNote.encrypt(this.to),
         changeNote.encrypt(vk),
         {
           from: this.metamaskAccount,

@@ -13,6 +13,7 @@ const {
   addAccount,
   deleteAccount,
   getOrdersByUser,
+  addViewingKeys,
 } = require('../localstorage');
 
 const {
@@ -39,8 +40,12 @@ router.post('/:userKey', asyncWrap(
     const passphrase = req.body.passphrase;
     const account = createAccount(passphrase);
     addAccount(userKey, account);
+
+    const zkAddress = addZkPrefix(account.address);
+    addViewingKeys(userKey, zkAddress);
+
     return res.status(200).json({
-      address: addZkPrefix(account.address),
+      address: zkAddress,
     });
   }
 ));
