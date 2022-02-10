@@ -39,7 +39,7 @@
     "eslint": "^5.16.0",
     "eslint-plugin-es-beautifier": "^1.0.1",
     "eslint-plugin-vue": "^5.2.3",
-    "node-sass": "^4.12.0",
+    "node-sass": "^7.0.0",
     "sass-loader": "^7.1.0",
     "web3-utils": "^1.0.0"
   },
