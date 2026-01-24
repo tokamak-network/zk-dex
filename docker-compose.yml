@@ -1,0 +1,119 @@
+services:
+  # Ganache - Local Ethereum blockchain for testing
+  ganache:
+    image: trufflesuite/ganache:v7.9.1
+    container_name: zkdex-ganache
+    ports:
+      - "8545:8545"
+    command:
+      - --host=0.0.0.0
+      - --port=8545
+      - --networkId=5777
+      - --accounts=10
+      - --defaultBalanceEther=1000
+      - --gasLimit=12000000
+      - --gasPrice=20000000000
+      - --mnemonic=candy maple cake sugar pudding cream honey rich smooth crumble sweet treat
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:8545', (r) => process.exit(r.statusCode ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 5s
+      timeout: 10s
+      retries: 15
+      start_period: 10s
+    networks:
+      - zkdex-network
+
+  # ZK-DEX Application
+  zkdex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zkdex-app
+    depends_on:
+      ganache:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - GANACHE_HOST=ganache
+      - GANACHE_PORT=8545
+    volumes:
+      # Mount source code for development (optional)
+      # - .:/app
+      # - /app/node_modules
+      # - /app/circuits-circom/node_modules
+      # Mount build artifacts to persist between runs
+      - zkdex-circuits-build:/app/circuits-circom/build
+    networks:
+      - zkdex-network
+    command: npx truffle test --network docker
+
+  # Development service with shell access
+  zkdex-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zkdex-dev
+    depends_on:
+      ganache:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - GANACHE_HOST=ganache
+      - GANACHE_PORT=8545
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/circuits-circom/node_modules
+      - zkdex-circuits-build:/app/circuits-circom/build
+    networks:
+      - zkdex-network
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles:
+      - dev
+
+  # Frontend integration test runner
+  test-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zkdex-test-frontend
+    environment:
+      - NODE_ENV=test
+    volumes:
+      - zkdex-circuits-build:/app/circuits-circom/build
+    networks:
+      - zkdex-network
+    command: node test/frontend-integration.test.js
+    profiles:
+      - test
+
+  # Production test runner
+  test-production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zkdex-test-production
+    depends_on:
+      ganache:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=test
+      - GANACHE_HOST=ganache
+      - GANACHE_PORT=8545
+    volumes:
+      - zkdex-circuits-build:/app/circuits-circom/build
+    networks:
+      - zkdex-network
+    command: npx truffle test test/ZkDex.production.test.js --network docker
+    profiles:
+      - test
+
+networks:
+  zkdex-network:
+    driver: bridge
+
+volumes:
+  zkdex-circuits-build:
+    driver: local

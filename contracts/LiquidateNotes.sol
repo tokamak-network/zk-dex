@@ -1,44 +1,40 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
+import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
-contract LiquidateNotes is ZkDaiBase {
-  uint8 internal constant NUM_PUBLIC_INPUTS = 4;
+abstract contract LiquidateNotes is ZkDaiBase {
+  uint8 internal constant LIQUIDATE_NUM_PUBLIC_INPUTS = 4;
 
-  MintNoteVerifier public liquidateNoteVerifier;
+  IMintNBurnNoteVerifier public liquidateNoteVerifier;
 
-  constructor(MintNoteVerifier _liquidateNoteVerifier) public {
+  constructor(IMintNBurnNoteVerifier _liquidateNoteVerifier) {
     liquidateNoteVerifier = _liquidateNoteVerifier;
   }
 
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
-  *      public input
-  *       - [0, 1]  = new note hash
-  *       - [2]     = note value
-  *       - [3]     = note type
-  *       - [4]     = output
+  *      public input (Groth16/snarkjs format - outputs come first)
+  *       - [0]     = output (always 1 for valid proof)
+  *       - [1, 2]  = new note hash (nh0, nh1)
+  *       - [3]     = note value
+  *       - [4]     = note type
   */
   function submit(
     address to,
     uint256[2] memory a,
-    uint256[2] memory a_p,
     uint256[2][2] memory b,
-    uint256[2] memory b_p,
     uint256[2] memory c,
-    uint256[2] memory c_p,
-    uint256[2] memory h,
-    uint256[2] memory k,
     uint256[5] memory input
   )
     internal
   {
-    require(development || liquidateNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "failed to verify circuit");
+    require(development || liquidateNoteVerifier.verifyProof(a, b, c, input), "failed to verify circuit");
 
-    bytes32 note = calcHash(input[0], input[1]);
+    bytes32 note = calcHash(input[1], input[2]);
 
     require(notes[note] == State.Valid, "Note is either invalid or already spent");
     notes[note] = State.Spent;

@@ -1,44 +1,40 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import {transferNote_Verifier as SpendNoteVerifier} from "./verifiers/transferNote_Verifier.sol";
+import {ITransferNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
-contract SpendNotes is ZkDaiBase {
-  uint8 internal constant NUM_PUBLIC_INPUTS = 9;
+abstract contract SpendNotes is ZkDaiBase {
+  uint8 internal constant SPEND_NUM_PUBLIC_INPUTS = 9;
 
-  SpendNoteVerifier public spendNoteVerifier;
+  ITransferNoteVerifier public spendNoteVerifier;
 
-  constructor(SpendNoteVerifier _spendNoteVerifier) public {
+  constructor(ITransferNoteVerifier _spendNoteVerifier) {
     spendNoteVerifier = _spendNoteVerifier;
   }
 
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
-  *      public input
-  *       - [0, 1]  = old note 1 hash
-  *       - [2, 3]  = old note 2 hash
-  *       - [4, 5]  = new note 1 hash
-  *       - [6, 7]  = new note 2 hash
-  *       - [8]     = output
+  *      public input (Groth16/snarkjs format - outputs come first)
+  *       - [0]     = output (always 1 for valid proof)
+  *       - [1, 2]  = old note 1 hash
+  *       - [3, 4]  = old note 2 hash
+  *       - [5, 6]  = new note 1 hash
+  *       - [7, 8]  = new note 2 hash
 */
   function submit(
     uint256[2] memory a,
-    uint256[2] memory a_p,
     uint256[2][2] memory b,
-    uint256[2] memory b_p,
     uint256[2] memory c,
-    uint256[2] memory c_p,
-    uint256[2] memory h,
-    uint256[2] memory k,
     uint256[9] memory input,
     bytes memory encryptedNote1,
     bytes memory encryptedNote2
   )
     internal
   {
-    require(development || spendNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+    require(development || spendNoteVerifier.verifyProof(a, b, c, input), "Failed to verify circuit");
     bytes32[4] memory _notes = get4Notes(input);
 
     // check that the first note (among public params) is valid and
@@ -74,12 +70,13 @@ contract SpendNotes is ZkDaiBase {
   function get4Notes(uint256[9] memory input)
     internal
     pure
-    returns(bytes32[4] memory notes)
+    returns(bytes32[4] memory noteHashes)
   {
-    notes[0] = calcHash(input[0], input[1]);
-    notes[1] = calcHash(input[2], input[3]);
-    notes[2] = calcHash(input[4], input[5]);
-    notes[3] = calcHash(input[6], input[7]);
+    // snarkjs format: output first, then note hashes
+    noteHashes[0] = calcHash(input[1], input[2]);
+    noteHashes[1] = calcHash(input[3], input[4]);
+    noteHashes[2] = calcHash(input[5], input[6]);
+    noteHashes[3] = calcHash(input[7], input[8]);
   }
 
   function isEmptyHash(bytes32 note) internal pure returns (bool) {

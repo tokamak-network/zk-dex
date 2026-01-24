@@ -1,24 +1,26 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 
 import "./Requestable.sol";
 import "./RLPReader.sol";
 
 contract ZkDaiBase is Requestable {
-  using RLPReader for *;
+  using RLPReader for bytes;
+  using RLPReader for RLPReader.RLPItem;
 
   bool public development;
   ERC20 public dai;
-  MintNoteVerifier public requestVerifier;
+  IMintNBurnNoteVerifier public requestVerifier;
 
   uint256 public constant ETH_TOKEY_TYPE = 0;
   uint256 public constant DAI_TOKEY_TYPE = 1;
 
   bytes32 public constant EMPTY_NOTE_HASH = 0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5;
 
-  constructor(bool _development, address _dai, MintNoteVerifier _requestVerifier) public {
+  constructor(bool _development, address _dai, IMintNBurnNoteVerifier _requestVerifier) {
     development = _development;
     dai = ERC20(_dai);
     requestVerifier = _requestVerifier;
@@ -44,17 +46,12 @@ contract ZkDaiBase is Requestable {
    *      So, optimistic approach is required but it will be implemented
    *      after this hackathon.
    *
-   *      value = rlp.encode(MintNBurnVerifierProof);
-   *        MintNBurnVerifierProof =
-   *          [uint256[2]
-   *          uint256[2]
-   *          uint256[2][2]
-   *          uint256[2]
-   *          uint256[2]
-   *          uint256[2]
-   *          uint256[2]
-   *          uint256[2]
-   *          uint256[5]]
+   *      value = rlp.encode(Groth16Proof);
+   *        Groth16Proof =
+   *          [uint256[2]     // a
+   *          uint256[2][2]   // b
+   *          uint256[2]      // c
+   *          uint256[5]]     // input
    */
   function applyRequestInRootChain(
     bool isExit,
@@ -92,16 +89,11 @@ contract ZkDaiBase is Requestable {
     RLPReader.RLPItem[] memory list = requestedNoteProofs[noteHash].toRlpItem().toList();
 
     uint256[2] memory a = parseUintArray2(list[0]);
-    uint256[2] memory a_p = parseUintArray2(list[1]);
-    uint256[2][2] memory b = parseUint2DArray2(list[2]);
-    uint256[2] memory b_p = parseUintArray2(list[3]);
-    uint256[2] memory c = parseUintArray2(list[4]);
-    uint256[2] memory c_p = parseUintArray2(list[5]);
-    uint256[2] memory h = parseUintArray2(list[6]);
-    uint256[2] memory k = parseUintArray2(list[7]);
-    uint256[5] memory input = parseUintArray5(list[8]);
+    uint256[2][2] memory b = parseUint2DArray2(list[1]);
+    uint256[2] memory c = parseUintArray2(list[2]);
+    uint256[5] memory input = parseUintArray5(list[3]);
 
-    require(requestVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "failed to verify circuit");
+    require(requestVerifier.verifyProof(a, b, c, input), "failed to verify circuit");
     notes[noteHash] = State.Valid;
     emit NoteStateChange(noteHash, State.Valid);
   }
@@ -127,7 +119,7 @@ contract ZkDaiBase is Requestable {
 
   function getNoteHash(bytes memory b) internal pure returns (bytes32) {
     RLPReader.RLPItem[] memory list = b.toRlpItem().toList();
-    RLPReader.RLPItem[] memory input = list[8].toList();
+    RLPReader.RLPItem[] memory input = list[3].toList();  // Changed from list[8] for Groth16 format
     return calcHash(input[0].toUint(), input[1].toUint());
   }
 

@@ -1,44 +1,40 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
+import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
-contract MintNotes is ZkDaiBase {
-  uint8 internal constant NUM_PUBLIC_INPUTS = 5;
+abstract contract MintNotes is ZkDaiBase {
+  uint8 internal constant MINT_NUM_PUBLIC_INPUTS = 5;
 
-  MintNoteVerifier public mintNoteVerifier;
+  IMintNBurnNoteVerifier public mintNoteVerifier;
 
-  constructor(MintNoteVerifier _mintNoteVerifier) public {
+  constructor(IMintNBurnNoteVerifier _mintNoteVerifier) {
     mintNoteVerifier = _mintNoteVerifier;
   }
 
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
-  *      public input
-  *       - [0, 1]  = new note hash
-  *       - [2]     = note value
-  *       - [3]     = note type
-  *       - [4]     = output
+  *      public input (Groth16/snarkjs format - outputs come first)
+  *       - [0]     = output (always 1 for valid proof)
+  *       - [1, 2]  = new note hash (nh0, nh1)
+  *       - [3]     = note value
+  *       - [4]     = note type
   */
   function submit(
     uint256[2] memory a,
-    uint256[2] memory a_p,
     uint256[2][2] memory b,
-    uint256[2] memory b_p,
     uint256[2] memory c,
-    uint256[2] memory c_p,
-    uint256[2] memory h,
-    uint256[2] memory k,
     uint256[5] memory input,
     bytes memory encryptedNote
   )
     internal
   {
-    require(development || mintNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+    require(development || mintNoteVerifier.verifyProof(a, b, c, input), "Failed to verify circuit");
 
-    bytes32 note = calcHash(input[0], input[1]);
+    bytes32 note = calcHash(input[1], input[2]);
     require(notes[note] == State.Invalid, "Note was already minted");
 
     notes[note] = State.Valid;

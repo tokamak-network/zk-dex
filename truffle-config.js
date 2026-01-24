@@ -50,6 +50,16 @@ module.exports = {
     //  gas: 10000000
     },
 
+    // Docker network - connects to ganache container
+    docker: {
+      host: process.env.GANACHE_HOST || 'ganache',
+      port: process.env.GANACHE_PORT || 8545,
+      network_id: '5777',
+      websockets: true,
+      gas: 12000000,
+      gasPrice: 20000000000,
+    },
+
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -88,14 +98,13 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      version: '0.5.8', // Fetch exact version from solc-bin (default: truffle's version)
-      // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      settings: { // See the solidity docs for advice about optimization and evmVersion
+      version: '0.8.20', // Solidity 0.8.x
+      settings: {
         optimizer: {
           enabled: true,
           runs: 200,
         },
-      //  evmVersion: "byzantium"
+        evmVersion: "paris"
       },
     },
   },

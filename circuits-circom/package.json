@@ -1,0 +1,20 @@
+{
+  "name": "zk-dex-circuits-circom",
+  "version": "1.0.0",
+  "description": "ZK-DEX Circom circuits for snarkjs",
+  "scripts": {
+    "compile": "bash scripts/compile.sh",
+    "setup": "bash scripts/setup.sh",
+    "generate-verifiers": "bash scripts/generate_verifiers.sh",
+    "test": "mocha test/**/*.test.js --timeout 100000",
+    "clean": "rm -rf build/*"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.4"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
+  }
+}

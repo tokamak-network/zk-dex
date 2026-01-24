@@ -1,22 +1,19 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import {mintNBurnNote_Verifier as MintNoteVerifier} from "./verifiers/mintNBurnNote_Verifier.sol";
-import {transferNote_Verifier as SpendNoteVerifier} from "./verifiers/transferNote_Verifier.sol";
-import {convertNote_Verifier as ConvertNoteVerifier} from "./verifiers/convertNote_Verifier.sol";
-import {makeOrder_Verifier as MakeOrderVerifier} from "./verifiers/makeOrder_Verifier.sol";
-import {takeOrder_Verifier as TakeOrderVerifier} from "./verifiers/takeOrder_Verifier.sol";
-import {settleOrder_Verifier as SettleOrderVerifier} from "./verifiers/settleOrder_Verifier.sol";
+import {IMintNBurnNoteVerifier, ITransferNoteVerifier, IConvertNoteVerifier, IMakeOrderVerifier, ITakeOrderVerifier, ISettleOrderVerifier} from "./verifiers/IGroth16Verifier.sol";
 
 import "./ZkDai.sol";
 import "./RLPReader.sol";
 
 contract ZkDex is ZkDai {
-  using RLPReader for *;
+  using RLPReader for bytes;
+  using RLPReader for RLPReader.RLPItem;
 
-  ConvertNoteVerifier public convertNoteVerifier;
-  MakeOrderVerifier public makeOrderVerifier;
-  TakeOrderVerifier public takeOrderVerifier;
-  SettleOrderVerifier public settleOrderVerifier;
+  IConvertNoteVerifier public convertNoteVerifier;
+  IMakeOrderVerifier public makeOrderVerifier;
+  ITakeOrderVerifier public takeOrderVerifier;
+  ISettleOrderVerifier public settleOrderVerifier;
 
   enum OrderState {Created, Taken, Settled}
 
@@ -41,14 +38,13 @@ contract ZkDex is ZkDai {
   constructor(
     bool _development,
     address _dai,
-    MintNoteVerifier _mintNoteVerifier,
-    SpendNoteVerifier _spendNoteVerifier,
-    ConvertNoteVerifier _convertNoteVerifier,
-    MakeOrderVerifier _makeOrderVerifier,
-    TakeOrderVerifier _takeOrderVerifier,
-    SettleOrderVerifier _settleOrderVerifier
+    IMintNBurnNoteVerifier _mintNoteVerifier,
+    ITransferNoteVerifier _spendNoteVerifier,
+    IConvertNoteVerifier _convertNoteVerifier,
+    IMakeOrderVerifier _makeOrderVerifier,
+    ITakeOrderVerifier _takeOrderVerifier,
+    ISettleOrderVerifier _settleOrderVerifier
   )
-    public
     ZkDai(_development, _dai, _mintNoteVerifier, _spendNoteVerifier)
   {
     convertNoteVerifier = _convertNoteVerifier;
@@ -58,29 +54,24 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input
-   *  - [0, 1]  = smart note hash
-   *  - [2, 3]  = original note hash (smart note's owner)
-   *  - [4, 5]  = new note hash (converted normal note)
-   *  - [6]     = output
+   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
+   *  - [0]     = output (always 1 for valid proof)
+   *  - [1, 2]  = smart note hash
+   *  - [3, 4]  = original note hash (smart note's owner)
+   *  - [5, 6]  = new note hash (converted normal note)
    */
    function convertNote(
     uint256[2] calldata a,
-    uint256[2] calldata a_p,
     uint256[2][2] calldata b,
-    uint256[2] calldata b_p,
     uint256[2] calldata c,
-    uint256[2] calldata c_p,
-    uint256[2] calldata h,
-    uint256[2] calldata k,
     uint256[7] calldata input,
     bytes calldata encryptedNote
   ) external {
-    require(development || convertNoteVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify circuit");
+    require(development || convertNoteVerifier.verifyProof(a, b, c, input), "Failed to verify circuit");
 
-    bytes32 smartNote = calcHash(input[0], input[1]);
-    bytes32 originalNote = calcHash(input[2], input[3]);
-    bytes32 newNote = calcHash(input[4], input[5]);
+    bytes32 smartNote = calcHash(input[1], input[2]);
+    bytes32 originalNote = calcHash(input[3], input[4]);
+    bytes32 newNote = calcHash(input[5], input[6]);
 
     require(notes[smartNote] == State.Valid, "Smart note cannot be converted");
     require(notes[originalNote] != State.Invalid, "Original note doesn't exist");
@@ -96,38 +87,34 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input
-   *  - [0, 1]  = maker note hash
-   *  - [2]     = maker note type
-   *  - [3]     = output
+   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
+   *  - [0]     = output (always 1 for valid proof)
+   *  - [1, 2]  = maker note hash
+   *  - [3]     = maker note type
    */
   function makeOrder(
     bytes32 makerViewingKey,
     uint256 targetToken,
     uint price,
     uint256[2] calldata a,
-    uint256[2] calldata a_p,
     uint256[2][2] calldata b,
-    uint256[2] calldata b_p,
     uint256[2] calldata c,
-    uint256[2] calldata c_p,
-    uint256[2] calldata h,
-    uint256[2] calldata k,
     uint256[4] calldata input
   ) external {
-    require(development || makeOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify make order circuit");
+    require(development || makeOrderVerifier.verifyProof(a, b, c, input), "Failed to verify make order circuit");
 
-    bytes32 makerNote = calcHash(input[0], input[1]);
+    bytes32 makerNote = calcHash(input[1], input[2]);
 
-    require(input[2] != targetToken, "ZkDex: cannot make an order with same token pair");
+    require(input[3] != targetToken, "ZkDex: cannot make an order with same token pair");
     require(notes[makerNote] == State.Valid, "ZkDex: maker note is not available");
 
-    uint orderId = orders.length++;
+    uint orderId = orders.length;
+    orders.push();
     Order storage order = orders[orderId];
 
     order.makerViewingKey = makerViewingKey;
     order.makerNote = makerNote;
-    order.sourceToken = input[2];
+    order.sourceToken = input[3];
     order.targetToken = targetToken;
     order.price = price;
     order.state = OrderState.Created;
@@ -143,41 +130,35 @@ contract ZkDex is ZkDai {
 
 
   /**
-   * zk-SNARK public input
-   *  - [0, 1]  = parent note hash
-   *  - [2]     = parent note type
+   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
+   *  - [0]     = output (always 1 for valid proof)
+   *  - [1, 2]  = parent note hash
+   *  - [3]     = parent note type
    *
-   *  - [3, 4]  = taker note to maker note hash (stake note)
-   *  - [5, 6]  = owner of taker note to maker (== maker note)
-   *  - [7]     = taker note to maker type
-   *
-   *  - [8]     = output
+   *  - [4, 5]  = taker note to maker note hash (stake note)
+   *  - [6, 7]  = owner of taker note to maker (== maker note)
+   *  - [8]     = taker note to maker type
    */
    function takeOrder(
     uint256 orderId,
     uint256[2] calldata a,
-    uint256[2] calldata a_p,
     uint256[2][2] calldata b,
-    uint256[2] calldata b_p,
     uint256[2] calldata c,
-    uint256[2] calldata c_p,
-    uint256[2] calldata h,
-    uint256[2] calldata k,
     uint256[9] calldata input,
     bytes calldata encryptedStakingNote
   ) external {
-    require(development || takeOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify take order circuit");
+    require(development || takeOrderVerifier.verifyProof(a, b, c, input), "Failed to verify take order circuit");
 
     Order storage order = orders[orderId];
 
     require(order.state == OrderState.Created);
 
-    require(order.targetToken == input[2], "ZkDex: parent note token type mismatch");
-    require(order.targetToken == input[7], "ZkDex: stake note token type mismatch");
-    require(order.makerNote == calcHash(input[5], input[6]), "ZkDex: owner of taker note to maker mismatch");
+    require(order.targetToken == input[3], "ZkDex: parent note token type mismatch");
+    require(order.targetToken == input[8], "ZkDex: stake note token type mismatch");
+    require(order.makerNote == calcHash(input[6], input[7]), "ZkDex: owner of taker note to maker mismatch");
 
-    bytes32 parentNote = calcHash(input[0], input[1]);
-    bytes32 takerNoteToMaker = calcHash(input[3], input[4]);
+    bytes32 parentNote = calcHash(input[1], input[2]);
+    bytes32 takerNoteToMaker = calcHash(input[4], input[5]);
 
     require(notes[parentNote] == State.Valid, "ZkDex: taker note is not available");
     require(notes[takerNoteToMaker] == State.Invalid, "ZkDex: taker send valid note to maker");
@@ -197,68 +178,62 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input
-   *  - [0, 1]  = maker note hash
-   *  - [2]     = maker note type
+   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
+   *  - [0]     = output (always 1 for valid proof)
+   *  - [1, 2]  = maker note hash
+   *  - [3]     = maker note type
    *
-   *  - [3, 4]  = taker note to maker note hash
-   *  - [5]     = taker note to maker type
+   *  - [4, 5]  = taker note to maker note hash
+   *  - [6]     = taker note to maker type
    *
-   *  - [6, 7]  = reward note hash
-   *  - [8, 9]  = owner of reward note (parent note (for taker))
-   *  - [10]    = reward note type
+   *  - [7, 8]  = reward note hash
+   *  - [9, 10] = owner of reward note (parent note (for taker))
+   *  - [11]    = reward note type
    *
-   *  - [11, 12]= payment note hash
-   *  - [13, 14]= owner of payment note (maker note (for maker))
-   *  - [15]    = payment note type
+   *  - [12, 13]= payment note hash
+   *  - [14, 15]= owner of payment note (maker note (for maker))
+   *  - [16]    = payment note type
    *
-   *  - [16, 17]= change note hash
-   *  - [18]    = change note type // TODO: make it private
+   *  - [17, 18]= change note hash
+   *  - [19]    = change note type
    *
-   *  - [19]    = price
-   *
-   *  - [20]    = output
+   *  - [20]    = price
    */
   function settleOrder(
     uint256 orderId,
     uint256[2] calldata a,
-    uint256[2] calldata a_p,
     uint256[2][2] calldata b,
-    uint256[2] calldata b_p,
     uint256[2] calldata c,
-    uint256[2] calldata c_p,
-    uint256[2] calldata h,
-    uint256[2] calldata k,
     uint256[21] calldata input,
 
     bytes calldata encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
   ) external {
-    require(development || settleOrderVerifier.verifyTx(a, a_p, b, b_p, c, c_p, h, k, input), "Failed to verify settle order circuit");
+    require(development || settleOrderVerifier.verifyProof(a, b, c, input), "Failed to verify settle order circuit");
 
     Order storage order = orders[orderId];
 
-    require(order.makerNote == calcHash(input[0], input[1]), "ZkDex: maker note mismatch");
-    require(order.sourceToken == input[2], "ZkDex: source token mismatch");
-    require(order.takerNoteToMaker == calcHash(input[3], input[4]), "ZkDex: taker note to maker mismatch");
-    require(order.targetToken == input[5], "ZkDex: target token mismatch");
+    require(order.makerNote == calcHash(input[1], input[2]), "ZkDex: maker note mismatch");
+    require(order.sourceToken == input[3], "ZkDex: source token mismatch");
+    require(order.takerNoteToMaker == calcHash(input[4], input[5]), "ZkDex: taker note to maker mismatch");
+    require(order.targetToken == input[6], "ZkDex: target token mismatch");
 
-    require(order.sourceToken == input[10], "ZkDex: reward token type mismatch");
-    require(order.parentNote == calcHash(input[8], input[9]), "ZkDex: owner of reward note mismatch");
-    require(order.targetToken == input[15], "ZkDex: payment token type mismatch");
-    require(order.makerNote == calcHash(input[13], input[14]), "ZkDex: owner of payment note mismatch");
+    require(order.sourceToken == input[11], "ZkDex: reward token type mismatch");
+    require(order.parentNote == calcHash(input[9], input[10]), "ZkDex: owner of reward note mismatch");
+    require(order.targetToken == input[16], "ZkDex: payment token type mismatch");
+    require(order.makerNote == calcHash(input[14], input[15]), "ZkDex: owner of payment note mismatch");
 
-    require(order.price == input[19], "ZkDex: order price mismatch");
+    require(order.price == input[20], "ZkDex: order price mismatch");
 
     require(order.state == OrderState.Taken, "ZkDex: order cannot be settled");
 
 
-    require(notes[calcHash(input[6], input[7])] == State.Invalid, "ZkDex: reward note must be invalid");
-    require(notes[calcHash(input[11], input[12])] == State.Invalid, "ZkDex: payment note must be invalid");
-    require(notes[calcHash(input[16], input[17])] == State.Invalid, "ZkDex: change note must be invalid");
+    require(notes[calcHash(input[7], input[8])] == State.Invalid, "ZkDex: reward note must be invalid");
+    require(notes[calcHash(input[12], input[13])] == State.Invalid, "ZkDex: payment note must be invalid");
+    require(notes[calcHash(input[17], input[18])] == State.Invalid, "ZkDex: change note must be invalid");
 
-    notes[calcHash(input[6], input[7])] = State.Valid;
-    notes[calcHash(input[11], input[12])] = State.Valid;
-    notes[calcHash(input[16], input[17])] = State.Valid;
+    notes[calcHash(input[7], input[8])] = State.Valid;
+    notes[calcHash(input[12], input[13])] = State.Valid;
+    notes[calcHash(input[17], input[18])] = State.Valid;
 
     notes[order.makerNote] = State.Spent;
     notes[order.parentNote] = State.Spent;
@@ -266,21 +241,21 @@ contract ZkDex is ZkDai {
 
     RLPReader.RLPItem[] memory encList = encDatas.toRlpItem().toList();
 
-    encryptedNotes[calcHash(input[6], input[7])] = encList[0].toBytes();
-    encryptedNotes[calcHash(input[11], input[12])] = encList[1].toBytes();
-    encryptedNotes[calcHash(input[16], input[17])] = encList[2].toBytes();
+    encryptedNotes[calcHash(input[7], input[8])] = encList[0].toBytes();
+    encryptedNotes[calcHash(input[12], input[13])] = encList[1].toBytes();
+    encryptedNotes[calcHash(input[17], input[18])] = encList[2].toBytes();
 
     order.state = OrderState.Settled;
 
-    emit NoteStateChange(calcHash(input[6], input[7]), State.Valid);
-    emit NoteStateChange(calcHash(input[11], input[12]), State.Valid);
-    emit NoteStateChange(calcHash(input[16], input[17]), State.Valid);
+    emit NoteStateChange(calcHash(input[7], input[8]), State.Valid);
+    emit NoteStateChange(calcHash(input[12], input[13]), State.Valid);
+    emit NoteStateChange(calcHash(input[17], input[18]), State.Valid);
 
     emit NoteStateChange(order.makerNote, State.Spent);
     emit NoteStateChange(order.parentNote, State.Spent);
     emit NoteStateChange(order.takerNoteToMaker, State.Spent);
 
-    emit OrderSettled(orderId, calcHash(input[6], input[7]), calcHash(input[11], input[12]), calcHash(input[16], input[17]));
+    emit OrderSettled(orderId, calcHash(input[7], input[8]), calcHash(input[12], input[13]), calcHash(input[17], input[18]));
   }
 
   function hashOrder(Order memory order) internal view returns (bytes32) {

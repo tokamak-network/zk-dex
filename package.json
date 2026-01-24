@@ -34,15 +34,19 @@
     "web3-utils": "^1.0.0"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3",
     "babyjubjub": "^1.0.2",
     "bn.js": "^5.0.0",
     "child-process-promise": "^2.2.1",
+    "circomlibjs": "^0.1.7",
     "dockerode": "^2.5.8",
     "dockerode-promise": "^0.1.0",
     "eccrypto": "^1.1.0",
     "ethlint": "^1.2.2",
+    "ffjavascript": "^0.3.1",
     "node-docker-api": "^1.1.22",
     "secp256k1": "^3.6.1",
+    "snarkjs": "^0.7.6",
     "truffle": "^5.0.0-beta.1"
   }
 }

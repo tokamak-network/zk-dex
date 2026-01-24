@@ -1,15 +1,16 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "../ZkDai.sol";
+import {IMintNBurnNoteVerifier, ITransferNoteVerifier} from "../verifiers/IGroth16Verifier.sol";
 
 contract TestZkDai is ZkDai {
   constructor(
     bool _development,
     address _dai,
-    MintNoteVerifier _mintNoteVerifier,
-    SpendNoteVerifier _spendNoteVerifier
+    IMintNBurnNoteVerifier _mintNoteVerifier,
+    ITransferNoteVerifier _spendNoteVerifier
   )
-    public
     ZkDai(_development, _dai, _mintNoteVerifier, _spendNoteVerifier)
   {}
 
