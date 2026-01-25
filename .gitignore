@@ -14,3 +14,12 @@ circuits/*/witness
 .secret
 
 db
+
+# Claude Code
+.claude/
+
+# Debug test files
+test/debug-*.js
+
+# Logs
+*.log
