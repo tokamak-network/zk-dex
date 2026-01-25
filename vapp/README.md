@@ -2,24 +2,62 @@
 
 ZK-DEX Frontend Application (Vue 3 + TypeScript + Vite)
 
-## Project setup
-```
+## Quick Start
+
+### 1. Install dependencies
+```bash
 npm install
 ```
 
-### Development
+### 2. Run Backend Server
+```bash
+npm run server
 ```
+Backend runs on http://localhost:3000
+
+### 3. Run Frontend (in another terminal)
+```bash
 npm run dev
 ```
+Frontend runs on http://localhost:5173
+
+## Docker (Full Stack)
+
+Run the entire stack with Docker Compose (from project root):
+
+```bash
+# Run tests with Ganache
+docker-compose up
+
+# Run development shell
+docker-compose --profile dev up zkdex-dev
+
+# Run production tests
+docker-compose --profile test up test-production
+```
+
+### Docker Services
+- **ganache**: Local Ethereum blockchain (port 8545)
+- **zkdex**: Test runner
+- **zkdex-dev**: Development shell with source mounted
+- **test-frontend**: Frontend integration tests
+- **test-production**: Production tests
+
+## Other Commands
 
 ### Production build
-```
+```bash
 npm run build
 ```
 
 ### Type check
-```
+```bash
 npm run type-check
+```
+
+### Preview production build
+```bash
+npm run preview
 ```
 
 ## Changelog
