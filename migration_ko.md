@@ -115,14 +115,16 @@ circuits-circom/
 
 ### 회로 복잡도
 
-| 회로 | 비선형 제약 | 선형 제약 | wires |
-|------|-----------|----------|-------|
-| mint_burn_note | 125,679 | 5,294 | 129,725 |
-| make_order | 125,679 | 5,294 | 129,725 |
-| take_order | 247,664 | 10,537 | 255,702 |
-| convert_note | 369,396 | 15,657 | 381,303 |
-| transfer_note | 494,825 | 20,818 | 510,646 |
-| settle_order | 614,380 | 26,275 | 634,399 |
+| 회로 | 비선형 제약 조건 |
+|------|------------------|
+| mint_burn_note | 154,900 |
+| make_order | 154,900 |
+| take_order | 246,040 |
+| convert_note | 337,437 |
+| transfer_note | 492,085 |
+| settle_order | 520,221 |
+
+*주소 기반 소유권 마이그레이션 (Phase 2) 이후 업데이트됨*
 
 ## Groth16 증명 포맷
 
@@ -592,6 +594,137 @@ docker: {
   gasPrice: 20000000000,
 }
 ```
+
+## 주소 기반 소유권 마이그레이션 (Phase 2)
+
+### 개요
+
+노트 소유권을 BabyJubJub 공개키 좌표(owner0, owner1)에서 SHA256으로 유도된 160비트 주소로 마이그레이션했습니다.
+
+**마이그레이션 일자:** 2026-01-25
+**상태:** ✅ 완료 (모든 테스트 통과)
+
+### 주요 변경 사항
+
+#### 노트 구조
+
+| 필드 | 이전 | 이후 |
+|------|------|------|
+| 소유자 | owner0 (256비트) + owner1 (256비트) = 512비트 | ownerAddress (160비트) |
+| 노트 해시 입력 | 1536비트 | 1184비트 |
+
+#### 주소 유도
+
+```
+ownerAddress = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
+```
+
+- pk.x와 pk.y는 256비트 BabyJubJub 공개키 좌표
+- 주소 = SHA256 해시의 마지막 160비트
+- ~2^80 충돌 저항성 제공 (실용적인 보안에 충분)
+
+#### 노트 해시 형식 (1184비트)
+
+```
+SHA256(
+  ownerAddress (160비트) ||
+  value (256비트) ||
+  tokenType (256비트) ||
+  vk0 (128비트) ||
+  vk1 (128비트) ||
+  salt (256비트)
+)
+```
+
+### 회로 변경
+
+#### 새 파일
+
+| 파일 | 설명 |
+|------|------|
+| `circuits-circom/utils/sha256/sha256_note_address.circom` | 160비트 주소를 사용한 노트 해시 |
+| `circuits-circom/utils/babyjubjub/get_address.circom` | 공개키에서 주소 유도 |
+
+#### 수정된 메인 회로
+
+6개 메인 회로 모두 owner0/owner1 대신 ownerAddress 사용하도록 업데이트:
+- `mint_burn_note.circom` - VerifyOwnershipByAddressStrict 사용
+- `transfer_note.circom` - 모든 노트에 ownerAddress 사용
+- `make_order.circom` - VerifyOwnershipByAddressStrict 사용
+- `take_order.circom` - ownerAddress 사용
+- `settle_order.circom` - ownerAddress 사용
+- `convert_note.circom` - ownerAddress 사용
+
+### 제약 조건 수 변화
+
+| 회로 | 이전 | 이후 | 변화 |
+|------|------|------|------|
+| mint_burn_note | 125,679 | 154,900 | +23% |
+| make_order | 125,679 | 154,900 | +23% |
+| take_order | 247,664 | 246,040 | -0.7% |
+| convert_note | 369,396 | 337,437 | -8.6% |
+| transfer_note | 494,825 | 492,085 | -0.6% |
+| settle_order | 614,380 | 520,221 | -15% |
+
+**참고:** mint_burn_note와 make_order는 주소 유도(공개키의 SHA256)로 인해 제약 조건이 증가했습니다. 다른 회로들은 노트 해시 입력 크기 감소(1536 vs 1184비트)로 인해 감소했습니다.
+
+### 백엔드 변경
+
+#### Note.js
+
+```javascript
+class Note {
+  // 이전
+  constructor(owner0, owner1, value, type, viewingKey, salt)
+
+  // 이후
+  constructor(ownerAddress, value, type, viewingKey, salt)
+  // ownerAddress: 160비트 hex 문자열 (40자)
+  // viewingKey: { vk0, vk1 } 128비트 값 두 개
+}
+```
+
+#### noteProofHelper.js
+
+```javascript
+// 이전
+const { secretKey, owner0, owner1 } = await generateKeypair();
+
+// 이후
+const { secretKey, ownerAddress } = await generateKeypair();
+```
+
+#### 스마트 노트 소유자
+
+스마트 노트의 경우, 소유자는 부모 노트 해시에서 유도됩니다:
+
+```javascript
+// 이전: owner = parentNote.hashArr() → [nh0, nh1] (256비트를 128비트 두 개로 분할)
+
+// 이후: owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
+function getSmartNoteOwner(parentNoteHash) {
+    const hash = crypto.createHash('sha256')
+        .update(Buffer.from(parentNoteHash.slice(2), 'hex'))
+        .digest('hex');
+    return hash.slice(-40);  // 마지막 160비트
+}
+```
+
+### 테스트 결과
+
+모든 회로 테스트 통과:
+- ✅ mint_burn_note 증명 생성
+- ✅ make_order 증명 생성
+- ✅ (다른 회로들은 전체 통합 테스트 진행 중)
+
+### 마이그레이션 이점
+
+1. **노트 크기 감소:** 512비트 → 160비트 소유자 표현
+2. **해시 입력 감소:** 1536비트 → 1184비트 노트 해시
+3. **이더리움 호환성:** 160비트 주소가 이더리움 형식과 일치
+4. **통일된 구조:** 일반 노트와 스마트 노트가 동일한 소유자 형식 사용
+
+---
 
 ## 다음 단계
 

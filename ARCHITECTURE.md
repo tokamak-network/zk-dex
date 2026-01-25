@@ -169,14 +169,26 @@ Circuits are written in Circom 2.1 and compiled to Groth16 proving systems.
 
 ```
 Note = {
-  owner0,      // Public key X (BabyJubJub, 256-bit)
-  owner1,      // Public key Y (BabyJubJub, 256-bit)
-  value,       // Token amount (256-bit)
-  type,        // 0=ETH, 1=DAI (256-bit)
-  viewingKey,  // For note decryption (256-bit)
-  salt         // Random value (256-bit)
+  ownerAddress,  // 160-bit address derived from SHA256(pk.x || pk.y)[96:256]
+  value,         // Token amount (256-bit)
+  type,          // 0=ETH, 1=DAI (256-bit)
+  viewingKey,    // vk0(128-bit) + vk1(128-bit) for note decryption
+  salt           // Random value (256-bit)
 }
 ```
+
+### Address Derivation
+
+Owner address is derived from BabyJubJub public key using SHA256:
+
+```
+address = SHA256(pk.x || pk.y)[96:256]  // Last 160 bits
+```
+
+This provides:
+- Compact representation (160-bit vs 512-bit public key)
+- Collision resistance (~2^80 security level)
+- Compatible with Ethereum address format
 
 ### Circuit Descriptions
 
@@ -184,7 +196,7 @@ Note = {
 
 **Purpose:** Proves ownership and correct hash computation for new notes.
 
-**Constraints:** ~125,679
+**Constraints:** ~154,900
 
 **Public Signals (snarkjs order):**
 ```
@@ -192,14 +204,14 @@ Note = {
 ```
 
 **Operations:**
-1. Verify ownership via BabyJubJub scalar multiplication
-2. Compute and verify SHA256 hash of note (1536-bit input)
+1. Verify ownership via address derivation (sk → pk → SHA256 → address)
+2. Compute and verify SHA256 hash of note (1184-bit input)
 
 #### 2. transfer_note (Spend & Split)
 
 **Purpose:** Spend 1-2 notes and create 2 new notes with value conservation.
 
-**Constraints:** ~494,825
+**Constraints:** ~492,085
 
 **Verification:**
 - Ownership of input notes
@@ -210,7 +222,7 @@ Note = {
 
 **Purpose:** Convert smart notes (from trading) to normal notes.
 
-**Constraints:** ~369,396
+**Constraints:** ~337,437
 
 **Verification:**
 - Smart note owner matches origin note hash
@@ -220,7 +232,7 @@ Note = {
 
 **Purpose:** Create trading order without revealing amount.
 
-**Constraints:** ~125,679
+**Constraints:** ~154,900
 
 **Output:** Commitment to order parameters with ownership proof.
 
@@ -228,7 +240,7 @@ Note = {
 
 **Purpose:** Accept order by creating a stake note for the maker.
 
-**Constraints:** ~247,664
+**Constraints:** ~246,040
 
 **Verification:**
 - Taker owns parent note
@@ -239,7 +251,7 @@ Note = {
 
 **Purpose:** Atomic swap with price calculation (most complex circuit).
 
-**Constraints:** ~614,380
+**Constraints:** ~520,221
 
 **Math Operations:**
 ```
@@ -254,14 +266,16 @@ takerValue == q1 * price + r1
 
 ### Circuit Complexity Summary
 
-| Circuit | Non-linear | Linear | Wires |
-|---------|-----------|--------|-------|
-| mint_burn_note | 125,679 | 5,294 | 129,725 |
-| make_order | 125,679 | 5,294 | 129,725 |
-| take_order | 247,664 | 10,537 | 255,702 |
-| convert_note | 369,396 | 15,657 | 381,303 |
-| transfer_note | 494,825 | 20,818 | 510,646 |
-| settle_order | 614,380 | 26,275 | 634,399 |
+| Circuit | Non-linear Constraints |
+|---------|------------------------|
+| mint_burn_note | 154,900 |
+| make_order | 154,900 |
+| take_order | 246,040 |
+| convert_note | 337,437 |
+| transfer_note | 492,085 |
+| settle_order | 520,221 |
+
+**Note:** Constraint counts increased for ownership verification (SHA256-based address derivation) but decreased overall due to smaller note hash input (1184-bit vs 1536-bit).
 
 ---
 
@@ -277,13 +291,14 @@ Main entry point for proof generation.
 // Initialize (required once)
 await noteProofHelper.init();
 
-// Key generation
-const { secretKey, owner0, owner1 } = await noteProofHelper.generateKeypair();
+// Key generation - returns 160-bit ownerAddress
+const { secretKey, ownerAddress } = await noteProofHelper.generateKeypair();
 
-// Note creation
+// Note creation with ownerAddress
 const { note, sk } = await noteProofHelper.createNote(secretKey, value, tokenType, viewingKey, salt);
 
 // Smart note creation (for trading)
+// owner = SHA256(parentNoteHash)[96:256] (160-bit truncation)
 const smartNote = await noteProofHelper.createSmartNote(ownerNote, value, tokenType, viewingKey, salt);
 
 // Proof generation
@@ -319,14 +334,20 @@ Core Note class for managing privacy notes.
 
 ```javascript
 class Note {
-  constructor(owner, value, type, viewingKey, salt)
-  hash()              // SHA256 hash of note
+  constructor(ownerAddress, value, type, viewingKey, salt)
+  // ownerAddress: 160-bit address (hex string)
+  // viewingKey: { vk0, vk1 } - two 128-bit values
+
+  hash()              // SHA256 hash of note (1184-bit input)
   hashArr()           // [nh0, nh1] 128-bit split
   toCircuitInput()    // Format for circuit
 }
 
+// Note hash computation (1184 bits total):
+// SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+
 // Constants
-EMPTY_NOTE_HASH = '0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5'
+EMPTY_NOTE_HASH = '0x...'  // Computed with zero ownerAddress
 ETH_TOKEN_TYPE = 0
 DAI_TOKEN_TYPE = 1
 ```
@@ -437,14 +458,15 @@ DAI_TOKEN_TYPE = 1
 - **Note-based UTXO:** Similar to Zcash, balances are represented as notes
 - **Encrypted Storage:** Note data encrypted with viewing keys
 - **ZK Proofs:** Ownership and validity proven without revealing data
-- **Smart Notes:** Owner = hash of another note (enables atomic swaps)
+- **Address-based Ownership:** Owner = 160-bit address derived from SHA256(pk)
+- **Smart Notes:** Owner = SHA256(parentNoteHash)[96:256] (160-bit truncation, enables atomic swaps)
 
 ### Cryptographic Primitives
 
 | Primitive | Usage |
 |-----------|-------|
 | **BabyJubJub** | Ownership keys (efficient in SNARKs) |
-| **SHA-256** | Note hash computation (1536-bit) |
+| **SHA-256** | Address derivation (512-bit → 160-bit) and note hash (1184-bit) |
 | **Groth16** | SNARK proof system |
 | **BN128** | Elliptic curve for pairings |
 

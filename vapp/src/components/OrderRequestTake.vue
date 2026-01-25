@@ -72,6 +72,7 @@ import { useOrderStore, type Order } from '@/stores/order'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
 import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
+import { encodeNoteData } from '@/utils/noteEncryption'
 
 interface TakeableOrder extends Order {
   orderId: string
@@ -82,8 +83,7 @@ interface TakeableOrder extends Order {
   takerNoteToMaker?: string
   // Full maker note details (for proof generation)
   makerNoteData?: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -97,8 +97,7 @@ interface TakeOrderProofResponse {
   c: string[]
   input: string[]
   stakeNote: {
-    owner0: string
-    owner1: string
+    ownerAddress: string  // 160-bit truncated hash of maker's note
     value: string
     token: string
     viewingKey: string
@@ -158,8 +157,8 @@ async function takeOrder() {
     return
   }
 
-  if (!selectedNote.value.owner0 || !selectedNote.value.owner1) {
-    alert('Note does not have owner0/owner1. Cannot take order.')
+  if (!selectedNote.value.ownerAddress) {
+    alert('Note does not have ownerAddress. Cannot take order.')
     return
   }
 
@@ -180,8 +179,7 @@ async function takeOrder() {
           selectedOrder.value.makerNoteData,
           // Taker's note
           {
-            owner0: selectedNote.value.owner0,
-            owner1: selectedNote.value.owner1,
+            ownerAddress: selectedNote.value.ownerAddress,
             value: selectedNote.value.value,
             token: selectedNote.value.token,
             viewingKey: selectedNote.value.viewingKey || '0x0',
@@ -205,8 +203,14 @@ async function takeOrder() {
     const cBigInt = proof.c.map(v => BigInt(v))
     const inputBigInt = proof.input.map(v => BigInt(v))
 
-    // Encrypt stake note
-    const encryptedStakeNote = zeroPadValue(toBeHex(toBigInt(proof.stakeNote.owner0)), 32)
+    // Encode stake note using RLP for on-chain storage
+    const encryptedStakeNote = encodeNoteData({
+      ownerAddress: proof.stakeNote.ownerAddress,  // 160-bit truncated maker hash
+      value: proof.stakeNote.value,
+      token: proof.stakeNote.token,
+      viewingKey: proof.stakeNote.viewingKey,
+      salt: proof.stakeNote.salt
+    })
 
     // Execute take order
     console.log('Calling contract takeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
@@ -233,8 +237,7 @@ async function takeOrder() {
       // Save stake note
       const stakeNoteObj: Note = {
         owner: noteOwner,
-        owner0: proof.stakeNote.owner0,
-        owner1: proof.stakeNote.owner1,
+        ownerAddress: proof.stakeNote.ownerAddress,  // 160-bit truncated maker hash
         value: proof.stakeNote.value,
         token: proof.stakeNote.token,
         viewingKey: proof.stakeNote.viewingKey,

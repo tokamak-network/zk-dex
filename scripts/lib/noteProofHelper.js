@@ -71,6 +71,16 @@ function toHexString(value) {
 }
 
 /**
+ * Derive 160-bit address from BabyJubJub public key
+ * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
+ * @param {{x: string, y: string}} pk - Public key
+ * @returns {string} 160-bit address (40 hex chars with 0x prefix)
+ */
+function deriveAddressFromPK(pk) {
+    return snarkjsUtils.getAddressFromPublicKey(pk);
+}
+
+/**
  * Create a new note with a circomlib-compatible owner public key
  * @param {string} sk - Secret key of the owner
  * @param {string|number|bigint} value - Note value
@@ -81,6 +91,9 @@ function toHexString(value) {
  */
 async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = '0x0', salt = null) {
     const pk = await derivePublicKey(sk);
+
+    // Derive 160-bit address from public key
+    const ownerAddress = deriveAddressFromPK(pk);
 
     // Generate random salt if not provided (masked to 254 bits for circuit compatibility)
     if (!salt) {
@@ -94,8 +107,7 @@ async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewi
     const valueHex = toHexString(value);
 
     const note = new Note(
-        pk.x,
-        pk.y,
+        Web3Utils.padLeft(ownerAddress, 40),
         Web3Utils.padLeft(valueHex, 64),
         Web3Utils.padLeft(tokenType, 64),
         Web3Utils.padLeft(viewingKey, 64),
@@ -115,7 +127,7 @@ function createEmptyNote() {
 
 /**
  * Create a smart note (stake note) for TakeOrder
- * Smart notes have owner = another note's hash (split into two 128-bit parts)
+ * Smart notes have ownerAddress = truncated 160-bit hash of another note
  * @param {Note} ownerNote - The note whose hash will be the owner (e.g., maker note)
  * @param {string|number|bigint} value - Note value
  * @param {string} tokenType - Token type
@@ -126,26 +138,20 @@ function createEmptyNote() {
 function createSmartNote(ownerNote, value, tokenType, viewingKey = '0x0', salt = null) {
     // Generate random salt if not provided
     if (!salt) {
-        salt = '0x' + crypto.randomBytes(32).toString('hex');
+        const saltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
+        const mask254 = (BigInt(1) << BigInt(254)) - BigInt(1);
+        salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
     }
 
-    // Get owner note hash and split into two 128-bit parts
+    // Get owner note hash and take last 160 bits as ownerAddress
     const ownerHash = ownerNote.hash();
-    const hashBigInt = BigInt(ownerHash);
-    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
-    const low = hashBigInt & mask128;
-    const high = hashBigInt >> BigInt(128);
-
-    // owner0 = high part, owner1 = low part (to match split256To128 order)
-    const owner0 = '0x' + high.toString(16).padStart(32, '0');
-    const owner1 = '0x' + low.toString(16).padStart(32, '0');
+    const ownerAddress = snarkjsUtils.getSmartNoteOwnerAddress(ownerHash);
 
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
     const note = new Note(
-        Web3Utils.padLeft(owner0, 64),
-        Web3Utils.padLeft(owner1, 64),
+        Web3Utils.padLeft('0x' + ownerAddress, 40),
         Web3Utils.padLeft(valueHex, 64),
         Web3Utils.padLeft(tokenType, 64),
         Web3Utils.padLeft(viewingKey, 64),
@@ -304,6 +310,7 @@ module.exports = {
     // Key management
     generateKeypair,
     derivePublicKey,
+    deriveAddressFromPK,
 
     // Note creation
     createNote,

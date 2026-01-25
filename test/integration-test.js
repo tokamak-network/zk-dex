@@ -72,14 +72,13 @@ async function testNoteCreation() {
 
     // Test 1: Create a normal note
     try {
-        const owner0 = '0x' + '1'.padStart(64, '0');
-        const owner1 = '0x' + '2'.padStart(64, '0');
+        const ownerAddress = '0x' + '1234567890abcdef1234567890abcdef12345678'; // 160-bit address
         const value = '0x' + (1000000000000000000n).toString(16).padStart(64, '0');
         const token = constants.ETH_TOKEN_TYPE;
         const viewingKey = '0x' + '0'.padStart(64, '0');
         const salt = TestUtils.randomSalt();
 
-        const note = new Note(owner0, owner1, value, token, viewingKey, salt);
+        const note = new Note(ownerAddress, value, token, viewingKey, salt);
         const hash = note.hash();
         const hashArr = note.hashArr();
 
@@ -109,15 +108,14 @@ async function testNoteCreation() {
 
     // Test 3: Note hash determinism
     try {
-        const owner0 = '0x' + '1'.padStart(64, '0');
-        const owner1 = '0x' + '2'.padStart(64, '0');
+        const ownerAddress = '0x' + 'deadbeefcafe1234567890abcdef12345678abcd'; // 160-bit address
         const value = '0x' + 'ff'.padStart(64, '0');
         const token = constants.ETH_TOKEN_TYPE;
         const viewingKey = '0x' + '0'.padStart(64, '0');
         const salt = '0x' + 'abc123'.padStart(64, '0');
 
-        const note1 = new Note(owner0, owner1, value, token, viewingKey, salt);
-        const note2 = new Note(owner0, owner1, value, token, viewingKey, salt);
+        const note1 = new Note(ownerAddress, value, token, viewingKey, salt);
+        const note2 = new Note(ownerAddress, value, token, viewingKey, salt);
 
         const hash1 = note1.hash();
         const hash2 = note2.hash();

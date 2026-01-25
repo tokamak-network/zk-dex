@@ -52,7 +52,8 @@ import { useFormatters } from '@/composables/useFormatters'
 import { useContractStore } from '@/stores/contract'
 import { useNoteStore, type Note } from '@/stores/note'
 import * as api from '@/api'
-import { toBigInt, zeroPadValue, toBeHex } from 'ethers'
+import { toBigInt } from 'ethers'
+import { encodeNoteData } from '@/utils/noteEncryption'
 
 const props = defineProps<{
   account: string
@@ -80,8 +81,7 @@ interface CombineProofResponse {
   c: string[]
   input: string[]
   combinedNote: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -104,8 +104,8 @@ function selectNote(note: Note) {
       return
     }
     // Validate notes have secretKey
-    if (!note.secretKey || !note.owner0 || !note.owner1) {
-      alert('Note is missing required data (secretKey/owner). Cannot combine.')
+    if (!note.secretKey || !note.ownerAddress) {
+      alert('Note is missing required data (secretKey/ownerAddress). Cannot combine.')
       return
     }
     selectedNotes.value.push(note)
@@ -142,16 +142,14 @@ async function combineNote() {
       inputs: {
         params: [
           {
-            owner0: note0.owner0,
-            owner1: note0.owner1,
+            ownerAddress: note0.ownerAddress,
             value: note0.value,
             token: note0.token,
             viewingKey: note0.viewingKey || '0x0',
             salt: note0.salt
           },
           {
-            owner0: note1.owner0,
-            owner1: note1.owner1,
+            ownerAddress: note1.ownerAddress,
             value: note1.value,
             token: note1.token,
             viewingKey: note1.viewingKey || '0x0',
@@ -173,9 +171,22 @@ async function combineNote() {
     const cBigInt = proof.c.map(v => BigInt(v))
     const inputBigInt = proof.input.map(v => BigInt(v))
 
-    // Encrypt combined note
-    const encryptedCombinedNote = zeroPadValue(toBeHex(toBigInt(proof.combinedNote.owner0)), 32)
-    const encryptedZeroNote = zeroPadValue(toBeHex(BigInt(0)), 32)
+    // Encode combined note using RLP for on-chain storage
+    const encryptedCombinedNote = encodeNoteData({
+      ownerAddress: proof.combinedNote.ownerAddress,
+      value: proof.combinedNote.value,
+      token: proof.combinedNote.token,
+      viewingKey: proof.combinedNote.viewingKey,
+      salt: proof.combinedNote.salt
+    })
+    // Zero note (empty change note) - minimal encoding
+    const encryptedZeroNote = encodeNoteData({
+      ownerAddress: '0x0',
+      value: '0x0',
+      token: proof.combinedNote.token,
+      viewingKey: '0x0',
+      salt: '0x0'
+    })
 
     // Call spend (transfer) on contract
     console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
@@ -197,8 +208,7 @@ async function combineNote() {
       // Add combined note
       const combinedNoteObj: Note = {
         owner: props.account,
-        owner0: proof.combinedNote.owner0,
-        owner1: proof.combinedNote.owner1,
+        ownerAddress: proof.combinedNote.ownerAddress,
         value: proof.combinedNote.value,
         token: proof.combinedNote.token,
         viewingKey: proof.combinedNote.viewingKey,

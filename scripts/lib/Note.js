@@ -52,47 +52,38 @@ const NoteState = {
   },
 };
 
+/**
+ * Note class with address-based ownership (160-bit)
+ * All notes use ownerAddress, including smart notes
+ * Smart notes have ownerAddress = truncated hash of origin note (last 160 bits)
+ */
 class Note {
   /**
-   *
-   * @param { String | BN } owner0 x-coordinates of public key for normal note, original note hash for smart note
-   * @param { String | BN | Null } owner1 y-coordinates of public key for normal note, null for smart note
+   * @param { String | BN } ownerAddress 160-bit address (derived from SHA256(pk) or truncated note hash for smart notes)
    * @param { String | BN } value The amount of token
    * @param { String | BN } token The type of token
-   * @param { String | BN } viewingKey The viewing key of the sender. It is only used when taker reveals his viewing key only to maker in encrypted note data.
-   * @param { String | BN } salt Random salt to prevent pre-image attack on note hash.
+   * @param { String | BN } viewingKey The viewing key of the sender
+   * @param { String | BN } salt Random salt to prevent pre-image attack on note hash
    */
-  constructor(owner0, owner1, value, token, viewingKey, salt) {
-    this.owner0 = Web3Utils.padLeft(owner0, 64);
-    if (owner1) {
-      this.owner1 = Web3Utils.padLeft(owner1, 64);
-    }
+  constructor(ownerAddress, value, token, viewingKey, salt) {
+    // ownerAddress is 160-bit (40 hex chars)
+    this.ownerAddress = Web3Utils.padLeft(ownerAddress, 40);
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
     this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
     this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
   }
 
-  isSmart() {
-    return this.owner1 === null;
-  }
-
-
   /**
-   * @returns { String | Array } Array of x and y coordinates of public key of the owner for normal note, or String of the original note hash for smart note.
+   * @returns { String } The owner address (160-bit)
    */
   getOwner() {
-    if (this.isSmart()) {
-      return this.owner0;
-    }
-
-    return [this.owner0, this.owner1];
+    return this.ownerAddress;
   }
 
   hash() {
     return marshal(noteHelper.getNoteHash(
-      unmarshal(this.owner0),
-      this.owner1 ? unmarshal(this.owner1) : null,
+      unmarshal(this.ownerAddress),
       unmarshal(this.value),
       unmarshal(this.token),
       unmarshal(this.viewingKey),
@@ -121,6 +112,36 @@ class Note {
   }
 }
 
+/**
+ * Create a smart note owner address from a note hash
+ * Takes the last 160 bits of the hash (originH0[low32] || originH1[128])
+ * @param {String} noteHash - 256-bit note hash (as hex string)
+ * @returns {String} - 160-bit address (as hex string)
+ */
+function getSmartNoteOwner(noteHash) {
+  // noteHash is 64 hex chars (256 bits)
+  // We want the last 160 bits = last 40 hex chars
+  const h = unmarshal(noteHash);
+  const padded = h.padStart(64, '0');
+  const last160bits = padded.slice(-40);
+  return marshal(last160bits);
+}
+
+/**
+ * Create a smart note with owner derived from origin note hash
+ * @param {Note} originNote - The origin note whose hash becomes the owner
+ * @param {String|BN} value - Note value
+ * @param {String|BN} token - Token type
+ * @param {String|BN} viewingKey - Viewing key
+ * @param {String|BN} salt - Salt
+ * @returns {Note} - Smart note with owner = truncated origin hash
+ */
+function createSmartNote(originNote, value, token, viewingKey, salt) {
+  const originHash = originNote.hash();
+  const smartOwner = getSmartNoteOwner(originHash);
+  return new Note(smartOwner, value, token, viewingKey, salt);
+}
+
 function marshalEncDecKey(_key) {
   const key = unmarshal(_key.toLowerCase());
   const reg = new RegExp(/^0*(.+)/, 'g');
@@ -135,13 +156,6 @@ function marshalEncDecKey(_key) {
   if (res.length % 2 === 1) {
     res = '0' + res;
   }
-
-  // console.warn(`
-  //   marshal?
-  //     match:    ${match}
-  //     original: ${_key}
-  //     res:      ${res}
-  // `)
 
   return res;
 }
@@ -158,7 +172,7 @@ function decrypt(v, decKey) {
   const r2 = decipher.final('utf8');
 
   const note = JSON.parse(r1 + r2);
-  return new Note(note.owner0, note.owner1, note.value, note.token, note.viewingKey, note.salt);
+  return new Note(note.ownerAddress, note.value, note.token, note.viewingKey, note.salt);
 }
 
 function dummyProofCreateNote(note) {
@@ -216,12 +230,13 @@ function dummyProofMakeOrder(makerNote) {
 function dummyProofTakeOrder(parentNote, stakeNote) {
   const proof = JSON.parse(sampleProof);
 
+  // New format: nOwnerAddress is 160-bit (single value instead of two 128-bit parts)
   proof.input = [
     ...parentNote.hashArr(),
     parentNote.token,
 
     ...stakeNote.hashArr(),
-    ...split32BytesTo16BytesArr(stakeNote.owner0),
+    stakeNote.ownerAddress,  // 160-bit owner address
     stakeNote.token,
     1,
   ];
@@ -232,6 +247,7 @@ function dummyProofTakeOrder(parentNote, stakeNote) {
 function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
   const proof = JSON.parse(sampleProof);
 
+  // New format: owner addresses are 160-bit (single value)
   proof.input = [
     ...makerNote.hashArr(),
     makerNote.token,
@@ -240,11 +256,11 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
     stakeNote.token,
 
     ...rewardNote.hashArr(),
-    ...split32BytesTo16BytesArr(rewardNote.owner0),
+    rewardNote.ownerAddress,  // 160-bit
     rewardNote.token,
 
     ...paymentNote.hashArr(),
-    ...split32BytesTo16BytesArr(paymentNote.owner0),
+    paymentNote.ownerAddress,  // 160-bit
     paymentNote.token,
 
     ...changeNote.hashArr(),
@@ -257,7 +273,7 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
   return parseProofObj(proof);
 }
 
-const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00', '0x00');
+const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00');
 const EMPTY_NOTE_HASH = EMPTY_NOTE.hash();
 
 console.log('EMPTY_NOTE_HASH', EMPTY_NOTE_HASH);
@@ -273,6 +289,8 @@ module.exports = {
   NoteState,
   Note,
   decrypt,
+  getSmartNoteOwner,
+  createSmartNote,
   createProof: {
     dummyProofCreateNote,
     dummyProofSpendNote,

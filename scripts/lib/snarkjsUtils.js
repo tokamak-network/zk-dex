@@ -106,13 +106,20 @@ function maskTo254Bits(value) {
 }
 
 /**
- * Compute note hash matching circuit computation (1536-bit SHA256)
- * The circuit uses 254-bit field elements padded to 256 bits with 2 leading zeros
- * @param {Object} note - Note object with owner0, owner1, value, token, viewingKey, salt
+ * Compute note hash matching circuit computation (1184-bit SHA256)
+ * Hash format: SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+ * @param {Object} note - Note object with ownerAddress, value, token, viewingKey, salt
  * @returns {{h0: string, h1: string}} Hash split into two 128-bit parts
  */
 function computeCircuitHash(note) {
     const crypto = require('crypto');
+
+    // Helper to convert a 160-bit address to 20 bytes (big-endian)
+    function addressTo20Bytes(val) {
+        const bigVal = hexToBigInt(val) & ((BigInt(1) << BigInt(160)) - BigInt(1));
+        const hex = bigVal.toString(16).padStart(40, '0');
+        return Buffer.from(hex, 'hex');
+    }
 
     // Helper to convert a field element (254 bits max) to 32 bytes (big-endian)
     function fieldTo32Bytes(val) {
@@ -128,18 +135,17 @@ function computeCircuitHash(note) {
         return Buffer.from(hex, 'hex');
     }
 
-    // Build 192-byte (1536-bit) message matching circuit structure:
-    // owner0 (32B) | owner1 (32B) | value (32B) | type (32B) | vk0||vk1 (32B) | salt (32B)
+    // Build 148-byte (1184-bit) message matching circuit structure:
+    // ownerAddress (20B) | value (32B) | type (32B) | vk0 (16B) | vk1 (16B) | salt (32B)
     const [vk0, vk1] = split256To128(note.viewingKey);
 
     const message = Buffer.concat([
-        fieldTo32Bytes(note.owner0),      // 32 bytes
-        fieldTo32Bytes(note.owner1),      // 32 bytes
-        fieldTo32Bytes(note.value),       // 32 bytes
-        fieldTo32Bytes(note.token),       // 32 bytes
-        to16Bytes(vk0),                   // 16 bytes (vk high part)
-        to16Bytes(vk1),                   // 16 bytes (vk low part)
-        fieldTo32Bytes(note.salt)         // 32 bytes
+        addressTo20Bytes(note.ownerAddress),  // 20 bytes (160 bits)
+        fieldTo32Bytes(note.value),           // 32 bytes
+        fieldTo32Bytes(note.token),           // 32 bytes
+        to16Bytes(vk0),                       // 16 bytes (vk high part)
+        to16Bytes(vk1),                       // 16 bytes (vk low part)
+        fieldTo32Bytes(note.salt)             // 32 bytes
     ]);
 
     // Compute SHA256
@@ -197,8 +203,7 @@ async function getMintNBurnProof(note, sk) {
         nh1,
         value: maskTo254Bits(note.value).toString(),
         tokenType: maskTo254Bits(note.token).toString(),
-        owner0: maskTo254Bits(note.owner0).toString(),
-        owner1: maskTo254Bits(note.owner1).toString(),
+        ownerAddress: hexToBigInt(note.ownerAddress).toString(),
         vk0,
         vk1,
         salt: maskTo254Bits(note.salt).toString(),
@@ -230,8 +235,7 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
         changeH0, changeH1,
 
         // Old note 0
-        o0Owner0: hexToBigInt(oldNote0.owner0).toString(),
-        o0Owner1: hexToBigInt(oldNote0.owner1).toString(),
+        o0OwnerAddress: hexToBigInt(oldNote0.ownerAddress).toString(),
         o0Value: hexToBigInt(oldNote0.value).toString(),
         o0Type: hexToBigInt(oldNote0.token).toString(),
         o0Vk0: o0vk0,
@@ -239,8 +243,7 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
         o0Salt: hexToBigInt(oldNote0.salt).toString(),
 
         // Old note 1
-        o1Owner0: oldNote1 ? hexToBigInt(oldNote1.owner0).toString() : '0',
-        o1Owner1: oldNote1 ? hexToBigInt(oldNote1.owner1).toString() : '0',
+        o1OwnerAddress: oldNote1 ? hexToBigInt(oldNote1.ownerAddress).toString() : '0',
         o1Value: oldNote1 ? hexToBigInt(oldNote1.value).toString() : '0',
         o1Type: oldNote1 ? hexToBigInt(oldNote1.token).toString() : '0',
         o1Vk0: o1vk0,
@@ -248,8 +251,7 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
         o1Salt: oldNote1 ? hexToBigInt(oldNote1.salt).toString() : '0',
 
         // New note
-        nOwner0: hexToBigInt(newNote.owner0).toString(),
-        nOwner1: hexToBigInt(newNote.owner1).toString(),
+        nOwnerAddress: hexToBigInt(newNote.ownerAddress).toString(),
         nValue: hexToBigInt(newNote.value).toString(),
         nType: hexToBigInt(newNote.token).toString(),
         nVk0: nVk0,
@@ -257,8 +259,7 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
         nSalt: hexToBigInt(newNote.salt).toString(),
 
         // Change note
-        cOwner0: hexToBigInt(changeNote.owner0).toString(),
-        cOwner1: hexToBigInt(changeNote.owner1).toString(),
+        cOwnerAddress: hexToBigInt(changeNote.ownerAddress).toString(),
         cValue: hexToBigInt(changeNote.value).toString(),
         cType: hexToBigInt(changeNote.token).toString(),
         cVk0: cVk0,
@@ -291,25 +292,22 @@ async function getConvertProof(smartNote, originNote, newNote, sk) {
         originH0, originH1,
         nh0, nh1,
 
-        // Smart note
-        smartOwner0: hexToBigInt(smartNote.owner0).toString(),
-        smartOwner1: hexToBigInt(smartNote.owner1).toString(),
+        // Smart note (ownerAddress is truncated hash of origin note)
+        smartOwnerAddress: hexToBigInt(smartNote.ownerAddress).toString(),
         smartValue: hexToBigInt(smartNote.value).toString(),
         smartType: hexToBigInt(smartNote.token).toString(),
         smartVk0, smartVk1,
         smartSalt: hexToBigInt(smartNote.salt).toString(),
 
         // Origin note
-        originOwner0: hexToBigInt(originNote.owner0).toString(),
-        originOwner1: hexToBigInt(originNote.owner1).toString(),
+        originOwnerAddress: hexToBigInt(originNote.ownerAddress).toString(),
         originValue: hexToBigInt(originNote.value).toString(),
         originType: hexToBigInt(originNote.token).toString(),
         originVk0, originVk1,
         originSalt: hexToBigInt(originNote.salt).toString(),
 
         // New note
-        nOwner0: hexToBigInt(newNote.owner0).toString(),
-        nOwner1: hexToBigInt(newNote.owner1).toString(),
+        nOwnerAddress: hexToBigInt(newNote.ownerAddress).toString(),
         nValue: hexToBigInt(newNote.value).toString(),
         nType: hexToBigInt(newNote.token).toString(),
         nVk0, nVk1,
@@ -331,8 +329,7 @@ async function getMakeOrderProof(makerNote, sk) {
     const inputs = {
         nh0, nh1,
         tokenType: hexToBigInt(makerNote.token).toString(),
-        owner0: hexToBigInt(makerNote.owner0).toString(),
-        owner1: hexToBigInt(makerNote.owner1).toString(),
+        ownerAddress: hexToBigInt(makerNote.ownerAddress).toString(),
         value: hexToBigInt(makerNote.value).toString(),
         vk0, vk1,
         salt: hexToBigInt(makerNote.salt).toString(),
@@ -344,6 +341,9 @@ async function getMakeOrderProof(makerNote, sk) {
 
 /**
  * Generate proof for TakeOrder circuit
+ * @param {Object} parentNote - Taker's parent note (normal note)
+ * @param {Object} stakeNote - Smart note with owner = truncated hash of maker's note
+ * @param {string} sk - Secret key of the taker
  */
 async function getTakeOrderProof(parentNote, stakeNote, sk) {
     const [oh0, oh1] = getNoteHashParts(parentNote);
@@ -357,13 +357,11 @@ async function getTakeOrderProof(parentNote, stakeNote, sk) {
         oh0, oh1,
         oType: hexToBigInt(parentNote.token).toString(),
         nh0, nh1,
-        nOwner0: hexToBigInt(stakeNote.owner0).toString(),
-        nOwner1: hexToBigInt(stakeNote.owner1).toString(),
+        nOwnerAddress: hexToBigInt(stakeNote.ownerAddress).toString(),  // 160-bit truncated maker hash
         nType: hexToBigInt(stakeNote.token).toString(),
 
         // Parent note private
-        oOwner0: hexToBigInt(parentNote.owner0).toString(),
-        oOwner1: hexToBigInt(parentNote.owner1).toString(),
+        oOwnerAddress: hexToBigInt(parentNote.ownerAddress).toString(),
         oValue: hexToBigInt(parentNote.value).toString(),
         oVk0, oVk1,
         oSalt: hexToBigInt(parentNote.salt).toString(),
@@ -411,27 +409,23 @@ async function getSettleOrderProof(
         o1h0, o1h1,
         o1Type: hexToBigInt(takerStakeNote.token).toString(),
         n0h0, n0h1,
-        n0Owner0: hexToBigInt(rewardNote.owner0).toString(),
-        n0Owner1: hexToBigInt(rewardNote.owner1).toString(),
+        n0OwnerAddress: hexToBigInt(rewardNote.ownerAddress).toString(),
         n0Type: hexToBigInt(rewardNote.token).toString(),
         n1h0, n1h1,
-        n1Owner0: hexToBigInt(paymentNote.owner0).toString(),
-        n1Owner1: hexToBigInt(paymentNote.owner1).toString(),
+        n1OwnerAddress: hexToBigInt(paymentNote.ownerAddress).toString(),
         n1Type: hexToBigInt(paymentNote.token).toString(),
         n2h0, n2h1,
         n2Type: hexToBigInt(changeNote.token).toString(),
         price: hexToBigInt(price).toString(),
 
         // Maker note private
-        o0Owner0: hexToBigInt(makerNote.owner0).toString(),
-        o0Owner1: hexToBigInt(makerNote.owner1).toString(),
+        o0OwnerAddress: hexToBigInt(makerNote.ownerAddress).toString(),
         o0Value: hexToBigInt(makerNote.value).toString(),
         o0Vk0, o0Vk1,
         o0Salt: hexToBigInt(makerNote.salt).toString(),
 
-        // Taker stake note private
-        o1Owner0: hexToBigInt(takerStakeNote.owner0).toString(),
-        o1Owner1: hexToBigInt(takerStakeNote.owner1).toString(),
+        // Taker stake note private (ownerAddress is truncated hash of maker note)
+        o1OwnerAddress: hexToBigInt(takerStakeNote.ownerAddress).toString(),
         o1Value: hexToBigInt(takerStakeNote.value).toString(),
         o1Vk0, o1Vk1,
         o1Salt: hexToBigInt(takerStakeNote.salt).toString(),
@@ -447,8 +441,7 @@ async function getSettleOrderProof(
         n1Salt: hexToBigInt(paymentNote.salt).toString(),
 
         // Change note private
-        n2Owner0: hexToBigInt(changeNote.owner0).toString(),
-        n2Owner1: hexToBigInt(changeNote.owner1).toString(),
+        n2OwnerAddress: hexToBigInt(changeNote.ownerAddress).toString(),
         n2Value: hexToBigInt(changeNote.value).toString(),
         n2Vk0, n2Vk1,
         n2Salt: hexToBigInt(changeNote.salt).toString(),
@@ -498,6 +491,47 @@ async function initialized() {
     return fs.existsSync(testWasm);
 }
 
+/**
+ * Derive 160-bit address from BabyJubJub public key
+ * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
+ * @param {Object} publicKey - Public key with x, y coordinates
+ * @returns {string} 160-bit address as hex string (40 chars, no 0x prefix)
+ */
+function getAddressFromPublicKey(publicKey) {
+    const crypto = require('crypto');
+
+    // Convert coordinates to 32 bytes each (256 bits, padded from 254-bit field elements)
+    const pkX = hexToBigInt(publicKey.x);
+    const pkY = hexToBigInt(publicKey.y);
+
+    const xHex = pkX.toString(16).padStart(64, '0');
+    const yHex = pkY.toString(16).padStart(64, '0');
+
+    // Concatenate: pk.x (32B) || pk.y (32B) = 64 bytes
+    const message = Buffer.concat([
+        Buffer.from(xHex, 'hex'),
+        Buffer.from(yHex, 'hex')
+    ]);
+
+    // SHA256 hash
+    const digest = crypto.createHash('sha256').update(message).digest('hex');
+
+    // Take last 160 bits (40 hex chars) = bits[96:256]
+    return digest.slice(-40);
+}
+
+/**
+ * Get smart note owner address from parent note hash
+ * Takes the last 160 bits of the 256-bit hash
+ * @param {string} noteHash - 256-bit note hash (64 hex chars)
+ * @returns {string} 160-bit address (40 hex chars)
+ */
+function getSmartNoteOwnerAddress(noteHash) {
+    const cleanHash = noteHash.startsWith('0x') ? noteHash.slice(2) : noteHash;
+    const padded = cleanHash.padStart(64, '0');
+    return padded.slice(-40);
+}
+
 module.exports = {
     // Proof generation
     getMintNBurnProof,
@@ -510,6 +544,10 @@ module.exports = {
     initialized,
     generateProof,
     formatProofForContract,
+
+    // Address utilities
+    getAddressFromPublicKey,
+    getSmartNoteOwnerAddress,
 
     // BabyJubJub (circomlib compatible)
     PrivateKey,

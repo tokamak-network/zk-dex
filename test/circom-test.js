@@ -7,7 +7,7 @@ const snarkjs = require('snarkjs');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { PublicKey, PrivateKey } = require('babyjubjub');
+const circomlibBabyJub = require('../scripts/lib/circomlibBabyJub');
 
 const CIRCUITS_DIR = path.join(__dirname, '../circuits-circom/build');
 
@@ -35,35 +35,40 @@ function stringifyBigInts(obj) {
 }
 
 /**
- * Get random secret key
+ * Get random secret key (circomlib compatible)
  */
-function getSk() {
-    return PrivateKey.getRandObj().field;
+async function getSk() {
+    return await circomlibBabyJub.randomSecretKey();
 }
 
 /**
- * Get private key object from sk
+ * Get owner public key coordinates from secret key (circomlib compatible)
  */
-function getPrivKey(sk) {
-    return new PrivateKey(sk);
+async function getOwnerCoords(sk) {
+    const pk = await circomlibBabyJub.getPublicKey(sk);
+    return [pk.x.toString(), pk.y.toString()];
 }
 
 /**
- * Get public key from private key
+ * Derive 160-bit ownerAddress from public key
+ * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
  */
-function getPubKey(privKey) {
-    return PublicKey.fromPrivate(privKey);
+function getOwnerAddress(pk_x, pk_y) {
+    // Pad pk_x and pk_y to 32 bytes each
+    const xHex = BigInt(pk_x).toString(16).padStart(64, '0');
+    const yHex = BigInt(pk_y).toString(16).padStart(64, '0');
+    const combined = Buffer.from(xHex + yHex, 'hex');
+    const hash = crypto.createHash('sha256').update(combined).digest('hex');
+    // Take last 160 bits (40 hex chars) of hash
+    return hash.slice(-40);
 }
 
 /**
- * Get owner (public key) from secret key
+ * Get owner address from secret key (circomlib compatible)
  */
-function getOwner(sk) {
-    const privKey = getPrivKey(sk);
-    const pubKey = getPubKey(privKey);
-    const pubKeyX = pubKey.p.x.n.toString(10);
-    const pubKeyY = pubKey.p.y.n.toString(10);
-    return [pubKeyX, pubKeyY];
+async function getOwner(sk) {
+    const [pk_x, pk_y] = await getOwnerCoords(sk);
+    return getOwnerAddress(pk_x, pk_y);
 }
 
 /**
@@ -85,8 +90,8 @@ function formatProofForContract(proof, publicSignals) {
  * Generate proof for a circuit
  */
 async function generateProof(circuitName, inputs) {
-    const wasmPath = path.join(CIRCUITS_DIR, `${circuitName}_js`, `${circuitName}.wasm`);
-    const zkeyPath = path.join(CIRCUITS_DIR, `${circuitName}.zkey`);
+    const wasmPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_js`, `${circuitName}.wasm`);
+    const zkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}.zkey`);
 
     if (!fs.existsSync(wasmPath)) {
         throw new Error(`WASM file not found: ${wasmPath}`);
@@ -96,7 +101,7 @@ async function generateProof(circuitName, inputs) {
     }
 
     const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        stringifyBigInts(inputs),
+        inputs,
         wasmPath,
         zkeyPath
     );
@@ -108,10 +113,38 @@ async function generateProof(circuitName, inputs) {
  * Verify proof locally
  */
 async function verifyProof(circuitName, proof, publicSignals) {
-    const vkeyPath = path.join(CIRCUITS_DIR, `${circuitName}_vk.json`);
+    const vkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_vkey.json`);
     const vkey = JSON.parse(fs.readFileSync(vkeyPath, 'utf8'));
 
     return snarkjs.groth16.verify(vkey, publicSignals, proof);
+}
+
+/**
+ * Compute note hash for circuit
+ * Hash format: SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+ */
+function computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt) {
+    // ownerAddress: 20 bytes (160 bits)
+    const addrHex = BigInt('0x' + ownerAddress).toString(16).padStart(40, '0');
+    // value: 32 bytes (256 bits)
+    const valueHex = BigInt(value).toString(16).padStart(64, '0');
+    // tokenType: 32 bytes (256 bits)
+    const typeHex = BigInt(tokenType).toString(16).padStart(64, '0');
+    // vk0: 16 bytes (128 bits)
+    const vk0Hex = BigInt(vk0).toString(16).padStart(32, '0');
+    // vk1: 16 bytes (128 bits)
+    const vk1Hex = BigInt(vk1).toString(16).padStart(32, '0');
+    // salt: 32 bytes (256 bits)
+    const saltHex = BigInt(salt).toString(16).padStart(64, '0');
+
+    const combined = addrHex + valueHex + typeHex + vk0Hex + vk1Hex + saltHex;
+    const hash = crypto.createHash('sha256').update(Buffer.from(combined, 'hex')).digest('hex');
+
+    // Split into two 128-bit parts
+    const nh0 = BigInt('0x' + hash.slice(0, 32)).toString();
+    const nh1 = BigInt('0x' + hash.slice(32)).toString();
+
+    return [nh0, nh1];
 }
 
 /**
@@ -121,26 +154,31 @@ async function testMintBurnNote() {
     console.log('\n=== Testing MintBurnNote Circuit ===');
 
     try {
+        // Initialize circomlibBabyJub
+        await circomlibBabyJub.init();
+
         // Generate valid secret key and derive public key
-        const sk = getSk();
-        const [owner0, owner1] = getOwner(sk);
+        const sk = await getSk();
+        const [pk_x, pk_y] = await getOwnerCoords(sk);
+        const ownerAddress = getOwnerAddress(pk_x, pk_y);
 
         console.log('Generated keys:');
-        console.log('  sk:', sk.n.toString(10).slice(0, 20) + '...');
-        console.log('  owner0:', owner0.slice(0, 20) + '...');
-        console.log('  owner1:', owner1.slice(0, 20) + '...');
+        console.log('  sk:', sk.toString().slice(0, 20) + '...');
+        console.log('  pk_x:', pk_x.slice(0, 20) + '...');
+        console.log('  pk_y:', pk_y.slice(0, 20) + '...');
+        console.log('  ownerAddress:', ownerAddress);
 
-        // Note parameters - using dummy values for hash since we can't compute
-        // the exact SHA256 hash that matches the circuit's implementation
+        // Note parameters
         const value = '1000000000000000000';  // 1 token
         const tokenType = '0';  // ETH
         const vk0 = '0';
         const vk1 = '0';
         const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
 
-        // Use dummy hash values - the circuit will verify these match the computed hash
-        const nh0 = '0';
-        const nh1 = '0';
+        // Compute correct note hash
+        const [nh0, nh1] = computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt);
+        console.log('  nh0:', nh0.slice(0, 20) + '...');
+        console.log('  nh1:', nh1.slice(0, 20) + '...');
 
         const inputs = {
             // Public inputs
@@ -150,12 +188,11 @@ async function testMintBurnNote() {
             tokenType,
 
             // Private inputs
-            owner0,
-            owner1,
+            ownerAddress: BigInt('0x' + ownerAddress).toString(),
             vk0,
             vk1,
             salt,
-            sk: sk.n.toString(10)
+            sk: sk.toString()
         };
 
         console.log('Generating proof (this may take a moment)...');
@@ -201,8 +238,12 @@ async function testMakeOrder() {
     console.log('\n=== Testing MakeOrder Circuit ===');
 
     try {
-        const sk = getSk();
-        const [owner0, owner1] = getOwner(sk);
+        // Initialize circomlibBabyJub
+        await circomlibBabyJub.init();
+
+        const sk = await getSk();
+        const [pk_x, pk_y] = await getOwnerCoords(sk);
+        const ownerAddress = getOwnerAddress(pk_x, pk_y);
 
         const value = '500000000000000000000';  // 500 tokens
         const tokenType = '1';  // DAI
@@ -210,21 +251,19 @@ async function testMakeOrder() {
         const vk1 = '0';
         const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
 
-        // Dummy hash values
-        const nh0 = '0';
-        const nh1 = '0';
+        // Compute correct note hash
+        const [nh0, nh1] = computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt);
 
         const inputs = {
             nh0,
             nh1,
             tokenType,
-            owner0,
-            owner1,
+            ownerAddress: BigInt('0x' + ownerAddress).toString(),
             value,
             vk0,
             vk1,
             salt,
-            sk: sk.n.toString(10)
+            sk: sk.toString()
         };
 
         console.log('Generating proof...');

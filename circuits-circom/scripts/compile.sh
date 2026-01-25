@@ -32,7 +32,7 @@ compile_circuit() {
     mkdir -p "$output_dir"
 
     # Compile with circom
-    circom "$circuit_file" \
+    $CIRCOM_BIN "$circuit_file" \
         --r1cs \
         --wasm \
         --sym \
@@ -52,12 +52,26 @@ echo "Circom Circuit Compiler"
 echo "==================================="
 echo ""
 
-# Check if circom is installed
-if ! command -v circom &> /dev/null; then
-    echo "Error: circom is not installed"
-    echo "Install with: npm install -g circom"
+# Check if circom 2.x is installed
+CIRCOM_BIN=""
+if [ -f "$HOME/.cargo/bin/circom" ]; then
+    CIRCOM_BIN="$HOME/.cargo/bin/circom"
+elif command -v circom &> /dev/null; then
+    # Check version
+    if circom --version 2>&1 | grep -q "2\."; then
+        CIRCOM_BIN="circom"
+    fi
+fi
+
+if [ -z "$CIRCOM_BIN" ]; then
+    echo "Error: circom 2.x is not installed"
+    echo "Install with: cargo install circom"
     exit 1
 fi
+
+echo "Using circom: $CIRCOM_BIN"
+echo "$($CIRCOM_BIN --version)"
+echo ""
 
 # Compile specific circuit or all
 if [ -n "$1" ]; then

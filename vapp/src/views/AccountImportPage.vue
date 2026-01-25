@@ -1,24 +1,65 @@
 <template>
   <div>
     <AccountList :accounts="accountStore.accounts" />
-    <input type="file" id="file" @change="onChange">
+    <div class="box">
+      <p style="margin-bottom: 20px;">Import Account</p>
+
+      <div class="field">
+        <label class="label">Keystore File</label>
+        <div class="control">
+          <input type="file" id="file" @change="onChange" accept=".json">
+        </div>
+      </div>
+
+      <div v-if="keystoreLoaded" class="field has-addons" style="margin-top: 20px;">
+        <p class="control">
+          <a class="button is-static" style="width: 140px">Passphrase</a>
+        </p>
+        <p class="control is-expanded">
+          <input
+            style="width: 100%; text-align: right;"
+            class="input"
+            type="password"
+            placeholder="Enter passphrase to unlock"
+            v-model="passphrase"
+            :disabled="isImporting"
+          >
+        </p>
+      </div>
+
+      <button
+        v-if="keystoreLoaded"
+        class="button is-link"
+        style="width: 100%; margin-top: 20px;"
+        :class="{ 'is-loading': isImporting }"
+        :disabled="!passphrase || isImporting"
+        @click="importAccount"
+      >
+        Import
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAccountStore } from '@/stores/account'
+import { ref, onMounted } from 'vue'
+import { useAccountStore, type BabyJubJubPublicKey } from '@/stores/account'
 import AccountList from '@/components/AccountList.vue'
 import * as api from '@/api'
 
 interface Keystore {
-  address: string
-  crypto: unknown
-  id: string
-  version: number
+  address?: string
+  crypto?: unknown
+  id?: string
+  version?: number
 }
 
 const accountStore = useAccountStore()
+
+const keystore = ref<Keystore | null>(null)
+const keystoreLoaded = ref(false)
+const passphrase = ref('')
+const isImporting = ref(false)
 
 onMounted(async () => {
   if (accountStore.accounts.length === 0) {
@@ -37,21 +78,43 @@ function onChange(event: Event) {
 
 function onReaderLoad(event: ProgressEvent<FileReader>) {
   if (event.target?.result) {
-    const keystore = JSON.parse(event.target.result as string) as Keystore
-    importAccount(keystore)
+    try {
+      keystore.value = JSON.parse(event.target.result as string) as Keystore
+      keystoreLoaded.value = true
+      passphrase.value = ''
+    } catch {
+      alert('Invalid keystore file')
+    }
   }
 }
 
-async function importAccount(keystore: Keystore) {
-  const account = {
-    keystore,
-    address: `0x${keystore.address}`,
-    publicKey: { x: '', y: '' },
-    name: '',
-    numberOfNotes: 0
-  }
+async function importAccount() {
+  if (!keystore.value || !passphrase.value) return
 
-  await api.addAccount(accountStore.key!, account)
-  accountStore.addAccount(account)
+  isImporting.value = true
+  try {
+    // Unlock to get publicKey and address
+    const res = await api.unlockAccount(passphrase.value, keystore.value)
+    const { publicKey, address } = res.data
+
+    const account = {
+      keystore: keystore.value,
+      address: address.startsWith('0x') ? address : `0x${address}`,
+      publicKey: publicKey as BabyJubJubPublicKey
+    }
+
+    await api.addAccount(accountStore.key!, account)
+    accountStore.addAccount(account)
+
+    // Reset
+    keystore.value = null
+    keystoreLoaded.value = false
+    passphrase.value = ''
+    alert('Account imported successfully')
+  } catch (err) {
+    alert('Failed to import: Wrong passphrase or invalid keystore')
+  } finally {
+    isImporting.value = false
+  }
 }
 </script>

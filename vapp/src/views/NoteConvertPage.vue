@@ -30,7 +30,8 @@ import { useContractStore } from '@/stores/contract'
 import { useFormatters } from '@/composables/useFormatters'
 import NoteList from '@/components/NoteList.vue'
 import * as api from '@/api'
-import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
+import { toBigInt } from 'ethers'
+import { encodeNoteData } from '@/utils/noteEncryption'
 
 const router = useRouter()
 const accountStore = useAccountStore()
@@ -49,8 +50,7 @@ interface ConvertProofResponse {
   c: string[]
   input: string[]
   newNote: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -80,22 +80,24 @@ function selectNote(selectedNote: Note) {
   note.value = selectedNote
   noteHash.value = selectedNote.hash
 
-  // Smart notes have owner = hash of origin note (split into owner0, owner1)
+  // Smart notes have ownerAddress = truncated 160-bit hash of origin note
   // We need to find the origin note to convert
   if (selectedNote.isSmart === '0x1') {
-    // Reconstruct the hash from owner0 and owner1
-    // owner0 = high 128 bits, owner1 = low 128 bits
-    const high = toBigInt(selectedNote.owner0 || '0x0')
-    const low = toBigInt(selectedNote.owner1 || '0x0')
-    const originHash = '0x' + ((high << BigInt(128)) | low).toString(16).padStart(64, '0')
+    // The smart note's ownerAddress is the last 160 bits of origin note's hash
+    // We need to find a note whose hash ends with this address
+    const smartOwnerAddress = selectedNote.ownerAddress.toLowerCase().replace('0x', '').padStart(40, '0')
 
-    // Find origin note by hash
-    const found = noteStore.notes.find(n => n.hash === originHash)
+    // Find origin note by matching truncated hash
+    const found = noteStore.notes.find(n => {
+      const noteHashLower = n.hash.toLowerCase().replace('0x', '').padStart(64, '0')
+      // Last 40 hex chars (160 bits) of hash should match ownerAddress
+      return noteHashLower.slice(-40) === smartOwnerAddress
+    })
     if (found) {
       originNote.value = found
     } else {
       originNote.value = null
-      console.warn('Origin note not found for smart note:', originHash)
+      console.warn('Origin note not found for smart note with ownerAddress:', smartOwnerAddress)
     }
   }
 }
@@ -126,8 +128,7 @@ async function convertNote() {
         params: [
           // Smart note data
           {
-            owner0: note.value.owner0,
-            owner1: note.value.owner1,
+            ownerAddress: note.value.ownerAddress,
             value: note.value.value,
             token: note.value.token,
             viewingKey: note.value.viewingKey || '0x0',
@@ -135,8 +136,7 @@ async function convertNote() {
           },
           // Origin note data
           {
-            owner0: originNote.value.owner0,
-            owner1: originNote.value.owner1,
+            ownerAddress: originNote.value.ownerAddress,
             value: originNote.value.value,
             token: originNote.value.token,
             viewingKey: originNote.value.viewingKey || '0x0',
@@ -158,8 +158,14 @@ async function convertNote() {
     const cBigInt = proof.c.map(v => BigInt(v))
     const inputBigInt = proof.input.map(v => BigInt(v))
 
-    // Encrypt new note
-    const encryptedNewNote = zeroPadValue(toBeHex(toBigInt(proof.newNote.owner0)), 32)
+    // Encode new note using RLP for on-chain storage
+    const encryptedNewNote = encodeNoteData({
+      ownerAddress: proof.newNote.ownerAddress,
+      value: proof.newNote.value,
+      token: proof.newNote.token,
+      viewingKey: proof.newNote.viewingKey,
+      salt: proof.newNote.salt
+    })
 
     // Call convert on contract (assuming there's a convert function)
     console.log('Calling contract convert...')
@@ -179,8 +185,7 @@ async function convertNote() {
       // Add new regular note
       const newNoteObj: Note = {
         owner: note.value.owner,
-        owner0: proof.newNote.owner0,
-        owner1: proof.newNote.owner1,
+        ownerAddress: proof.newNote.ownerAddress,
         value: proof.newNote.value,
         token: proof.newNote.token,
         viewingKey: proof.newNote.viewingKey,

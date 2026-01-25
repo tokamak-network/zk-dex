@@ -1,14 +1,14 @@
 pragma circom 2.1.0;
 
-include "../utils/sha256/sha256_1536bit.circom";
+include "../utils/sha256/sha256_note_address.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
 
-// MakeOrder Circuit
+// MakeOrder Circuit (Address-based ownership)
 // Proves maker owns a note for creating an order
 // Similar to MintNBurnNote but with different public inputs
 //
 // Public inputs: [nh0, nh1, tokenType]
-// Private inputs: [owner0, owner1, value, vk0, vk1, salt, sk]
+// Private inputs: [ownerAddress, value, vk0, vk1, salt, sk]
 // Output: 1 (success)
 template MakeOrder() {
     // Public inputs
@@ -17,8 +17,7 @@ template MakeOrder() {
     signal input tokenType;    // Token type (public for order matching)
 
     // Private inputs
-    signal input owner0;       // Owner public key X
-    signal input owner1;       // Owner public key Y
+    signal input ownerAddress; // Owner address (160 bits)
     signal input value;        // Note value (private)
     signal input vk0;          // Viewing key part 0
     signal input vk1;          // Viewing key part 1
@@ -28,21 +27,19 @@ template MakeOrder() {
     // Output
     signal output out;
 
-    // 1. Verify ownership
-    component ownership = ProofOfOwnershipStrict();
-    ownership.pk[0] <== owner0;
-    ownership.pk[1] <== owner1;
+    // 1. Verify ownership (address-based)
+    component ownership = VerifyOwnershipByAddressStrict();
+    ownership.address <== ownerAddress;
     ownership.sk <== sk;
 
     // 2. Compute note hash
-    component noteHash = Sha256_1536bit();
-    noteHash.in[0] <== owner0;
-    noteHash.in[1] <== owner1;
-    noteHash.in[2] <== value;
-    noteHash.in[3] <== tokenType;
-    noteHash.in[4] <== vk0;
-    noteHash.in[5] <== vk1;
-    noteHash.in[6] <== salt;
+    component noteHash = Sha256NoteWithAddress();
+    noteHash.ownerAddress <== ownerAddress;
+    noteHash.value <== value;
+    noteHash.tokenType <== tokenType;
+    noteHash.vk0 <== vk0;
+    noteHash.vk1 <== vk1;
+    noteHash.salt <== salt;
 
     // 3. Verify hash matches
     noteHash.out[0] === nh0;

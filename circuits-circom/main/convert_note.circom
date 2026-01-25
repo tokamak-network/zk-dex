@@ -1,19 +1,19 @@
 pragma circom 2.1.0;
 
-include "../utils/sha256/sha256_1536bit.circom";
+include "../utils/sha256/sha256_note_address.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
-include "../utils/is_smart.circom";
+include "../utils/pack/pack160.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/bitify.circom";
 
-// ConvertNote Circuit
+// ConvertNote Circuit (Address-based ownership)
 // Converts a smart note to a normal note
 //
-// Smart notes have owner0 = original note hash (first 126 bits = 0)
+// Smart notes have ownerAddress = truncated origin note hash (160 bits)
 // This circuit verifies:
-// 1. Smart note is indeed a smart note
-// 2. Smart note's owner links to the origin note
-// 3. Origin note ownership
-// 4. Value and type preservation
+// 1. Smart note's owner links to the origin note (truncated hash match)
+// 2. Origin note ownership
+// 3. Value and type preservation
 //
 // Public inputs: [smartH0, smartH1, originH0, originH1, nh0, nh1]
 template ConvertNote() {
@@ -30,8 +30,7 @@ template ConvertNote() {
     signal input nh1;
 
     // Private inputs - Smart note
-    signal input smartOwner0;  // Should be origin note hash (part 0)
-    signal input smartOwner1;  // Should be origin note hash (part 1)
+    signal input smartOwnerAddress;  // Should be truncated origin note hash (160 bits)
     signal input smartValue;
     signal input smartType;
     signal input smartVk0;
@@ -39,8 +38,7 @@ template ConvertNote() {
     signal input smartSalt;
 
     // Private inputs - Origin note
-    signal input originOwner0;
-    signal input originOwner1;
+    signal input originOwnerAddress; // 160-bit address
     signal input originValue;
     signal input originType;
     signal input originVk0;
@@ -48,8 +46,7 @@ template ConvertNote() {
     signal input originSalt;
 
     // Private inputs - New note
-    signal input nOwner0;
-    signal input nOwner1;
+    signal input nOwnerAddress;      // 160-bit address
     signal input nValue;
     signal input nType;
     signal input nVk0;
@@ -57,79 +54,90 @@ template ConvertNote() {
     signal input nSalt;
 
     // Private inputs
-    signal input sk;           // Secret key for origin note
+    signal input sk;                 // Secret key for origin note
 
     // Output
     signal output out;
 
-    // 1. Verify smart note is a smart note
-    component isSmart = IsSmartStrict();
-    isSmart.owner0 <== smartOwner0;
+    // 1. Compute expected smart note owner from origin hash
+    // smartOwnerAddress should be the last 160 bits of (originH0 || originH1)
+    // = originH1 (128 bits) || first 32 bits of originH0
+    // For simplicity, we verify: smartOwnerAddress == pack160(originH0[low32] || originH1[all128])
 
-    // 2. Verify smart note's owner links to origin note
-    // smartOwner0 should equal originH0, smartOwner1 should equal originH1
-    component linkEq0 = IsEqual();
-    linkEq0.in[0] <== smartOwner0;
-    linkEq0.in[1] <== originH0;
-    linkEq0.out === 1;
+    // Unpack originH0 and originH1 to bits
+    component unpackH0 = Num2Bits(128);
+    unpackH0.in <== originH0;
 
-    component linkEq1 = IsEqual();
-    linkEq1.in[0] <== smartOwner1;
-    linkEq1.in[1] <== originH1;
-    linkEq1.out === 1;
+    component unpackH1 = Num2Bits(128);
+    unpackH1.in <== originH1;
 
-    // 3. Verify smart note hash
-    component smartHash = Sha256_1536bit();
-    smartHash.in[0] <== smartOwner0;
-    smartHash.in[1] <== smartOwner1;
-    smartHash.in[2] <== smartValue;
-    smartHash.in[3] <== smartType;
-    smartHash.in[4] <== smartVk0;
-    smartHash.in[5] <== smartVk1;
-    smartHash.in[6] <== smartSalt;
+    // Build 160-bit expected owner: last 160 bits of the 256-bit hash
+    // originH0 || originH1 = 256 bits, we want bits [96:256] = last 160 bits
+    // That's: bits [96:128) from H0 (32 bits) + all of H1 (128 bits)
+    component packExpected = Pack160();
+    // First 32 bits come from originH0 (bits 96-127 of the full hash, which is bits 0-31 of H0)
+    for (var i = 0; i < 32; i++) {
+        packExpected.bits[i] <== unpackH0.out[127 - i];  // MSB first
+    }
+    // Remaining 128 bits come from originH1
+    for (var i = 0; i < 128; i++) {
+        packExpected.bits[32 + i] <== unpackH1.out[127 - i];  // MSB first
+    }
+
+    // Verify smart note owner matches expected
+    component ownerMatch = IsEqual();
+    ownerMatch.in[0] <== smartOwnerAddress;
+    ownerMatch.in[1] <== packExpected.out;
+    ownerMatch.out === 1;
+
+    // 2. Verify smart note hash
+    component smartHash = Sha256NoteWithAddress();
+    smartHash.ownerAddress <== smartOwnerAddress;
+    smartHash.value <== smartValue;
+    smartHash.tokenType <== smartType;
+    smartHash.vk0 <== smartVk0;
+    smartHash.vk1 <== smartVk1;
+    smartHash.salt <== smartSalt;
 
     smartHash.out[0] === smartH0;
     smartHash.out[1] === smartH1;
 
-    // 4. Verify origin note hash
-    component originHash = Sha256_1536bit();
-    originHash.in[0] <== originOwner0;
-    originHash.in[1] <== originOwner1;
-    originHash.in[2] <== originValue;
-    originHash.in[3] <== originType;
-    originHash.in[4] <== originVk0;
-    originHash.in[5] <== originVk1;
-    originHash.in[6] <== originSalt;
+    // 3. Verify origin note hash
+    component originHash = Sha256NoteWithAddress();
+    originHash.ownerAddress <== originOwnerAddress;
+    originHash.value <== originValue;
+    originHash.tokenType <== originType;
+    originHash.vk0 <== originVk0;
+    originHash.vk1 <== originVk1;
+    originHash.salt <== originSalt;
 
     originHash.out[0] === originH0;
     originHash.out[1] === originH1;
 
-    // 5. Verify ownership of origin note
-    component ownership = ProofOfOwnershipStrict();
-    ownership.pk[0] <== originOwner0;
-    ownership.pk[1] <== originOwner1;
+    // 4. Verify ownership of origin note (address-based)
+    component ownership = VerifyOwnershipByAddressStrict();
+    ownership.address <== originOwnerAddress;
     ownership.sk <== sk;
 
-    // 6. Verify new note hash
-    component newHash = Sha256_1536bit();
-    newHash.in[0] <== nOwner0;
-    newHash.in[1] <== nOwner1;
-    newHash.in[2] <== nValue;
-    newHash.in[3] <== nType;
-    newHash.in[4] <== nVk0;
-    newHash.in[5] <== nVk1;
-    newHash.in[6] <== nSalt;
+    // 5. Verify new note hash
+    component newHash = Sha256NoteWithAddress();
+    newHash.ownerAddress <== nOwnerAddress;
+    newHash.value <== nValue;
+    newHash.tokenType <== nType;
+    newHash.vk0 <== nVk0;
+    newHash.vk1 <== nVk1;
+    newHash.salt <== nSalt;
 
     newHash.out[0] === nh0;
     newHash.out[1] === nh1;
 
-    // 7. Value preservation: smart value == new value
+    // 6. Value preservation: smart value == new value
     component valueEq = IsEqual();
     valueEq.in[0] <== smartValue;
     valueEq.in[1] <== nValue;
     valueEq.out === 1;
 
-    // 8. Type preservation: smart type == new type
+    // 7. Type preservation: smart type == new type
     component typeEq = IsEqual();
     typeEq.in[0] <== smartType;
     typeEq.in[1] <== nType;

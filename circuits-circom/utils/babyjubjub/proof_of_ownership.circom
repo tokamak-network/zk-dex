@@ -61,3 +61,15 @@ template VerifyOwnershipByAddress() {
 
     valid <== eq.out;
 }
+
+// Strict version that constrains valid == 1
+template VerifyOwnershipByAddressStrict() {
+    signal input address;      // Expected address (160-bit)
+    signal input sk;           // Secret key
+
+    component proof = VerifyOwnershipByAddress();
+    proof.address <== address;
+    proof.sk <== sk;
+
+    proof.valid === 1;
+}

@@ -91,8 +91,8 @@ async function makeNewOrder() {
     return
   }
 
-  if (!selectedNote.value.owner0 || !selectedNote.value.owner1) {
-    alert('Note does not have owner0/owner1. Cannot make order.')
+  if (!selectedNote.value.ownerAddress) {
+    alert('Note does not have ownerAddress. Cannot make order.')
     return
   }
 
@@ -105,8 +105,7 @@ async function makeNewOrder() {
       inputs: {
         params: [
           {
-            owner0: selectedNote.value.owner0,
-            owner1: selectedNote.value.owner1,
+            ownerAddress: selectedNote.value.ownerAddress,
             value: selectedNote.value.value,
             token: selectedNote.value.token,
             viewingKey: selectedNote.value.viewingKey || '0x0',

@@ -140,8 +140,7 @@ interface BurnProofResponse {
   c: string[]
   input: string[]
   note: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -154,8 +153,8 @@ async function generateProof(): Promise<BurnProofResponse> {
   if (!effectiveSecretKey.value) {
     throw new Error('No secret key available. Please unlock account.')
   }
-  if (!selectedNote.value?.owner0 || !selectedNote.value?.owner1) {
-    throw new Error('Note does not have owner0/owner1. Cannot generate burn proof.')
+  if (!selectedNote.value?.ownerAddress) {
+    throw new Error('Note does not have ownerAddress. Cannot generate burn proof.')
   }
 
   const params = {
@@ -163,8 +162,7 @@ async function generateProof(): Promise<BurnProofResponse> {
     inputs: {
       params: [
         {
-          owner0: selectedNote.value.owner0,
-          owner1: selectedNote.value.owner1,
+          ownerAddress: selectedNote.value.ownerAddress,
           value: selectedNote.value.value,
           token: selectedNote.value.token,
           viewingKey: selectedNote.value.viewingKey || '0x0',

@@ -163,14 +163,26 @@ function verifyProof(
 
 ```
 Note = {
-  owner0,      // 공개키 X (BabyJubJub, 256비트)
-  owner1,      // 공개키 Y (BabyJubJub, 256비트)
-  value,       // 토큰 금액 (256비트)
-  type,        // 0=ETH, 1=DAI (256비트)
-  viewingKey,  // 노트 복호화용 (256비트)
-  salt         // 랜덤 값 (256비트)
+  ownerAddress,  // SHA256(pk.x || pk.y)[96:256]에서 파생된 160비트 주소
+  value,         // 토큰 금액 (256비트)
+  type,          // 0=ETH, 1=DAI (256비트)
+  viewingKey,    // vk0(128비트) + vk1(128비트) 노트 복호화용
+  salt           // 랜덤 값 (256비트)
 }
 ```
+
+### 주소 유도
+
+소유자 주소는 BabyJubJub 공개키에서 SHA256을 사용하여 유도됩니다:
+
+```
+address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
+```
+
+이를 통해:
+- 컴팩트한 표현 (512비트 공개키 대신 160비트)
+- 충돌 저항성 (~2^80 보안 수준)
+- 이더리움 주소 형식과 호환
 
 ### 회로 설명
 
@@ -178,7 +190,7 @@ Note = {
 
 **목적:** 새 노트에 대한 소유권과 올바른 해시 계산을 증명합니다.
 
-**제약 조건:** ~125,679개
+**제약 조건:** ~154,900개
 
 **공개 신호 (snarkjs 순서):**
 ```
@@ -186,14 +198,14 @@ Note = {
 ```
 
 **작업:**
-1. BabyJubJub 스칼라 곱셈을 통한 소유권 검증
-2. 노트의 SHA256 해시 계산 및 검증 (1536비트 입력)
+1. 주소 유도를 통한 소유권 검증 (sk → pk → SHA256 → address)
+2. 노트의 SHA256 해시 계산 및 검증 (1184비트 입력)
 
 #### 2. transfer_note (소비 및 분할)
 
 **목적:** 1-2개의 노트를 소비하고 가치 보존과 함께 2개의 새 노트를 생성합니다.
 
-**제약 조건:** ~494,825개
+**제약 조건:** ~492,085개
 
 **검증:**
 - 입력 노트의 소유권
@@ -204,7 +216,7 @@ Note = {
 
 **목적:** 스마트 노트(거래에서 생성된)를 일반 노트로 변환합니다.
 
-**제약 조건:** ~369,396개
+**제약 조건:** ~337,437개
 
 **검증:**
 - 스마트 노트 소유자가 원본 노트 해시와 일치
@@ -214,7 +226,7 @@ Note = {
 
 **목적:** 금액을 노출하지 않고 거래 주문을 생성합니다.
 
-**제약 조건:** ~125,679개
+**제약 조건:** ~154,900개
 
 **출력:** 소유권 증명과 함께 주문 매개변수에 대한 커밋먼트.
 
@@ -222,7 +234,7 @@ Note = {
 
 **목적:** 메이커를 위한 스테이크 노트를 생성하여 주문을 수락합니다.
 
-**제약 조건:** ~247,664개
+**제약 조건:** ~246,040개
 
 **검증:**
 - 테이커가 부모 노트 소유
@@ -233,7 +245,7 @@ Note = {
 
 **목적:** 가격 계산이 포함된 원자적 스왑 (가장 복잡한 회로).
 
-**제약 조건:** ~614,380개
+**제약 조건:** ~520,221개
 
 **수학 연산:**
 ```
@@ -248,14 +260,16 @@ takerValue == q1 * price + r1
 
 ### 회로 복잡도 요약
 
-| 회로 | 비선형 | 선형 | 와이어 |
-|------|--------|------|--------|
-| mint_burn_note | 125,679 | 5,294 | 129,725 |
-| make_order | 125,679 | 5,294 | 129,725 |
-| take_order | 247,664 | 10,537 | 255,702 |
-| convert_note | 369,396 | 15,657 | 381,303 |
-| transfer_note | 494,825 | 20,818 | 510,646 |
-| settle_order | 614,380 | 26,275 | 634,399 |
+| 회로 | 비선형 제약 조건 |
+|------|------------------|
+| mint_burn_note | 154,900 |
+| make_order | 154,900 |
+| take_order | 246,040 |
+| convert_note | 337,437 |
+| transfer_note | 492,085 |
+| settle_order | 520,221 |
+
+**참고:** 소유권 검증(SHA256 기반 주소 유도)으로 인해 일부 제약 조건이 증가했지만, 노트 해시 입력 크기 감소(1536비트 → 1184비트)로 전체적으로 감소했습니다.
 
 ---
 
@@ -271,13 +285,14 @@ takerValue == q1 * price + r1
 // 초기화 (한 번 필요)
 await noteProofHelper.init();
 
-// 키 생성
-const { secretKey, owner0, owner1 } = await noteProofHelper.generateKeypair();
+// 키 생성 - 160비트 ownerAddress 반환
+const { secretKey, ownerAddress } = await noteProofHelper.generateKeypair();
 
-// 노트 생성
+// ownerAddress로 노트 생성
 const { note, sk } = await noteProofHelper.createNote(secretKey, value, tokenType, viewingKey, salt);
 
 // 스마트 노트 생성 (거래용)
+// owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
 const smartNote = await noteProofHelper.createSmartNote(ownerNote, value, tokenType, viewingKey, salt);
 
 // 증명 생성
@@ -313,14 +328,20 @@ verifyProofLocal(circuitName, proof, signals) // 로컬 검증
 
 ```javascript
 class Note {
-  constructor(owner, value, type, viewingKey, salt)
-  hash()              // 노트의 SHA256 해시
+  constructor(ownerAddress, value, type, viewingKey, salt)
+  // ownerAddress: 160비트 주소 (hex 문자열)
+  // viewingKey: { vk0, vk1 } - 128비트 값 두 개
+
+  hash()              // 노트의 SHA256 해시 (1184비트 입력)
   hashArr()           // [nh0, nh1] 128비트 분할
   toCircuitInput()    // 회로용 형식
 }
 
+// 노트 해시 계산 (총 1184비트):
+// SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+
 // 상수
-EMPTY_NOTE_HASH = '0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5'
+EMPTY_NOTE_HASH = '0x...'  // 0 ownerAddress로 계산
 ETH_TOKEN_TYPE = 0
 DAI_TOKEN_TYPE = 1
 ```
@@ -431,14 +452,15 @@ DAI_TOKEN_TYPE = 1
 - **노트 기반 UTXO:** Zcash와 유사하게 잔액이 노트로 표현됨
 - **암호화된 저장소:** 노트 데이터가 뷰잉키로 암호화됨
 - **ZK 증명:** 데이터 노출 없이 소유권과 유효성 증명
-- **스마트 노트:** 소유자 = 다른 노트의 해시 (원자적 스왑 가능)
+- **주소 기반 소유권:** 소유자 = SHA256(pk)에서 유도된 160비트 주소
+- **스마트 노트:** 소유자 = SHA256(부모노트해시)[96:256] (160비트 자르기, 원자적 스왑 가능)
 
 ### 암호화 기본 요소
 
 | 기본 요소 | 용도 |
 |----------|------|
 | **BabyJubJub** | 소유권 키 (SNARKs에서 효율적) |
-| **SHA-256** | 노트 해시 계산 (1536비트) |
+| **SHA-256** | 주소 유도 (512비트 → 160비트) 및 노트 해시 (1184비트) |
 | **Groth16** | SNARK 증명 시스템 |
 | **BN128** | 페어링을 위한 타원 곡선 |
 

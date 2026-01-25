@@ -35,14 +35,59 @@
         <a class="button is-static" style="width: 140px">To</a>
       </p>
       <p class="control is-expanded">
-        <div class="select is-fullwidth">
-          <select v-model="toAccountAddress">
-            <option value="">Select recipient...</option>
-            <option v-for="acc in accountStore.accounts" :key="acc.address" :value="acc.address">{{ fmt.abbreviateZk(acc.address) }}</option>
-          </select>
-        </div>
+        <template v-if="isSelfTransfer">
+          <div class="select is-fullwidth">
+            <select v-model="toAccountAddress">
+              <option value="">Select account...</option>
+              <option
+                v-for="acc in accountStore.accounts"
+                :key="acc.address"
+                :value="acc.address"
+              >{{ fmt.abbreviateZk(acc.address) }}</option>
+            </select>
+          </div>
+        </template>
+        <template v-else>
+          <input
+            style="width: 100%;"
+            class="input"
+            type="text"
+            placeholder="Recipient address (0x...)"
+            v-model="toAccountAddress"
+          >
+        </template>
       </p>
     </div>
+    <template v-if="!isSelfTransfer">
+      <div class="field has-addons">
+        <p class="control">
+          <a class="button is-static" style="width: 140px">PublicKey X</a>
+        </p>
+        <p class="control is-expanded">
+          <input
+            style="width: 100%;"
+            class="input"
+            type="text"
+            placeholder="Recipient public key X (0x...)"
+            v-model="manualPublicKeyX"
+          >
+        </p>
+      </div>
+      <div class="field has-addons">
+        <p class="control">
+          <a class="button is-static" style="width: 140px">PublicKey Y</a>
+        </p>
+        <p class="control is-expanded">
+          <input
+            style="width: 100%;"
+            class="input"
+            type="text"
+            placeholder="Recipient public key Y (0x...)"
+            v-model="manualPublicKeyY"
+          >
+        </p>
+      </div>
+    </template>
     <div class="field has-addons">
       <p class="control">
         <a class="button is-static" style="width: 140px">Amount</a>
@@ -126,10 +171,24 @@ const isSelfTransfer = ref(false)
 const passphrase = ref('')
 const unlockedSecretKey = ref('')
 const showPassphraseModal = ref(false)
+const manualPublicKeyX = ref('')
+const manualPublicKeyY = ref('')
 
-// Get the recipient account object with publicKey
+// Get the recipient account object with publicKey (for self-transfer)
 const recipientAccount = computed(() => {
   return accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
+})
+
+// Get the effective recipient public key (from account or manual input)
+const recipientPublicKey = computed((): BabyJubJubPublicKey | null => {
+  if (isSelfTransfer.value) {
+    return recipientAccount.value?.publicKey || null
+  } else {
+    if (manualPublicKeyX.value && manualPublicKeyY.value) {
+      return { x: manualPublicKeyX.value, y: manualPublicKeyY.value }
+    }
+    return null
+  }
 })
 
 // Get the sender account object with publicKey
@@ -147,7 +206,7 @@ const canClickTransfer = computed(() => {
   return noteHash.value !== '' &&
          amount.value !== '' &&
          toAccountAddress.value !== '' &&
-         recipientAccount.value?.publicKey &&
+         recipientPublicKey.value &&
          senderAccount.value?.publicKey
 })
 
@@ -171,11 +230,10 @@ function selectNote(note: Note) {
   unlockedSecretKey.value = ''
   passphrase.value = ''
   showPassphraseModal.value = false
-  if (isSelfTransfer.value) {
-    toAccountAddress.value = noteOwner.value
-  } else {
-    toAccountAddress.value = ''
-  }
+  // Reset recipient fields
+  toAccountAddress.value = isSelfTransfer.value ? noteOwner.value : ''
+  manualPublicKeyX.value = ''
+  manualPublicKeyY.value = ''
 }
 
 function selectAccountFromModal(account: Account) {
@@ -219,8 +277,8 @@ function calculateChange(originalValue: string, transferAmount: string): bigint 
 }
 
 function isValidRecipient(): boolean {
-  // Check if recipient account is selected and has a valid public key
-  return !!recipientAccount.value && !!recipientAccount.value.publicKey
+  // Check if we have a valid recipient address and public key
+  return !!toAccountAddress.value && !!recipientPublicKey.value
 }
 
 function isValidAmount(fromValue: string, toAmount: string): boolean {
@@ -235,8 +293,7 @@ interface TransferProofResponse {
   c: string[]
   input: string[]
   newNote: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -244,8 +301,7 @@ interface TransferProofResponse {
     hash: string
   }
   changeNote: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -262,8 +318,8 @@ async function generateProof(
   recipientPubKey: BabyJubJubPublicKey,
   senderPubKey: BabyJubJubPublicKey
 ): Promise<TransferProofResponse> {
-  if (!oldNote.owner0 || !oldNote.owner1) {
-    throw new Error('Note does not have owner0/owner1. Cannot generate transfer proof.')
+  if (!oldNote.ownerAddress) {
+    throw new Error('Note does not have ownerAddress. Cannot generate transfer proof.')
   }
 
   const params = {
@@ -272,8 +328,7 @@ async function generateProof(
       params: [
         // Old note data
         {
-          owner0: oldNote.owner0,
-          owner1: oldNote.owner1,
+          ownerAddress: oldNote.ownerAddress,
           value: oldNote.value,
           token: oldNote.token,
           viewingKey: oldNote.viewingKey || '0x0',
@@ -323,7 +378,7 @@ async function doTransfer() {
     const change = calculateChange(selectedNote.value.value, amount.value)
 
     console.log('Generating transfer proof with public keys...')
-    console.log('Recipient:', recipientAccount.value!.publicKey)
+    console.log('Recipient:', recipientPublicKey.value)
     console.log('Sender:', senderAccount.value.publicKey)
 
     const proof = await generateProof(
@@ -331,7 +386,7 @@ async function doTransfer() {
       amount.value,
       change.toString(),
       effectiveSecretKey.value,
-      recipientAccount.value!.publicKey,
+      recipientPublicKey.value!,
       senderAccount.value.publicKey
     )
     console.log('Transfer proof generated:', proof)
@@ -344,16 +399,14 @@ async function doTransfer() {
 
     // Encode notes using RLP for on-chain storage and recovery
     const encryptedNewNote = encodeNoteData({
-      owner0: proof.newNote.owner0,
-      owner1: proof.newNote.owner1,
+      ownerAddress: proof.newNote.ownerAddress,
       value: proof.newNote.value,
       token: proof.newNote.token,
       viewingKey: proof.newNote.viewingKey,
       salt: proof.newNote.salt
     })
     const encryptedChangeNote = encodeNoteData({
-      owner0: proof.changeNote.owner0,
-      owner1: proof.changeNote.owner1,
+      ownerAddress: proof.changeNote.ownerAddress,
       value: proof.changeNote.value,
       token: proof.changeNote.token,
       viewingKey: proof.changeNote.viewingKey,
@@ -418,6 +471,10 @@ async function doTransfer() {
 }
 
 watch(isSelfTransfer, (selfTransfer) => {
+  // Reset recipient fields when toggling self-transfer
+  toAccountAddress.value = ''
+  manualPublicKeyX.value = ''
+  manualPublicKeyY.value = ''
   if (selfTransfer) {
     createAccountModalActive.value = true
   }

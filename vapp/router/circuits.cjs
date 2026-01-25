@@ -55,10 +55,12 @@ router.post('/', asyncWrap(
           salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
         }
 
-        // Create note with account's public key as owner
+        // Derive 160-bit address from public key
+        const ownerAddress = noteProofHelper.deriveAddressFromPK(publicKey);
+
+        // Create note with address-based ownership
         const note = new Note(
-          Web3Utils.padLeft(publicKey.x, 64),
-          Web3Utils.padLeft(publicKey.y, 64),
+          Web3Utils.padLeft(ownerAddress, 40),
           Web3Utils.padLeft(Web3Utils.toHex(noteData.value || '0'), 64),
           noteData.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft(noteData.viewingKey || '0x0', 64),
@@ -74,8 +76,7 @@ router.post('/', asyncWrap(
           c: mintProof.c,
           input: mintProof.input,
           note: {
-            owner0: note.owner0,
-            owner1: note.owner1,
+            ownerAddress: note.ownerAddress,
             value: note.value,
             token: note.token,
             viewingKey: note.viewingKey,
@@ -88,7 +89,7 @@ router.post('/', asyncWrap(
 
       case 'transferNote': {
         // params: [oldNote, newNoteParams, changeNoteParams, sk, recipientPublicKey, senderPublicKey]
-        // oldNote: the input note with owner0, owner1, value, token, viewingKey, salt
+        // oldNote: the input note with ownerAddress, value, token, viewingKey, salt
         // newNoteParams: { value, token } for recipient note
         // changeNoteParams: { value, token } for change note
         // sk: secret key of the old note owner
@@ -107,8 +108,7 @@ router.post('/', asyncWrap(
         // Ensure token is converted consistently (same as mint)
         const oldTokenValue = (oldNoteData.token === '0x1' || oldNoteData.token === 1 || oldNoteData.token === '1') ? 1 : 0;
         const oldNote0 = new Note(
-          oldNoteData.owner0,
-          oldNoteData.owner1,
+          oldNoteData.ownerAddress,
           oldNoteData.value,
           oldTokenValue,
           oldNoteData.viewingKey || '0x0',
@@ -120,10 +120,13 @@ router.post('/', asyncWrap(
         const mask254 = (BigInt(1) << BigInt(254)) - BigInt(1);
         const newSalt = '0x' + (newSaltBigInt & mask254).toString(16).padStart(64, '0');
 
-        // Create new note with recipient's public key
+        // Derive addresses from public keys
+        const recipientAddress = noteProofHelper.deriveAddressFromPK(recipientPublicKey);
+        const senderAddress = noteProofHelper.deriveAddressFromPK(senderPublicKey);
+
+        // Create new note with recipient's address
         const newNote = new Note(
-          Web3Utils.padLeft(recipientPublicKey.x, 64),
-          Web3Utils.padLeft(recipientPublicKey.y, 64),
+          Web3Utils.padLeft(recipientAddress, 40),
           Web3Utils.padLeft(Web3Utils.toHex(newNoteParams.value || '0'), 64),
           newNoteParams.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft('0x0', 64),
@@ -134,10 +137,9 @@ router.post('/', asyncWrap(
         const changeSaltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
         const changeSalt = '0x' + (changeSaltBigInt & mask254).toString(16).padStart(64, '0');
 
-        // Create change note with sender's public key
+        // Create change note with sender's address
         const changeNote = new Note(
-          Web3Utils.padLeft(senderPublicKey.x, 64),
-          Web3Utils.padLeft(senderPublicKey.y, 64),
+          Web3Utils.padLeft(senderAddress, 40),
           Web3Utils.padLeft(Web3Utils.toHex(changeNoteParams.value || '0'), 64),
           changeNoteParams.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft('0x0', 64),
@@ -155,8 +157,7 @@ router.post('/', asyncWrap(
           c: transferProof.c,
           input: transferProof.input,
           newNote: {
-            owner0: newNote.owner0,
-            owner1: newNote.owner1,
+            ownerAddress: newNote.ownerAddress,
             value: newNote.value,
             token: newNote.token,
             viewingKey: newNote.viewingKey,
@@ -164,8 +165,7 @@ router.post('/', asyncWrap(
             hash: newNote.hash()
           },
           changeNote: {
-            owner0: changeNote.owner0,
-            owner1: changeNote.owner1,
+            ownerAddress: changeNote.ownerAddress,
             value: changeNote.value,
             token: changeNote.token,
             viewingKey: changeNote.viewingKey,
@@ -185,8 +185,7 @@ router.post('/', asyncWrap(
         // Ensure token is converted consistently (same as mint)
         const tokenValue = (noteData.token === '0x1' || noteData.token === 1 || noteData.token === '1') ? 1 : 0;
         const note = new Note(
-          noteData.owner0,
-          noteData.owner1,
+          noteData.ownerAddress,
           noteData.value,
           tokenValue,
           noteData.viewingKey || '0x0',
@@ -202,8 +201,7 @@ router.post('/', asyncWrap(
           c: burnProof.c,
           input: burnProof.input,
           note: {
-            owner0: note.owner0,
-            owner1: note.owner1,
+            ownerAddress: note.ownerAddress,
             value: note.value,
             token: note.token,
             viewingKey: note.viewingKey,
@@ -222,8 +220,7 @@ router.post('/', asyncWrap(
         // Ensure token is converted consistently (same as mint)
         const tokenValue = (noteData.token === '0x1' || noteData.token === 1 || noteData.token === '1') ? 1 : 0;
         const makerNote = new Note(
-          noteData.owner0,
-          noteData.owner1,
+          noteData.ownerAddress,
           noteData.value,
           tokenValue,
           noteData.viewingKey || '0x0',
@@ -251,8 +248,7 @@ router.post('/', asyncWrap(
 
         // Reconstruct parent note (maker's note)
         const parentNote = new Note(
-          parentNoteData.owner0,
-          parentNoteData.owner1,
+          parentNoteData.ownerAddress,
           parentNoteData.value,
           parentTokenValue,
           parentNoteData.viewingKey || '0x0',
@@ -261,15 +257,14 @@ router.post('/', asyncWrap(
 
         // Reconstruct taker's input note
         const takerNote = new Note(
-          takerNoteData.owner0,
-          takerNoteData.owner1,
+          takerNoteData.ownerAddress,
           takerNoteData.value,
           takerTokenValue,
           takerNoteData.viewingKey || '0x0',
           takerNoteData.salt
         );
 
-        // Create stake note (smart note owned by the parent note's hash)
+        // Create stake note (smart note owned by truncated hash of parent note)
         const stakeNote = noteProofHelper.createSmartNote(
           parentNote,
           BigInt(stakeNoteParams.value || '0'),
@@ -285,8 +280,7 @@ router.post('/', asyncWrap(
           c: takeOrderProof.c,
           input: takeOrderProof.input,
           stakeNote: {
-            owner0: stakeNote.owner0,
-            owner1: stakeNote.owner1,
+            ownerAddress: stakeNote.ownerAddress,  // 160-bit truncated hash of parent note
             value: stakeNote.value,
             token: stakeNote.token,
             viewingKey: stakeNote.viewingKey,
@@ -315,10 +309,9 @@ router.post('/', asyncWrap(
         const token0Value = (note0Data.token === '0x1' || note0Data.token === 1 || note0Data.token === '1') ? 1 : 0;
         const token1Value = note1Data ? ((note1Data.token === '0x1' || note1Data.token === 1 || note1Data.token === '1') ? 1 : 0) : 0;
 
-        // Reconstruct input notes
+        // Reconstruct input notes with address-based ownership
         const oldNote0 = new Note(
-          note0Data.owner0,
-          note0Data.owner1,
+          note0Data.ownerAddress,
           note0Data.value,
           token0Value,
           note0Data.viewingKey || '0x0',
@@ -326,8 +319,7 @@ router.post('/', asyncWrap(
         );
 
         const oldNote1 = note1Data ? new Note(
-          note1Data.owner0,
-          note1Data.owner1,
+          note1Data.ownerAddress,
           note1Data.value,
           token1Value,
           note1Data.viewingKey || '0x0',
@@ -342,22 +334,23 @@ router.post('/', asyncWrap(
         const combinedSaltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
         const combinedSalt = '0x' + (combinedSaltBigInt & mask254).toString(16).padStart(64, '0');
 
-        // Create combined note with owner's public key
+        // Derive address from owner's public key
+        const ownerAddress = noteProofHelper.deriveAddressFromPK(ownerPublicKey);
+
+        // Create combined note with owner's address
         const combinedNote = new Note(
-          Web3Utils.padLeft(ownerPublicKey.x, 64),
-          Web3Utils.padLeft(ownerPublicKey.y, 64),
+          Web3Utils.padLeft(ownerAddress, 40),
           Web3Utils.padLeft(Web3Utils.toHex(combinedValue.toString()), 64),
           note0Data.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft('0x0', 64),
           Web3Utils.padLeft(combinedSalt, 64)
         );
 
-        // Create zero-value change note (also owned by the same account)
+        // Create zero-value change note (also owned by the same address)
         const zeroSaltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
         const zeroSalt = '0x' + (zeroSaltBigInt & mask254).toString(16).padStart(64, '0');
         const zeroNote = new Note(
-          Web3Utils.padLeft(ownerPublicKey.x, 64),
-          Web3Utils.padLeft(ownerPublicKey.y, 64),
+          Web3Utils.padLeft(ownerAddress, 40),
           Web3Utils.padLeft('0x0', 64),
           note0Data.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft('0x0', 64),
@@ -375,8 +368,7 @@ router.post('/', asyncWrap(
           c: combineProof.c,
           input: combineProof.input,
           combinedNote: {
-            owner0: combinedNote.owner0,
-            owner1: combinedNote.owner1,
+            ownerAddress: combinedNote.ownerAddress,
             value: combinedNote.value,
             token: combinedNote.token,
             viewingKey: combinedNote.viewingKey,
@@ -390,7 +382,7 @@ router.post('/', asyncWrap(
       case 'convertNote': {
         // Convert a smart note back to a regular note
         // params: [smartNoteData, originNoteData, sk, ownerPublicKey]
-        // smartNoteData: The smart note to convert (isSmart = 1)
+        // smartNoteData: The smart note to convert (ownerAddress = truncated hash of origin)
         // originNoteData: The origin note whose hash is the smart note's owner
         // sk: Secret key of the origin note
         // ownerPublicKey: { x, y } BabyJubJub public key for the new note
@@ -408,10 +400,9 @@ router.post('/', asyncWrap(
         const smartTokenValue = (smartNoteData.token === '0x1' || smartNoteData.token === 1 || smartNoteData.token === '1') ? 1 : 0;
         const originTokenValue = (originNoteData.token === '0x1' || originNoteData.token === 1 || originNoteData.token === '1') ? 1 : 0;
 
-        // Reconstruct smart note
+        // Reconstruct smart note with address-based ownership
         const smartNote = new Note(
-          smartNoteData.owner0,
-          smartNoteData.owner1,
+          smartNoteData.ownerAddress,
           smartNoteData.value,
           smartTokenValue,
           smartNoteData.viewingKey || '0x0',
@@ -420,8 +411,7 @@ router.post('/', asyncWrap(
 
         // Reconstruct origin note
         const originNote = new Note(
-          originNoteData.owner0,
-          originNoteData.owner1,
+          originNoteData.ownerAddress,
           originNoteData.value,
           originTokenValue,
           originNoteData.viewingKey || '0x0',
@@ -433,10 +423,12 @@ router.post('/', asyncWrap(
         const newSaltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
         const newSalt = '0x' + (newSaltBigInt & mask254).toString(16).padStart(64, '0');
 
-        // Create new regular note with owner's public key
+        // Derive address from owner's public key
+        const ownerAddress = noteProofHelper.deriveAddressFromPK(ownerPublicKey);
+
+        // Create new regular note with owner's address
         const newNote = new Note(
-          Web3Utils.padLeft(ownerPublicKey.x, 64),
-          Web3Utils.padLeft(ownerPublicKey.y, 64),
+          Web3Utils.padLeft(ownerAddress, 40),
           Web3Utils.padLeft(Web3Utils.toHex(smartNoteData.value || '0'), 64),
           smartNoteData.token === '0x1' ? 1 : 0,
           Web3Utils.padLeft('0x0', 64),
@@ -452,8 +444,7 @@ router.post('/', asyncWrap(
           c: convertProof.c,
           input: convertProof.input,
           newNote: {
-            owner0: newNote.owner0,
-            owner1: newNote.owner1,
+            ownerAddress: newNote.ownerAddress,
             value: newNote.value,
             token: newNote.token,
             viewingKey: newNote.viewingKey,

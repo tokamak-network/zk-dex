@@ -1,24 +1,23 @@
 pragma circom 2.1.0;
 
-include "../utils/sha256/sha256_1536bit.circom";
+include "../utils/sha256/sha256_note_address.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
-include "../utils/is_smart.circom";
 include "../utils/math/safe_math.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 
-// SettleOrder Circuit
+// SettleOrder Circuit (Address-based ownership)
 // Atomic settlement of maker-taker order with price calculation
 //
 // Inputs:
-// - Maker note (o0): maker's note being traded
-// - Taker stake note (o1): taker's payment to maker
+// - Maker note (o0): maker's note being traded (normal note with address)
+// - Taker stake note (o1): taker's payment to maker (smart note with address = truncated maker note hash)
 // - Price: exchange rate
 // - Division quotients/remainders for non-deterministic arithmetic
 //
-// Outputs (3 new notes):
-// - Reward note (n0): maker's source token to taker
-// - Payment note (n1): taker's target token to maker
+// Outputs (3 new notes, all smart notes):
+// - Reward note (n0): maker's source token to taker (owner = taker's parent note hash truncated)
+// - Payment note (n1): taker's target token to maker (owner = maker's note hash truncated)
 // - Change note (n2): remainder to appropriate party
 //
 // Math:
@@ -40,15 +39,13 @@ template SettleOrder() {
     // Reward note (n0) - to taker
     signal input n0h0;
     signal input n0h1;
-    signal input n0Owner0;     // Taker's parent note hash (public)
-    signal input n0Owner1;
+    signal input n0OwnerAddress;   // Taker's parent note hash truncated (160-bit)
     signal input n0Type;
 
     // Payment note (n1) - to maker
     signal input n1h0;
     signal input n1h1;
-    signal input n1Owner0;     // Maker's note hash (public)
-    signal input n1Owner1;
+    signal input n1OwnerAddress;   // Maker's note hash truncated (160-bit)
     signal input n1Type;
 
     // Change note (n2)
@@ -61,16 +58,14 @@ template SettleOrder() {
 
     // ===== Private Inputs =====
     // Maker note (o0)
-    signal input o0Owner0;
-    signal input o0Owner1;
+    signal input o0OwnerAddress;   // 160-bit address
     signal input o0Value;
     signal input o0Vk0;
     signal input o0Vk1;
     signal input o0Salt;
 
     // Taker stake note (o1)
-    signal input o1Owner0;
-    signal input o1Owner1;
+    signal input o1OwnerAddress;   // 160-bit (truncated maker note hash)
     signal input o1Value;
     signal input o1Vk0;
     signal input o1Vk1;
@@ -89,18 +84,17 @@ template SettleOrder() {
     signal input n1Salt;
 
     // Change note (n2)
-    signal input n2Owner0;
-    signal input n2Owner1;
+    signal input n2OwnerAddress;   // 160-bit (determined by settlement direction)
     signal input n2Value;
     signal input n2Vk0;
     signal input n2Vk1;
     signal input n2Salt;
 
     // Division witnesses (for non-deterministic arithmetic)
-    signal input q0;           // quotient: o0Value * price / 10^18
-    signal input r0;           // remainder
-    signal input q1;           // quotient: o1Value / price
-    signal input r1;           // remainder
+    signal input q0;               // quotient: o0Value * price / 10^18
+    signal input r0;               // remainder
+    signal input q1;               // quotient: o1Value / price
+    signal input r1;               // remainder
 
     // Secret key for maker note ownership
     signal input sk;
@@ -112,42 +106,35 @@ template SettleOrder() {
     var DECIMALS = 1000000000000000000; // 10^18
 
     // ===== 1. Verify maker note hash =====
-    component hashO0 = Sha256_1536bit();
-    hashO0.in[0] <== o0Owner0;
-    hashO0.in[1] <== o0Owner1;
-    hashO0.in[2] <== o0Value;
-    hashO0.in[3] <== o0Type;
-    hashO0.in[4] <== o0Vk0;
-    hashO0.in[5] <== o0Vk1;
-    hashO0.in[6] <== o0Salt;
+    component hashO0 = Sha256NoteWithAddress();
+    hashO0.ownerAddress <== o0OwnerAddress;
+    hashO0.value <== o0Value;
+    hashO0.tokenType <== o0Type;
+    hashO0.vk0 <== o0Vk0;
+    hashO0.vk1 <== o0Vk1;
+    hashO0.salt <== o0Salt;
 
     hashO0.out[0] === o0h0;
     hashO0.out[1] === o0h1;
 
     // ===== 2. Verify taker stake note hash =====
-    component hashO1 = Sha256_1536bit();
-    hashO1.in[0] <== o1Owner0;
-    hashO1.in[1] <== o1Owner1;
-    hashO1.in[2] <== o1Value;
-    hashO1.in[3] <== o1Type;
-    hashO1.in[4] <== o1Vk0;
-    hashO1.in[5] <== o1Vk1;
-    hashO1.in[6] <== o1Salt;
+    component hashO1 = Sha256NoteWithAddress();
+    hashO1.ownerAddress <== o1OwnerAddress;
+    hashO1.value <== o1Value;
+    hashO1.tokenType <== o1Type;
+    hashO1.vk0 <== o1Vk0;
+    hashO1.vk1 <== o1Vk1;
+    hashO1.salt <== o1Salt;
 
     hashO1.out[0] === o1h0;
     hashO1.out[1] === o1h1;
 
-    // ===== 3. Verify maker note ownership =====
-    component ownership = ProofOfOwnershipStrict();
-    ownership.pk[0] <== o0Owner0;
-    ownership.pk[1] <== o0Owner1;
+    // ===== 3. Verify maker note ownership (address-based) =====
+    component ownership = VerifyOwnershipByAddressStrict();
+    ownership.address <== o0OwnerAddress;
     ownership.sk <== sk;
 
-    // ===== 4. Verify taker stake note is smart note =====
-    component isSmart = IsSmartStrict();
-    isSmart.owner0 <== o1Owner0;
-
-    // ===== 5. Division proof for price calculation =====
+    // ===== 4. Division proof for price calculation =====
     // o0Value * price = q0 * 10^18 + r0
     signal o0ValueTimesPrice;
     o0ValueTimesPrice <== o0Value * price;
@@ -179,7 +166,7 @@ template SettleOrder() {
     r1Valid.in[1] <== price;
     r1Valid.out === 1;
 
-    // ===== 6. Determine settlement direction =====
+    // ===== 5. Determine settlement direction =====
     // o1ValueOverPrice = q1 (integer division of o1Value / price)
     // o0ValuePrice = q0 (o0Value * price / 10^18)
     signal o1ValueOverPrice;
@@ -195,7 +182,7 @@ template SettleOrder() {
     signal bit;
     bit <== cmp.out;
 
-    // ===== 7. Calculate expected values =====
+    // ===== 6. Calculate expected values =====
     // if bit == 1: reward = o1ValueOverPrice, payment = o1Value, change = o0Value - o1ValueOverPrice
     // if bit == 0: reward = o0Value, payment = o0ValuePrice, change = o1Value - o0ValuePrice
 
@@ -227,59 +214,46 @@ template SettleOrder() {
     signal expectedChange;
     expectedChange <== muxChange.out;
 
-    // ===== 8. Verify output note values =====
+    // ===== 7. Verify output note values =====
     n0Value === expectedReward;
     n1Value === expectedPayment;
     n2Value === expectedChange;
 
-    // ===== 9. Verify all output notes are smart notes =====
-    component isSmartN0 = IsSmartStrict();
-    isSmartN0.owner0 <== n0Owner0;
-
-    component isSmartN1 = IsSmartStrict();
-    isSmartN1.owner0 <== n1Owner0;
-
-    component isSmartN2 = IsSmartStrict();
-    isSmartN2.owner0 <== n2Owner0;
-
-    // ===== 10. Verify output note hashes =====
-    component hashN0 = Sha256_1536bit();
-    hashN0.in[0] <== n0Owner0;
-    hashN0.in[1] <== n0Owner1;
-    hashN0.in[2] <== n0Value;
-    hashN0.in[3] <== n0Type;
-    hashN0.in[4] <== n0Vk0;
-    hashN0.in[5] <== n0Vk1;
-    hashN0.in[6] <== n0Salt;
+    // ===== 8. Verify output note hashes =====
+    component hashN0 = Sha256NoteWithAddress();
+    hashN0.ownerAddress <== n0OwnerAddress;
+    hashN0.value <== n0Value;
+    hashN0.tokenType <== n0Type;
+    hashN0.vk0 <== n0Vk0;
+    hashN0.vk1 <== n0Vk1;
+    hashN0.salt <== n0Salt;
 
     hashN0.out[0] === n0h0;
     hashN0.out[1] === n0h1;
 
-    component hashN1 = Sha256_1536bit();
-    hashN1.in[0] <== n1Owner0;
-    hashN1.in[1] <== n1Owner1;
-    hashN1.in[2] <== n1Value;
-    hashN1.in[3] <== n1Type;
-    hashN1.in[4] <== n1Vk0;
-    hashN1.in[5] <== n1Vk1;
-    hashN1.in[6] <== n1Salt;
+    component hashN1 = Sha256NoteWithAddress();
+    hashN1.ownerAddress <== n1OwnerAddress;
+    hashN1.value <== n1Value;
+    hashN1.tokenType <== n1Type;
+    hashN1.vk0 <== n1Vk0;
+    hashN1.vk1 <== n1Vk1;
+    hashN1.salt <== n1Salt;
 
     hashN1.out[0] === n1h0;
     hashN1.out[1] === n1h1;
 
-    component hashN2 = Sha256_1536bit();
-    hashN2.in[0] <== n2Owner0;
-    hashN2.in[1] <== n2Owner1;
-    hashN2.in[2] <== n2Value;
-    hashN2.in[3] <== n2Type;
-    hashN2.in[4] <== n2Vk0;
-    hashN2.in[5] <== n2Vk1;
-    hashN2.in[6] <== n2Salt;
+    component hashN2 = Sha256NoteWithAddress();
+    hashN2.ownerAddress <== n2OwnerAddress;
+    hashN2.value <== n2Value;
+    hashN2.tokenType <== n2Type;
+    hashN2.vk0 <== n2Vk0;
+    hashN2.vk1 <== n2Vk1;
+    hashN2.salt <== n2Salt;
 
     hashN2.out[0] === n2h0;
     hashN2.out[1] === n2h1;
 
-    // ===== 11. Type consistency =====
+    // ===== 9. Type consistency =====
     // n0Type should match o0Type (reward in maker's token)
     n0Type === o0Type;
     // n1Type should match o1Type (payment in taker's token)
@@ -297,8 +271,8 @@ template SettleOrder() {
 component main {public [
     o0h0, o0h1, o0Type,
     o1h0, o1h1, o1Type,
-    n0h0, n0h1, n0Owner0, n0Owner1, n0Type,
-    n1h0, n1h1, n1Owner0, n1Owner1, n1Type,
+    n0h0, n0h1, n0OwnerAddress, n0Type,
+    n1h0, n1h1, n1OwnerAddress, n1Type,
     n2h0, n2h1, n2Type,
     price
 ]} = SettleOrder();

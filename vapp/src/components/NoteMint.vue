@@ -127,8 +127,7 @@ interface MintProofResponse {
   c: string[]
   input: string[]
   note: {
-    owner0: string
-    owner1: string
+    ownerAddress: string
     value: string
     token: string
     viewingKey: string
@@ -160,8 +159,7 @@ function encryptNote(noteData: MintProofResponse['note']): string {
   // Encode note data using RLP for on-chain storage
   // This allows note recovery by scanning blockchain events
   return encodeNoteData({
-    owner0: noteData.owner0,
-    owner1: noteData.owner1,
+    ownerAddress: noteData.ownerAddress,
     value: noteData.value,
     token: noteData.token,
     viewingKey: noteData.viewingKey,
