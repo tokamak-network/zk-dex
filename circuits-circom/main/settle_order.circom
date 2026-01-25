@@ -3,8 +3,10 @@ pragma circom 2.1.0;
 include "../utils/sha256/sha256_note_address.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
 include "../utils/math/safe_math.circom";
+include "../utils/pack/pack160.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
+include "../node_modules/circomlib/circuits/bitify.circom";
 
 // SettleOrder Circuit (Address-based ownership)
 // Atomic settlement of maker-taker order with price calculation
@@ -134,6 +136,44 @@ template SettleOrder() {
     ownership.address <== o0OwnerAddress;
     ownership.sk <== sk;
 
+    // ===== SECURITY FIX: Compute truncated maker note hash (160-bit address) =====
+    // Address = h0[high 32 bits] || h1[all 128 bits] = 160 bits
+    // Original Zokrates: o0h0 == o1owner0, o0h1 == o1owner1
+
+    // Unpack o0h0 (128 bits) to get high 32 bits
+    component unpackMakerH0 = Num2Bits(128);
+    unpackMakerH0.in <== o0h0;
+
+    // Unpack o0h1 (128 bits)
+    component unpackMakerH1 = Num2Bits(128);
+    unpackMakerH1.in <== o0h1;
+
+    // Build truncated maker address: h0[high 32 bits] + h1[all 128 bits] = 160 bits
+    component packMakerAddr = Pack160();
+    // First 32 bits: high 32 bits of o0h0 (bits 96-127)
+    for (var i = 0; i < 32; i++) {
+        packMakerAddr.bits[i] <== unpackMakerH0.out[127 - i];  // MSB first
+    }
+    // Remaining 128 bits: all of o0h1
+    for (var i = 0; i < 128; i++) {
+        packMakerAddr.bits[32 + i] <== unpackMakerH1.out[127 - i];  // MSB first
+    }
+
+    // ===== SECURITY FIX 1: Verify stake note (o1) owner == truncated maker hash =====
+    // This links the stake note to the maker's order
+    // Original Zokrates: o0h0 == o1owner0 && o0h1 == o1owner1
+    component stakeOwnerCheck = IsEqual();
+    stakeOwnerCheck.in[0] <== o1OwnerAddress;
+    stakeOwnerCheck.in[1] <== packMakerAddr.out;
+    stakeOwnerCheck.out === 1;
+
+    // ===== SECURITY FIX 2: Verify payment note (n1) owner == truncated maker hash =====
+    // Payment goes to maker, so owner should be truncated maker note hash
+    component paymentOwnerCheck = IsEqual();
+    paymentOwnerCheck.in[0] <== n1OwnerAddress;
+    paymentOwnerCheck.in[1] <== packMakerAddr.out;
+    paymentOwnerCheck.out === 1;
+
     // ===== 4. Division proof for price calculation =====
     // o0Value * price = q0 * 10^18 + r0
     signal o0ValueTimesPrice;
@@ -167,13 +207,13 @@ template SettleOrder() {
     r1Valid.out === 1;
 
     // ===== 5. Determine settlement direction =====
-    // o1ValueOverPrice = q1 (integer division of o1Value / price)
-    // o0ValuePrice = q0 (o0Value * price / 10^18)
+    // o1ValueOverPrice = q1 (ETH equivalent of taker's DAI: o1Value / price)
+    // o0ValuePrice = q0 * 10^18 (DAI equivalent of maker's ETH: o0Value * price)
     signal o1ValueOverPrice;
-    o1ValueOverPrice <== q1;
+    o1ValueOverPrice <== q1;  // q1 = floor(o1Value / price), already in wei
 
     signal o0ValuePrice;
-    o0ValuePrice <== q0;
+    o0ValuePrice <== q0 * DECIMALS;  // Scale up: q0 * 10^18 to get DAI in wei
 
     // bit = 1 if o0Value >= o1ValueOverPrice, else 0
     component cmp = GreaterEqThan(252);
@@ -213,6 +253,20 @@ template SettleOrder() {
     muxChange.s <== bit;
     signal expectedChange;
     expectedChange <== muxChange.out;
+
+    // ===== SECURITY FIX 3: Verify change note (n2) owner =====
+    // Original Zokrates: n2owner = if bit == 1 then o0h (maker) else n0owner (taker parent)
+    // If bit == 1: maker has excess, change goes to maker -> owner = truncated maker hash
+    // If bit == 0: taker has excess, change goes to taker -> owner = n0OwnerAddress (taker's parent)
+    component muxChangeOwner = Mux1();
+    muxChangeOwner.c[0] <== n0OwnerAddress;      // if bit=0, change to taker (same as reward owner)
+    muxChangeOwner.c[1] <== packMakerAddr.out;   // if bit=1, change to maker
+    muxChangeOwner.s <== bit;
+
+    component changeOwnerCheck = IsEqual();
+    changeOwnerCheck.in[0] <== n2OwnerAddress;
+    changeOwnerCheck.in[1] <== muxChangeOwner.out;
+    changeOwnerCheck.out === 1;
 
     // ===== 7. Verify output note values =====
     n0Value === expectedReward;

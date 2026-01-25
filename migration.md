@@ -122,9 +122,9 @@ circuits-circom/
 | take_order | 246,040 |
 | convert_note | 337,437 |
 | transfer_note | 492,085 |
-| settle_order | 520,221 |
+| settle_order | 520,481 |
 
-*Updated after address-based ownership migration (Phase 2)*
+*Updated after address-based ownership migration (Phase 2) and security fixes (Phase 2.2-2.3)*
 
 ## Groth16 Proof Format
 
@@ -476,7 +476,7 @@ generateSettleOrderProof(makerNote, takerStakeNote, rewardNote, paymentNote, cha
 | SettleOrder Proof | Generate | 1/1 ✓ |
 | Proof Format | Contract compatibility, Array helper | 2/2 ✓ |
 
-### Boundary Value and Edge Case Tests (33/33 passing)
+### Boundary Value and Edge Case Tests (45/45 passing)
 
 ```bash
 node test/boundary-edge-cases.test.js
@@ -487,10 +487,13 @@ node test/boundary-edge-cases.test.js
 | Boundary Values | value=0, 1 wei, 1 ETH, 2^128-1, 10^30, token types, salt boundaries | 9/9 ✓ |
 | Edge Cases | Empty note hash, same value notes, self-transfer, equal split, full transfer, two inputs | 7/7 ✓ |
 | Price Calculation | price=1 (1:1), exact division, large price (100), partial fill | 4/4 ✓ |
-| Smart Notes | Create smart note, identify smart, convert note | 3/3 ✓ |
+| Smart Notes | Create smart note, ownerAddress derivation, convert note | 3/3 ✓ |
 | Hash Consistency | Deterministic, value change, token change, owner change, 128-bit split | 5/5 ✓ |
 | Proof Format | Structure validation, hex values, circuit differences | 3/3 ✓ |
 | MakeOrder/TakeOrder | Minimum value, stake note creation | 2/2 ✓ |
+| Viewing Key Relationship | Normal note vk↔address, smart note vk↔parentHash, different keys | 4/4 ✓ |
+| SettleOrder Security | Stake owner, payment owner, change owner (bit=1), negative tests | 6/6 ✓ |
+| SettleOrder bit=0 | Taker excess scenario, change owner constraint | 2/2 ✓ |
 
 ### Frontend Integration Example (`examples/frontend-usage.js`)
 
@@ -522,8 +525,24 @@ await zkdex.mint(
    - All tests passing in Docker environment
 
 10. ✅ **Boundary value and edge case tests added**
-   - `test/boundary-edge-cases.test.js` - 33 tests all passing
+   - `test/boundary-edge-cases.test.js` - 45 tests all passing
    - Covers circuit behavior at boundary values and edge cases
+
+11. ✅ **Viewing key ↔ ownerAddress relationship established**
+    - Normal notes: ownerAddress = viewingKey[96:256] (last 160 bits)
+    - Smart notes: ownerAddress = truncated(parentNoteHash), viewingKey = parentNoteHash
+    - Added 4 new relationship tests
+
+12. ✅ **SettleOrder security fixes implemented**
+    - Security Fix 1: Stake note owner verification
+    - Security Fix 2: Payment note owner verification
+    - Security Fix 3: Change note owner verification (bit-dependent)
+    - Added 6 new security tests (3 positive, 3 negative)
+
+13. ✅ **SettleOrder bit=0 scaling fix**
+    - Fixed payment calculation: `o0ValuePrice = q0 * DECIMALS`
+    - bit=0 (taker excess) now correctly scales DAI payment to wei
+    - Added 2 new bit=0 tests
 
 ## Docker Environment
 
@@ -662,9 +681,9 @@ All 6 main circuits updated to use ownerAddress instead of owner0/owner1:
 | take_order | 247,664 | 246,040 | -0.7% |
 | convert_note | 369,396 | 337,437 | -8.6% |
 | transfer_note | 494,825 | 492,085 | -0.6% |
-| settle_order | 614,380 | 520,221 | -15% |
+| settle_order | 614,380 | 520,481 | -15% |
 
-**Note:** mint_burn_note and make_order constraints increased due to address derivation (SHA256 of public key). Other circuits decreased due to smaller note hash input (1184 vs 1536 bits).
+**Note:** mint_burn_note and make_order constraints increased due to address derivation (SHA256 of public key). Other circuits decreased due to smaller note hash input (1184 vs 1536 bits). settle_order includes security fixes (Phase 2.2-2.3).
 
 ### Backend Changes
 
@@ -721,6 +740,184 @@ All circuit tests passing:
 2. **Smaller Hash Input:** 1536-bit → 1184-bit note hash
 3. **Ethereum Compatibility:** 160-bit address matches Ethereum format
 4. **Unified Structure:** Normal and smart notes use same owner format
+
+---
+
+## Viewing Key ↔ OwnerAddress Relationship (Phase 2.1)
+
+### Overview
+
+Established a clear derivation relationship between viewing key and owner address for both normal and smart notes.
+
+**Date:** 2026-01-26
+**Status:** ✅ Complete
+
+### Normal Notes
+
+```
+viewingKey = SHA256(pk.x || pk.y) = 256 bits
+ownerAddress = viewingKey[96:256] = last 160 bits
+```
+
+- pk.x and pk.y are BabyJubJub public key coordinates (256 bits each)
+- viewingKey is the full 256-bit hash
+- ownerAddress is derived from viewingKey (last 160 bits)
+
+### Smart Notes
+
+```
+viewingKey = parentNoteHash = 256 bits
+ownerAddress = truncated(parentNoteHash) = h0[0:32 bits] + h1[all 128 bits] = 160 bits
+```
+
+- parentNoteHash is split into h0 (first 128 bits) and h1 (last 128 bits)
+- ownerAddress = h0[96:128] (32 bits) + h1 (128 bits) = 160 bits
+- This maintains the relationship: ownerAddress is embedded within viewingKey
+
+### Backend Implementation
+
+**noteProofHelper.js:**
+```javascript
+// Normal note creation
+async function createNote(sk, value, tokenType, viewingKey = null, salt = null) {
+    const pk = await derivePublicKey(sk);
+    const ownerAddress = deriveAddressFromPK(pk);  // SHA256(pk)[96:256]
+
+    if (!viewingKey) {
+        const vkData = snarkjsUtils.getViewingKeyFromPublicKey(pk);
+        viewingKey = vkData.fullHash;  // SHA256(pk) = 256 bits
+    }
+    // ...
+}
+
+// Smart note creation
+function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = null) {
+    const ownerHash = ownerNote.hash();
+    const ownerAddress = snarkjsUtils.getSmartNoteOwnerAddress(ownerHash);
+
+    if (!viewingKey) {
+        viewingKey = ownerHash;  // parentNoteHash = 256 bits
+    }
+    // ...
+}
+```
+
+---
+
+## SettleOrder Security Fixes (Phase 2.2)
+
+### Overview
+
+Fixed critical security issues and a scaling bug in the settle_order circuit.
+
+**Date:** 2026-01-26
+**Status:** ✅ Complete
+
+### Security Fix 1: Stake Note Owner Verification
+
+**Problem:** Stake note owner was not verified to match the truncated maker note hash.
+
+**Solution:** Added constraint in `settle_order.circom`:
+```circom
+// SECURITY FIX 1: Verify stake note (o1) owner == truncated(makerNote.hash)
+component stakeOwnerCheck = IsEqual();
+stakeOwnerCheck.in[0] <== o1OwnerAddress;
+stakeOwnerCheck.in[1] <== packMakerAddr.out;  // truncated maker hash
+stakeOwnerCheck.out === 1;
+```
+
+### Security Fix 2: Payment Note Owner Verification
+
+**Problem:** Payment note owner was not verified.
+
+**Solution:** Added constraint:
+```circom
+// SECURITY FIX 2: Verify payment note (n1) owner == truncated(makerNote.hash)
+component paymentOwnerCheck = IsEqual();
+paymentOwnerCheck.in[0] <== n1OwnerAddress;
+paymentOwnerCheck.in[1] <== packMakerAddr.out;
+paymentOwnerCheck.out === 1;
+```
+
+### Security Fix 3: Change Note Owner Verification
+
+**Problem:** Change note owner was not verified based on settlement direction (bit).
+
+**Solution:** Added constraint:
+```circom
+// SECURITY FIX 3: Verify change note (n2) owner
+// bit=1: change to maker, bit=0: change to taker
+component muxChangeOwner = Mux1();
+muxChangeOwner.c[0] <== n0OwnerAddress;      // if bit=0, taker
+muxChangeOwner.c[1] <== packMakerAddr.out;   // if bit=1, maker
+muxChangeOwner.s <== bit;
+
+component changeOwnerCheck = IsEqual();
+changeOwnerCheck.in[0] <== n2OwnerAddress;
+changeOwnerCheck.in[1] <== muxChangeOwner.out;
+changeOwnerCheck.out === 1;
+```
+
+---
+
+## SettleOrder bit=0 Scaling Fix (Phase 2.3)
+
+### Overview
+
+Fixed a critical scaling bug in the bit=0 case (taker has excess) of the settle_order circuit.
+
+**Date:** 2026-01-26
+**Status:** ✅ Complete
+
+### Problem
+
+When bit=0, the payment calculation used `q0` directly, which loses the wei scaling:
+
+```circom
+// Before (BUG)
+signal o0ValuePrice;
+o0ValuePrice <== q0;  // q0 = 50, not 50×10^18!
+```
+
+**Example:**
+- makerValue = 5 ETH = 5×10^18 wei
+- price = 10 (10 DAI per ETH)
+- q0 = (5×10^18 × 10) / 10^18 = 50
+- **Wrong:** payment = 50 wei (essentially 0 DAI)
+- **Correct:** payment = 50×10^18 wei (50 DAI)
+
+### Solution
+
+Scale up `o0ValuePrice` by multiplying with DECIMALS (10^18):
+
+```circom
+// After (FIXED)
+signal o0ValuePrice;
+o0ValuePrice <== q0 * DECIMALS;  // q0 * 10^18 = 50×10^18
+```
+
+### bit=0 vs bit=1 Comparison
+
+| Scenario | bit=1 (Maker Excess) | bit=0 (Taker Excess) |
+|----------|----------------------|----------------------|
+| Condition | makerValue ≥ q1 | makerValue < q1 |
+| Reward (to taker) | q1 (ETH equiv) | makerValue (all ETH) |
+| Payment (to maker) | takerValue (full DAI) | q0 × 10^18 (DAI equiv) |
+| Change | makerValue - q1 | takerValue - payment |
+| Change Owner | Maker | Taker |
+
+### Verified Example (bit=0)
+
+| Value | Amount |
+|-------|--------|
+| makerValue | 5 ETH = 5×10^18 wei |
+| takerValue | 100 DAI = 100×10^18 wei |
+| price | 10 (10 DAI/ETH) |
+| q1 | 10×10^18 (10 ETH equiv) |
+| q0 | 50 |
+| **reward** | 5×10^18 (5 ETH to taker) ✓ |
+| **payment** | 50×10^18 (50 DAI to maker) ✓ |
+| **change** | 50×10^18 (50 DAI to taker) ✓ |
 
 ---
 

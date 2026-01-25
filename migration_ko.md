@@ -122,9 +122,9 @@ circuits-circom/
 | take_order | 246,040 |
 | convert_note | 337,437 |
 | transfer_note | 492,085 |
-| settle_order | 520,221 |
+| settle_order | 520,481 |
 
-*주소 기반 소유권 마이그레이션 (Phase 2) 이후 업데이트됨*
+*주소 기반 소유권 마이그레이션 (Phase 2) 및 보안 수정 (Phase 2.2-2.3) 이후 업데이트됨*
 
 ## Groth16 증명 포맷
 
@@ -508,10 +508,26 @@ await zkdex.mint(
    - Docker 환경에서 전체 테스트 통과
 
 10. ✅ **경계값 및 엣지 케이스 테스트 추가**
-   - `test/boundary-edge-cases.test.js` - 33개 테스트 모두 통과
+   - `test/boundary-edge-cases.test.js` - 45개 테스트 모두 통과
    - 회로 동작의 경계값과 엣지 케이스 검증
 
-### 경계값 및 엣지 케이스 테스트 결과 (33/33 통과)
+11. ✅ **Viewing Key ↔ ownerAddress 관계 설정**
+    - 일반 노트: ownerAddress = viewingKey[96:256] (마지막 160비트)
+    - 스마트 노트: ownerAddress = truncated(parentNoteHash), viewingKey = parentNoteHash
+    - 4개의 관계 테스트 추가
+
+12. ✅ **SettleOrder 보안 수정**
+    - 보안 수정 1: Stake 노트 소유자 검증
+    - 보안 수정 2: Payment 노트 소유자 검증
+    - 보안 수정 3: Change 노트 소유자 검증 (bit 의존)
+    - 6개의 보안 테스트 추가 (양성 3개, 음성 3개)
+
+13. ✅ **SettleOrder bit=0 스케일링 수정**
+    - Payment 계산 수정: `o0ValuePrice = q0 * DECIMALS`
+    - bit=0 (테이커 초과) 케이스에서 DAI 지급액이 올바르게 wei로 스케일링됨
+    - 2개의 bit=0 테스트 추가
+
+### 경계값 및 엣지 케이스 테스트 결과 (45/45 통과)
 
 ```bash
 node test/boundary-edge-cases.test.js
@@ -522,10 +538,13 @@ node test/boundary-edge-cases.test.js
 | 경계값 테스트 | value=0, 1 wei, 1 ETH, 2^128-1, 10^30, 토큰 타입, salt 경계 | 9/9 ✓ |
 | 엣지 케이스 | 빈 노트 해시, 동일 값 노트, 자기 전송, 균등 분할, 전액 전송, 2개 입력 | 7/7 ✓ |
 | 가격 계산 | price=1 (1:1), 정확한 나눗셈, 큰 가격 (100), 부분 체결 | 4/4 ✓ |
-| 스마트 노트 | 스마트 노트 생성, 식별, 변환 | 3/3 ✓ |
+| 스마트 노트 | 스마트 노트 생성, ownerAddress 유도, 변환 | 3/3 ✓ |
 | 해시 일관성 | 결정론적, 값 변경, 토큰 변경, 소유자 변경, 128비트 분할 | 5/5 ✓ |
 | 증명 포맷 | 구조 검증, hex 값, 회로 차이 | 3/3 ✓ |
 | MakeOrder/TakeOrder | 최소 값, stake 노트 생성 | 2/2 ✓ |
+| Viewing Key 관계 | 일반 노트 vk↔address, 스마트 노트 vk↔parentHash, 서로 다른 키 | 4/4 ✓ |
+| SettleOrder 보안 | Stake 소유자, Payment 소유자, Change 소유자 (bit=1), 음성 테스트 | 6/6 ✓ |
+| SettleOrder bit=0 | 테이커 초과 시나리오, Change 소유자 제약 | 2/2 ✓ |
 
 ## Docker 환경
 
@@ -664,9 +683,9 @@ SHA256(
 | take_order | 247,664 | 246,040 | -0.7% |
 | convert_note | 369,396 | 337,437 | -8.6% |
 | transfer_note | 494,825 | 492,085 | -0.6% |
-| settle_order | 614,380 | 520,221 | -15% |
+| settle_order | 614,380 | 520,481 | -15% |
 
-**참고:** mint_burn_note와 make_order는 주소 유도(공개키의 SHA256)로 인해 제약 조건이 증가했습니다. 다른 회로들은 노트 해시 입력 크기 감소(1536 vs 1184비트)로 인해 감소했습니다.
+**참고:** mint_burn_note와 make_order는 주소 유도(공개키의 SHA256)로 인해 제약 조건이 증가했습니다. 다른 회로들은 노트 해시 입력 크기 감소(1536 vs 1184비트)로 인해 감소했습니다. settle_order는 보안 수정(Phase 2.2-2.3) 포함.
 
 ### 백엔드 변경
 
@@ -723,6 +742,156 @@ function getSmartNoteOwner(parentNoteHash) {
 2. **해시 입력 감소:** 1536비트 → 1184비트 노트 해시
 3. **이더리움 호환성:** 160비트 주소가 이더리움 형식과 일치
 4. **통일된 구조:** 일반 노트와 스마트 노트가 동일한 소유자 형식 사용
+
+---
+
+## Viewing Key ↔ OwnerAddress 관계 (Phase 2.1)
+
+### 개요
+
+일반 노트와 스마트 노트 모두에 대해 viewing key와 owner address 간의 명확한 유도 관계를 설정했습니다.
+
+**일자:** 2026-01-26
+**상태:** ✅ 완료
+
+### 일반 노트
+
+```
+viewingKey = SHA256(pk.x || pk.y) = 256비트
+ownerAddress = viewingKey[96:256] = 마지막 160비트
+```
+
+- pk.x와 pk.y는 BabyJubJub 공개키 좌표 (각 256비트)
+- viewingKey는 전체 256비트 해시
+- ownerAddress는 viewingKey에서 유도됨 (마지막 160비트)
+
+### 스마트 노트
+
+```
+viewingKey = parentNoteHash = 256비트
+ownerAddress = truncated(parentNoteHash) = h0[0:32비트] + h1[전체 128비트] = 160비트
+```
+
+- parentNoteHash는 h0 (첫 128비트)과 h1 (마지막 128비트)으로 분할
+- ownerAddress = h0[96:128] (32비트) + h1 (128비트) = 160비트
+- 이 관계 유지: ownerAddress가 viewingKey 내에 포함됨
+
+---
+
+## SettleOrder 보안 수정 (Phase 2.2)
+
+### 개요
+
+settle_order 회로의 중요한 보안 이슈와 스케일링 버그를 수정했습니다.
+
+**일자:** 2026-01-26
+**상태:** ✅ 완료
+
+### 보안 수정 1: Stake 노트 소유자 검증
+
+**문제:** Stake 노트 소유자가 truncated maker 노트 해시와 일치하는지 검증되지 않음.
+
+**해결책:** `settle_order.circom`에 제약 추가:
+```circom
+// 보안 수정 1: stake 노트 (o1) 소유자 == truncated(makerNote.hash) 검증
+component stakeOwnerCheck = IsEqual();
+stakeOwnerCheck.in[0] <== o1OwnerAddress;
+stakeOwnerCheck.in[1] <== packMakerAddr.out;  // truncated maker hash
+stakeOwnerCheck.out === 1;
+```
+
+### 보안 수정 2: Payment 노트 소유자 검증
+
+**문제:** Payment 노트 소유자가 검증되지 않음.
+
+**해결책:** 제약 추가:
+```circom
+// 보안 수정 2: payment 노트 (n1) 소유자 == truncated(makerNote.hash) 검증
+component paymentOwnerCheck = IsEqual();
+paymentOwnerCheck.in[0] <== n1OwnerAddress;
+paymentOwnerCheck.in[1] <== packMakerAddr.out;
+paymentOwnerCheck.out === 1;
+```
+
+### 보안 수정 3: Change 노트 소유자 검증
+
+**문제:** Change 노트 소유자가 정산 방향(bit)에 따라 검증되지 않음.
+
+**해결책:** 제약 추가:
+```circom
+// 보안 수정 3: change 노트 (n2) 소유자 검증
+// bit=1: change는 maker에게, bit=0: change는 taker에게
+component muxChangeOwner = Mux1();
+muxChangeOwner.c[0] <== n0OwnerAddress;      // bit=0이면 taker
+muxChangeOwner.c[1] <== packMakerAddr.out;   // bit=1이면 maker
+muxChangeOwner.s <== bit;
+
+component changeOwnerCheck = IsEqual();
+changeOwnerCheck.in[0] <== n2OwnerAddress;
+changeOwnerCheck.in[1] <== muxChangeOwner.out;
+changeOwnerCheck.out === 1;
+```
+
+---
+
+## SettleOrder bit=0 스케일링 수정 (Phase 2.3)
+
+### 개요
+
+settle_order 회로의 bit=0 케이스 (테이커 초과)에서 중요한 스케일링 버그를 수정했습니다.
+
+**일자:** 2026-01-26
+**상태:** ✅ 완료
+
+### 문제점
+
+bit=0일 때, payment 계산이 `q0`을 직접 사용하여 wei 스케일링이 손실됨:
+
+```circom
+// 이전 (버그)
+signal o0ValuePrice;
+o0ValuePrice <== q0;  // q0 = 50, 50×10^18가 아님!
+```
+
+**예시:**
+- makerValue = 5 ETH = 5×10^18 wei
+- price = 10 (ETH당 10 DAI)
+- q0 = (5×10^18 × 10) / 10^18 = 50
+- **잘못됨:** payment = 50 wei (사실상 0 DAI)
+- **올바름:** payment = 50×10^18 wei (50 DAI)
+
+### 해결책
+
+`o0ValuePrice`에 DECIMALS (10^18)를 곱하여 스케일 업:
+
+```circom
+// 이후 (수정됨)
+signal o0ValuePrice;
+o0ValuePrice <== q0 * DECIMALS;  // q0 * 10^18 = 50×10^18
+```
+
+### bit=0 vs bit=1 비교
+
+| 시나리오 | bit=1 (Maker 초과) | bit=0 (Taker 초과) |
+|----------|-------------------|-------------------|
+| 조건 | makerValue ≥ q1 | makerValue < q1 |
+| Reward (taker에게) | q1 (ETH 환산) | makerValue (전체 ETH) |
+| Payment (maker에게) | takerValue (전체 DAI) | q0 × 10^18 (DAI 환산) |
+| Change | makerValue - q1 | takerValue - payment |
+| Change 소유자 | Maker | Taker |
+
+### 검증된 예시 (bit=0)
+
+| 값 | 금액 |
+|-----|------|
+| makerValue | 5 ETH = 5×10^18 wei |
+| takerValue | 100 DAI = 100×10^18 wei |
+| price | 10 (ETH당 10 DAI) |
+| q1 | 10×10^18 (10 ETH 환산) |
+| q0 | 50 |
+| **reward** | 5×10^18 (5 ETH to taker) ✓ |
+| **payment** | 50×10^18 (50 DAI to maker) ✓ |
+| **change** | 50×10^18 (50 DAI to taker) ✓ |
 
 ---
 

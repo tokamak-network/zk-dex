@@ -114,17 +114,18 @@ class Note {
 
 /**
  * Create a smart note owner address from a note hash
- * Takes the last 160 bits of the hash (originH0[low32] || originH1[128])
+ * Circuit takes: high 32 bits of h0 + all 128 bits of h1 = 160 bits
+ * In hex: noteHash[0:8] + noteHash[32:64] = 40 hex chars
  * @param {String} noteHash - 256-bit note hash (as hex string)
  * @returns {String} - 160-bit address (as hex string)
  */
 function getSmartNoteOwner(noteHash) {
   // noteHash is 64 hex chars (256 bits)
-  // We want the last 160 bits = last 40 hex chars
+  // We want: high 32 bits of h0 (first 8 hex) + all of h1 (last 32 hex) = 40 hex chars
   const h = unmarshal(noteHash);
   const padded = h.padStart(64, '0');
-  const last160bits = padded.slice(-40);
-  return marshal(last160bits);
+  const smartOwner = padded.slice(0, 8) + padded.slice(32, 64);
+  return marshal(smartOwner);
 }
 
 /**

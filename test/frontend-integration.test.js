@@ -117,8 +117,7 @@ async function testNoteCreation() {
 
         assert(note, 'Note should exist');
         assert(note.hash(), 'Note hash should be computable');
-        assert(note.owner0, 'Note owner0 should exist');
-        assert(note.owner1, 'Note owner1 should exist');
+        assert(note.ownerAddress, 'Note ownerAddress should exist');
         assert(sk === keypair.sk, 'Secret key should match');
     });
 
@@ -171,14 +170,17 @@ async function testNoteCreation() {
         assert(smartNote.hash(), 'Smart note hash should be computable');
 
         // Verify owner is derived from parent note hash
+        // Circuit takes: high 32 bits of h0 + all 128 bits of h1 = 160 bits
+        // In hex: noteHash[0:8] + noteHash[32:64] = 40 hex chars
         const parentHash = parentNote.hash();
-        const hashBigInt = BigInt(parentHash);
-        const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
-        const expectedOwner1 = '0x' + (hashBigInt & mask128).toString(16).padStart(32, '0');
-        const expectedOwner0 = '0x' + (hashBigInt >> BigInt(128)).toString(16).padStart(32, '0');
+        const cleanHash = parentHash.startsWith('0x') ? parentHash.slice(2) : parentHash;
+        const paddedHash = cleanHash.padStart(64, '0');
+        const expectedOwnerAddress = paddedHash.slice(0, 8) + paddedHash.slice(32, 64);
+        const smartOwnerClean = smartNote.ownerAddress.startsWith('0x')
+            ? smartNote.ownerAddress.slice(2) : smartNote.ownerAddress;
 
-        assert(smartNote.owner0.toLowerCase().includes(expectedOwner0.slice(2).replace(/^0+/, '')),
-            'Smart note owner0 should be derived from parent hash');
+        assert(smartOwnerClean.toLowerCase() === expectedOwnerAddress.toLowerCase(),
+            'Smart note ownerAddress should be derived from parent hash (h0[0:32] || h1)');
     });
 
     await runTest('Note hash is deterministic', async () => {
@@ -387,7 +389,7 @@ async function testTakeOrderProofGeneration() {
         const proof = await noteProofHelper.generateTakeOrderProof(parentNote, stakeNote, takerSk);
 
         assert(proof, 'TakeOrder proof should exist');
-        assert(proof.input.length === 9, 'TakeOrder proof should have 9 public inputs');
+        assert(proof.input.length === 8, 'TakeOrder proof should have 8 public inputs (7 inputs + 1 output)');
 
         const isValid = await noteProofHelper.verifyProof('take_order', proof, proof.input);
         assert(isValid === true, 'TakeOrder proof should be valid');
@@ -513,8 +515,9 @@ async function testSettleOrderProofGeneration() {
             generateSalt()
         );
 
+        // SECURITY FIX: With bit=1, change goes to maker, so owner = truncated(makerNote.hash)
         const changeNote = noteProofHelper.createSmartNote(
-            takerParentNote,
+            makerNote,  // bit=1 means change to maker
             changeValue,
             constants.ETH_TOKEN_TYPE, // Change is ETH (same as maker's token)
             '0x0',
@@ -532,7 +535,7 @@ async function testSettleOrderProofGeneration() {
         );
 
         assert(proof, 'Settle order proof should exist');
-        assert(proof.input.length === 21, 'Settle order proof should have 21 public inputs');
+        assert(proof.input.length === 19, 'Settle order proof should have 19 public inputs (18 inputs + 1 output)');
 
         const isValid = await noteProofHelper.verifyProof('settle_order', proof, proof.input);
         assert(isValid === true, 'Settle order proof should be valid');

@@ -82,18 +82,35 @@ function deriveAddressFromPK(pk) {
 
 /**
  * Create a new note with a circomlib-compatible owner public key
+ *
+ * Viewing key derivation:
+ * - viewingKey = SHA256(pk.x || pk.y) = 256 bits
+ * - ownerAddress = viewingKey[96:256] = last 160 bits
+ *
+ * This relationship allows:
+ * - Anyone with the viewing key can derive the owner address
+ * - Only the secret key holder can prove ownership and spend
+ *
  * @param {string} sk - Secret key of the owner
  * @param {string|number|bigint} value - Note value
  * @param {string} tokenType - Token type (ETH or DAI)
- * @param {string} viewingKey - Optional viewing key
+ * @param {string} viewingKey - Optional viewing key (if null, derived from pk)
  * @param {string} salt - Optional salt (random if not provided)
  * @returns {Promise<{note: Note, sk: string}>}
  */
-async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = '0x0', salt = null) {
+async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = null, salt = null) {
     const pk = await derivePublicKey(sk);
 
     // Derive 160-bit address from public key
     const ownerAddress = deriveAddressFromPK(pk);
+
+    // Derive viewing key from public key if not provided
+    // viewingKey = SHA256(pk.x || pk.y) = 256 bits
+    // Relationship: ownerAddress = viewingKey[96:256] (last 160 bits)
+    if (!viewingKey) {
+        const vkData = snarkjsUtils.getViewingKeyFromPublicKey(pk);
+        viewingKey = vkData.fullHash;
+    }
 
     // Generate random salt if not provided (masked to 254 bits for circuit compatibility)
     if (!salt) {
@@ -106,12 +123,13 @@ async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewi
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
+    // Note constructor already calls padLeft, no need to double-pad
     const note = new Note(
-        Web3Utils.padLeft(ownerAddress, 40),
-        Web3Utils.padLeft(valueHex, 64),
-        Web3Utils.padLeft(tokenType, 64),
-        Web3Utils.padLeft(viewingKey, 64),
-        Web3Utils.padLeft(salt, 64)
+        ownerAddress,
+        valueHex,
+        tokenType,
+        viewingKey,
+        salt
     );
 
     return { note, sk };
@@ -128,14 +146,22 @@ function createEmptyNote() {
 /**
  * Create a smart note (stake note) for TakeOrder
  * Smart notes have ownerAddress = truncated 160-bit hash of another note
+ *
+ * Viewing key derivation for smart notes:
+ * - viewingKey = parentNoteHash = 256 bits
+ * - ownerAddress = truncated(parentNoteHash) = h0[96:128] + h1 = 160 bits
+ *
+ * This maintains the same relationship as normal notes:
+ * - ownerAddress is embedded within the viewing key
+ *
  * @param {Note} ownerNote - The note whose hash will be the owner (e.g., maker note)
  * @param {string|number|bigint} value - Note value
  * @param {string} tokenType - Token type
- * @param {string} viewingKey - Optional viewing key
+ * @param {string} viewingKey - Optional viewing key (if null, derived from owner note hash)
  * @param {string} salt - Optional salt (random if not provided)
  * @returns {Note}
  */
-function createSmartNote(ownerNote, value, tokenType, viewingKey = '0x0', salt = null) {
+function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = null) {
     // Generate random salt if not provided
     if (!salt) {
         const saltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
@@ -143,19 +169,29 @@ function createSmartNote(ownerNote, value, tokenType, viewingKey = '0x0', salt =
         salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
     }
 
-    // Get owner note hash and take last 160 bits as ownerAddress
+    // Get owner note hash
     const ownerHash = ownerNote.hash();
+
+    // Derive ownerAddress as truncated hash (160 bits)
     const ownerAddress = snarkjsUtils.getSmartNoteOwnerAddress(ownerHash);
+
+    // Derive viewing key from owner note hash if not provided
+    // viewingKey = parentNoteHash = 256 bits
+    // Relationship: ownerAddress = truncated(viewingKey)
+    if (!viewingKey) {
+        viewingKey = ownerHash;
+    }
 
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
+    // Note constructor already calls padLeft, no need to double-pad
     const note = new Note(
-        Web3Utils.padLeft('0x' + ownerAddress, 40),
-        Web3Utils.padLeft(valueHex, 64),
-        Web3Utils.padLeft(tokenType, 64),
-        Web3Utils.padLeft(viewingKey, 64),
-        Web3Utils.padLeft(salt, 64)
+        '0x' + ownerAddress,
+        valueHex,
+        tokenType,
+        viewingKey,
+        salt
     );
 
     return note;

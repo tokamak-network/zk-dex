@@ -77,9 +77,35 @@ template TransferNote() {
     signal output out;
 
     // Check if old note 1 is empty (single transfer)
-    // Empty note has ownerAddress == 0
-    component isNote1Empty = IsZero();
-    isNote1Empty.in <== o1OwnerAddress;
+    // SECURITY FIX: Must check ALL fields are zero, not just ownerAddress
+    // Original Zokrates: o1owner0 == 0 && o1owner1 == 0 && o1val == 0 && o1type == 0 && o1vk0 == 0 && o1vk1 == 0 && o1salt == 0
+    component isO1AddrZero = IsZero();
+    component isO1ValueZero = IsZero();
+    component isO1TypeZero = IsZero();
+    component isO1Vk0Zero = IsZero();
+    component isO1Vk1Zero = IsZero();
+    component isO1SaltZero = IsZero();
+
+    isO1AddrZero.in <== o1OwnerAddress;
+    isO1ValueZero.in <== o1Value;
+    isO1TypeZero.in <== o1Type;
+    isO1Vk0Zero.in <== o1Vk0;
+    isO1Vk1Zero.in <== o1Vk1;
+    isO1SaltZero.in <== o1Salt;
+
+    // All fields must be zero for the note to be considered empty
+    // AND all the zero checks together
+    signal allZero1;
+    signal allZero2;
+    signal allZero3;
+    signal allZero4;
+    signal isNote1Empty;
+
+    allZero1 <== isO1AddrZero.out * isO1ValueZero.out;
+    allZero2 <== allZero1 * isO1TypeZero.out;
+    allZero3 <== allZero2 * isO1Vk0Zero.out;
+    allZero4 <== allZero3 * isO1Vk1Zero.out;
+    isNote1Empty <== allZero4 * isO1SaltZero.out;
 
     // 1. Verify ownership of old note 0 (address-based)
     component ownership0 = VerifyOwnershipByAddressStrict();
@@ -94,7 +120,7 @@ template TransferNote() {
 
     // Either note1 is empty OR ownership is valid
     component orGate = OR();
-    orGate.a <== isNote1Empty.out;
+    orGate.a <== isNote1Empty;
     orGate.b <== ownership1.valid;
     orGate.out === 1;
 
@@ -161,7 +187,7 @@ template TransferNote() {
 
     // Either note1 empty OR types match
     component orType = OR();
-    orType.a <== isNote1Empty.out;
+    orType.a <== isNote1Empty;
     orType.b <== typeEq01.out;
     orType.out === 1;
 

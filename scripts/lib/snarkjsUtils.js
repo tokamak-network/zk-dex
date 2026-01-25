@@ -66,8 +66,8 @@ function formatProofForContract(proof, publicSignals) {
  * @returns {Promise<Object>} proof formatted for contract
  */
 async function generateProof(circuitName, inputs) {
-    const wasmPath = path.join(CIRCUITS_DIR, `${circuitName}_js`, `${circuitName}.wasm`);
-    const zkeyPath = path.join(CIRCUITS_DIR, `${circuitName}.zkey`);
+    const wasmPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_js`, `${circuitName}.wasm`);
+    const zkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}.zkey`);
 
     // Check if files exist
     if (!fs.existsSync(wasmPath)) {
@@ -173,7 +173,8 @@ function split256To128(value) {
  * EMPTY_NOTE_HASH parts (precomputed)
  * EMPTY_NOTE_HASH = 0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5
  */
-const EMPTY_NOTE_HASH_PARTS = ['124334422911111396289769072584791590702', '3487650632839358898875693501852664245'];
+// EMPTY_NOTE_HASH = 0x3b18c58c739716e76429634a61375c45b3b5cd470c22ab6d3e14cee23dd992e1
+const EMPTY_NOTE_HASH_PARTS = ['78553073638322975829184534289877261381', '238875780499818765291310502715196019425'];
 
 /**
  * Get note hash parts from note object
@@ -462,7 +463,7 @@ async function getSettleOrderProof(
  * Verify a proof locally (for testing)
  */
 async function verifyProofLocal(circuitName, proof, publicSignals) {
-    const vkeyPath = path.join(CIRCUITS_DIR, `${circuitName}_vk.json`);
+    const vkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_vkey.json`);
     const vkey = JSON.parse(fs.readFileSync(vkeyPath, 'utf8'));
 
     // publicSignals is already in snarkjs format: [output, ...public_inputs]
@@ -487,7 +488,7 @@ async function verifyProofLocal(circuitName, proof, publicSignals) {
  * Check if circuits are initialized
  */
 async function initialized() {
-    const testWasm = path.join(CIRCUITS_DIR, 'mint_burn_note_js', 'mint_burn_note.wasm');
+    const testWasm = path.join(CIRCUITS_DIR, 'mint_burn_note', 'mint_burn_note_js', 'mint_burn_note.wasm');
     return fs.existsSync(testWasm);
 }
 
@@ -521,15 +522,55 @@ function getAddressFromPublicKey(publicKey) {
 }
 
 /**
+ * Derive viewing key from BabyJubJub public key
+ * viewingKey = SHA256(pk.x || pk.y) = 256 bits
+ * Split into vk0 (first 128 bits) and vk1 (last 128 bits)
+ *
+ * Relationship with ownerAddress:
+ * - ownerAddress = hash[96:256] = vk0[96:128] + vk1 = 160 bits
+ * - This allows deriving ownerAddress from viewingKey
+ *
+ * @param {Object} publicKey - Public key with x, y coordinates
+ * @returns {{vk0: string, vk1: string, fullHash: string}} Viewing key parts (hex with 0x prefix)
+ */
+function getViewingKeyFromPublicKey(publicKey) {
+    const crypto = require('crypto');
+
+    // Convert coordinates to 32 bytes each (256 bits, padded from 254-bit field elements)
+    const pkX = hexToBigInt(publicKey.x);
+    const pkY = hexToBigInt(publicKey.y);
+
+    const xHex = pkX.toString(16).padStart(64, '0');
+    const yHex = pkY.toString(16).padStart(64, '0');
+
+    // Concatenate: pk.x (32B) || pk.y (32B) = 64 bytes
+    const message = Buffer.concat([
+        Buffer.from(xHex, 'hex'),
+        Buffer.from(yHex, 'hex')
+    ]);
+
+    // SHA256 hash = 256 bits = 64 hex chars
+    const fullHash = crypto.createHash('sha256').update(message).digest('hex');
+
+    // Split into vk0 (first 128 bits = 32 hex chars) and vk1 (last 128 bits = 32 hex chars)
+    const vk0 = '0x' + fullHash.slice(0, 32);
+    const vk1 = '0x' + fullHash.slice(32, 64);
+
+    return { vk0, vk1, fullHash: '0x' + fullHash };
+}
+
+/**
  * Get smart note owner address from parent note hash
- * Takes the last 160 bits of the 256-bit hash
+ * Circuit takes: high 32 bits of h0 + all 128 bits of h1 = 160 bits
+ * In hex: noteHash[0:8] + noteHash[32:64] = 40 hex chars
  * @param {string} noteHash - 256-bit note hash (64 hex chars)
  * @returns {string} 160-bit address (40 hex chars)
  */
 function getSmartNoteOwnerAddress(noteHash) {
     const cleanHash = noteHash.startsWith('0x') ? noteHash.slice(2) : noteHash;
     const padded = cleanHash.padStart(64, '0');
-    return padded.slice(-40);
+    // Take first 8 hex chars (high 32 bits of h0) + last 32 hex chars (all of h1)
+    return padded.slice(0, 8) + padded.slice(32, 64);
 }
 
 module.exports = {
@@ -545,8 +586,9 @@ module.exports = {
     generateProof,
     formatProofForContract,
 
-    // Address utilities
+    // Address and viewing key utilities
     getAddressFromPublicKey,
+    getViewingKeyFromPublicKey,
     getSmartNoteOwnerAddress,
 
     // BabyJubJub (circomlib compatible)

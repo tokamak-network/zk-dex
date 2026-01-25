@@ -386,8 +386,9 @@ async function runPriceCalculationEdgeCases() {
         const paymentNote = noteProofHelper.createSmartNote(
             makerNote, payment, constants.DAI_TOKEN_TYPE, '0x0', generateSalt()
         );
+        // SECURITY FIX: For bit=1, change goes to maker
         const changeNote = noteProofHelper.createSmartNote(
-            takerParent, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
+            makerNote, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
         );
 
         const proof = await noteProofHelper.generateSettleOrderProof(
@@ -431,8 +432,9 @@ async function runPriceCalculationEdgeCases() {
         const paymentNote = noteProofHelper.createSmartNote(
             makerNote, payment, constants.DAI_TOKEN_TYPE, '0x0', generateSalt()
         );
+        // SECURITY FIX: For bit=1, change goes to maker
         const changeNote = noteProofHelper.createSmartNote(
-            takerParent, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
+            makerNote, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
         );
 
         const proof = await noteProofHelper.generateSettleOrderProof(
@@ -476,8 +478,9 @@ async function runPriceCalculationEdgeCases() {
         const paymentNote = noteProofHelper.createSmartNote(
             makerNote, payment, constants.DAI_TOKEN_TYPE, '0x0', generateSalt()
         );
+        // SECURITY FIX: For bit=1, change goes to maker
         const changeNote = noteProofHelper.createSmartNote(
-            takerParent, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
+            makerNote, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
         );
 
         const proof = await noteProofHelper.generateSettleOrderProof(
@@ -521,8 +524,9 @@ async function runPriceCalculationEdgeCases() {
         const paymentNote = noteProofHelper.createSmartNote(
             makerNote, payment, constants.DAI_TOKEN_TYPE, '0x0', generateSalt()
         );
+        // SECURITY FIX: For bit=1, change goes to maker
         const changeNote = noteProofHelper.createSmartNote(
-            takerParent, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
+            makerNote, change, constants.ETH_TOKEN_TYPE, '0x0', generateSalt()
         );
 
         const proof = await noteProofHelper.generateSettleOrderProof(
@@ -535,7 +539,7 @@ async function runPriceCalculationEdgeCases() {
 async function runSmartNoteTests() {
     log('blue', '\n=== Smart Note Tests ===\n');
 
-    await test('Create smart note with correct owner hash', async () => {
+    await test('Create smart note with correct ownerAddress (truncated hash)', async () => {
         const { sk } = await noteProofHelper.generateKeypair();
         const { note: ownerNote } = await noteProofHelper.createNote(
             sk, SCALING_FACTOR, '0x0', '0x0', generateSalt()
@@ -545,12 +549,14 @@ async function runSmartNoteTests() {
             ownerNote, SCALING_FACTOR, '0x1', '0x0', generateSalt()
         );
 
-        // Check that smartNote has owner0 and owner1
-        assert(smartNote.owner0, 'Smart note should have owner0');
-        assert(smartNote.owner1, 'Smart note should have owner1');
+        // Check that smartNote has ownerAddress (160-bit truncated hash)
+        assert(smartNote.ownerAddress, 'Smart note should have ownerAddress');
+        const ownerClean = smartNote.ownerAddress.startsWith('0x')
+            ? smartNote.ownerAddress.slice(2) : smartNote.ownerAddress;
+        assert(ownerClean.length <= 40, 'ownerAddress should be at most 160 bits (40 hex chars)');
     });
 
-    await test('Smart note is identified as smart (owner is hash)', async () => {
+    await test('Smart note ownerAddress is derived from parent note hash', async () => {
         const { sk } = await noteProofHelper.generateKeypair();
         const { note: ownerNote } = await noteProofHelper.createNote(
             sk, SCALING_FACTOR, '0x0', '0x0', generateSalt()
@@ -560,9 +566,19 @@ async function runSmartNoteTests() {
             ownerNote, SCALING_FACTOR, '0x1', '0x0', generateSalt()
         );
 
-        // Smart note owner is a hash split into two 128-bit parts
-        assert(smartNote.owner0, 'Smart note should have owner0');
-        assert(smartNote.owner1, 'Smart note should have owner1');
+        // Smart note ownerAddress = truncated(parentNoteHash)
+        // = h0[0:8 hex] + h1[all 32 hex] = 40 hex chars
+        const parentHash = ownerNote.hash();
+        const hashClean = parentHash.startsWith('0x') ? parentHash.slice(2) : parentHash;
+        const hashPadded = hashClean.padStart(64, '0');
+        const expectedOwner = hashPadded.slice(0, 8) + hashPadded.slice(32);
+
+        const ownerClean = smartNote.ownerAddress.startsWith('0x')
+            ? smartNote.ownerAddress.slice(2) : smartNote.ownerAddress;
+        const ownerPadded = ownerClean.padStart(40, '0');
+
+        assertEqual(ownerPadded.toLowerCase(), expectedOwner.toLowerCase(),
+            'Smart note ownerAddress should be truncated parent note hash');
     });
 
     await test('ConvertNote from smart note to normal note', async () => {
@@ -749,7 +765,487 @@ async function runMakeOrderTakeOrderTests() {
 
         const proof = await noteProofHelper.generateTakeOrderProof(parentNote, stakeNote, takerSk);
         assert(proof.a && proof.b && proof.c, 'TakeOrder proof should be generated');
-        assertEqual(proof.input.length, 9, 'TakeOrder should have 9 public inputs');
+        // 7 public inputs + 1 output = 8 total public signals
+        assertEqual(proof.input.length, 8, 'TakeOrder should have 8 public signals');
+    });
+}
+
+async function runViewingKeyRelationshipTests() {
+    log('blue', '\n=== Viewing Key ↔ OwnerAddress Relationship Tests ===\n');
+
+    await test('Normal note: ownerAddress = viewingKey[96:256] (last 160 bits)', async () => {
+        const { sk } = await noteProofHelper.generateKeypair();
+        const { note } = await noteProofHelper.createNote(
+            sk, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // viewingKey is 256 bits = 64 hex chars
+        // ownerAddress should be last 160 bits = viewingKey[24:64] (last 40 hex chars)
+        const vkClean = note.viewingKey.startsWith('0x') ? note.viewingKey.slice(2) : note.viewingKey;
+        const vkPadded = vkClean.padStart(64, '0');
+        const expectedOwner = vkPadded.slice(24); // last 40 hex chars = 160 bits
+
+        const ownerClean = note.ownerAddress.startsWith('0x') ? note.ownerAddress.slice(2) : note.ownerAddress;
+        const ownerPadded = ownerClean.padStart(40, '0');
+
+        assertEqual(ownerPadded.toLowerCase(), expectedOwner.toLowerCase(),
+            'ownerAddress should be last 160 bits of viewingKey');
+    });
+
+    await test('Smart note: ownerAddress = truncated(parentNoteHash)', async () => {
+        const { sk } = await noteProofHelper.generateKeypair();
+        const { note: parentNote } = await noteProofHelper.createNote(
+            sk, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const smartNote = noteProofHelper.createSmartNote(
+            parentNote, SCALING_FACTOR / 2n, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // For smart note, viewingKey = parentNoteHash
+        const parentHash = parentNote.hash();
+        const hashClean = parentHash.startsWith('0x') ? parentHash.slice(2) : parentHash;
+        const hashPadded = hashClean.padStart(64, '0');
+
+        // ownerAddress = h0[0:8] + h1[all 32 chars] = first 8 + last 32 = 40 hex chars
+        const expectedOwner = hashPadded.slice(0, 8) + hashPadded.slice(32);
+
+        const ownerClean = smartNote.ownerAddress.startsWith('0x') ? smartNote.ownerAddress.slice(2) : smartNote.ownerAddress;
+        const ownerPadded = ownerClean.padStart(40, '0');
+
+        assertEqual(ownerPadded.toLowerCase(), expectedOwner.toLowerCase(),
+            'Smart note ownerAddress should be truncated parentNoteHash');
+    });
+
+    await test('Smart note: viewingKey equals parentNoteHash', async () => {
+        const { sk } = await noteProofHelper.generateKeypair();
+        const { note: parentNote } = await noteProofHelper.createNote(
+            sk, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const smartNote = noteProofHelper.createSmartNote(
+            parentNote, SCALING_FACTOR / 2n, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const parentHash = parentNote.hash();
+        assertEqual(smartNote.viewingKey.toLowerCase(), parentHash.toLowerCase(),
+            'Smart note viewingKey should equal parentNoteHash');
+    });
+
+    await test('Different keys produce different ownerAddress', async () => {
+        const { sk: sk1 } = await noteProofHelper.generateKeypair();
+        const { sk: sk2 } = await noteProofHelper.generateKeypair();
+
+        const { note: note1 } = await noteProofHelper.createNote(
+            sk1, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: note2 } = await noteProofHelper.createNote(
+            sk2, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        assert(note1.ownerAddress.toLowerCase() !== note2.ownerAddress.toLowerCase(),
+            'Different secret keys should produce different ownerAddresses');
+    });
+}
+
+async function runSettleOrderBit0Tests() {
+    log('blue', '\n=== SettleOrder bit=0 (Taker Excess) Tests ===\n');
+
+    await test('SettleOrder with bit=0 (taker has more ETH equivalent)', async () => {
+        // In bit=0 case: o0Value < o1ValueOverPrice (q1)
+        // This means taker is overpaying, so change goes to taker
+        //
+        // Circuit fix: o0ValuePrice is now q0 * DECIMALS (scaled to wei)
+        //
+        // Scenario:
+        // - price = 10 (10 DAI per ETH)
+        // - makerValue = 5 ETH = 5×10^18 wei
+        // - takerValue = 100 DAI = 100×10^18 wei
+        //
+        // Calculations:
+        // - q1 = floor(takerValue / price) = 10×10^18 (10 ETH equivalent)
+        // - o1ValueOverPrice = q1 = 10×10^18
+        // - bit = (5×10^18 >= 10×10^18) = false = 0
+        //
+        // With bit=0 (after fix):
+        // - reward = o0Value = 5×10^18 (5 ETH to taker)
+        // - q0 = floor((5×10^18 * 10) / 10^18) = 50
+        // - payment = o0ValuePrice = q0 * DECIMALS = 50×10^18 (50 DAI to maker)
+        // - change = o1Value - o0ValuePrice = 100×10^18 - 50×10^18 = 50×10^18 (50 DAI to taker)
+
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 5n * SCALING_FACTOR;   // 5 ETH
+        const takerValue = 100n * SCALING_FACTOR; // 100 DAI
+
+        // Expected outputs for bit=0
+        const q1 = takerValue / price;  // 10×10^18
+        const q0 = (makerValue * price) / SCALING_FACTOR;  // 50
+        const expectedReward = makerValue;  // 5×10^18 (all maker's ETH)
+        const expectedPayment = q0 * SCALING_FACTOR;  // 50×10^18 (DAI to maker)
+        const expectedChange = takerValue - expectedPayment;  // 50×10^18 (DAI refund to taker)
+
+        // Verify bit=0 condition
+        assert(makerValue < q1, `Should be bit=0: makerValue(${makerValue}) < q1(${q1})`);
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Stake note owner = truncated(makerNote.hash)
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Create output notes
+        // Reward: ETH to taker (owner = takerParent hash)
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, expectedReward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        // Payment: DAI to maker (owner = makerNote hash)
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, expectedPayment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+        // Change: DAI to taker (bit=0, so owner = takerParent hash, same as reward)
+        const changeNote = noteProofHelper.createSmartNote(
+            takerParent, expectedChange, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Generate proof
+        const proof = await noteProofHelper.generateSettleOrderProof(
+            makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, makerSk
+        );
+
+        assert(proof.a && proof.b && proof.c, 'bit=0 proof should succeed');
+        log('green', `      bit=0 values: reward=${expectedReward}, payment=${expectedPayment}, change=${expectedChange}`);
+    });
+
+    await test('SettleOrder bit=0: change owner must be taker (not maker)', async () => {
+        // When bit=0, change goes to TAKER, so changeNote owner must be n0OwnerAddress (takerParent)
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 5n * SCALING_FACTOR;
+        const takerValue = 100n * SCALING_FACTOR;
+
+        const q0 = (makerValue * price) / SCALING_FACTOR;
+        const expectedReward = makerValue;
+        const expectedPayment = q0 * SCALING_FACTOR;
+        const expectedChange = takerValue - expectedPayment;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, expectedReward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, expectedPayment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // WRONG: For bit=0, change should go to taker, but we use makerNote as owner
+        const wrongChangeNote = noteProofHelper.createSmartNote(
+            makerNote, expectedChange, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        try {
+            await noteProofHelper.generateSettleOrderProof(
+                makerNote, stakeNote, rewardNote, paymentNote, wrongChangeNote, price, makerSk
+            );
+            throw new Error('Should have failed with wrong change owner');
+        } catch (error) {
+            assert(
+                error.message.includes('Assert Failed') || error.message.includes('constraint'),
+                'Should fail due to change owner constraint violation'
+            );
+        }
+    });
+}
+
+async function runSettleOrderSecurityTests() {
+    log('blue', '\n=== SettleOrder Security Tests (Owner Verification) ===\n');
+
+    await test('SettleOrder: stakeNote owner must equal truncated(makerNote.hash)', async () => {
+        // This test verifies SECURITY FIX 1 in settle_order.circom
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Create CORRECT stake note (owner = makerNote hash)
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Calculate outputs for bit=1
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+        const changeNote = noteProofHelper.createSmartNote(
+            makerNote, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // This should succeed with correct stake note owner
+        const proof = await noteProofHelper.generateSettleOrderProof(
+            makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, makerSk
+        );
+        assert(proof.a && proof.b && proof.c, 'Proof should succeed with correct stake owner');
+    });
+
+    await test('SettleOrder: paymentNote owner must equal truncated(makerNote.hash)', async () => {
+        // This test verifies SECURITY FIX 2 in settle_order.circom
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // Create CORRECT payment note (owner = makerNote hash)
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const changeNote = noteProofHelper.createSmartNote(
+            makerNote, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const proof = await noteProofHelper.generateSettleOrderProof(
+            makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, makerSk
+        );
+        assert(proof.a && proof.b && proof.c, 'Proof should succeed with correct payment owner');
+    });
+
+    await test('SettleOrder: changeNote owner correct for bit=1 (maker)', async () => {
+        // This test verifies SECURITY FIX 3 in settle_order.circom
+        // When bit=1, change goes to maker, so changeNote owner = truncated(makerNote.hash)
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // For bit=1, change goes to MAKER (not taker!)
+        const changeNote = noteProofHelper.createSmartNote(
+            makerNote, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const proof = await noteProofHelper.generateSettleOrderProof(
+            makerNote, stakeNote, rewardNote, paymentNote, changeNote, price, makerSk
+        );
+        assert(proof.a && proof.b && proof.c, 'Proof should succeed with correct change owner (maker for bit=1)');
+    });
+
+    // Negative test: wrong change note owner should fail
+    await test('SettleOrder: wrong changeNote owner should fail (bit=1)', async () => {
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // WRONG: For bit=1, using takerParent as change owner (should be makerNote)
+        const wrongChangeNote = noteProofHelper.createSmartNote(
+            takerParent, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        let failed = false;
+        try {
+            await noteProofHelper.generateSettleOrderProof(
+                makerNote, stakeNote, rewardNote, paymentNote, wrongChangeNote, price, makerSk
+            );
+        } catch (e) {
+            failed = true;
+        }
+        assert(failed, 'Proof generation should fail with wrong change owner');
+    });
+
+    // Negative test: wrong stake note owner should fail
+    await test('SettleOrder: wrong stakeNote owner should fail', async () => {
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // WRONG: stake note owner = takerParent (should be makerNote)
+        const wrongStakeNote = noteProofHelper.createSmartNote(
+            takerParent, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const paymentNote = noteProofHelper.createSmartNote(
+            makerNote, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+        const changeNote = noteProofHelper.createSmartNote(
+            makerNote, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        let failed = false;
+        try {
+            await noteProofHelper.generateSettleOrderProof(
+                makerNote, wrongStakeNote, rewardNote, paymentNote, changeNote, price, makerSk
+            );
+        } catch (e) {
+            failed = true;
+        }
+        assert(failed, 'Proof generation should fail with wrong stake owner');
+    });
+
+    // Negative test: wrong payment note owner should fail
+    await test('SettleOrder: wrong paymentNote owner should fail', async () => {
+        const { sk: makerSk } = await noteProofHelper.generateKeypair();
+        const { sk: takerSk } = await noteProofHelper.generateKeypair();
+
+        const price = 10n;
+        const makerValue = 2n * SCALING_FACTOR;
+        const takerValue = 10n * SCALING_FACTOR;
+
+        const { note: makerNote } = await noteProofHelper.createNote(
+            makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+        const { note: takerParent } = await noteProofHelper.createNote(
+            takerSk, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const stakeNote = noteProofHelper.createSmartNote(
+            makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const reward = takerValue / price;
+        const payment = takerValue;
+        const change = makerValue - reward;
+
+        const rewardNote = noteProofHelper.createSmartNote(
+            takerParent, reward, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        // WRONG: payment note owner = takerParent (should be makerNote)
+        const wrongPaymentNote = noteProofHelper.createSmartNote(
+            takerParent, payment, constants.DAI_TOKEN_TYPE, null, generateSalt()
+        );
+
+        const changeNote = noteProofHelper.createSmartNote(
+            makerNote, change, constants.ETH_TOKEN_TYPE, null, generateSalt()
+        );
+
+        let failed = false;
+        try {
+            await noteProofHelper.generateSettleOrderProof(
+                makerNote, stakeNote, rewardNote, wrongPaymentNote, changeNote, price, makerSk
+            );
+        } catch (e) {
+            failed = true;
+        }
+        assert(failed, 'Proof generation should fail with wrong payment owner');
     });
 }
 
@@ -776,6 +1272,9 @@ async function main() {
         await runHashTests();
         await runProofFormatTests();
         await runMakeOrderTakeOrderTests();
+        await runViewingKeyRelationshipTests();
+        await runSettleOrderSecurityTests();
+        await runSettleOrderBit0Tests();  // Now fixed: o0ValuePrice = q0 * DECIMALS
 
         // Summary
         console.log('\n' + '='.repeat(60));
