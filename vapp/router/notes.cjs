@@ -1,6 +1,6 @@
 const express = require('express');
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../lib/asyncWrap.cjs');
 
 const {
   getNoteByNoteHash,
@@ -9,7 +9,7 @@ const {
   addNote,
   addTransferNote,
   updateNoteState,
-} = require('../localstorage');
+} = require('../localstorage.cjs');
 
 
 const router = express.Router();
@@ -17,7 +17,7 @@ const router = express.Router();
 router.get('/transfer/:account', asyncWrap(
   async function (req, res) {
     const account = req.params.account;
-    const notes = getTransferNotes(account);
+    const notes = getTransferNotes(account) || '[]';
     return res.status(200).json({
       notes,
     });
@@ -38,7 +38,7 @@ router.get('/:account/:hash', asyncWrap(
 router.get('/:account', asyncWrap(
   async function (req, res) {
     const account = req.params.account;
-    const notes = getNotes(account);
+    const notes = getNotes(account) || '[]';
     return res.status(200).json({
       notes,
     });

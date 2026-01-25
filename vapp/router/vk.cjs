@@ -1,11 +1,11 @@
 const express = require('express');
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../lib/asyncWrap.cjs');
 
 const {
   getViewingKey,
   setViewingKey,
-} = require('../localstorage');
+} = require('../localstorage.cjs');
 
 const router = express.Router();
 

@@ -1,15 +1,13 @@
 <template>
   <div class="container columns">
-    <div class="column is-one-fifth">
+    <div class="column is-one-fifth" style="padding-left: 20px;">
       <aside class="menu">
         <ul class="menu-list">
           <li>
             <router-link to="/">Summary</router-link>
           </li>
         </ul>
-        <p class="menu-label" style="margin-top: 30px;">
-          Accounts
-        </p>
+        <p class="menu-label" style="margin-top: 30px;">Accounts</p>
         <ul class="menu-list">
           <li>
             <router-link to="/accounts/import">Import</router-link>
@@ -21,9 +19,7 @@
             <router-link to="/accounts/delete">Delete</router-link>
           </li>
         </ul>
-        <p class="menu-label" style="margin-top: 30px;">
-          Wallets
-        </p>
+        <p class="menu-label" style="margin-top: 30px;">Wallets</p>
         <ul class="menu-list">
           <li>
             <router-link to="/wallet">My Wallet</router-link>
@@ -38,9 +34,7 @@
             <router-link to="/convert">Convert</router-link>
           </li>
         </ul>
-        <p class="menu-label" style="margin-top: 30px;">
-          History
-        </p>
+        <p class="menu-label" style="margin-top: 30px;">History</p>
         <ul class="menu-list">
           <li>
             <router-link to="/notes/transfer">Note Transfer</router-link>
@@ -59,6 +53,6 @@
   </div>
 </template>
 
-<script>
-export default {};
+<script setup lang="ts">
+// Dashboard page - layout component
 </script>

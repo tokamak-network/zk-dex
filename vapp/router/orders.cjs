@@ -1,6 +1,6 @@
 const express = require('express');
 
-const asyncWrap = require('../lib/asyncWrap');
+const asyncWrap = require('../lib/asyncWrap.cjs');
 
 const {
   getOrder,
@@ -12,7 +12,7 @@ const {
   updateOrderState,
   updateOrderTaker,
   updateOrderHistory,
-} = require('../localstorage');
+} = require('../localstorage.cjs');
 
 const router = express.Router();
 

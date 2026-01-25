@@ -1,47 +1,47 @@
 <template>
   <div>
-    <account-list :accounts="accounts" />
-    <note-list-transfer-history :transferNotes="transferNotes" />
+    <AccountList :accounts="accounts" />
+    <NoteListTransferHistory :transferNotes="displayNotes" />
   </div>
 </template>
 
-<script>
-import AccountList from '../components/AccountList';
-import NoteListTransferHistory from '../components/NoteListTransferHistory';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useAccountStore } from '@/stores/account'
+import AccountList from '@/components/AccountList.vue'
+import NoteListTransferHistory from '@/components/NoteListTransferHistory.vue'
+import * as api from '@/api'
+import type { Account } from '@/stores/account'
+import type { TransferNote } from '@/stores/note'
 
-import { mapState } from 'vuex';
-import { getAccounts, getTransferNotes } from '../api/index';
+const accountStore = useAccountStore()
 
-export default {
-  data () {
-    return {
-      accounts: [],
-      transferNotes: [],
-    };
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-    }),
-  },
-  created () {
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
-        const transferNotes = [];
-        for (let i = 0; i < accounts.length; i++) {
-          const n = await getTransferNotes(accounts[i].address);
-          if (n != null) {
-            transferNotes.push(...n);
-          }
-        }
-        this.transferNotes = transferNotes;
+const accounts = ref<Account[]>([])
+const transferNotes = ref<TransferNote[]>([])
+
+const displayNotes = computed(() => {
+  return transferNotes.value.map(note => ({
+    hash: note.hash,
+    type: note.type,
+    token: note.token,
+    value: note.value,
+    from: note.from,
+    to: note.to
+  }))
+})
+
+onMounted(async () => {
+  const fetchedAccounts = await api.getAccounts(accountStore.key!)
+  if (fetchedAccounts) {
+    accounts.value = fetchedAccounts
+    const allTransferNotes: TransferNote[] = []
+    for (const account of fetchedAccounts) {
+      const n = await api.getTransferNotes(account.address)
+      if (n) {
+        allTransferNotes.push(...n)
       }
-    });
-  },
-  components: {
-    AccountList,
-    NoteListTransferHistory,
-  },
-};
+    }
+    transferNotes.value = allTransferNotes
+  }
+})
 </script>

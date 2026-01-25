@@ -5,45 +5,41 @@
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
-import { getViewingKey, setViewingKey } from '../api/index';
-import Web3Utils from 'web3-utils';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAccountStore } from '@/stores/account'
+import * as api from '@/api'
+import { hexlify, randomBytes } from 'ethers'
 
-export default {
-  data () {
-    return {
-      userKey: '',
-    };
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-    }),
-  },
-  mounted () {
-    if (this.key !== null) {
-      this.$router.push({ path: '/' });
+const router = useRouter()
+const accountStore = useAccountStore()
+
+const userKey = ref('')
+
+onMounted(() => {
+  if (accountStore.key) {
+    router.push({ path: '/' })
+  }
+})
+
+async function login() {
+  if (!userKey.value) return
+
+  try {
+    let vk = await api.getViewingKey(userKey.value)
+
+    if (!vk) {
+      // Viewing key must be less than 64 bits
+      vk = hexlify(randomBytes(8))
+      await api.setViewingKey(userKey.value, vk)
     }
-  },
-  methods: {
-    ...mapMutations([
-      'SET_KEY',
-      'SET_VIEWING_KEY',
-    ]),
-    login () {
-      getViewingKey(this.userKey)
-        .then((vk) => {
-          if (vk === null) {
-            // NOTE: viewing key must less than 64 bits
-            vk = Web3Utils.randomHex(8);
-            setViewingKey(this.userKey, vk);
-          }
-          this.SET_KEY(this.userKey);
-          this.SET_VIEWING_KEY(vk);
-          this.$router.push({ path: '/' });
-        });
-    },
-  },
-};
+
+    accountStore.setKey(userKey.value)
+    accountStore.setViewingKey(vk)
+    router.push({ path: '/' })
+  } catch (err) {
+    console.error('Login failed:', err)
+  }
+}
 </script>

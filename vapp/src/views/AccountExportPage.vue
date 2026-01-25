@@ -1,93 +1,119 @@
 <template>
   <div>
-    <account-list :accounts="accounts" />
+    <AccountList :accounts="accountStore.accounts" @selectAccount="selectAccount" />
     <div class="box">
-      Export account: {{ addressToExport }}
-      <div class="field has-addons" style="margin-top: 20px;">
+      <p style="margin-bottom: 20px;">Export Account</p>
+      <div class="field has-addons">
         <p class="control">
-          <a class="button is-static" style="width: 140px">
-            Passphrase
-          </a>
+          <a class="button is-static" style="width: 140px">Account</a>
         </p>
         <p class="control is-expanded">
-          <input style="width: 100%; text-align: right;" class="input" type="password" placeholder="passphrase" v-model="passphrase">
+          <a class="button is-static" style="width: 100%;">{{ fmt.formatZkAddress(addressToExport) }}</a>
         </p>
       </div>
-      <button class="button" style="width: 100%;" @click="unlockAccount" :class="{'is-static': accountToExport == null}">Unlock</button>
-      <a tag="button" @click="exportAccount" style="width: 100%; margin-top: 10px;" class="button" :href="'data:' +data+ ''" download="keystore.json" :class="{'is-static': !isUnlock}">Export keystore</a>
+      <div class="field has-addons" style="margin-top: 20px;">
+        <p class="control">
+          <a class="button is-static" style="width: 140px">Passphrase</a>
+        </p>
+        <p class="control is-expanded">
+          <input
+            style="width: 100%; text-align: right;"
+            class="input"
+            type="password"
+            placeholder="Enter passphrase to verify"
+            v-model="passphrase"
+            :disabled="isUnlock"
+          >
+        </p>
+        <p class="control">
+          <button
+            class="button"
+            :class="{ 'is-success': isUnlock, 'is-loading': unlocking }"
+            @click="unlockAccountHandler"
+            :disabled="!passphrase || !accountToExport || isUnlock"
+          >
+            {{ isUnlock ? '✓ Verified' : 'Verify' }}
+          </button>
+        </p>
+      </div>
+      <a
+        tag="button"
+        @click="exportAccount"
+        style="width: 100%; margin-top: 20px;"
+        class="button is-link"
+        :href="'data:' + data + ''"
+        download="keystore.json"
+        :class="{'is-static': !isUnlock}"
+      >
+        Export Keystore
+      </a>
     </div>
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
-import AccountList from '../components/AccountList.vue';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAccountStore, type Account } from '@/stores/account'
+import { useFormatters } from '@/composables/useFormatters'
+import AccountList from '@/components/AccountList.vue'
+import * as api from '@/api'
 
-import { getAccounts, unlockAccount } from '../api/index';
-import keythereum from 'keythereum';
+const accountStore = useAccountStore()
+const fmt = useFormatters()
 
-export default {
-  data () {
-    return {
-      accountToExport: null,
-      addressToExport: '',
-      passphrase: '',
-      isUnlock: false,
-      data: null,
-    };
-  },
-  components: {
-    AccountList,
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-    }),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        if (a !== null) {
-          accounts.push(...a);
-        }
-        this.SET_ACCOUNTS(accounts);
-      });
+const accountToExport = ref<Account | null>(null)
+const addressToExport = ref('')
+const passphrase = ref('')
+const isUnlock = ref(false)
+const unlocking = ref(false)
+const data = ref<string | null>(null)
+
+onMounted(async () => {
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+})
+
+function selectAccount(account: Account) {
+  accountToExport.value = account
+  addressToExport.value = account.address
+  // Reset unlock state when selecting new account
+  isUnlock.value = false
+  passphrase.value = ''
+}
+
+async function unlockAccountHandler() {
+  if (!accountToExport.value || !passphrase.value) return
+
+  unlocking.value = true
+  try {
+    const res = await api.unlockAccount(
+      passphrase.value,
+      accountToExport.value.keystore
+    )
+    const secretKey = res.data.secretKey
+
+    if (!secretKey) {
+      alert('Failed to verify: Invalid response')
+      return
     }
-    this.$bus.$on('select-account', this.selectAccount);
-  },
-  beforeDestroy () {
-    this.$bus.$off('select-account');
-  },
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS']),
-    selectAccount (account) {
-      this.accountToExport = account;
-      this.addressToExport = account.address;
-    },
-    async unlockAccount () {
-      const res = await unlockAccount(
-        this.passphrase,
-        this.accountToExport.keystore
-      );
-      const privateKey = res.data.privateKey;
+    isUnlock.value = true
+  } catch (err) {
+    alert('Failed to verify: Wrong passphrase?')
+  } finally {
+    unlocking.value = false
+  }
+}
 
-      if (privateKey === null) {
-        alert('Failed to unlock the account');
-        return;
-      }
-      this.isUnlock = true;
-    },
-    exportAccount () {
-      const keyObj = this.accountToExport.keystore;
-      this.data =
-        'text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(keyObj));
-      this.passphrase = '';
-      this.isUnlock = false;
-      this.accountToExport = null;
-      this.addressToExport = '';
-    },
-  },
-};
+function exportAccount() {
+  if (!accountToExport.value) return
+
+  const keyObj = accountToExport.value.keystore
+  data.value = 'text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(keyObj))
+  // Reset after export
+  passphrase.value = ''
+  isUnlock.value = false
+  accountToExport.value = null
+  addressToExport.value = ''
+}
 </script>

@@ -9,8 +9,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(count, price) in orderList" @click="selectOrders(price)">
-          <td>{{ price | hexToNumberString }} </td>
+        <tr v-for="(count, price) in orderStore.orderList" :key="price" @click="selectOrders(price as string)">
+          <td>{{ fmt.hexToNumberString(price as string) }}</td>
           <td>{{ count }}</td>
         </tr>
       </tbody>
@@ -18,32 +18,23 @@
   </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from 'vuex';
-import { getOrders } from '../api/index';
+<script setup lang="ts">
+import { useOrderStore, type Order } from '@/stores/order'
+import { useFormatters } from '@/composables/useFormatters'
 
-export default {
-  data () {
-    return {
-      selectedOrder: null,
-    };
-  },
-  props: ['orders'],
-  computed: {
-    ...mapGetters(['orderList']),
-  },
-  methods: {
-    selectOrders (price) {
-      const orders = this.orders.filter(o => (o.price === price && o.state === '0x0'));
-      this.$bus.$emit('select-orders', orders);
-    },
-  },
-};
+const props = defineProps<{
+  orders: Order[]
+}>()
 
+const emit = defineEmits<{
+  selectOrders: [orders: Order[]]
+}>()
 
-const a = {
-  'a': 10,
-  'b': 20,
-};
+const orderStore = useOrderStore()
+const fmt = useFormatters()
 
+function selectOrders(price: string) {
+  const orders = props.orders.filter(o => o.price === price && o.state === '0x0')
+  emit('selectOrders', orders)
+}
 </script>

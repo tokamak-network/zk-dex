@@ -3,7 +3,7 @@
     <div style="float: left;">
       <p style="margin-left: 10px; margin-bottom: 20px;">Notes</p>
     </div>
-    <table class="table fixed_header">
+    <table class="table">
       <thead>
         <tr>
           <th>Note Hash</th>
@@ -11,73 +11,120 @@
           <th>Token</th>
           <th>VALUE</th>
           <th>STATE</th>
-          <!-- <th>SMART NOTE</th> -->
         </tr>
       </thead>
       <tbody>
-        <div v-if="$route.path === '/exchange'">
-          <tr v-for="note in notesFilteredByOrderType" @click="selectNote(note)">
-            <td>{{ note.hash | abbreviate}}</td>
-            <td>{{ note.owner | abbreviate }}</td>
-            <td>{{ note.token | tokenType }}</td>
-            <td>{{ note.value | hexToNumberString }}</td>
-            <td>{{ note.state | noteState }}</td>
-            <!-- <td>{{ note.isSmart | isSmartNote }}</td> -->
+        <template v-if="route.path === '/exchange'">
+          <tr v-for="note in orderStore.notesFilteredByOrderType" :key="note.hash" @click="selectNote(note)">
+            <td>{{ fmt.abbreviate(note.hash) }}</td>
+            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.tokenType(note.token) }}</td>
+            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.noteState(note.state) }}</td>
           </tr>
-        </div>
-        <div v-else-if="$route.path === '/transfer' || $route.path === '/convert'">
-          <tr v-for="note in validNotes" @click="selectNote(note)">
-            <td>{{ note.hash | abbreviate}}</td>
-            <td>{{ note.owner | abbreviate }}</td>
-            <td>{{ note.token | tokenType }}</td>
-            <td>{{ note.value | hexToNumberString }}</td>
-            <td>{{ note.state | noteState }}</td>
-            <!-- <td>{{ note.isSmart | isSmartNote }}</td> -->
+        </template>
+        <template v-else-if="route.path === '/transfer' || route.path === '/convert'">
+          <tr v-for="note in validNotes" :key="note.hash" @click="selectNote(note)">
+            <td>{{ fmt.abbreviate(note.hash) }}</td>
+            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.tokenType(note.token) }}</td>
+            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.noteState(note.state) }}</td>
           </tr>
-        </div>
-        <div v-else>
-          <tr v-for="note in notes" @click="selectNote(note)">
-            <td>{{ note.hash | abbreviate}}</td>
-            <td>{{ note.owner | abbreviate }}</td>
-            <td>{{ note.token | tokenType }}</td>
-            <td>{{ note.value | hexToNumberString }}</td>
-            <td>{{ note.state | noteState }}</td>
+        </template>
+        <template v-else>
+          <tr v-for="note in notes" :key="note.hash" @click="selectNote(note)">
+            <td>{{ fmt.abbreviate(note.hash) }}</td>
+            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.tokenType(note.token) }}</td>
+            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.noteState(note.state) }}</td>
           </tr>
-        </div>
+        </template>
       </tbody>
     </table>
   </div>
 </template>
 
-<script>
-import { mapState, mapActions, mapGetters } from 'vuex';
-import { constants } from '../../../scripts/lib/Note';
-import { getNotes } from '../api/index';
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useOrderStore } from '@/stores/order'
+import { useFormatters } from '@/composables/useFormatters'
+import type { Note } from '@/stores/note'
 
-export default {
-  props: ['notes'],
-  computed: {
-    ...mapState({
-      accounts: state => state.accounts,
-    }),
-    ...mapGetters(['notesFilteredByOrderType']),
-    validNotes () {
-      return this.notes.filter(note => note.state === '0x1');
-    },
-  },
-  methods: {
-    selectNote (note) {
-      this.$bus.$emit('select-note', note);
-    },
-    mappedNotes (notes) {
-      return notes.map((note) => {
-        const n = {};
-        n.token = note.token === constants.ETH_TOKEN_TYPE ? 'eth' : 'dai';
-        n.value = parseInt(note.value);
+const props = defineProps<{
+  notes: Note[]
+}>()
 
-        return n;
-      });
-    },
-  },
-};
+const emit = defineEmits<{
+  selectNote: [note: Note]
+}>()
+
+const route = useRoute()
+const orderStore = useOrderStore()
+const fmt = useFormatters()
+
+const validNotes = computed(() => {
+  return props.notes.filter(note => note.state === '0x1')
+})
+
+function selectNote(note: Note) {
+  emit('selectNote', note)
+}
 </script>
+
+<style scoped>
+.table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  text-align: center;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.5em 0.75em;
+}
+
+/* Note Hash */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 22%;
+}
+
+/* Owner */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 22%;
+}
+
+/* Token */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 12%;
+}
+
+/* VALUE */
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 24%;
+}
+
+/* STATE */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 20%;
+}
+
+.table tbody tr {
+  cursor: pointer;
+}
+
+.table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+</style>

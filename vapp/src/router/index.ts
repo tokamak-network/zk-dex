@@ -1,26 +1,24 @@
-import Vue from 'vue';
-import Router from 'vue-router';
-import store from '../store/index';
+import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+import { useAccountStore } from '@/stores/account'
 
-Vue.use(Router);
+import LoginPage from '@/views/LoginPage.vue'
+import MainPage from '@/views/MainPage.vue'
+import DashboardPage from '@/views/DashboardPage.vue'
+import DashboardSummaryPage from '@/views/DashboardSummaryPage.vue'
+import ExchangePage from '@/views/ExchangePage.vue'
+import NotePage from '@/views/NotePage.vue'
+import NoteTransferPage from '@/views/NoteTransferPage.vue'
+import NoteWalletPage from '@/views/NoteWalletPage.vue'
+import NoteCombinePage from '@/views/NoteCombinePage.vue'
+import NoteConvertPage from '@/views/NoteConvertPage.vue'
+import HistoryNoteTransferPage from '@/views/HistoryNoteTransferPage.vue'
+import HistoryOrderPage from '@/views/HistoryOrderPage.vue'
+import AccountImportPage from '@/views/AccountImportPage.vue'
+import AccountExportPage from '@/views/AccountExportPage.vue'
+import AccountDeletePage from '@/views/AccountDeletePage.vue'
 
-import LoginPage from '../views/LoginPage.vue';
-import MainPage from '../views/MainPage.vue';
-import DashboardPage from '../views/DashboardPage.vue';
-import DashboardSummaryPage from '../views/DashboardSummaryPage.vue';
-import ExchangePage from '../views/ExchangePage.vue';
-import NotePage from '../views/NotePage.vue';
-import NoteTransferPage from '../views/NoteTransferPage.vue';
-import NoteWalletPage from '../views/NoteWalletPage.vue';
-import NoteCombinePage from '../views/NoteCombinePage.vue';
-import NoteConvertPage from '../views/NoteConvertPage.vue';
-import HistoryNoteTransferPage from '../views/HistoryNoteTransferPage.vue';
-import HistoryOrderPage from '../views/HistoryOrderPage.vue';
-import AccountImportPage from '../views/AccountImportPage.vue';
-import AccountExportPage from '../views/AccountExportPage.vue';
-import AccountDeletePage from '../views/AccountDeletePage.vue';
-
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     component: LoginPage,
@@ -85,26 +83,20 @@ const routes = [
       },
     ],
   },
-];
+]
 
-const createRouter = () =>
-  new Router({
-    mode: 'history',
-    // scrollBehavior: () => ({
-    //   y: 0,
-    // }),
-    routes,
-  });
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
 
-const router = createRouter();
-
-router.beforeResolve((to, _, next) => {
-  const key = store.state.key;
-  if (key === null && to.path !== '/login') {
-    next({ path: '/login' });
+router.beforeResolve((to, _from, next) => {
+  const accountStore = useAccountStore()
+  if (!accountStore.key && to.path !== '/login') {
+    next({ path: '/login' })
   } else {
-    next();
+    next()
   }
-});
+})
 
-export default router;
+export default router

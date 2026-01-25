@@ -2,50 +2,34 @@
   <div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Order id
-        </a>
+        <a class="button is-static" style="width: 140px">Order id</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ orderId | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(orderId || '0x0') }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Price
-        </a>
+        <a class="button is-static" style="width: 140px">Price</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ orderPrice | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(orderPrice || '0x0') }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note
-        </a>
+        <a class="button is-static" style="width: 140px">Note</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteHash | abbreviate }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviate(noteHash) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note amount
-        </a>
+        <a class="button is-static" style="width: 140px">Note amount</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteValue | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
       </p>
     </div>
     <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
@@ -54,7 +38,7 @@
     <div v-else-if="radio === 'sell'" style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Sell DAI</button>
     </div>
-    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
+    <o-modal v-model:active="orderModalActive">
       <div class="box">
         <table class="table">
           <thead>
@@ -64,9 +48,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="hoverable" v-for="order in orders" @click="selectOrder(order)">
-              <td>{{ order.orderId | hexToNumberString }}</td>
-              <td>{{ order.price | hexToNumberString }}</td>
+            <tr class="hoverable" v-for="o in availableOrders" :key="o.orderId" @click="selectOrderFromModal(o)">
+              <td>{{ fmt.hexToNumberString(o.orderId) }}</td>
+              <td>{{ fmt.hexToNumberString(o.price) }}</td>
             </tr>
           </tbody>
         </table>
@@ -74,225 +58,224 @@
           <button class="button" @click="closeModal">Close</button>
         </div>
       </div>
-    </b-modal>
+    </o-modal>
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
-import { constants, Note } from '../../../scripts/lib/Note';
-import Web3Utils from 'web3-utils';
-import {
-  getNotes,
-  getOrder,
-  getOrderHistory,
-  addNote,
-  addOrderHistory,
-  addOrder,
-  generateProof,
-  updateNoteState,
-  updateOrderHistory,
-  updateOrderState,
-  updateOrderTaker,
-} from '../api/index';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useWeb3Store } from '@/stores/web3'
+import { useContractStore } from '@/stores/contract'
+import { useAccountStore } from '@/stores/account'
+import { useNoteStore, type Note } from '@/stores/note'
+import { useOrderStore, type Order } from '@/stores/order'
+import { useFormatters } from '@/composables/useFormatters'
+import * as api from '@/api'
+import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 
-export default {
-  data () {
-    return {
-      createAccountModalActive: false,
-      loading: false,
-      orderId: '',
-      orderPrice: '',
-      order: null,
-      orders: [],
-      note: null,
-      noteHash: '',
-      noteValue: '',
-      salt: null,
-    };
-  },
-  props: ['radio'],
-  computed: {
-    ...mapState({
-      accounts: state => state.accounts,
-      coinbase: state => state.web3.coinbase,
-      viewingKey: state => state.viewingKey,
-      dex: state => state.dexContractInstance,
-    }),
-  },
-  created () {
-    this.$bus.$on('select-note', this.selectNote);
-    this.$bus.$on('select-orders', this.selectOrders);
-    this.salt = Web3Utils.randomHex(16);
-  },
-  beforeDestroy () {
-    // TODO: research
-    // this.$bus.$off('select-note');
-  },
-  methods: {
-    ...mapMutations(['SET_ORDERS', 'SET_ORDER_HISTORY', 'SET_NOTES']),
-    closeModal () {
-      this.createAccountModalActive = false;
-    },
-    selectNote (note) {
-      this.note = note;
-      this.noteHash = note.hash;
-      this.noteValue = note.value;
-    },
-    selectOrder (order) {
-      this.order = order;
-      this.orderId = order.orderId;
-      this.orderPrice = order.price;
-      this.createAccountModalActive = false;
-    },
-    selectOrders (orders) {
-      this.createAccountModalActive = true;
-      this.orders = orders;
-    },
-    stakeNote () {
-      const stakeNote = new Note(
-        this.order.makerNote,
-        this.note.value,
-        this.order.targetToken,
-        this.viewingKey,
-        this.salt,
-        true
-      );
-      return stakeNote;
-    },
-    takerNote () {
-      const note = this.note;
-      delete note.hash;
-      delete note.state;
+interface TakeableOrder extends Order {
+  orderId: string
+  makerNote: string
+  makerViewingKey?: string
+  orderMaker?: string
+  parentNote?: string
+  takerNoteToMaker?: string
+  // Full maker note details (for proof generation)
+  makerNoteData?: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+  }
+}
 
-      return note;
-    },
-    async proof () {
-      const takerNote = this.takerNote();
-      const stakeNote = this.stakeNote();
-      const params = {
-        circuit: 'takeOrder',
-        params: [this.order.makerNote, takerNote, stakeNote],
-      };
-      const res = await generateProof(params);
+interface TakeOrderProofResponse {
+  a: string[]
+  b: string[][]
+  c: string[]
+  input: string[]
+  stakeNote: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+    hash: string
+  }
+}
 
-      return res.data.proof;
-    },
-    async takeOrder () {
-      this.loading = true;
+defineProps<{
+  radio: string
+}>()
 
-      const takerNote = this.takerNote();
-      const stakeNote = this.stakeNote();
-      const proof = await this.proof();
-      const tx = await this.dex.takeOrder(
-        this.order.orderId,
-        ...proof,
-        stakeNote.encrypt(this.order.makerViewingKey),
-        {
-          from: this.coinbase,
-        }
-      );
+const web3Store = useWeb3Store()
+const contractStore = useContractStore()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const orderStore = useOrderStore()
+const fmt = useFormatters()
 
-      if (tx.receipt.status) {
-        // 1. taker note state update
-        const noteOwner = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(takerNote.owner)),
-          40
-        );
-        const noteHash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-          64
-        );
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        await updateNoteState(noteOwner, noteHash, noteState);
+const orderModalActive = ref(false)
+const loading = ref(false)
+const orderId = ref('')
+const orderPrice = ref('')
+const selectedOrder = ref<TakeableOrder | null>(null)
+const availableOrders = ref<TakeableOrder[]>([])
+const selectedNote = ref<Note | null>(null)
+const noteHash = ref('')
+const noteValue = ref('')
 
-        // 2. stake note create
-        const hash = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
-          64
-        );
-        const state = Web3Utils.toHex(tx.logs[1].args.state);
-        const noteObject = {};
-        noteObject.owner = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(stakeNote.owner)),
-          40
-        );
-        noteObject.value = Web3Utils.toHex(Web3Utils.toBN(stakeNote.value));
-        noteObject.token = Web3Utils.toHex(Web3Utils.toBN(stakeNote.token));
-        noteObject.viewingKey = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(stakeNote.viewingKey)),
-          16
-        );
-        noteObject.salt = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(stakeNote.salt)),
-          32
-        );
-        noteObject.isSmart = Web3Utils.toHex(Web3Utils.toBN(stakeNote.isSmart));
-        noteObject.hash = hash;
-        noteObject.state = state;
-        await addNote(this.order.orderMaker, noteObject);
+function closeModal() {
+  orderModalActive.value = false
+}
 
-        // 3. order state update
-        const order = await this.dex.orders(Web3Utils.toBN(this.order.orderId));
-        await updateOrderState(
-          this.order.orderId,
-          Web3Utils.toHex(order.state)
-        );
-        const orders = await updateOrderTaker(this.order.orderId, noteOwner);
-        this.SET_ORDERS(orders);
+function selectNote(note: Note) {
+  selectedNote.value = note
+  noteHash.value = note.hash
+  noteValue.value = note.value
+}
 
-        // 4. update order history state
-        this.order.parentNote = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(order.parentNote)),
-          64
-        );
-        this.order.takerNoteToMaker = Web3Utils.padLeft(
-          Web3Utils.toHex(Web3Utils.toBN(order.takerNoteToMaker)),
-          64
-        );
-        this.order.state = Web3Utils.toHex(order.state);
-        const orderHistory = this.order;
-        orderHistory.takerNote = noteObject.hash;
-        orderHistory.takerNoteAmount = noteObject.value;
-        orderHistory.orderTaker = noteOwner;
-        await updateOrderHistory(this.order.orderMaker, orderHistory);
+function selectOrderFromModal(order: TakeableOrder) {
+  selectedOrder.value = order
+  orderId.value = order.orderId
+  orderPrice.value = order.price
+  orderModalActive.value = false
+}
 
-        // 5. create order history (buy)
-        orderHistory.timestamp = new Date().getTime();
-        orderHistory.type = '0x1';
-        await addOrderHistory(takerNote.owner, orderHistory);
+function selectOrders(orders: TakeableOrder[]) {
+  orderModalActive.value = true
+  availableOrders.value = orders
+}
 
-        const newNotes = [];
-        for (let i = 0; i < this.accounts.length; i++) {
-          const n = await getNotes(this.accounts[i].address);
-          if (n !== null) {
-            newNotes.push(...n);
-          }
-        }
-        this.SET_NOTES(newNotes);
+async function takeOrder() {
+  if (!selectedOrder.value || !selectedNote.value) return
 
-        const newOrderHistory = [];
-        for (let i = 0; i < this.accounts.length; i++) {
-          const h = await getOrderHistory(this.accounts[i].address);
-          if (h !== null) {
-            newOrderHistory.push(...h);
-          }
-        }
-        this.SET_ORDER_HISTORY(newOrderHistory);
+  if (!selectedNote.value.secretKey) {
+    alert('Note does not have a secret key. Cannot take order.')
+    return
+  }
+
+  if (!selectedNote.value.owner0 || !selectedNote.value.owner1) {
+    alert('Note does not have owner0/owner1. Cannot take order.')
+    return
+  }
+
+  if (!selectedOrder.value.makerNoteData) {
+    alert('Order does not have maker note details. Cannot take order.')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Generate proof with proper parameters
+    const params = {
+      circuit: 'takeOrder',
+      inputs: {
+        params: [
+          // Parent note (maker's note)
+          selectedOrder.value.makerNoteData,
+          // Taker's note
+          {
+            owner0: selectedNote.value.owner0,
+            owner1: selectedNote.value.owner1,
+            value: selectedNote.value.value,
+            token: selectedNote.value.token,
+            viewingKey: selectedNote.value.viewingKey || '0x0',
+            salt: selectedNote.value.salt
+          },
+          // Stake note params
+          { value: selectedNote.value.value, token: selectedOrder.value.targetToken },
+          // Secret key
+          selectedNote.value.secretKey
+        ]
       }
-      this.loading = false;
-      this.clear();
-    },
-    clear () {
-      this.orderId = '';
-      this.orderPrice = '';
-      this.noteHash = '';
-      this.noteValue = '';
-    },
-  },
-};
+    }
+    console.log('Generating takeOrder proof...')
+    const proofRes = await api.generateProof(params)
+    const proof = proofRes.data.proof as TakeOrderProofResponse
+    console.log('TakeOrder proof generated:', proof)
+
+    // Convert proof values to BigInt for ethers v6
+    const aBigInt = proof.a.map(v => BigInt(v))
+    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = proof.c.map(v => BigInt(v))
+    const inputBigInt = proof.input.map(v => BigInt(v))
+
+    // Encrypt stake note
+    const encryptedStakeNote = zeroPadValue(toBeHex(toBigInt(proof.stakeNote.owner0)), 32)
+
+    // Execute take order
+    console.log('Calling contract takeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    const tx = await contractStore.dexContract!.takeOrder(
+      selectedOrder.value.orderId,
+      aBigInt, bBigInt, cBigInt, inputBigInt,
+      encryptedStakeNote
+    )
+
+    console.log('Transaction sent:', tx.hash)
+    const receipt = await tx.wait()
+    console.log('Transaction receipt:', receipt)
+
+    if (receipt.status === 1) {
+      const noteOwner = zeroPadValue(toBeHex(toBigInt(selectedNote.value.owner)), 20)
+
+      // Update taker note state to TRADING
+      await api.updateNoteState(noteOwner, noteHash.value, '0x2')
+
+      // Update order state
+      await api.updateOrderState(selectedOrder.value.orderId, '0x1')
+      await api.updateOrderTaker(selectedOrder.value.orderId, noteOwner)
+
+      // Save stake note
+      const stakeNoteObj: Note = {
+        owner: noteOwner,
+        owner0: proof.stakeNote.owner0,
+        owner1: proof.stakeNote.owner1,
+        value: proof.stakeNote.value,
+        token: proof.stakeNote.token,
+        viewingKey: proof.stakeNote.viewingKey,
+        salt: proof.stakeNote.salt,
+        isSmart: '0x1',
+        hash: proof.stakeNote.hash,
+        state: '0x1'
+      }
+      await api.addNote(noteOwner, stakeNoteObj)
+
+      // Reload data
+      await noteStore.loadNotes()
+      await orderStore.loadOrders()
+      await orderStore.loadOrderHistory()
+
+      alert('Order taken successfully!')
+      clear()
+    } else {
+      alert('Transaction failed')
+    }
+  } catch (err) {
+    console.error('Failed to take order:', err)
+    alert('Failed to take order: ' + (err as Error).message)
+  } finally {
+    loading.value = false
+  }
+}
+
+function clear() {
+  orderId.value = ''
+  orderPrice.value = ''
+  noteHash.value = ''
+  noteValue.value = ''
+  selectedNote.value = null
+  selectedOrder.value = null
+}
+
+defineExpose({ selectNote, selectOrders })
 </script>
-<style>
+
+<style scoped>
 .hoverable {
   cursor: pointer;
 }

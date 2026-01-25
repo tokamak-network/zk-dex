@@ -1,12 +1,12 @@
 <template>
   <div>
-    <img src="../../public/chart.png">
+    <img src="/chart.png" alt="Order Chart">
   </div>
 </template>
 
-<script>
-export default {};
+<script setup lang="ts">
+// Simple chart placeholder component
 </script>
 
-<style>
+<style scoped>
 </style>

@@ -13,45 +13,40 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="account in accounts" @click="selectAccount(account)" :class="{ 'is-selected': account == selectedAccount }">
-          <!-- <td>Ethereum</td>
-          <td>ETH</td>
-          <td>3</td>
-          <td>0.11111</td>
-          <td>0.22222</td>
-          <td>0.33333</td> -->
+        <tr
+          v-for="account in accounts"
+          :key="account.address"
+          @click="selectAccount(account)"
+          :class="{ 'is-selected': account === selectedAccount }"
+        >
         </tr>
       </tbody>
     </table>
   </div>
 </template>
 
-<script>
-import { mapState, mapActions } from 'vuex';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import type { Account } from '@/stores/account'
 
-export default {
-  data () {
-    return {
-      accounts: [],
-      selectedAccount: null,
-    };
-  },
-  computed: mapState({
-    // coinbase: state => state.web3.coinbase,
-    // secretKey: state => state.secretKey,
-    // account: state => state.account,
-  }),
-  methods: {
-    selectAccount (account) {
-      this.selectedAccount = account;
-    },
-  },
-  created () {
-    this.accounts.push({
-      '1': 1,
-      '2': 2,
-      '3': 3,
-    });
-  },
-};
+interface BalanceAccount extends Account {
+  [key: string]: unknown
+}
+
+const accounts = ref<BalanceAccount[]>([])
+const selectedAccount = ref<BalanceAccount | null>(null)
+
+function selectAccount(account: BalanceAccount) {
+  selectedAccount.value = account
+}
+
+onMounted(() => {
+  accounts.value.push({
+    address: '',
+    publicKey: { x: '', y: '' },
+    '1': 1,
+    '2': 2,
+    '3': 3,
+  })
+})
 </script>

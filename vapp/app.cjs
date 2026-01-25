@@ -7,15 +7,15 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/circuits', require('./router/circuits'));
-app.use('/vk', require('./router/vk'));
-app.use('/accounts', require('./router/accounts'));
-app.use('/notes', require('./router/notes'));
-app.use('/orders', require('./router/orders'));
+app.use('/circuits', require('./router/circuits.cjs'));
+app.use('/vk', require('./router/vk.cjs'));
+app.use('/accounts', require('./router/accounts.cjs'));
+app.use('/notes', require('./router/notes.cjs'));
+app.use('/orders', require('./router/orders.cjs'));
 
 app.use(function (err, req, res, next) {
-  console.error(err.stack);
-  res.status(400).json({
+  console.error('Server error:', err.stack);
+  res.status(500).json({
     message: err.message,
   });
 });

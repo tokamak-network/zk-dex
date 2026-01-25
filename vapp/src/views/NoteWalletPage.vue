@@ -1,51 +1,35 @@
 <template>
   <div>
-    <note-balance-list :notes="notes" />
-    <note-list :notes="notes" />
+    <NoteBalanceList :notes="noteStore.notes" />
+    <NoteList :notes="noteStore.notes" />
   </div>
 </template>
 
-<script>
-import NoteBalanceList from '../components/NoteBalanceList';
-import NoteList from '../components/NoteList';
+<script setup lang="ts">
+import { onMounted, watch } from 'vue'
+import { useAccountStore } from '@/stores/account'
+import { useContractStore } from '@/stores/contract'
+import { useNoteStore } from '@/stores/note'
+import NoteBalanceList from '@/components/NoteBalanceList.vue'
+import NoteList from '@/components/NoteList.vue'
 
-import { mapState, mapMutations } from 'vuex';
-import { getAccounts, getNotes } from '../api/index';
+const accountStore = useAccountStore()
+const contractStore = useContractStore()
+const noteStore = useNoteStore()
 
-export default {
-  components: {
-    NoteBalanceList,
-    NoteList,
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-      notes: state => state.notes,
-    }),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        const notes = [];
+onMounted(async () => {
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+  if (contractStore.isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
 
-        if (a !== null) {
-          accounts.push(...a);
-          for (let i = 0; i < accounts.length; i++) {
-            const n = await getNotes(accounts[i].address);
-            if (n !== null) {
-              notes.push(...n);
-            }
-          }
-        }
-        this.SET_ACCOUNTS(accounts);
-        this.SET_NOTES(notes);
-      });
-    }
-  },
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS', 'SET_NOTES']),
-  },
-};
+// Watch for contract initialization to load notes
+watch(() => contractStore.isInitialized, async (isInitialized) => {
+  if (isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
 </script>

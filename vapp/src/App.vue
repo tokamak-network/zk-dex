@@ -4,10 +4,8 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'App',
-};
+<script setup lang="ts">
+// App component - Vue 3 with script setup
 </script>
 
 <style lang="scss">
@@ -15,8 +13,7 @@ export default {
 $widescreen-enabled: false;
 // Disable the fullhd breakpoint
 $fullhd-enabled: false;
-@import "~bulma";
-@import "~buefy/src/scss/buefy";
+
 // Custom styles
 html,
 body,
@@ -37,7 +34,7 @@ body,
   width: 100%;
 }
 
-html CSS Result EDIT ON .fixed_header {
+.fixed_header {
   width: 400px;
   table-layout: fixed;
   border-collapse: collapse;

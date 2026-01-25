@@ -4,8 +4,8 @@
       <div class="column" style="float: left;">
         <p style="margin-left: 10px;">Accounts</p>
       </div>
-      <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="$route.path === '/'">
-        <button class="button" @click="createNewAccount" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
+      <div style="float: right; margin-top: 10px; margin-right: 20px;" v-if="route.path === '/'">
+        <button class="button" @click="openModal" :class="{ 'is-loading': !done }">CREATE NEW ACCOUNT</button>
       </div>
     </div>
     <table class="table">
@@ -13,88 +13,132 @@
         <tr>
           <th>Index</th>
           <th>Address</th>
-          <!-- <th>Name</th> -->
           <th>Total Notes</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(account, index) in accounts" @click="selectAccount(account)">
+        <tr
+          v-for="(account, index) in accounts"
+          :key="account.address"
+          @click="selectAccount(account)"
+          :class="{ 'is-selected': selectedAccount?.address === account.address }"
+        >
           <td>{{ index }}</td>
-          <td>{{ account.address }}</td>
-          <!-- <td>{{ account.name }}</td> -->
-          <td>{{ getNumberOfNotesInAccount(account) }}</td>
+          <td>{{ fmt.formatZkAddress(account.address) }}</td>
+          <td>{{ noteStore.numberOfNotesInAccount(account.address) }}</td>
         </tr>
       </tbody>
     </table>
-    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
-      <form action="">
+    <o-modal v-model:active="createAccountModalActive">
+      <form @submit.prevent="createNewAccount">
         <div class="modal-card" style="width: auto">
           <header class="modal-card-head">
             <p class="modal-card-title">Create New Account</p>
           </header>
           <section class="modal-card-body">
-            <b-field label="Passphrase">
-              <b-input type="password" v-model="passphrase" password-reveal placeholder="Your password" required>
-              </b-input>
-            </b-field>
+            <o-field label="Passphrase">
+              <o-input type="password" v-model="passphrase" password-reveal placeholder="Your password" required />
+            </o-field>
           </section>
           <footer class="modal-card-foot">
-            <button class="button" :class="{ 'is-static': passphrase === ''}" @click="createNewAccount">Create</button>
+            <button class="button" type="submit" :disabled="passphrase === ''">Create</button>
           </footer>
         </div>
       </form>
-    </b-modal>
+    </o-modal>
   </div>
 </template>
 
-<script>
-import { mapMutations, mapState, mapGetters } from 'vuex';
-import { createAccount, addAccount } from '../api/index';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAccountStore, type Account, type BabyJubJubPublicKey } from '@/stores/account'
+import { useNoteStore } from '@/stores/note'
+import { useFormatters } from '@/composables/useFormatters'
+import * as api from '@/api'
 
-export default {
-  data () {
-    return {
-      done: true,
-      createAccountModalActive: false,
-      passphrase: '',
-    };
-  },
-  props: ['accounts'],
-  computed: {
-    ...mapState({
-      key: state => state.key,
-    }),
-    ...mapGetters(['numberOfNotesInAccount']),
-  },
-  methods: {
-    ...mapMutations(['ADD_ACCOUNT']),
-    getNumberOfNotesInAccount (account) {
-      return this.numberOfNotesInAccount(account);
-    },
-    selectAccount (account) {
-      this.$bus.$emit('select-account', account);
-    },
-    // TODO: refactoring
-    createNewAccount () {
-      this.done = false;
-      createAccount(this.passphrase).then(async (res) => {
-        const keystore = res.data.address;
-        const account = {};
-        account.keystore = keystore;
-        account.address = `0x${keystore.address}`;
-        account.name = '';
-        account.numberOfNotes = 0;
+defineProps<{
+  accounts: Account[]
+  selectedAccount?: Account | null
+}>()
 
-        await addAccount(this.key, account);
-        this.ADD_ACCOUNT(account);
-        this.createAccountModalActive = false;
-        this.done = true;
-        this.passphrase = '';
-      });
-    },
-    activeModal () {
-      this.createAccountModalActive = true;
-    },
-  },
-};
+const emit = defineEmits<{
+  selectAccount: [account: Account]
+}>()
+
+const route = useRoute()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const fmt = useFormatters()
+
+const done = ref(true)
+const createAccountModalActive = ref(false)
+const passphrase = ref('')
+
+function selectAccount(account: Account) {
+  emit('selectAccount', account)
+}
+
+function openModal() {
+  createAccountModalActive.value = true
+}
+
+async function createNewAccount() {
+  if (!passphrase.value) return
+
+  done.value = false
+  try {
+    const res = await api.createAccount(passphrase.value)
+
+    // Check for error response
+    if (res.data.error) {
+      throw new Error(res.data.error)
+    }
+
+    if (!res.data.account) {
+      throw new Error('No account data returned from server')
+    }
+
+    // res.data.account contains { address, publicKey: {x, y}, keystore }
+    const { address, publicKey, keystore } = res.data.account as {
+      address: string
+      publicKey: BabyJubJubPublicKey
+      keystore: unknown
+    }
+    const account: Account = {
+      address: `0x${address}`,
+      publicKey,
+      keystore
+    }
+
+    await api.addAccount(accountStore.key!, account)
+    accountStore.addAccount(account)
+    createAccountModalActive.value = false
+    passphrase.value = ''
+  } catch (err) {
+    console.error('Failed to create account:', err)
+    alert('Failed to create account: ' + (err as Error).message)
+  } finally {
+    done.value = true
+  }
+}
 </script>
+
+<style scoped>
+.table tbody tr {
+  cursor: pointer;
+}
+
+.table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.table tbody tr.is-selected {
+  background-color: #3273dc;
+  color: white;
+}
+
+.table tbody tr.is-selected:hover {
+  background-color: #2366d1;
+}
+</style>

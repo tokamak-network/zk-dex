@@ -2,11 +2,19 @@ const LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./localstorage');
 
 function getViewingKey (key) {
-  return localStorage.getItem(`${key}viewingkey`);
+  try {
+    return localStorage.getItem(`${key}viewingkey`);
+  } catch (err) {
+    return null;
+  }
 }
 
 function getAccounts (key) {
-  return localStorage.getItem(`${key}accounts`);
+  try {
+    return localStorage.getItem(`${key}accounts`);
+  } catch (err) {
+    return null;
+  }
 }
 
 function getNoteByNoteHash (account, hash) {
@@ -25,11 +33,19 @@ function getNoteByNoteHash (account, hash) {
 }
 
 function getNotes (account) {
-  return localStorage.getItem(`${account}notes`);
+  try {
+    return localStorage.getItem(`${account}notes`);
+  } catch (err) {
+    return null;
+  }
 }
 
 function getTransferNotes (account) {
-  return localStorage.getItem(`${account}transfernotes`);
+  try {
+    return localStorage.getItem(`${account}transfernotes`);
+  } catch (err) {
+    return null;
+  }
 }
 
 function getOrder (id) {
@@ -49,11 +65,19 @@ function getOrder (id) {
 }
 
 function getOrderHistory (account) {
-  return localStorage.getItem(`${account}orders`);
+  try {
+    return localStorage.getItem(`${account}orders`);
+  } catch (err) {
+    return null;
+  }
 }
 
 function getOrders () {
-  return localStorage.getItem('orders');
+  try {
+    return localStorage.getItem('orders');
+  } catch (err) {
+    return null;
+  }
 }
 
 function addAccount (key, account) {

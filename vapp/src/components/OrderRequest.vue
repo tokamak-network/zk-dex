@@ -6,65 +6,60 @@
           <h2>DAI-ETH</h2>
           <section style="margin-top: 20px; margin-left: 15px;">
             <div class="field">
-              <b-radio v-model="radio" native-value="buy">
-                BUY
-              </b-radio>
+              <o-radio v-model="radio" native-value="buy">BUY</o-radio>
             </div>
             <div class="field">
-              <b-radio v-model="radio" native-value="sell">
-                SELL
-              </b-radio>
+              <o-radio v-model="radio" native-value="sell">SELL</o-radio>
             </div>
           </section>
         </div>
         <div class="column">
-          <!-- TODO: https://vuejs.org/v2/guide/components-dynamic-async.html#keep-alive-with-Dynamic-Components -->
-          <b-tabs position="is-right" type="is-toggle" v-model="activeTab" style="float: right;">
-            <b-tab-item label="Make"></b-tab-item>
-            <b-tab-item label="Take"></b-tab-item>
-          </b-tabs>
+          <o-tabs position="right" type="toggle" v-model="activeTab" style="float: right;">
+            <o-tab-item label="Make" :value="0"></o-tab-item>
+            <o-tab-item label="Take" :value="1"></o-tab-item>
+          </o-tabs>
         </div>
       </div>
-      <order-request-make v-if="activeTab === 0" :radio="radio" />
-      <order-request-take v-else-if="activeTab === 1" :radio="radio" />
+      <OrderRequestMake v-if="activeTab === 0" ref="orderRequestMakeRef" :radio="radio" />
+      <OrderRequestTake v-else-if="activeTab === 1" ref="orderRequestTakeRef" :radio="radio" />
     </div>
-
   </div>
 </template>
 
-<script>
-import { mapMutations } from 'vuex';
-import OrderRequestMake from './OrderRequestMake.vue';
-import OrderRequestTake from './OrderRequestTake.vue';
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useOrderStore, type BuyOrSell, type MakeOrTake } from '@/stores/order'
+import type { Note } from '@/stores/note'
+import OrderRequestMake from './OrderRequestMake.vue'
+import OrderRequestTake from './OrderRequestTake.vue'
 
-export default {
-  data () {
-    return {
-      radio: 'buy',
-      activeTab: 0,
-    };
-  },
-  watch: {
-    radio (choice) {
-      this.SELECT_BUY_OR_SELL(choice);
-    },
-    activeTab (tab) {
-      if (tab === 0) {
-        this.SELECT_MAKE_OR_TAKE('make');
-      } else if (tab === 1) {
-        this.SELECT_MAKE_OR_TAKE('take');
-      }
-    },
-  },
-  components: {
-    OrderRequestMake,
-    OrderRequestTake,
-  },
-  methods: {
-    ...mapMutations(['SELECT_BUY_OR_SELL', 'SELECT_MAKE_OR_TAKE']),
-  },
-};
+const orderStore = useOrderStore()
+
+const radio = ref<BuyOrSell>('buy')
+const activeTab = ref(0)
+
+const orderRequestMakeRef = ref<InstanceType<typeof OrderRequestMake> | null>(null)
+const orderRequestTakeRef = ref<InstanceType<typeof OrderRequestTake> | null>(null)
+
+watch(radio, (choice) => {
+  orderStore.selectBuyOrSell(choice)
+})
+
+watch(activeTab, (tab) => {
+  const makeOrTake: MakeOrTake = tab === 0 ? 'make' : 'take'
+  orderStore.selectMakeOrTake(makeOrTake)
+})
+
+function selectNote(note: Note) {
+  if (activeTab.value === 0) {
+    orderRequestMakeRef.value?.selectNote(note)
+  } else {
+    orderRequestTakeRef.value?.selectNote(note)
+  }
+}
+
+defineExpose({ selectNote })
 </script>
 
-<style>
+<style scoped>
 </style>

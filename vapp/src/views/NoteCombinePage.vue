@@ -1,62 +1,43 @@
 <template>
   <div>
-    <note-balance-list :accounts="accounts" :notes="notes" v-on:selectAccount="selectAccount" />
-    <note-list :notes="notes" />
-    <note-combine :notes="notes" :account="account" />
+    <NoteBalanceList :accounts="accountStore.accounts" :notes="notes" @selectAccount="selectAccount" />
+    <NoteList :notes="notes" @selectNote="handleSelectNote" />
+    <NoteCombine ref="noteCombineRef" :account="selectedAccount" />
   </div>
 </template>
 
-<script>
-import NoteBalanceList from '../components/NoteBalanceList';
-import NoteList from '../components/NoteList';
-import NoteCombine from '../components/NoteCombine';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAccountStore, type Account } from '@/stores/account'
+import NoteBalanceList from '@/components/NoteBalanceList.vue'
+import NoteList from '@/components/NoteList.vue'
+import NoteCombine from '@/components/NoteCombine.vue'
+import * as api from '@/api'
+import type { Note } from '@/stores/note'
 
-import { mapState, mapMutations } from 'vuex';
-import { getAccounts, getNotes } from '../api/index';
+const accountStore = useAccountStore()
 
-import Web3Utils from 'web3-utils';
+const selectedAccount = ref('')
+const notes = ref<Note[]>([])
+const noteCombineRef = ref<InstanceType<typeof NoteCombine> | null>(null)
 
-export default {
-  components: {
-    NoteBalanceList,
-    NoteList,
-    NoteCombine,
-  },
-  data () {
-    return {
-      account: '',
-      notes: [],
-    };
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-    }),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        if (a !== null) {
-          accounts.push(...a);
-        }
-        this.SET_ACCOUNTS(accounts);
-      });
-    }
-  },
-  // TODO: selected notes event listening.
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS']),
-    async selectAccount (account) {
-      this.account = account;
-      const notes = await getNotes(account);
-      if (notes !== null) {
-        this.notes = notes;
-      } else {
-        this.notes = [];
-      }
-    },
-  },
-};
+function handleSelectNote(note: Note) {
+  noteCombineRef.value?.selectNote(note)
+}
+
+onMounted(async () => {
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+})
+
+async function selectAccount(account: Account) {
+  selectedAccount.value = account.address
+  const fetchedNotes = await api.getNotes(account.address)
+  if (fetchedNotes) {
+    notes.value = fetchedNotes
+  } else {
+    notes.value = []
+  }
+}
 </script>

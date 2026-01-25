@@ -82,9 +82,12 @@ function toHexString(value) {
 async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = '0x0', salt = null) {
     const pk = await derivePublicKey(sk);
 
-    // Generate random salt if not provided
+    // Generate random salt if not provided (masked to 254 bits for circuit compatibility)
     if (!salt) {
-        salt = '0x' + crypto.randomBytes(32).toString('hex');
+        // Generate 32 bytes but mask to 254 bits to fit in BN128 field
+        const saltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
+        const mask254 = (BigInt(1) << BigInt(254)) - BigInt(1);
+        salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
     }
 
     // Convert value to hex string (handles BigInt)

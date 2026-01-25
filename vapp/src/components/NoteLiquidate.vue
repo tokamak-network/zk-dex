@@ -5,134 +5,240 @@
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Account
-        </a>
+        <a class="button is-static" style="width: 140px">Account</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteOwner }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(noteOwner) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note
-        </a>
+        <a class="button is-static" style="width: 140px">Note</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteHash | abbreviate }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviate(noteHash) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note Amount
-        </a>
+        <a class="button is-static" style="width: 140px">Note Amount</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteValue | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
+      </p>
+    </div>
+    <!-- Show unlock UI if note doesn't have secretKey -->
+    <div v-if="needsUnlock" class="field has-addons" style="margin-top: 20px;">
+      <p class="control">
+        <a class="button is-static" style="width: 140px">Passphrase</a>
+      </p>
+      <p class="control is-expanded">
+        <input style="width: 100%; text-align: right;" class="input" type="password" v-model="passphrase" placeholder="Unlock account to liquidate">
+      </p>
+      <p class="control">
+        <button class="button" :class="{ 'is-success': isUnlocked, 'is-loading': unlocking }" @click="unlockAccount" :disabled="!passphrase">
+          {{ isUnlocked ? '✓ Unlocked' : 'Unlock' }}
+        </button>
       </p>
     </div>
     <div style="display: flex; justify-content: flex-end">
-      <a class="button is-link" style="margin-top: 20px;" :class="{ 'is-static': noteHash === '', 'is-loading': loading }" @click="liquidateNote">Liquidate</a>
+      <a class="button is-link" style="margin-top: 20px;" :class="{ 'is-static': !canLiquidate, 'is-loading': loading }" @click="liquidateNote">Liquidate</a>
     </div>
   </div>
 </template>
 
-<script>
-import { mapState, mapActions, mapMutations } from 'vuex';
-import { getNotes, updateNoteState, generateProof } from '../api/index';
-import Web3Utils from 'web3-utils';
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useWeb3Store } from '@/stores/web3'
+import { useContractStore } from '@/stores/contract'
+import { useAccountStore } from '@/stores/account'
+import { useNoteStore, type Note } from '@/stores/note'
+import { useOrderStore } from '@/stores/order'
+import { useFormatters } from '@/composables/useFormatters'
+import * as api from '@/api'
+import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 
-export default {
-  data () {
-    return {
-      loading: false,
-      note: null,
-      noteOwner: '',
-      noteHash: '',
-      noteValue: '',
-    };
-  },
-  props: {
-    token: {
-      type: String,
-    },
-  },
-  computed: {
-    ...mapState({
-      accounts: state => state.accounts,
-      coinbase: state => state.web3.coinbase,
-      dex: state => state.dexContractInstance,
-      dai: state => state.daiContractInstance,
-    }),
-  },
-  created () {
-    this.$bus.$on('select-note', this.selectNote);
-  },
-  beforeDestroy () {
-    this.$bus.$off('select-note');
-  },
-  methods: {
-    ...mapMutations([
-      'SET_NOTES',
-    ]),
-    selectNote (note) {
-      this.note = note;
-      this.noteOwner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(note.owner)),
-        40
-      );
-      this.noteHash = note.hash;
-      this.noteValue = note.value;
-    },
-    async proof () {
-      const params = {
-        circuit: 'mintNBurnNote',
-        params: [this.note],
-      };
-      const res = await generateProof(params);
+defineProps<{
+  token: string
+}>()
 
-      return res.data.proof;
-    },
-    async liquidateNote () {
-      this.loading = true;
+const router = useRouter()
+const web3Store = useWeb3Store()
+const contractStore = useContractStore()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const orderStore = useOrderStore()
+const fmt = useFormatters()
 
-      const proof = await this.proof();
-      const tx = await this.dex.liquidate(this.noteOwner, ...proof, {
-        from: this.coinbase,
-      });
+const loading = ref(false)
+const unlocking = ref(false)
+const selectedNote = ref<Note | null>(null)
+const noteOwner = ref('')
+const noteHash = ref('')
+const noteValue = ref('')
+const passphrase = ref('')
+const isUnlocked = ref(false)
+const unlockedSecretKey = ref('')
 
-      const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
-      const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
-      const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-      await updateNoteState(noteOwner, noteHash, noteState);
+// Check if we need to unlock (only for VALID notes that don't have secretKey)
+const needsUnlock = computed(() => {
+  return selectedNote.value &&
+         selectedNote.value.state === '0x1' &&  // Only VALID notes
+         !selectedNote.value.secretKey &&
+         noteHash.value !== ''
+})
 
-      const newNotes = [];
-      for (let i = 0; i < this.accounts.length; i++) {
-        const n = await getNotes(this.accounts[i].address);
-        if (n !== null) {
-          newNotes.push(...n);
-        }
-      }
-      this.SET_NOTES(newNotes);
-      this.updateDaiAmount();
+// Get the effective secret key (either from note or from unlock)
+const effectiveSecretKey = computed(() => {
+  return selectedNote.value?.secretKey || unlockedSecretKey.value
+})
 
-      this.loading = false;
-      this.$router.push({ path: '/' });
-    },
-    async updateDaiAmount () {
-      const daiAmount = await this.dai.balanceOf(this.coinbase);
-      this.$store.dispatch('setDaiAmount', {
-        daiAmount,
-      });
-    },
-  },
-};
+// Only allow liquidation if note is VALID (0x1) and we have secretKey
+const canLiquidate = computed(() => {
+  return selectedNote.value &&
+         selectedNote.value.state === '0x1' &&
+         effectiveSecretKey.value &&
+         noteHash.value !== ''
+})
+
+// Get the owner account to unlock
+const ownerAccount = computed(() => {
+  return accountStore.accounts.find(acc => acc.address === noteOwner.value)
+})
+
+function selectNote(note: Note) {
+  selectedNote.value = note
+  noteOwner.value = note.owner
+  noteHash.value = note.hash
+  noteValue.value = note.value
+  // Reset unlock state
+  isUnlocked.value = false
+  unlockedSecretKey.value = ''
+  passphrase.value = ''
+}
+
+async function unlockAccount() {
+  if (!ownerAccount.value || !passphrase.value) return
+
+  unlocking.value = true
+  try {
+    const res = await api.unlockAccount(passphrase.value, ownerAccount.value.keystore)
+    unlockedSecretKey.value = res.data.secretKey
+    isUnlocked.value = true
+  } catch (err) {
+    alert('Failed to unlock account: Wrong passphrase?')
+    isUnlocked.value = false
+  } finally {
+    unlocking.value = false
+  }
+}
+
+interface BurnProofResponse {
+  a: string[]
+  b: string[][]
+  c: string[]
+  input: string[]
+  note: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+    hash: string
+  }
+}
+
+async function generateProof(): Promise<BurnProofResponse> {
+  if (!effectiveSecretKey.value) {
+    throw new Error('No secret key available. Please unlock account.')
+  }
+  if (!selectedNote.value?.owner0 || !selectedNote.value?.owner1) {
+    throw new Error('Note does not have owner0/owner1. Cannot generate burn proof.')
+  }
+
+  const params = {
+    circuit: 'burnNote',
+    inputs: {
+      params: [
+        {
+          owner0: selectedNote.value.owner0,
+          owner1: selectedNote.value.owner1,
+          value: selectedNote.value.value,
+          token: selectedNote.value.token,
+          viewingKey: selectedNote.value.viewingKey || '0x0',
+          salt: selectedNote.value.salt
+        },
+        effectiveSecretKey.value
+      ]
+    }
+  }
+  const res = await api.generateProof(params)
+  return res.data.proof as BurnProofResponse
+}
+
+async function liquidateNote() {
+  if (!selectedNote.value) return
+
+  if (selectedNote.value.state !== '0x1') {
+    alert('Note is not in VALID state. Cannot liquidate.')
+    return
+  }
+
+  if (!effectiveSecretKey.value) {
+    alert('Please unlock your account first.')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    console.log('Generating burn proof...')
+    const proof = await generateProof()
+    console.log('Burn proof generated:', proof)
+
+    // Convert proof values to BigInt for ethers v6
+    const aBigInt = proof.a.map(v => BigInt(v))
+    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = proof.c.map(v => BigInt(v))
+    const inputBigInt = proof.input.map(v => BigInt(v))
+
+    // First parameter is the recipient address for the liquidated funds
+    const recipientAddress = web3Store.account
+    console.log('Calling contract liquidate with:', { to: recipientAddress, a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    const tx = await contractStore.dexContract!.liquidate(
+      recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
+    )
+
+    console.log('Transaction sent:', tx.hash)
+    const receipt = await tx.wait()
+    console.log('Transaction receipt:', receipt)
+
+    if (receipt.status === 1) {
+      // Update note state to spent
+      await api.updateNoteState(noteOwner.value, noteHash.value, '0x3')
+      await noteStore.loadNotes()
+      await updateDaiAmount()
+      alert('Liquidation successful!')
+    } else {
+      alert('Transaction failed')
+    }
+
+    router.push({ path: '/' })
+  } catch (err) {
+    console.error('Failed to liquidate note:', err)
+    alert('Failed to liquidate note: ' + (err as Error).message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function updateDaiAmount() {
+  if (!contractStore.daiContract || !web3Store.account) return
+  const daiAmount = await contractStore.daiContract.balanceOf(web3Store.account)
+  orderStore.setDaiAmount(daiAmount.toString())
+}
+
+defineExpose({ selectNote })
 </script>

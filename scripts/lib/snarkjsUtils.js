@@ -98,6 +98,61 @@ function hexToBigInt(hex) {
 }
 
 /**
+ * Mask value to 254 bits (BN128 field constraint)
+ */
+function maskTo254Bits(value) {
+    const mask = (BigInt(1) << BigInt(254)) - BigInt(1);
+    return hexToBigInt(value) & mask;
+}
+
+/**
+ * Compute note hash matching circuit computation (1536-bit SHA256)
+ * The circuit uses 254-bit field elements padded to 256 bits with 2 leading zeros
+ * @param {Object} note - Note object with owner0, owner1, value, token, viewingKey, salt
+ * @returns {{h0: string, h1: string}} Hash split into two 128-bit parts
+ */
+function computeCircuitHash(note) {
+    const crypto = require('crypto');
+
+    // Helper to convert a field element (254 bits max) to 32 bytes (big-endian)
+    function fieldTo32Bytes(val) {
+        const bigVal = maskTo254Bits(val);
+        const hex = bigVal.toString(16).padStart(64, '0');
+        return Buffer.from(hex, 'hex');
+    }
+
+    // Helper to convert 128-bit value to 16 bytes
+    function to16Bytes(val) {
+        const bigVal = hexToBigInt(val) & ((BigInt(1) << BigInt(128)) - BigInt(1));
+        const hex = bigVal.toString(16).padStart(32, '0');
+        return Buffer.from(hex, 'hex');
+    }
+
+    // Build 192-byte (1536-bit) message matching circuit structure:
+    // owner0 (32B) | owner1 (32B) | value (32B) | type (32B) | vk0||vk1 (32B) | salt (32B)
+    const [vk0, vk1] = split256To128(note.viewingKey);
+
+    const message = Buffer.concat([
+        fieldTo32Bytes(note.owner0),      // 32 bytes
+        fieldTo32Bytes(note.owner1),      // 32 bytes
+        fieldTo32Bytes(note.value),       // 32 bytes
+        fieldTo32Bytes(note.token),       // 32 bytes
+        to16Bytes(vk0),                   // 16 bytes (vk high part)
+        to16Bytes(vk1),                   // 16 bytes (vk low part)
+        fieldTo32Bytes(note.salt)         // 32 bytes
+    ]);
+
+    // Compute SHA256
+    const digest = crypto.createHash('sha256').update(message).digest('hex');
+
+    // Split into two 128-bit parts
+    return {
+        h0: digest.slice(0, 32),  // First 128 bits (high)
+        h1: digest.slice(32)      // Last 128 bits (low)
+    };
+}
+
+/**
  * Split 256-bit value into two 128-bit values
  */
 function split256To128(value) {
@@ -130,20 +185,24 @@ function getNoteHashParts(note) {
  * Generate proof for MintNBurnNote circuit
  */
 async function getMintNBurnProof(note, sk) {
-    const [nh0, nh1] = getNoteHashParts(note);
+    // Use circuit-compatible hash computation
+    const circuitHash = computeCircuitHash(note);
+    const nh0 = BigInt('0x' + circuitHash.h0).toString();
+    const nh1 = BigInt('0x' + circuitHash.h1).toString();
+
     const [vk0, vk1] = split256To128(note.viewingKey);
 
     const inputs = {
         nh0,
         nh1,
-        value: hexToBigInt(note.value).toString(),
-        tokenType: hexToBigInt(note.token).toString(),
-        owner0: hexToBigInt(note.owner0).toString(),
-        owner1: hexToBigInt(note.owner1).toString(),
+        value: maskTo254Bits(note.value).toString(),
+        tokenType: maskTo254Bits(note.token).toString(),
+        owner0: maskTo254Bits(note.owner0).toString(),
+        owner1: maskTo254Bits(note.owner1).toString(),
         vk0,
         vk1,
-        salt: hexToBigInt(note.salt).toString(),
-        sk: hexToBigInt(sk).toString()
+        salt: maskTo254Bits(note.salt).toString(),
+        sk: maskTo254Bits(sk).toString()
     };
 
     return generateProof('mint_burn_note', inputs);

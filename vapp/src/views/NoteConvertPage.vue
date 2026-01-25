@@ -1,6 +1,6 @@
 <template>
   <div>
-    <note-list :notes="smartNotes" />
+    <NoteList :notes="noteStore.smartNotes" @selectNote="selectNote" />
     <div class="box">
       <div class="field has-addons">
         <p class="control">
@@ -10,7 +10,7 @@
         </p>
         <p class="control is-expanded">
           <a class="button is-static" style="width: 100%;">
-            {{ noteHash | abbreviate }}
+            {{ fmt.abbreviate(noteHash) }}
           </a>
         </p>
       </div>
@@ -21,63 +21,190 @@
   </div>
 </template>
 
-<script>
-import NoteList from '../components/NoteList';
-import NoteTransfer from '../components/NoteTransfer';
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAccountStore } from '@/stores/account'
+import { useNoteStore, type Note } from '@/stores/note'
+import { useContractStore } from '@/stores/contract'
+import { useFormatters } from '@/composables/useFormatters'
+import NoteList from '@/components/NoteList.vue'
+import * as api from '@/api'
+import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 
-import { mapState, mapMutations, mapGetters } from 'vuex';
-import { getAccounts, getNotes } from '../api/index';
+const router = useRouter()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const contractStore = useContractStore()
+const fmt = useFormatters()
 
-export default {
-  data () {
-    return {
-      note: null,
-      noteHash: '',
-      loading: false,
-    };
-  },
-  components: {
-    NoteList,
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-      notes: state => state.notes,
-    }),
-    ...mapGetters(['smartNotes']),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        const notes = [];
+const note = ref<Note | null>(null)
+const noteHash = ref('')
+const loading = ref(false)
+const originNote = ref<Note | null>(null)
 
-        if (a !== null) {
-          accounts.push(...a);
-          for (let i = 0; i < accounts.length; i++) {
-            const n = await getNotes(accounts[i].address);
-            if (n !== null) {
-              notes.push(...n);
-            }
-          }
-        }
-        this.SET_ACCOUNTS(accounts);
-        this.SET_NOTES(notes);
-      });
+interface ConvertProofResponse {
+  a: string[]
+  b: string[][]
+  c: string[]
+  input: string[]
+  newNote: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+    hash: string
+  }
+  newNoteSecretKey: string
+}
+
+onMounted(async () => {
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+  if (contractStore.isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
+
+// Watch for contract initialization to load notes
+watch(() => contractStore.isInitialized, async (isInitialized) => {
+  if (isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
+
+function selectNote(selectedNote: Note) {
+  note.value = selectedNote
+  noteHash.value = selectedNote.hash
+
+  // Smart notes have owner = hash of origin note (split into owner0, owner1)
+  // We need to find the origin note to convert
+  if (selectedNote.isSmart === '0x1') {
+    // Reconstruct the hash from owner0 and owner1
+    // owner0 = high 128 bits, owner1 = low 128 bits
+    const high = toBigInt(selectedNote.owner0 || '0x0')
+    const low = toBigInt(selectedNote.owner1 || '0x0')
+    const originHash = '0x' + ((high << BigInt(128)) | low).toString(16).padStart(64, '0')
+
+    // Find origin note by hash
+    const found = noteStore.notes.find(n => n.hash === originHash)
+    if (found) {
+      originNote.value = found
+    } else {
+      originNote.value = null
+      console.warn('Origin note not found for smart note:', originHash)
     }
-    this.$bus.$on('select-note', this.selectNote);
-  },
-  beforeDestroy () {
-    this.$bus.$off('select-note');
-  },
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS', 'SET_NOTES']),
-    selectNote (note) {
-      this.note = note;
-      this.noteHash = note.hash;
-    },
-    convertNote () {},
-  },
-};
+  }
+}
+
+async function convertNote() {
+  if (!note.value || note.value.isSmart !== '0x1') {
+    alert('Please select a smart note to convert.')
+    return
+  }
+
+  if (!originNote.value) {
+    alert('Cannot find the origin note for this smart note. The origin note must be in your wallet.')
+    return
+  }
+
+  if (!originNote.value.secretKey) {
+    alert('Origin note is missing secret key. Cannot convert.')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Generate convert proof
+    const params = {
+      circuit: 'convertNote',
+      inputs: {
+        params: [
+          // Smart note data
+          {
+            owner0: note.value.owner0,
+            owner1: note.value.owner1,
+            value: note.value.value,
+            token: note.value.token,
+            viewingKey: note.value.viewingKey || '0x0',
+            salt: note.value.salt
+          },
+          // Origin note data
+          {
+            owner0: originNote.value.owner0,
+            owner1: originNote.value.owner1,
+            value: originNote.value.value,
+            token: originNote.value.token,
+            viewingKey: originNote.value.viewingKey || '0x0',
+            salt: originNote.value.salt
+          },
+          // Secret key of origin note
+          originNote.value.secretKey
+        ]
+      }
+    }
+    console.log('Generating convert proof...')
+    const proofRes = await api.generateProof(params)
+    const proof = proofRes.data.proof as ConvertProofResponse
+    console.log('Convert proof generated:', proof)
+
+    // Convert proof values to BigInt for ethers v6
+    const aBigInt = proof.a.map(v => BigInt(v))
+    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = proof.c.map(v => BigInt(v))
+    const inputBigInt = proof.input.map(v => BigInt(v))
+
+    // Encrypt new note
+    const encryptedNewNote = zeroPadValue(toBeHex(toBigInt(proof.newNote.owner0)), 32)
+
+    // Call convert on contract (assuming there's a convert function)
+    console.log('Calling contract convert...')
+    const tx = await contractStore.dexContract!.convert(
+      aBigInt, bBigInt, cBigInt, inputBigInt,
+      encryptedNewNote
+    )
+
+    console.log('Transaction sent:', tx.hash)
+    const receipt = await tx.wait()
+    console.log('Transaction receipt:', receipt)
+
+    if (receipt.status === 1) {
+      // Update smart note state to SPENT
+      await api.updateNoteState(note.value.owner, note.value.hash, '0x3')
+
+      // Add new regular note
+      const newNoteObj: Note = {
+        owner: note.value.owner,
+        owner0: proof.newNote.owner0,
+        owner1: proof.newNote.owner1,
+        value: proof.newNote.value,
+        token: proof.newNote.token,
+        viewingKey: proof.newNote.viewingKey,
+        salt: proof.newNote.salt,
+        isSmart: '0x0',
+        hash: proof.newNote.hash,
+        state: '0x1',
+        secretKey: proof.newNoteSecretKey
+      }
+      await api.addNote(note.value.owner, newNoteObj)
+
+      // Reload notes
+      await noteStore.loadNotes()
+
+      alert('Note converted successfully!')
+      router.push({ path: '/' })
+    } else {
+      alert('Transaction failed')
+    }
+  } catch (err) {
+    console.error('Failed to convert note:', err)
+    alert('Failed to convert note: ' + (err as Error).message)
+  } finally {
+    loading.value = false
+  }
+}
 </script>

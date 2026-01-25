@@ -17,23 +17,38 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="note in transferNotes">
-          <td>{{ note.hash | abbreviate }}</td>
-          <td>{{ note.type | transferNoteType }}</td>
-          <td>{{ note.token | tokenType }}</td>
-          <td>{{ note.value | hexToNumberString }}</td>
-          <td>{{ note.from | abbreviate }}</td>
-          <td>{{ note.to | abbreviate}}</td>
-          <td>{{ note.change | hexToNumberString }}</td>
-          <td>{{ note.transactionHash | abbreviate }}</td>
+        <tr v-for="note in transferNotes" :key="note.hash">
+          <td>{{ fmt.abbreviate(note.hash) }}</td>
+          <td>{{ fmt.transferNoteType(note.type) }}</td>
+          <td>{{ fmt.tokenType(note.token) }}</td>
+          <td>{{ fmt.hexToNumberString(note.value) }}</td>
+          <td>{{ fmt.abbreviateZk(note.from || '') }}</td>
+          <td>{{ fmt.abbreviateZk(note.to || '') }}</td>
+          <td>{{ note.change ? fmt.hexToNumberString(note.change) : '' }}</td>
+          <td>{{ fmt.abbreviate(note.transactionHash || '') }}</td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
 
-<script>
-export default {
-  props: ['transferNotes'],
-};
+<script setup lang="ts">
+import { useFormatters } from '@/composables/useFormatters'
+
+interface TransferNoteDisplay {
+  hash: string
+  type: string
+  token: string
+  value: string
+  from?: string
+  to?: string
+  change?: string
+  transactionHash?: string
+}
+
+defineProps<{
+  transferNotes: TransferNoteDisplay[]
+}>()
+
+const fmt = useFormatters()
 </script>

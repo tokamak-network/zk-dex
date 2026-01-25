@@ -17,6 +17,7 @@ contracts/           # Solidity smart contracts (0.8.20)
 scripts/lib/         # JavaScript proof generation utilities
 test/                # Integration & production tests
 examples/            # Frontend usage examples
+vapp/                # Vue 3 frontend application
 ```
 
 ## Quick Start
@@ -120,6 +121,70 @@ const proof = await noteProofHelper.generateMintProof(note, sk);
 await zkDai.mint(proof.a, proof.b, proof.c, proof.input, encryptedNote, { value: '1000000000000000000' });
 ```
 
+## Frontend (vapp)
+
+The `vapp` directory contains a Vue 3 frontend application for interacting with ZK-DEX.
+
+### Technology Stack
+
+| Component | Version |
+|-----------|---------|
+| Vue | 3.4.21 |
+| State Management | Pinia 2.1.7 |
+| UI Library | Oruga UI 0.8.12 + Bulma |
+| Build Tool | Vite 5.1.5 |
+| Language | TypeScript 5.4.2 |
+| Web3 Library | ethers.js 6.11.1 |
+| Router | Vue Router 4.3.0 |
+
+### Installation
+
+```bash
+cd vapp
+npm install
+```
+
+### Development
+
+```bash
+# Start Vite development server (http://localhost:8080)
+npm run dev
+
+# Type checking
+npm run type-check
+```
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Backend Server
+
+The Express backend serves the API for account and note management:
+
+```bash
+# Start Express backend server
+npm run server
+```
+
+### Features
+
+- MetaMask wallet connection
+- Account import/export/delete
+- Note minting and liquidation (ETH/DAI)
+- Private note transfers
+- Note combining
+- Order creation and taking
+- Order settlement and history
+
+For detailed migration information, see [migration_vapp.md](migration_vapp.md) or [migration_vapp_ko.md](migration_vapp_ko.md).
+
 ## Testing
 
 ### Test Suites
@@ -160,7 +225,8 @@ This project was migrated from ZoKrates to Circom/snarkjs. See [migration.md](mi
 ## Documents
 
 - [Architecture (EN)](ARCHITECTURE.md) / [Architecture (KO)](ARCHITECTURE_ko.md)
-- [Migration Report (EN)](migration.md) / [Migration Report (KO)](migration_ko.md)
+- [Circuit Migration (EN)](migration.md) / [Circuit Migration (KO)](migration_ko.md)
+- [Frontend Migration (EN)](migration_vapp.md) / [Frontend Migration (KO)](migration_vapp_ko.md)
 - [Architecture Presentation](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [Demo Video](https://youtu.be/QvKaqMH_5lk)
 

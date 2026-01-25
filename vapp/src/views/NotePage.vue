@@ -1,71 +1,77 @@
 <template>
   <div>
     <div v-if="action === 'mint'">
-      <note-mint :accounts="accounts" :token="token" />
+      <NoteMint :accounts="accounts" :token="token" />
     </div>
     <div v-else-if="action === 'liquidate'">
-      <note-list :notes="notes" />
-      <note-liquidate :accounts="accounts" :token="token" />
+      <NoteList :notes="filteredNotes" @selectNote="handleSelectNote" />
+      <NoteLiquidate ref="noteLiquidateRef" :accounts="accounts" :token="token" />
     </div>
   </div>
 </template>
 
-<script>
-import NoteList from '../components/NoteList';
-import NoteMint from '../components/NoteMint';
-import NoteLiquidate from '../components/NoteLiquidate';
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAccountStore } from '@/stores/account'
+import { useContractStore } from '@/stores/contract'
+import { useNoteStore } from '@/stores/note'
+import NoteList from '@/components/NoteList.vue'
+import NoteMint from '@/components/NoteMint.vue'
+import NoteLiquidate from '@/components/NoteLiquidate.vue'
+import type { Note } from '@/stores/note'
 
-import { mapState } from 'vuex';
-import { getAccounts, getNotes } from '../api/index';
-import Web3Utils from 'web3-utils';
+const route = useRoute()
+const accountStore = useAccountStore()
+const contractStore = useContractStore()
+const noteStore = useNoteStore()
 
-export default {
-  components: {
-    NoteList,
-    NoteMint,
-    NoteLiquidate,
-  },
-  data () {
-    return {
-      accounts: [],
-      notes: [],
-    };
-  },
-  created () {
-    const query = this.$route.query;
-    this.action = query.action;
-    this.token = query.token;
+const action = ref('')
+const token = ref('')
 
-    let type;
-    if (this.token === 'ETH') {
-      type = '0';
-    } else if (this.token === 'DAI') {
-      type = '1';
-    }
+const noteLiquidateRef = ref<InstanceType<typeof NoteLiquidate> | null>(null)
 
-    getAccounts(this.key).then(async (accounts) => {
-      if (accounts !== null) {
-        this.accounts = accounts;
+// Use filtered accounts from store (only BabyJubJub accounts)
+const accounts = computed(() => accountStore.accounts)
 
-        if (this.action === 'liquidate') {
-          const notes = [];
-          for (let i = 0; i < accounts.length; i++) {
-            const n = await getNotes(accounts[i].address);
-            if (n != null) {
-              // TODO: only 'valid' state's note can liquidate.
-              const f = n.filter(note => Web3Utils.hexToNumberString(note.token) === type);
-              notes.push(...f);
-            }
-          }
-          this.notes = notes;
-        }
-      }
-    });
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-    }),
-  },
-};
+function handleSelectNote(note: Note) {
+  noteLiquidateRef.value?.selectNote(note)
+}
+
+const filteredNotes = computed(() => {
+  let tokenType: string
+  if (token.value === 'ETH') {
+    tokenType = '0'
+  } else if (token.value === 'DAI') {
+    tokenType = '1'
+  } else {
+    return noteStore.notes
+  }
+  return noteStore.notes.filter(note => {
+    const noteToken = BigInt(note.token).toString()
+    return noteToken === tokenType
+  })
+})
+
+onMounted(async () => {
+  action.value = route.query.action as string || ''
+  token.value = route.query.token as string || ''
+
+  // Load accounts if not already loaded
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+
+  // Load notes for liquidate action (only if contract is initialized)
+  if (action.value === 'liquidate' && contractStore.isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
+
+// Watch for contract initialization to load notes (for liquidate action)
+watch(() => contractStore.isInitialized, async (isInitialized) => {
+  if (isInitialized && action.value === 'liquidate' && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
 </script>

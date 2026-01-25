@@ -1,61 +1,43 @@
 <template>
   <div>
-    <account-list :accounts="accounts" />
+    <AccountList :accounts="accountStore.accounts" @selectAccount="selectAccount" />
     <div class="box">
-      Delete account: {{ addressToDelete }}
-      <button class="button" style="width: 100%; margin-top: 15px;" @click="deleteAccount" :class="{'is-static': accountToDelete == null}">Delete</button>
+      Delete account: {{ fmt.formatZkAddress(addressToDelete) }}
+      <button class="button" style="width: 100%; margin-top: 15px;" @click="deleteAccountHandler" :class="{'is-static': accountToDelete == null}">Delete</button>
     </div>
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
-import AccountList from '../components/AccountList.vue';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAccountStore, type Account } from '@/stores/account'
+import { useFormatters } from '@/composables/useFormatters'
+import AccountList from '@/components/AccountList.vue'
+import * as api from '@/api'
 
-import { getAccounts, deleteAccount } from '../api/index';
+const accountStore = useAccountStore()
+const fmt = useFormatters()
 
-export default {
-  data () {
-    return {
-      accountToDelete: null,
-      addressToDelete: '',
-    };
-  },
-  components: {
-    AccountList,
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-    }),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        if (a !== null) {
-          accounts.push(...a);
-        }
-        this.SET_ACCOUNTS(accounts);
-      });
-    }
-    this.$bus.$on('select-account', this.selectAccount);
-  },
-  beforeDestroy () {
-    this.$bus.$off('select-account');
-  },
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS', 'DELETE_ACCOUNT']),
-    selectAccount (account) {
-      this.accountToDelete = account;
-      this.addressToDelete = account.address;
-    },
-    deleteAccount () {
-      deleteAccount(this.key, this.addressToDelete).then(() => {
-        this.DELETE_ACCOUNT(this.accountToDelete);
-      });
-    },
-  },
-};
+const accountToDelete = ref<Account | null>(null)
+const addressToDelete = ref('')
+
+onMounted(async () => {
+  if (accountStore.accounts.length === 0) {
+    await accountStore.loadAccounts()
+  }
+})
+
+function selectAccount(account: Account) {
+  accountToDelete.value = account
+  addressToDelete.value = account.address
+}
+
+async function deleteAccountHandler() {
+  if (!accountToDelete.value) return
+
+  await api.deleteAccount(accountStore.key!, addressToDelete.value)
+  accountStore.deleteAccount(accountToDelete.value)
+  accountToDelete.value = null
+  addressToDelete.value = ''
+}
 </script>

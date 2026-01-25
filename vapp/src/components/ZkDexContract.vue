@@ -1,61 +1,44 @@
 <template>
   <div>
     <div>
-      <p style="margin-top: 12px;">DAI Amount: {{ daiAmount }} dai </p>
-      <p style="margin-top: 12px;">ZkDex address: {{ address }}</p>
+      <p style="margin-top: 12px;">DAI Amount: {{ orderStore.daiAmount }} dai</p>
+      <p style="margin-top: 12px;">ZkDex address: {{ contractStore.dexAddress }}</p>
     </div>
   </div>
 </template>
 
-<script>
-import { mapState, mapActions, mapMutations } from 'vuex';
-import Web3Utils from 'web3-utils';
+<script setup lang="ts">
+import { onMounted, watch } from 'vue'
+import { useWeb3Store } from '@/stores/web3'
+import { useContractStore } from '@/stores/contract'
+import { useOrderStore } from '@/stores/order'
 
-export default {
-  data () {
-    return {
-      address: null,
-    };
-  },
-  beforeCreate () {
-    this.$store.dispatch('setContract');
-  },
-  created () {
-    this.dexContract
-      .deployed()
-      .then((dexContractInstance) => {
-        this.address = dexContractInstance.address;
-        this.setDexContractInstance(dexContractInstance);
+const web3Store = useWeb3Store()
+const contractStore = useContractStore()
+const orderStore = useOrderStore()
 
-        return dexContractInstance.dai();
-      })
-      .then(daiAddress => this.daiContract.at(daiAddress))
-      .then((daiContractInstance) => {
-        this.setDaiContractInstance(daiContractInstance);
-        this.updateDaiAmount();
-      });
-  },
-  computed: mapState({
-    coinbase: state => state.web3.coinbase,
-    viewingKey: state => state.viewingKey,
-    dexContract: state => state.dexContract,
-    daiContract: state => state.daiContract,
-    daiContractInstance: state => state.daiContractInstance,
-    daiAmount: state => state.daiAmount,
-  }),
-  methods: {
-    ...mapActions([
-      'setDexContractInstance',
-      'setDaiContractInstance',
-    ]),
-    async updateDaiAmount () {
-      const daiAmount = await this.daiContractInstance.balanceOf(this.coinbase);
-      this.$store.dispatch('setDaiAmount', {
-        daiAmount,
-      });
-    },
-  },
-};
+async function updateDaiAmount() {
+  if (!contractStore.daiContract || !web3Store.account) return
+  try {
+    const daiAmount = await contractStore.daiContract.balanceOf(web3Store.account)
+    orderStore.setDaiAmount(daiAmount.toString())
+  } catch (err) {
+    console.error('Failed to get DAI balance:', err)
+  }
+}
+
+onMounted(async () => {
+  if (web3Store.isConnected && !contractStore.isInitialized) {
+    await contractStore.initContracts()
+    await updateDaiAmount()
+  }
+})
+
+watch(() => contractStore.isInitialized, async (isInitialized) => {
+  if (isInitialized) {
+    await updateDaiAmount()
+  }
+})
 </script>
 
 <style scoped></style>

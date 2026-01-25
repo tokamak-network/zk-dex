@@ -2,9 +2,7 @@
   <div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Price
-        </a>
+        <a class="button is-static" style="width: 140px">Price</a>
       </p>
       <p class="control is-expanded">
         <input style="width: 100%; text-align: right;" class="input" type="text" placeholder="price" v-model="price" @keypress="onlyNumber">
@@ -12,26 +10,18 @@
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note
-        </a>
+        <a class="button is-static" style="width: 140px">Note</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteHash | abbreviate }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviate(noteHash) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note amount
-        </a>
+        <a class="button is-static" style="width: 140px">Note amount</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteValue | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
       </p>
     </div>
     <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
@@ -43,155 +33,149 @@
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
-import { constants } from '../../../scripts/lib/Note';
-import Web3Utils from 'web3-utils';
-import {
-  getNotes,
-  updateNoteState,
-  addOrderHistory,
-  addOrder,
-  generateProof,
-} from '../api/index';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useWeb3Store } from '@/stores/web3'
+import { useContractStore } from '@/stores/contract'
+import { useAccountStore } from '@/stores/account'
+import { useNoteStore, type Note } from '@/stores/note'
+import { useOrderStore } from '@/stores/order'
+import { useFormatters } from '@/composables/useFormatters'
+import * as api from '@/api'
+import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 
-export default {
-  data () {
-    return {
-      note: null,
-      loading: false,
-      activeTab: 0,
-      noteHash: '',
-      noteValue: '',
-      price: '',
-    };
-  },
-  props: ['radio'],
-  computed: {
-    ...mapState({
-      accounts: state => state.accounts,
-      coinbase: state => state.web3.coinbase,
-      dex: state => state.dexContractInstance,
-      viewingKey: state => state.viewingKey,
-    }),
-  },
-  created () {
-    this.$bus.$on('select-note', this.selectNote);
-  },
-  beforeDestroy () {
-    // this.$bus.$off('select-note');
-  },
-  methods: {
-    ...mapMutations([
-      'SET_ORDERS',
-      'SET_ORDER_HISTORY',
-      'SET_NOTES',
-    ]),
-    onlyNumber () {
-      if ((event.keyCode < 48) || (event.keyCode > 57)) {
-        event.returnValue = false;
+defineProps<{
+  radio: string
+}>()
+
+const web3Store = useWeb3Store()
+const contractStore = useContractStore()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const orderStore = useOrderStore()
+const fmt = useFormatters()
+
+const loading = ref(false)
+const selectedNote = ref<Note | null>(null)
+const noteHash = ref('')
+const noteValue = ref('')
+const price = ref('')
+
+const ETH_TOKEN_TYPE = '0x0'
+const DAI_TOKEN_TYPE = '0x1'
+
+function onlyNumber(event: KeyboardEvent) {
+  if (event.keyCode < 48 || event.keyCode > 57) {
+    event.preventDefault()
+  }
+}
+
+function selectNote(note: Note) {
+  selectedNote.value = note
+  noteHash.value = note.hash
+  noteValue.value = note.value
+}
+
+interface MakeOrderProofResponse {
+  a: string[]
+  b: string[][]
+  c: string[]
+  input: string[]
+}
+
+async function makeNewOrder() {
+  if (!selectedNote.value || !price.value) return
+
+  if (!selectedNote.value.secretKey) {
+    alert('Note does not have a secret key. Cannot make order.')
+    return
+  }
+
+  if (!selectedNote.value.owner0 || !selectedNote.value.owner1) {
+    alert('Note does not have owner0/owner1. Cannot make order.')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Generate proof with note data and secretKey
+    const params = {
+      circuit: 'makeOrder',
+      inputs: {
+        params: [
+          {
+            owner0: selectedNote.value.owner0,
+            owner1: selectedNote.value.owner1,
+            value: selectedNote.value.value,
+            token: selectedNote.value.token,
+            viewingKey: selectedNote.value.viewingKey || '0x0',
+            salt: selectedNote.value.salt
+          },
+          selectedNote.value.secretKey
+        ]
       }
-    },
-    selectNote (note) {
-      this.note = note;
-      this.noteHash = note.hash;
-      this.noteValue = note.value;
-    },
-    makerNote () {
-      const note = this.note;
-      delete note.hash;
-      delete note.state;
+    }
+    console.log('Generating makeOrder proof...')
+    const proofRes = await api.generateProof(params)
+    const proof = proofRes.data.proof as MakeOrderProofResponse
+    console.log('MakeOrder proof generated:', proof)
 
-      return note;
-    },
-    async proof (note) {
-      const params = {
-        circuit: 'makeOrder',
-        params: [note],
-      };
-      const res = await generateProof(params);
+    // Determine target token
+    const targetToken = selectedNote.value.token === ETH_TOKEN_TYPE ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
 
-      return res.data.proof;
-    },
-    async makeNewOrder () {
-      this.loading = true;
+    // Convert proof values to BigInt for ethers v6
+    const aBigInt = proof.a.map(v => BigInt(v))
+    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = proof.c.map(v => BigInt(v))
+    const inputBigInt = proof.input.map(v => BigInt(v))
 
-      const makerNote = this.makerNote();
-      const proof = await this.proof(makerNote);
-      const tx = await this.dex.makeOrder(
-        '0x0',
-        this.note.token === '0x0'
-          ? constants.DAI_TOKEN_TYPE
-          : constants.ETH_TOKEN_TYPE,
-        this.price,
-        ...proof,
-        {
-          from: this.coinbase,
-        }
-      );
+    // Execute make order
+    console.log('Calling contract makeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    const tx = await contractStore.dexContract!.makeOrder(
+      selectedNote.value.token,
+      targetToken,
+      price.value,
+      aBigInt, bBigInt, cBigInt, inputBigInt
+    )
 
-      if (tx.receipt.status) {
-        const noteOwner = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
-        const noteHash = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)), 64);
-        const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-        await this.updateNoteState(noteOwner, noteHash, noteState);
+    console.log('Transaction sent:', tx.hash)
+    const receipt = await tx.wait()
+    console.log('Transaction receipt:', receipt)
 
-        const order = await this.createOrder();
-        await this.createOrderHistory(noteOwner, order);
-      }
-      this.loading = false;
-      this.clear();
-    },
-    clear () {
-      this.noteHash = '';
-      this.noteValue = '';
-      this.price = '';
-    },
-    async createOrder () {
-      const orderMaker = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(this.note.owner)), 40);
-      const orderId = (await this.dex.getOrderCount()) - 1;
-      const order = await this.dex.orders(orderId);
+    if (receipt.status === 1) {
+      const noteOwner = zeroPadValue(toBeHex(toBigInt(selectedNote.value.owner)), 20)
 
-      order.orderId = Web3Utils.toHex(orderId);
-      order.orderMaker = orderMaker;
-      order.makerNote = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.makerNote)), 64);
-      order.parentNote = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.parentNote)), 64);
-      order.takerNoteToMaker = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.takerNoteToMaker)), 64);
-      order.makerViewingKey = Web3Utils.padLeft(Web3Utils.toHex(Web3Utils.toBN(order.makerViewingKey)), 16);
-      order.price = Web3Utils.toHex(order.price);
-      order.sourceToken = Web3Utils.toHex(order.sourceToken);
-      order.targetToken = Web3Utils.toHex(order.targetToken);
-      order.state = Web3Utils.toHex(order.state);
-      order.type = Web3Utils.toHex('0'); // '0': sell, '1': buy
-      order.timestamp = new Date().getTime();
-      order.makerNoteAmount = Web3Utils.toHex(this.note.value);
-      order.takerNoteAmount = Web3Utils.toHex('0');
+      // Update note state to TRADING
+      await api.updateNoteState(noteOwner, noteHash.value, '0x2')
 
-      const orders = await addOrder(order);
-      this.SET_ORDERS(orders);
+      // Reload data
+      await noteStore.loadNotes()
+      await orderStore.loadOrders()
+      await orderStore.loadOrderHistory()
 
-      return order;
-    },
-    async createOrderHistory (account, order) {
-      const orderHistory = order;
-      const history = await addOrderHistory(account, orderHistory);
-      this.SET_ORDER_HISTORY(history);
-    },
-    async updateNoteState (noteOwner, noteHash, noteState) {
-      await updateNoteState(noteOwner, noteHash, noteState);
+      alert('Order created successfully!')
+      clear()
+    } else {
+      alert('Transaction failed')
+    }
+  } catch (err) {
+    console.error('Failed to make order:', err)
+    alert('Failed to make order: ' + (err as Error).message)
+  } finally {
+    loading.value = false
+  }
+}
 
-      const newNotes = [];
-      for (let i = 0; i < this.accounts.length; i++) {
-        const n = await getNotes(this.accounts[i].address);
-        if (n !== null) {
-          newNotes.push(...n);
-        }
-      }
-      this.SET_NOTES(newNotes);
-    },
-  },
-};
+function clear() {
+  noteHash.value = ''
+  noteValue.value = ''
+  price.value = ''
+  selectedNote.value = null
+}
+
+defineExpose({ selectNote })
 </script>
 
-<style>
+<style scoped>
 </style>

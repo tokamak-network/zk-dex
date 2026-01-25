@@ -266,7 +266,8 @@ function initialized() {
     c = await docker.getContainer(c.Id);
   } catch (e) {
     console.error('Failed to connect docker container', e);
-    process.exit(-1);
+    // Don't exit - allow server to run without Docker for development
+    // process.exit(-1);
   }
 })();
 

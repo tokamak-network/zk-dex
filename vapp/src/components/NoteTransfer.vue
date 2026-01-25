@@ -4,68 +4,77 @@
       <p style="margin-left: 10px; margin-bottom: 20px;">Transfer</p>
     </div>
     <div class="block" style="display: flex; justify-content: flex-end">
-      <b-switch v-model="isSelfTransfer">self-transfer</b-switch>
+      <o-switch v-model="isSelfTransfer">self-transfer</o-switch>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          From
-        </a>
+        <a class="button is-static" style="width: 140px">From</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteOwner }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(noteOwner) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note
-        </a>
+        <a class="button is-static" style="width: 140px">Note</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteHash | abbreviate }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviate(noteHash) }}</a>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Note Amount
-        </a>
+        <a class="button is-static" style="width: 140px">Note Amount</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">
-          {{ noteValue | hexToNumberString }}
-        </a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
       </p>
     </div>
     <div class="field has-addons" style="margin-top: 40px;">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          To
-        </a>
+        <a class="button is-static" style="width: 140px">To</a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="text" v-model="account">
+        <div class="select is-fullwidth">
+          <select v-model="toAccountAddress">
+            <option value="">Select recipient...</option>
+            <option v-for="acc in accountStore.accounts" :key="acc.address" :value="acc.address">{{ fmt.abbreviateZk(acc.address) }}</option>
+          </select>
+        </div>
       </p>
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">
-          Amount
-        </a>
+        <a class="button is-static" style="width: 140px">Amount</a>
       </p>
       <p class="control is-expanded">
         <input style="width: 100%; text-align: right;" class="input" type="text" v-model="amount" @keypress="onlyNumber">
       </p>
     </div>
-    <div style="margin-top: 10px; display: flex; justify-content: flex-end">
-      <button class="button" @click="transferNote" :class="{ 'is-static': noteHash === '' || amount === '', 'is-loading': loading }">Transfer</button>
+    <div style="margin-top: 20px; display: flex; justify-content: flex-end">
+      <button
+        class="button is-link"
+        @click="handleTransferClick"
+        :class="{ 'is-static': !canClickTransfer, 'is-loading': loading }"
+      >Transfer</button>
     </div>
-    <b-modal :active.sync="createAccountModalActive" :width="640" scroll="keep" class="hide-footer centered">
+    <!-- Passphrase modal -->
+    <o-modal v-model:active="showPassphraseModal">
+      <div class="box" style="width: 400px;">
+        <p class="title is-5">Enter Passphrase</p>
+        <p class="subtitle is-6">Unlock account to transfer note</p>
+        <div class="field">
+          <p class="control">
+            <input class="input" type="password" v-model="passphrase" placeholder="Passphrase" @keyup.enter="confirmPassphrase">
+          </p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button class="button" @click="showPassphraseModal = false">Cancel</button>
+          <button class="button is-link" :class="{ 'is-loading': unlocking }" @click="confirmPassphrase" :disabled="!passphrase">Confirm</button>
+        </div>
+      </div>
+    </o-modal>
+    <o-modal v-model:active="createAccountModalActive">
       <div class="box">
         <table class="table">
           <thead>
@@ -74,8 +83,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="hoverable" v-for="account in accounts" @click="selectAccount(account)">
-              <td>{{ account.address }}</td>
+            <tr class="hoverable" v-for="acc in accountStore.accounts" :key="acc.address" @click="selectAccountFromModal(acc)">
+              <td>{{ fmt.abbreviateZk(acc.address) }}</td>
             </tr>
           </tbody>
         </table>
@@ -83,268 +92,339 @@
           <button class="button" @click="closeModal">Close</button>
         </div>
       </div>
-    </b-modal>
+    </o-modal>
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex';
+<script setup lang="ts">
+import { ref, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useContractStore } from '@/stores/contract'
+import { useAccountStore, type Account, type BabyJubJubPublicKey } from '@/stores/account'
+import { useNoteStore, type Note } from '@/stores/note'
+import { useFormatters } from '@/composables/useFormatters'
+import * as api from '@/api'
+import { toBigInt } from 'ethers'
+import { encodeNoteData } from '@/utils/noteEncryption'
 
-import Web3Utils from 'web3-utils';
-import { Note } from '../../../scripts/lib/Note';
-import {
-  getNotes,
-  getTransferNotes,
-  addNote,
-  addTransferNote,
-  updateNoteState,
-  generateProof,
-} from '../api/index';
+const router = useRouter()
+const contractStore = useContractStore()
+const accountStore = useAccountStore()
+const noteStore = useNoteStore()
+const fmt = useFormatters()
 
-export default {
-  data () {
-    return {
-      createAccountModalActive: false,
-      loading: false,
-      note: '',
-      noteOwner: '',
-      noteHash: '',
-      noteValue: '',
-      account: '',
-      amount: '',
-      isSelfTransfer: false,
-    };
-  },
-  computed: {
-    ...mapState({
-      accounts: state => state.accounts,
-      coinbase: state => state.web3.coinbase,
-      dex: state => state.dexContractInstance,
-      viewingKey: state => state.viewingKey,
-    }),
-  },
-  created () {
-    this.$bus.$on('select-note', this.selectNote);
-  },
-  beforeDestroy () {
-    this.$bus.$off('select-note');
-  },
-  watch: {
-    isSelfTransfer (selfTransfer) {
-      if (selfTransfer) {
-        this.createAccountModalActive = true;
-      }
-    },
-  },
-  methods: {
-    ...mapMutations(['SET_NOTES', 'SET_TRANSFER_NOTES']),
-    onlyNumber () {
-      if (event.keyCode < 48 || event.keyCode > 57) {
-        event.returnValue = false;
-      }
-    },
-    closeModal () {
-      this.createAccountModalActive = false;
-    },
-    selectNote (note) {
-      this.note = note;
-      this.noteOwner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(note.owner)),
-        40
-      );
-      this.noteHash = note.hash;
-      this.noteValue = note.value;
-      if (this.isSelfTransfer) {
-        this.account = this.noteOwner;
-      } else {
-        this.account = '';
-      }
-    },
-    selectAccount (account) {
-      this.account = account.address;
-      this.closeModal();
-    },
-    notes () {
-      if (this.note.state !== '0x1') {
-        alert('invalid note');
-        return null;
-      }
-      if (
-        !this.isValidAccount(this.account) ||
-        !this.isValidAmount(this.amount)
-      ) {
-        alert('invalid account(or amount)');
-        return null;
-      }
-      const type = this.note.token;
-      const change = this.change(this.amount);
-      const note1 = new Note(
-        this.account,
-        this.amount,
-        type,
-        '0x0',
-        Web3Utils.randomHex(16)
-      );
-      const note2 = new Note(
-        this.note.owner,
-        change,
-        type,
-        '0x0',
-        Web3Utils.randomHex(16)
-      );
+const createAccountModalActive = ref(false)
+const loading = ref(false)
+const unlocking = ref(false)
+const selectedNote = ref<Note | null>(null)
+const noteOwner = ref('')
+const noteHash = ref('')
+const noteValue = ref('')
+const toAccountAddress = ref('')
+const amount = ref('')
+const isSelfTransfer = ref(false)
+const passphrase = ref('')
+const unlockedSecretKey = ref('')
+const showPassphraseModal = ref(false)
 
-      return { note1, note2 };
-    },
-    async proof (oldNote, newNote1, newNote2) {
-      const params = {
-        circuit: 'transferNote',
-        params: [oldNote, newNote1, newNote2],
-      };
+// Get the recipient account object with publicKey
+const recipientAccount = computed(() => {
+  return accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
+})
 
-      const res = await generateProof(params);
-      return res.data.proof;
-    },
-    async transferNote () {
-      this.loading = true;
+// Get the sender account object with publicKey
+const senderAccount = computed(() => {
+  return accountStore.accounts.find(acc => acc.address === noteOwner.value)
+})
 
-      const notes = this.notes();
-      if (this.notes() === null) {
-        this.loading = false;
-        return;
-      }
+// Get the effective secret key (either from note or from unlock)
+const effectiveSecretKey = computed(() => {
+  return selectedNote.value?.secretKey || unlockedSecretKey.value
+})
 
-      const proof = await this.proof(this.note, notes.note1, notes.note2);
+// Can we click the transfer button? (doesn't require secretKey yet)
+const canClickTransfer = computed(() => {
+  return noteHash.value !== '' &&
+         amount.value !== '' &&
+         toAccountAddress.value !== '' &&
+         recipientAccount.value?.publicKey &&
+         senderAccount.value?.publicKey
+})
 
-      const tx = await this.dex.spend(
-        ...proof,
-        notes.note1.encrypt(notes.note1.owner),
-        notes.note2.encrypt(notes.note2.owner),
-        { from: this.coinbase }
-      );
+function onlyNumber(event: KeyboardEvent) {
+  if (event.keyCode < 48 || event.keyCode > 57) {
+    event.preventDefault()
+  }
+}
 
-      // 1. update note
-      const noteOwner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(this.note.owner)),
-        40
-      );
-      const noteHash = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(tx.logs[0].args.note)),
-        64
-      );
-      const noteState = Web3Utils.toHex(tx.logs[0].args.state);
-      await updateNoteState(noteOwner, noteHash, noteState);
+function closeModal() {
+  createAccountModalActive.value = false
+}
 
-      // 2. add note1
-      const noteHash1 = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(tx.logs[1].args.note)),
-        64
-      );
-      const noteState1 = Web3Utils.toHex(tx.logs[1].args.state);
-      const noteObject1 = {};
-      noteObject1.owner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note1.owner)),
-        40
-      );
-      noteObject1.value = Web3Utils.toHex(Web3Utils.toBN(notes.note1.value));
-      noteObject1.token = Web3Utils.toHex(Web3Utils.toBN(notes.note1.token));
-      noteObject1.viewingKey = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note1.viewingKey)),
-        16
-      );
-      noteObject1.salt = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note1.salt)),
-        32
-      );
-      noteObject1.isSmart = Web3Utils.toHex(
-        Web3Utils.toBN(notes.note1.isSmart)
-      );
-      noteObject1.hash = noteHash1;
-      noteObject1.state = noteState1;
-      await addNote(noteObject1.owner, noteObject1);
+function selectNote(note: Note) {
+  selectedNote.value = note
+  // note.owner is already formatted (either 20-byte address or stored format)
+  noteOwner.value = note.owner
+  noteHash.value = note.hash
+  noteValue.value = note.value
+  // Reset unlock state
+  unlockedSecretKey.value = ''
+  passphrase.value = ''
+  showPassphraseModal.value = false
+  if (isSelfTransfer.value) {
+    toAccountAddress.value = noteOwner.value
+  } else {
+    toAccountAddress.value = ''
+  }
+}
 
-      // 3. add note2
-      const noteHash2 = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(tx.logs[2].args.note)),
-        64
-      );
-      const noteState2 = Web3Utils.toHex(tx.logs[2].args.state);
-      const noteObject2 = {};
-      noteObject2.owner = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note2.owner)),
-        40
-      );
-      noteObject2.value = Web3Utils.toHex(Web3Utils.toBN(notes.note2.value));
-      noteObject2.token = Web3Utils.toHex(Web3Utils.toBN(notes.note2.token));
-      noteObject2.viewingKey = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note2.viewingKey)),
-        16
-      );
-      noteObject2.salt = Web3Utils.padLeft(
-        Web3Utils.toHex(Web3Utils.toBN(notes.note2.salt)),
-        32
-      );
-      noteObject2.isSmart = Web3Utils.toHex(
-        Web3Utils.toBN(notes.note2.isSmart)
-      );
-      noteObject2.hash = noteHash2;
-      noteObject2.state = noteState2;
-      await addNote(noteObject2.owner, noteObject2);
+function selectAccountFromModal(account: Account) {
+  toAccountAddress.value = account.address
+  closeModal()
+}
 
-      // transfer note1
-      const transferNote1 = this.note;
-      transferNote1.type = '0x0'; // 0x0: send, 0x1: receive
-      transferNote1.from = noteOwner;
-      transferNote1.to = this.account;
-      transferNote1.change = Web3Utils.toHex(this.change(this.amount));
-      transferNote1.value = Web3Utils.toHex(this.amount);
-      transferNote1.transactionHash = tx.receipt.transactionHash;
-      await addTransferNote(noteOwner, transferNote1);
+function handleTransferClick() {
+  if (!canClickTransfer.value) return
 
-      // transfer note2
-      const transferNote2 = noteObject1;
-      transferNote2.type = '0x1';
-      transferNote2.from = '';
-      transferNote2.to = this.account;
-      transferNote2.change = '';
-      transferNote2.value = Web3Utils.toHex(this.amount);
-      transferNote2.transactionHash = tx.receipt.transactionHash;
-      await addTransferNote(this.account, transferNote2);
+  // If note already has secretKey, proceed directly
+  if (selectedNote.value?.secretKey) {
+    unlockedSecretKey.value = selectedNote.value.secretKey
+    doTransfer()
+  } else {
+    // Show passphrase modal to unlock account
+    showPassphraseModal.value = true
+  }
+}
 
-      const newNotes = [];
-      for (let i = 0; i < this.accounts.length; i++) {
-        const n = await getNotes(this.accounts[i].address);
-        if (n !== null) {
-          newNotes.push(...n);
-        }
-      }
-      this.SET_NOTES(newNotes);
+async function confirmPassphrase() {
+  if (!senderAccount.value || !passphrase.value) return
 
-      const newTransferNotes = [];
-      for (let i = 0; i < this.accounts.length; i++) {
-        const n = await getTransferNotes(this.accounts[i].address);
-        if (n !== null) {
-          newTransferNotes.push(...n);
-        }
-      }
-      this.SET_TRANSFER_NOTES(newTransferNotes);
+  unlocking.value = true
+  try {
+    const res = await api.unlockAccount(passphrase.value, senderAccount.value.keystore)
+    unlockedSecretKey.value = res.data.secretKey
+    showPassphraseModal.value = false
+    // Now proceed with transfer
+    await doTransfer()
+  } catch (err) {
+    alert('Failed to unlock account: Wrong passphrase?')
+  } finally {
+    unlocking.value = false
+    passphrase.value = ''
+  }
+}
 
-      this.loading = false;
-      this.$router.push({ path: '/' });
-    },
-    change (amount) {
-      return Web3Utils.toBN(this.note.value).sub(Web3Utils.toBN(amount));
-    },
-    isValidAccount (account) {
-      return Web3Utils.isAddress(account);
-    },
-    isValidAmount (amount) {
-      const fromAmount = Web3Utils.toBN(this.note.value);
-      const toAmount = Web3Utils.toBN(amount);
+function calculateChange(originalValue: string, transferAmount: string): bigint {
+  return toBigInt(originalValue) - toBigInt(transferAmount)
+}
 
-      return fromAmount.cmp(toAmount) >= 0 ? true : false;
-    },
-  },
-};
+function isValidRecipient(): boolean {
+  // Check if recipient account is selected and has a valid public key
+  return !!recipientAccount.value && !!recipientAccount.value.publicKey
+}
+
+function isValidAmount(fromValue: string, toAmount: string): boolean {
+  const from = toBigInt(fromValue)
+  const to = toBigInt(toAmount)
+  return from >= to
+}
+
+interface TransferProofResponse {
+  a: string[]
+  b: string[][]
+  c: string[]
+  input: string[]
+  newNote: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+    hash: string
+  }
+  changeNote: {
+    owner0: string
+    owner1: string
+    value: string
+    token: string
+    viewingKey: string
+    salt: string
+    hash: string
+  }
+}
+
+async function generateProof(
+  oldNote: Note,
+  newNoteValue: string,
+  changeNoteValue: string,
+  secretKey: string,
+  recipientPubKey: BabyJubJubPublicKey,
+  senderPubKey: BabyJubJubPublicKey
+): Promise<TransferProofResponse> {
+  if (!oldNote.owner0 || !oldNote.owner1) {
+    throw new Error('Note does not have owner0/owner1. Cannot generate transfer proof.')
+  }
+
+  const params = {
+    circuit: 'transferNote',
+    inputs: {
+      params: [
+        // Old note data
+        {
+          owner0: oldNote.owner0,
+          owner1: oldNote.owner1,
+          value: oldNote.value,
+          token: oldNote.token,
+          viewingKey: oldNote.viewingKey || '0x0',
+          salt: oldNote.salt
+        },
+        // New note params (for recipient)
+        { value: newNoteValue, token: oldNote.token },
+        // Change note params (back to sender)
+        { value: changeNoteValue, token: oldNote.token },
+        // Secret key
+        secretKey,
+        // Recipient's public key
+        recipientPubKey,
+        // Sender's public key (for change note)
+        senderPubKey
+      ]
+    }
+  }
+  const res = await api.generateProof(params)
+  return res.data.proof as TransferProofResponse
+}
+
+async function doTransfer() {
+  if (!selectedNote.value || selectedNote.value.state !== '0x1') {
+    alert('Invalid note')
+    return
+  }
+
+  if (!effectiveSecretKey.value) {
+    alert('Please unlock your account first.')
+    return
+  }
+
+  if (!isValidRecipient() || !isValidAmount(selectedNote.value.value, amount.value)) {
+    alert('Invalid recipient or amount')
+    return
+  }
+
+  if (!senderAccount.value || !senderAccount.value.publicKey) {
+    alert('Sender account not found or missing public key')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const change = calculateChange(selectedNote.value.value, amount.value)
+
+    console.log('Generating transfer proof with public keys...')
+    console.log('Recipient:', recipientAccount.value!.publicKey)
+    console.log('Sender:', senderAccount.value.publicKey)
+
+    const proof = await generateProof(
+      selectedNote.value,
+      amount.value,
+      change.toString(),
+      effectiveSecretKey.value,
+      recipientAccount.value!.publicKey,
+      senderAccount.value.publicKey
+    )
+    console.log('Transfer proof generated:', proof)
+
+    // Convert proof values to BigInt for ethers v6
+    const aBigInt = proof.a.map(v => BigInt(v))
+    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = proof.c.map(v => BigInt(v))
+    const inputBigInt = proof.input.map(v => BigInt(v))
+
+    // Encode notes using RLP for on-chain storage and recovery
+    const encryptedNewNote = encodeNoteData({
+      owner0: proof.newNote.owner0,
+      owner1: proof.newNote.owner1,
+      value: proof.newNote.value,
+      token: proof.newNote.token,
+      viewingKey: proof.newNote.viewingKey,
+      salt: proof.newNote.salt
+    })
+    const encryptedChangeNote = encodeNoteData({
+      owner0: proof.changeNote.owner0,
+      owner1: proof.changeNote.owner1,
+      value: proof.changeNote.value,
+      token: proof.changeNote.token,
+      viewingKey: proof.changeNote.viewingKey,
+      salt: proof.changeNote.salt
+    })
+
+    console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    const tx = await contractStore.dexContract!.spend(
+      aBigInt, bBigInt, cBigInt, inputBigInt,
+      encryptedNewNote,
+      encryptedChangeNote
+    )
+
+    console.log('Transaction sent:', tx.hash)
+    const receipt = await tx.wait()
+    console.log('Transaction receipt:', receipt)
+
+    if (receipt.status === 1) {
+      // Notes are now stored on-chain via RLP encoding
+      // Both recipient's note and sender's change note will be discovered via blockchain scan
+
+      // Add transfer history records (still local for now)
+      // Sender record (type: '0x0' = Send)
+      await api.addTransferNote(noteOwner.value, {
+        hash: noteHash.value,
+        type: '0x0',
+        from: noteOwner.value,
+        to: toAccountAddress.value,
+        value: amount.value,
+        token: selectedNote.value.token,
+        change: change.toString(),
+        transactionHash: receipt.hash
+      })
+
+      // Receiver record (type: '0x1' = Receive)
+      await api.addTransferNote(toAccountAddress.value, {
+        hash: proof.newNote.hash,
+        type: '0x1',
+        from: noteOwner.value,
+        to: toAccountAddress.value,
+        value: amount.value,
+        token: selectedNote.value.token,
+        transactionHash: receipt.hash
+      })
+
+      // Scan blockchain to discover notes
+      await noteStore.loadNotes()
+      await noteStore.loadTransferNotes()
+
+      alert('Transfer successful!')
+    } else {
+      alert('Transaction failed')
+    }
+
+    router.push({ path: '/' })
+  } catch (err) {
+    console.error('Failed to transfer note:', err)
+    alert('Failed to transfer note: ' + (err as Error).message)
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(isSelfTransfer, (selfTransfer) => {
+  if (selfTransfer) {
+    createAccountModalActive.value = true
+  }
+})
+
+// Expose selectNote for parent components
+defineExpose({ selectNote })
 </script>
 
 <style scoped>

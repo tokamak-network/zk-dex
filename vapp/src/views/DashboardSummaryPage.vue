@@ -1,64 +1,73 @@
 <template>
   <div>
-    <account-list :accounts="accounts" />
-    <note-list :notes="notes" />
-    <note-balance-list :notes="notes" />
-    <note-list-transfer-history :transferNotes="transferNotes" />
+    <NoteBalanceList :notes="filteredNotes" :accounts="accountStore.accounts || []" />
+    <AccountList :accounts="accountStore.accounts || []" :selectedAccount="selectedAccount" @selectAccount="handleSelectAccount" />
+    <NoteList :notes="filteredNotes" @selectNote="handleSelectNote" />
+    <NoteListTransferHistory :transferNotes="noteStore.transferNotes || []" />
   </div>
 </template>
 
-<script>
-import AccountList from '../components/AccountList.vue';
-import NoteList from '../components/NoteList.vue';
-import NoteBalanceList from '../components/NoteBalanceList.vue';
-import NoteListTransferHistory from '../components/NoteListTransferHistory.vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAccountStore, type Account } from '@/stores/account'
+import { useContractStore } from '@/stores/contract'
+import { useNoteStore, type Note } from '@/stores/note'
+import AccountList from '@/components/AccountList.vue'
+import NoteList from '@/components/NoteList.vue'
+import NoteBalanceList from '@/components/NoteBalanceList.vue'
+import NoteListTransferHistory from '@/components/NoteListTransferHistory.vue'
 
-import { mapState, mapMutations } from 'vuex';
-import { getAccounts, getTransferNotes, getNotes } from '../api/index';
+const accountStore = useAccountStore()
+const contractStore = useContractStore()
+const noteStore = useNoteStore()
 
-export default {
-  components: {
-    AccountList,
-    NoteList,
-    NoteBalanceList,
-    NoteListTransferHistory,
-  },
-  computed: {
-    ...mapState({
-      key: state => state.key,
-      accounts: state => state.accounts,
-      notes: state => state.notes,
-      transferNotes: state => state.transferNotes,
-    }),
-  },
-  created () {
-    if (this.accounts === null) {
-      getAccounts(this.key).then(async (a) => {
-        const accounts = [];
-        const notes = [];
-        const transferNotes = [];
+const selectedAccount = ref<Account | null>(null)
 
-        if (a !== null) {
-          accounts.push(...a);
-          for (let i = 0; i < accounts.length; i++) {
-            const n = await getNotes(accounts[i].address);
-            if (n !== null) {
-              notes.push(...n);
-            }
-            const tn = await getTransferNotes(accounts[i].address);
-            if (tn !== null) {
-              transferNotes.push(...tn);
-            }
-          }
-        }
-        this.SET_ACCOUNTS(accounts);
-        this.SET_NOTES(notes);
-        this.SET_TRANSFER_NOTES(transferNotes);
-      });
+// Filter notes by selected account, or show all if none selected
+const filteredNotes = computed(() => {
+  if (!selectedAccount.value) {
+    return noteStore.notes || []
+  }
+  return (noteStore.notes || []).filter(note => note.owner === selectedAccount.value!.address)
+})
+
+onMounted(async () => {
+  try {
+    // Always load accounts if not loaded yet
+    if (accountStore.accounts.length === 0) {
+      await accountStore.loadAccounts()
     }
-  },
-  methods: {
-    ...mapMutations(['SET_ACCOUNTS', 'SET_NOTES', 'SET_TRANSFER_NOTES']),
-  },
-};
+    // Only load notes if contract is initialized
+    if (contractStore.isInitialized && noteStore.notes.length === 0) {
+      await noteStore.loadNotes()
+    }
+    // Always load transfer notes if not loaded yet
+    if (noteStore.transferNotes.length === 0) {
+      await noteStore.loadTransferNotes()
+    }
+  } catch (err) {
+    console.error('Failed to load data:', err)
+  }
+})
+
+// Watch for contract initialization to load notes
+watch(() => contractStore.isInitialized, async (isInitialized) => {
+  if (isInitialized && noteStore.notes.length === 0) {
+    await noteStore.loadNotes()
+  }
+})
+
+function handleSelectAccount(account: Account) {
+  // Toggle selection - clicking same account deselects it
+  if (selectedAccount.value?.address === account.address) {
+    selectedAccount.value = null
+  } else {
+    selectedAccount.value = account
+  }
+  accountStore.setCurrentAccount(account)
+}
+
+function handleSelectNote(note: Note) {
+  noteStore.setSelectedNote(note)
+}
 </script>
