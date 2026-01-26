@@ -32,7 +32,9 @@ circuits-circom/
 │   ├── *.zkey                      # Groth16 proving key
 │   └── *_vk.json                   # Verification key
 ├── utils/
-│   ├── sha256/
+│   ├── poseidon/
+│   │   └── poseidon_note.circom     # Poseidon 기반 노트 해시 (Phase 3)
+│   ├── sha256/                       # 레거시 (Phase 1-2, 더 이상 사용하지 않음)
 │   │   ├── sha256_512bit.circom
 │   │   └── sha256_1536bit.circom
 │   ├── babyjubjub/
@@ -106,25 +108,27 @@ circuits-circom/
 
 | 회로 | 공개 입력 (snarkjs 순서) | 개수 |
 |------|-------------------------|-----|
-| mint_burn_note | [output, nh0, nh1, value, tokenType] | 5 |
-| transfer_note | [output, o0h0, o0h1, o1h0, o1h1, nh0, nh1, changeH0, changeH1] | 9 |
-| convert_note | [output, smartH0, smartH1, originH0, originH1, nh0, nh1] | 7 |
-| make_order | [output, nh0, nh1, tokenType] | 4 |
-| take_order | [output, oh0, oh1, oType, nh0, nh1, nOwner0, nOwner1, nType] | 9 |
-| settle_order | [output, o0h*, o1h*, n0h*, n1h*, n2h*, price] | 21 |
+| mint_burn_note | [output, noteHash, value, tokenType] | 4 |
+| transfer_note | [output, o0Hash, o1Hash, newHash, changeHash] | 5 |
+| convert_note | [output, smartHash, originHash, newHash] | 4 |
+| make_order | [output, noteHash, tokenType] | 3 |
+| take_order | [output, oldHash, oldType, newHash, newOwnerAddress, newType] | 6 |
+| settle_order | [output, o0Hash, o0Type, o1Hash, o1Type, n0Hash, n0OwnerAddress, n0Type, n1Hash, n1OwnerAddress, n1Type, n2Hash, n2Type, price] | 14 |
+
+*Phase 3 (Poseidon 마이그레이션)에서 업데이트됨: 노트 해시가 128비트 쌍 분할 대신 단일 필드 원소로 변경됨*
 
 ### 회로 복잡도
 
-| 회로 | 비선형 제약 조건 |
-|------|------------------|
-| mint_burn_note | 154,900 |
-| make_order | 154,900 |
-| take_order | 246,040 |
-| convert_note | 337,437 |
-| transfer_note | 492,085 |
-| settle_order | 520,481 |
+| 회로 | SHA256 (Phase 2) | Poseidon (Phase 3) | 감소율 |
+|------|-------------------|--------------------| ------ |
+| mint_burn_note | 154,900 | ~2,000 | ~98% |
+| make_order | 154,900 | ~2,000 | ~98% |
+| take_order | 246,040 | ~3,000 | ~99% |
+| convert_note | 337,437 | ~4,000 | ~99% |
+| transfer_note | 492,085 | ~5,000 | ~99% |
+| settle_order | 520,481 | ~6,000 | ~99% |
 
-*주소 기반 소유권 마이그레이션 (Phase 2) 및 보안 수정 (Phase 2.2-2.3) 이후 업데이트됨*
+*Phase 3 (Poseidon 마이그레이션): Poseidon 해시 (~300 제약)가 SHA256 (~30,000 제약)를 대체하여 회로 크기가 ~97-99% 감소. 정확한 Poseidon 제약 수는 근사값이며, `circom --r1cs`로 정확한 값을 확인할 수 있습니다.*
 
 ## Groth16 증명 포맷
 
@@ -262,12 +266,13 @@ await zkDai.mint(
 
 **해결**: 모든 컨트랙트의 input 배열 인덱스를 snarkjs 순서에 맞게 수정
 
-### 4. SHA256 해시 포맷 호환성 ✓
+### 4. SHA256 해시 포맷 호환성 ✓ *(Phase 3 Poseidon 마이그레이션으로 대체됨)*
 
 **문제**: circom 회로의 SHA256 입력 포맷과 JavaScript 구현의 일치 확인 필요
 
 **해결**: `test/sha256-hash-test.js`에서 검증 완료
 - JavaScript Note.hash()와 circom SHA256_1536bit 출력이 일치함을 확인
+- **참고**: SHA256은 Phase 3에서 Poseidon으로 대체됨. Note.hash()는 이제 circomlibjs Poseidon을 사용
 
 ### 5. SettleOrder 가격 및 Division Witness ✓
 
@@ -302,10 +307,10 @@ const r1 = takerStakeValue % price;
 **문제**: SettleOrder의 reward, payment, change 노트가 모두 스마트 노트여야 함
 
 **해결**: `noteProofHelper.js`에 `createSmartNote` 함수 추가
-- owner = 다른 노트의 해시 (128비트씩 분할)
-- reward 노트: owner = taker의 parent note
-- payment 노트: owner = maker note
-- change 노트: owner = taker의 parent note
+- owner = 다른 노트의 Poseidon 해시의 하위 160비트
+- reward 노트: owner = taker의 parent note 해시 (160비트로 잘림)
+- payment 노트: owner = maker note 해시 (160비트로 잘림)
+- change 노트: 정산 방향에 따라 결정 (bit=1: maker, bit=0: taker)
 
 ## 알려진 이슈
 
@@ -527,6 +532,16 @@ await zkdex.mint(
     - bit=0 (테이커 초과) 케이스에서 DAI 지급액이 올바르게 wei로 스케일링됨
     - 2개의 bit=0 테스트 추가
 
+14. ✅ **SHA256 → Poseidon 해시 마이그레이션 (Phase 3)**
+    - 모든 회로가 SHA256에서 Poseidon 해시로 마이그레이션 (~97-99% 제약 감소)
+    - Note.js: 비동기 초기화 패턴 (`await initNote()` 1회, 이후 `hash()`는 동기)
+    - noteHelper.js: SHA256 → Poseidon 해시 계산
+    - noteProofHelper.js: init()에서 initNote() 호출, createSmartNote에서 동기 getSmartNoteOwner 사용
+    - ZkDaiBase.sol: EMPTY_NOTE_HASH를 `0x1fdb...53d5` (Poseidon(0,0,0,0,0,0))로 업데이트
+    - 스마트 노트 소유자: Poseidon 해시의 하위 160비트 (이전: SHA256 자르기)
+    - 공개 입력 감소 (분할 h0/h1 대신 단일 필드 원소 해시)
+    - 전체 19개 Truffle 테스트 통과 (개발 8개 + 프로덕션 11개)
+
 ### 경계값 및 엣지 케이스 테스트 결과 (45/45 통과)
 
 ```bash
@@ -552,8 +567,10 @@ node test/boundary-edge-cases.test.js
 
 ```
 Dockerfile              # 조건부 빌드 (로컬 artifacts 있으면 사용)
+vapp/Dockerfile         # 프론트엔드 멀티스테이지 빌드 (dev/prod)
 docker-compose.yml      # 서비스 구성
 .dockerignore           # 제외 파일 목록
+vapp/.dockerignore      # 프론트엔드 빌드 제외 파일
 ```
 
 ### Dockerfile 특징
@@ -561,34 +578,40 @@ docker-compose.yml      # 서비스 구성
 - **조건부 빌드**: 로컬에 `circuits-circom/build/*.zkey` 파일이 있으면 그대로 사용
 - 없으면 자동으로 ptau 다운로드 + 회로 컴파일 + 신뢰 설정 수행
 - Circom 컴파일러는 Rust에서 빌드 (multi-stage build)
+- 프론트엔드: 개발(Vite)과 프로덕션(nginx) 타겟의 멀티스테이지 빌드
 
 ### 서비스 구성
 
-| 서비스 | 설명 | 프로필 |
-|--------|------|--------|
-| `ganache` | 로컬 이더리움 블록체인 | 기본 |
-| `zkdex` | 테스트 실행 | 기본 |
-| `zkdex-dev` | 개발용 쉘 | dev |
-| `test-frontend` | 프론트엔드 테스트 | test |
-| `test-production` | 프로덕션 테스트 | test |
+| 서비스 | 설명 | 포트 | 프로필 |
+|--------|------|------|--------|
+| `ganache` | 로컬 이더리움 블록체인 | 8545 | 기본 |
+| `zkdex` | 테스트 실행 | - | 기본 |
+| `vapp` | 프론트엔드 (Production/nginx) | 8080 | 기본 |
+| `vapp-dev` | 프론트엔드 (Development/hot reload) | 8081 | dev |
+| `zkdex-dev` | 개발용 쉘 | - | dev |
+| `test-frontend` | 프론트엔드 테스트 | - | test |
+| `test-production` | 프로덕션 테스트 | - | test |
 
 ### 사용 방법
 
 ```bash
-# 빌드 (로컬 빌드 결과물 사용시 빠름)
-docker compose build zkdex
+# 모든 테스트 실행
+docker compose run zkdex
 
-# 테스트 실행
-docker compose up zkdex
+# ganache + 프론트엔드 (프로덕션) 시작
+docker compose up ganache vapp -d
+
+# ganache + 프론트엔드 (개발/hot reload) 시작
+docker compose --profile dev up ganache vapp-dev -d
 
 # 개발 모드 (쉘 접속)
-docker compose --profile dev up zkdex-dev
+docker compose --profile dev run zkdex-dev
 
 # 프론트엔드 테스트
-docker compose --profile test up test-frontend
+docker compose --profile test run test-frontend
 
 # 프로덕션 테스트
-docker compose --profile test up test-production
+docker compose --profile test run test-production
 
 # 정리
 docker compose down -v
@@ -618,7 +641,7 @@ docker: {
 
 ### 개요
 
-노트 소유권을 BabyJubJub 공개키 좌표(owner0, owner1)에서 SHA256으로 유도된 160비트 주소로 마이그레이션했습니다.
+노트 소유권을 BabyJubJub 공개키 좌표(owner0, owner1)에서 160비트 주소로 마이그레이션했습니다. 원래 SHA256에서 유도(Phase 2)했으나 현재는 Poseidon(Phase 3)을 사용합니다.
 
 **마이그레이션 일자:** 2026-01-25
 **상태:** ✅ 완료 (모든 테스트 통과)
@@ -634,26 +657,27 @@ docker: {
 
 #### 주소 유도
 
+~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, Phase 3에서 대체됨)*
+
 ```
-ownerAddress = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
+ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Poseidon 해시의 하위 160비트
 ```
 
 - pk.x와 pk.y는 256비트 BabyJubJub 공개키 좌표
-- 주소 = SHA256 해시의 마지막 160비트
+- 주소 = Poseidon 해시의 하위 160비트
 - ~2^80 충돌 저항성 제공 (실용적인 보안에 충분)
 
-#### 노트 해시 형식 (1184비트)
+#### 노트 해시 형식 (Poseidon, 단일 필드 원소)
+
+~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, Phase 3에서 대체됨)*
 
 ```
-SHA256(
-  ownerAddress (160비트) ||
-  value (256비트) ||
-  tokenType (256비트) ||
-  vk0 (128비트) ||
-  vk1 (128비트) ||
-  salt (256비트)
-)
+Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → 단일 254비트 필드 원소
 ```
+
+- 모든 6개 입력은 필드 원소 (비트 연결 아님)
+- 출력은 단일 BN254 필드 원소 (h0/h1 분할 없음)
+- ~300 제약 vs SHA256의 ~30,000 제약
 
 ### 회로 변경
 
@@ -661,7 +685,8 @@ SHA256(
 
 | 파일 | 설명 |
 |------|------|
-| `circuits-circom/utils/sha256/sha256_note_address.circom` | 160비트 주소를 사용한 노트 해시 |
+| `circuits-circom/utils/poseidon/poseidon_note.circom` | Poseidon 기반 노트 해시 (Phase 3) |
+| `circuits-circom/utils/sha256/sha256_note_address.circom` | 160비트 주소를 사용한 노트 해시 *(레거시, Phase 2)* |
 | `circuits-circom/utils/babyjubjub/get_address.circom` | 공개키에서 주소 유도 |
 
 #### 수정된 메인 회로
@@ -718,14 +743,14 @@ const { secretKey, ownerAddress } = await generateKeypair();
 스마트 노트의 경우, 소유자는 부모 노트 해시에서 유도됩니다:
 
 ```javascript
-// 이전: owner = parentNote.hashArr() → [nh0, nh1] (256비트를 128비트 두 개로 분할)
-
-// 이후: owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
-function getSmartNoteOwner(parentNoteHash) {
-    const hash = crypto.createHash('sha256')
-        .update(Buffer.from(parentNoteHash.slice(2), 'hex'))
-        .digest('hex');
-    return hash.slice(-40);  // 마지막 160비트
+// Phase 1: owner = parentNote.hashArr() → [nh0, nh1] (256비트를 128비트 두 개로 분할)
+// Phase 2: owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
+// Phase 3 (현재): owner = Poseidon 노트 해시의 하위 160비트
+function getSmartNoteOwner(noteHash) {
+    const hashBigInt = BigInt(noteHash);
+    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
+    const address = hashBigInt & mask160;
+    return '0x' + address.toString(16).padStart(40, '0');
 }
 ```
 
@@ -756,24 +781,26 @@ function getSmartNoteOwner(parentNoteHash) {
 
 ### 일반 노트
 
+~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, Phase 3에서 대체됨)*
+
 ```
-viewingKey = SHA256(pk.x || pk.y) = 256비트
-ownerAddress = viewingKey[96:256] = 마지막 160비트
+viewingKey = Poseidon(pk.x, pk.y) = 254비트 필드 원소
+ownerAddress = viewingKey & ((1 << 160) - 1) = 하위 160비트
 ```
 
 - pk.x와 pk.y는 BabyJubJub 공개키 좌표 (각 256비트)
-- viewingKey는 전체 256비트 해시
-- ownerAddress는 viewingKey에서 유도됨 (마지막 160비트)
+- viewingKey는 Poseidon 해시 (단일 필드 원소)
+- ownerAddress는 viewingKey에서 유도됨 (하위 160비트)
 
 ### 스마트 노트
 
 ```
-viewingKey = parentNoteHash = 256비트
-ownerAddress = truncated(parentNoteHash) = h0[0:32비트] + h1[전체 128비트] = 160비트
+viewingKey = parentNoteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+ownerAddress = parentNoteHash & ((1 << 160) - 1) = 하위 160비트
 ```
 
-- parentNoteHash는 h0 (첫 128비트)과 h1 (마지막 128비트)으로 분할
-- ownerAddress = h0[96:128] (32비트) + h1 (128비트) = 160비트
+- parentNoteHash는 단일 Poseidon 필드 원소 (h0/h1 분할 없음)
+- ownerAddress = parentNoteHash의 하위 160비트 (단순 비트마스크)
 - 이 관계 유지: ownerAddress가 viewingKey 내에 포함됨
 
 ---
@@ -895,9 +922,119 @@ o0ValuePrice <== q0 * DECIMALS;  // q0 * 10^18 = 50×10^18
 
 ---
 
+## SHA256 → Poseidon 해시 마이그레이션 (Phase 3)
+
+### 개요
+
+모든 해시 계산을 SHA256에서 ZK 친화적 해시 함수인 Poseidon으로 마이그레이션했습니다. 이를 통해 회로 제약이 ~97-99% 감소하고, 노트 해시 형식이 비트 연결 SHA256 입력에서 필드 원소 Poseidon 입력으로 단순화되었습니다.
+
+**마이그레이션 일자:** 2026-01-26
+**상태:** ✅ 완료 (전체 19개 테스트 통과)
+
+### 동기
+
+| | SHA256 | Poseidon |
+|--|--------|----------|
+| 해시당 제약 수 | ~30,000 | ~300 |
+| 노트 해시 입력 형식 | 비트 연결 (1184비트) | 필드 원소 (6개 입력) |
+| 해시 출력 | 256비트 (h0/h1로 분할) | 단일 254비트 필드 원소 |
+| 주소 유도 | SHA256 자르기 | Poseidon 하위 160비트 |
+| JS 구현 | Node.js `crypto` 모듈 | circomlibjs (비동기 초기화, 동기 해시) |
+
+### 주요 변경 사항
+
+#### 1. 회로 해시 함수
+
+6개 회로 모두 `SHA256NoteWithAddress()` 대신 `PoseidonNoteWithAddress()` 사용:
+
+```circom
+// 이전 (SHA256)
+component hashNote = SHA256NoteWithAddress();
+// 1184비트 입력, 256비트 출력을 h0/h1로 분할
+
+// 이후 (Poseidon)
+component hashNote = PoseidonNoteWithAddress();
+// 6개 필드 원소 입력, 1개 필드 원소 출력
+hashNote.ownerAddress <== ownerAddress;
+hashNote.value <== value;
+hashNote.tokenType <== tokenType;
+hashNote.vk0 <== vk0;
+hashNote.vk1 <== vk1;
+hashNote.salt <== salt;
+```
+
+#### 2. Note.js (비동기 초기화 패턴)
+
+```javascript
+const { Note, init: initNote, getSmartNoteOwner } = require('./Note');
+
+// Note.hash() 사용 전 init()을 1회 호출해야 함
+await initNote();  // circomlibjs Poseidon 로드
+
+// 이후 hash()는 동기
+const note = new Note(ownerAddress, value, tokenType, viewingKey, salt);
+const hash = note.hash();  // Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+```
+
+#### 3. EMPTY_NOTE_HASH
+
+```
+Poseidon(0, 0, 0, 0, 0, 0) = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+```
+
+`ZkDaiBase.sol`에서 업데이트:
+```solidity
+bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
+```
+
+#### 4. 스마트 노트 소유자 유도
+
+```javascript
+// 이전 (SHA256): SHA256(noteHash) → 마지막 160비트
+// 이후 (Poseidon): noteHash & ((1 << 160) - 1) → 하위 160비트
+function getSmartNoteOwner(noteHash) {
+    const hashBigInt = BigInt(noteHash);
+    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
+    return '0x' + (hashBigInt & mask160).toString(16).padStart(40, '0');
+}
+```
+
+#### 5. 공개 입력 수 감소
+
+| 회로 | SHA256 입력 수 | Poseidon 입력 수 | 감소 |
+|------|---------------|-----------------|------|
+| mint_burn_note | 5 | 4 | -1 |
+| transfer_note | 9 | 5 | -4 |
+| convert_note | 7 | 4 | -3 |
+| make_order | 4 | 3 | -1 |
+| take_order | 9 | 6 | -3 |
+| settle_order | 21 | 14 | -7 |
+
+### 수정된 파일
+
+| 파일 | 변경 사항 |
+|------|----------|
+| `scripts/lib/Note.js` | SHA256 → Poseidon 해시, 비동기 초기화 패턴, getSmartNoteOwner |
+| `scripts/helper/noteHelper.js` | SHA256 → Poseidon 해시 |
+| `scripts/lib/noteProofHelper.js` | init()에서 initNote() 호출, createSmartNote에서 getSmartNoteOwner 사용 |
+| `scripts/lib/snarkjsUtils.js` | getSmartNoteOwnerAddress에서 async 제거 |
+| `contracts/ZkDaiBase.sol` | EMPTY_NOTE_HASH를 Poseidon 값으로 업데이트 |
+| `test/ZkDex.production.test.js` | initNote() 추가, settle change 노트 소유자 수정 |
+| `circuits-circom/utils/poseidon/poseidon_note.circom` | 신규: Poseidon 기반 노트 해시 컴포넌트 |
+| 6개 메인 회로 전체 | SHA256NoteWithAddress → PoseidonNoteWithAddress |
+
+### 테스트 결과
+
+Poseidon 마이그레이션 후 전체 19개 Truffle 테스트 통과:
+- ✅ 개발 모드 (8/8)
+- ✅ 프로덕션 모드 (11/11) E2E 플로우 포함 (Make → Take → Settle → Convert)
+
+---
+
 ## 다음 단계
 
 1. 성능 최적화 (추후 진행 예정 - 증명 생성 시간 단축)
+2. 모든 회로를 Poseidon으로 재컴파일하고 정확한 제약 수 측정
 
 ## 의존성
 

@@ -10,15 +10,16 @@
 
 const Web3Utils = require('web3-utils');
 const crypto = require('crypto');
-const { Note, constants } = require('./Note');
+const { Note, constants, init: initNote, getSmartNoteOwner } = require('./Note');
 const snarkjsUtils = require('./snarkjsUtils');
 const circomlibBabyJub = require('./circomlibBabyJub');
 
 /**
- * Initialize the crypto libraries
+ * Initialize the crypto libraries (including Poseidon for Note.hash())
  */
 async function init() {
     await circomlibBabyJub.init();
+    await initNote();
 }
 
 /**
@@ -71,13 +72,13 @@ function toHexString(value) {
 }
 
 /**
- * Derive 160-bit address from BabyJubJub public key
- * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
+ * Derive 160-bit address from BabyJubJub public key using Poseidon
+ * address = Poseidon(pk.x, pk.y) truncated to 160 bits
  * @param {{x: string, y: string}} pk - Public key
- * @returns {string} 160-bit address (40 hex chars with 0x prefix)
+ * @returns {Promise<string>} 160-bit address (40 hex chars with 0x prefix)
  */
-function deriveAddressFromPK(pk) {
-    return snarkjsUtils.getAddressFromPublicKey(pk);
+async function deriveAddressFromPK(pk) {
+    return await snarkjsUtils.getAddressFromPublicKey(pk);
 }
 
 /**
@@ -101,15 +102,15 @@ function deriveAddressFromPK(pk) {
 async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = null, salt = null) {
     const pk = await derivePublicKey(sk);
 
-    // Derive 160-bit address from public key
-    const ownerAddress = deriveAddressFromPK(pk);
+    // Derive 160-bit address from public key using Poseidon
+    const ownerAddress = await deriveAddressFromPK(pk);
 
     // Derive viewing key from public key if not provided
-    // viewingKey = SHA256(pk.x || pk.y) = 256 bits
-    // Relationship: ownerAddress = viewingKey[96:256] (last 160 bits)
+    // viewingKey = Poseidon(pk.x, pk.y) = 254-bit field element
+    // Relationship: ownerAddress = truncate160(viewingKey)
     if (!viewingKey) {
-        const vkData = snarkjsUtils.getViewingKeyFromPublicKey(pk);
-        viewingKey = vkData.fullHash;
+        const vkData = await snarkjsUtils.getViewingKeyFromPublicKey(pk);
+        viewingKey = vkData.vk;  // Use 'vk' which contains the full Poseidon hash
     }
 
     // Generate random salt if not provided (masked to 254 bits for circuit compatibility)
@@ -169,15 +170,13 @@ function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = 
         salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
     }
 
-    // Get owner note hash
+    // Get owner note hash (Poseidon, sync after init)
     const ownerHash = ownerNote.hash();
 
-    // Derive ownerAddress as truncated hash (160 bits)
-    const ownerAddress = snarkjsUtils.getSmartNoteOwnerAddress(ownerHash);
+    // Derive ownerAddress as truncated hash (lower 160 bits)
+    const ownerAddress = getSmartNoteOwner(ownerHash);
 
     // Derive viewing key from owner note hash if not provided
-    // viewingKey = parentNoteHash = 256 bits
-    // Relationship: ownerAddress = truncated(viewingKey)
     if (!viewingKey) {
         viewingKey = ownerHash;
     }
@@ -185,9 +184,8 @@ function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = 
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
-    // Note constructor already calls padLeft, no need to double-pad
     const note = new Note(
-        '0x' + ownerAddress,
+        ownerAddress,
         valueHex,
         tokenType,
         viewingKey,

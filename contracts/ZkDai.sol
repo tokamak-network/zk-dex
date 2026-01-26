@@ -23,26 +23,26 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
   /**
   * @dev Transfers specified number of dai tokens to itself and submits the zkSnark proof to mint a new note
   * @notice Groth16 proof format: a, b, c
-  * @notice Input format (snarkjs order): [output, nh0, nh1, value, tokenType]
+  * @notice Input format (snarkjs/Poseidon): [output, noteHash, value, tokenType]
   * @param input Public inputs of the zkSnark
   */
   function mint(
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[5] calldata input,
+    uint256[4] calldata input,
     bytes calldata encryptedNote
   )
     external
     payable
   {
-    // input[3] = value, input[4] = tokenType (snarkjs order: output first)
-    if (input[4] == ETH_TOKEY_TYPE) {
-      require(msg.value == input[3],"ether amount doesn't match");
-    } else if (input[4] == DAI_TOKEY_TYPE) {
+    // input[2] = value, input[3] = tokenType (Poseidon version)
+    if (input[3] == ETH_TOKEY_TYPE) {
+      require(msg.value == input[2],"ether amount doesn't match");
+    } else if (input[3] == DAI_TOKEY_TYPE) {
       require(msg.value == 0, "msg.value should be 0 for creating dai note");
       require(
-        dai.transferFrom(msg.sender, address(this), input[3]),
+        dai.transferFrom(msg.sender, address(this), input[2]),
         "dai transfer failed"
       );
     }
@@ -53,13 +53,14 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
   /**
   * @dev Submits the zkSnark proof to be able to spend a note and create two new notes
   * @notice Groth16 proof format: a, b, c
+  * @notice Input format (snarkjs/Poseidon): [output, o0Hash, o1Hash, newHash, changeHash]
   * @param input Public inputs of the zkSnark
   */
   function spend(
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[9] calldata input,
+    uint256[5] calldata input,
     bytes calldata encryptedNote1,
     bytes calldata encryptedNote2
   )
@@ -72,7 +73,7 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
   * @dev Liquidate a note to transfer the equivalent amount of dai to the recipient
   * @param to Recipient of the dai tokens
   * @notice Groth16 proof format: a, b, c
-  * @notice Input format (snarkjs order): [output, nh0, nh1, value, tokenType]
+  * @notice Input format (snarkjs/Poseidon): [output, noteHash, value, tokenType]
   * @param input Public inputs of the zkSnark
   */
   function liquidate(
@@ -80,18 +81,18 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[5] calldata input
+    uint256[4] calldata input
   )
     external
   {
     LiquidateNotes.submit(to, a, b, c, input);
 
-    // input[3] = value, input[4] = tokenType (snarkjs order: output first)
-    if (input[4] == ETH_TOKEY_TYPE) {
-      to.transfer(input[3]);
-    } else if (input[4] == DAI_TOKEY_TYPE) {
+    // input[2] = value, input[3] = tokenType (Poseidon version)
+    if (input[3] == ETH_TOKEY_TYPE) {
+      to.transfer(input[2]);
+    } else if (input[3] == DAI_TOKEY_TYPE) {
       require(
-        dai.transfer(to, input[3]),
+        dai.transfer(to, input[2]),
         "dai transfer failed"
       );
     }

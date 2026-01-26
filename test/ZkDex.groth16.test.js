@@ -13,8 +13,13 @@ const MakeOrderVerifier = artifacts.require("MakeOrderVerifier");
 const TakeOrderVerifier = artifacts.require("TakeOrderVerifier");
 const SettleOrderVerifier = artifacts.require("SettleOrderVerifier");
 
-const { Note, constants } = require('../scripts/lib/Note');
 const util = require('./util');
+
+// Token type constants (matching contract)
+const constants = {
+    ETH_TOKEN_TYPE: '0x0',
+    DAI_TOKEN_TYPE: '0x1'
+};
 
 const SCALING_FACTOR = 10n ** 18n;
 
@@ -75,28 +80,24 @@ contract('ZkDex Groth16', function(accounts) {
     describe('Note Minting (Development Mode)', () => {
         it('should mint a note with ETH', async () => {
             // Create a test note
-            const owner0 = '0x' + '1'.padStart(64, '0');
-            const owner1 = '0x' + '2'.padStart(64, '0');
             const value = SCALING_FACTOR;  // 1 ETH
             const tokenType = constants.ETH_TOKEN_TYPE;
-            const viewingKey = '0x' + '0'.padStart(64, '0');
-            const salt = '0x' + 'abc123'.padStart(64, '0');
 
-            const note = new Note(owner0, owner1, value.toString(16), tokenType, viewingKey, salt);
-            const hashArr = note.hashArr();
+            // For Poseidon version, noteHash is a single field element
+            // In dev mode, we use a dummy hash since proof verification is skipped
+            const dummyNoteHash = '0x' + '1234567890abcdef'.padStart(64, '0');
 
             // Create dummy Groth16 proof (will be skipped in dev mode)
-            // snarkjs order: [output, nh0, nh1, value, tokenType]
+            // Poseidon format: [output, noteHash, value, tokenType]
             const proof = util.createDummyGroth16Proof([
                 '0x1',       // output (always first in snarkjs)
-                hashArr[0],  // nh0
-                hashArr[1],  // nh1
+                dummyNoteHash,  // single Poseidon note hash
                 '0x' + value.toString(16),  // value
                 tokenType    // tokenType
             ]);
 
             // Encrypt note (dummy encryption for test)
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            const encryptedNote = '0x1234';
 
             // Mint the note
             const tx = await zkdex.mint(
@@ -118,27 +119,21 @@ contract('ZkDex Groth16', function(accounts) {
             // Approve DAI transfer
             await dai.approve(zkdex.address, daiAmount.toString());
 
-            // Create a test note
-            const owner0 = '0x' + '3'.padStart(64, '0');
-            const owner1 = '0x' + '4'.padStart(64, '0');
             const tokenType = constants.DAI_TOKEN_TYPE;
-            const viewingKey = '0x' + '0'.padStart(64, '0');
-            const salt = '0x' + 'def456'.padStart(64, '0');
 
-            const note = new Note(owner0, owner1, daiAmount.toString(16), tokenType, viewingKey, salt);
-            const hashArr = note.hashArr();
+            // For Poseidon version, noteHash is a single field element
+            const dummyNoteHash = '0x' + 'fedcba0987654321'.padStart(64, '0');
 
             // Create dummy Groth16 proof
-            // snarkjs order: [output, nh0, nh1, value, tokenType]
+            // Poseidon format: [output, noteHash, value, tokenType]
             const proof = util.createDummyGroth16Proof([
                 '0x1',       // output (always first in snarkjs)
-                hashArr[0],
-                hashArr[1],
+                dummyNoteHash,  // single Poseidon note hash
                 '0x' + daiAmount.toString(16),
                 tokenType
             ]);
 
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            const encryptedNote = '0x5678';
 
             // Mint the note
             const tx = await zkdex.mint(
@@ -161,27 +156,21 @@ contract('ZkDex Groth16', function(accounts) {
     describe('Note State Management', () => {
         it('should track note states correctly', async () => {
             // Create and mint a note
-            const owner0 = '0x' + '5'.padStart(64, '0');
-            const owner1 = '0x' + '6'.padStart(64, '0');
             const value = SCALING_FACTOR;
             const tokenType = constants.ETH_TOKEN_TYPE;
-            const viewingKey = '0x' + '0'.padStart(64, '0');
-            const salt = '0x' + 'aabbcc123'.padStart(64, '0');
 
-            const note = new Note(owner0, owner1, value.toString(16), tokenType, viewingKey, salt);
-            const noteHash = note.hash();
-            const hashArr = note.hashArr();
+            // For Poseidon version, noteHash is a single field element
+            const dummyNoteHash = '0x' + 'aabbccddeeff1122'.padStart(64, '0');
 
-            // snarkjs order: [output, nh0, nh1, value, tokenType]
+            // Poseidon format: [output, noteHash, value, tokenType]
             const proof = util.createDummyGroth16Proof([
                 '0x1',       // output (always first in snarkjs)
-                hashArr[0],
-                hashArr[1],
+                dummyNoteHash,  // single Poseidon note hash
                 '0x' + value.toString(16),
                 tokenType
             ]);
 
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            const encryptedNote = '0xabcd';
 
             await zkdex.mint(
                 proof.a,
@@ -193,23 +182,26 @@ contract('ZkDex Groth16', function(accounts) {
             );
 
             // Check note state is Valid (1)
-            const state = await zkdex.notes(noteHash);
+            // Note: The contract stores the note hash from the public input
+            const state = await zkdex.notes(dummyNoteHash);
             assert.equal(state.toString(), '1', 'Note should be in Valid state');
         });
     });
 
     describe('Groth16 Proof Format', () => {
         it('should accept correct Groth16 proof format', async () => {
-            // Groth16 format: a[2], b[2][2], c[2], input[5]
+            // Groth16 format: a[2], b[2][2], c[2], input[4] (Poseidon version)
             const a = ['0x1', '0x2'];
             const b = [['0x3', '0x4'], ['0x5', '0x6']];
             const c = ['0x7', '0x8'];
+            const input = ['0x1', '0x2', '0x3', '0x4']; // [output, noteHash, value, tokenType]
 
             assert.equal(a.length, 2, 'a should have 2 elements');
             assert.equal(b.length, 2, 'b should have 2 rows');
             assert.equal(b[0].length, 2, 'b[0] should have 2 elements');
             assert.equal(b[1].length, 2, 'b[1] should have 2 elements');
             assert.equal(c.length, 2, 'c should have 2 elements');
+            assert.equal(input.length, 4, 'input should have 4 elements (Poseidon)');
         });
     });
 });

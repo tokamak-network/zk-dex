@@ -9,21 +9,27 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build"
 CONTRACTS_DIR="$(dirname "$PROJECT_DIR")/contracts/verifiers"
 
-# Circuit names and their corresponding verifier contract names
-declare -A CIRCUIT_NAMES=(
-    ["mint_burn_note"]="mintNBurnNote"
-    ["make_order"]="makeOrder"
-    ["take_order"]="takeOrder"
-    ["convert_note"]="convertNote"
-    ["transfer_note"]="transferNote"
-    ["settle_order"]="settleOrder"
-)
+# Function to get contract name from circuit name
+get_contract_name() {
+    case "$1" in
+        "mint_burn_note") echo "MintBurnNote" ;;
+        "make_order") echo "MakeOrder" ;;
+        "take_order") echo "TakeOrder" ;;
+        "convert_note") echo "ConvertNote" ;;
+        "transfer_note") echo "TransferNote" ;;
+        "settle_order") echo "SettleOrder" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+# List of circuits
+CIRCUITS="mint_burn_note make_order take_order convert_note transfer_note settle_order"
 
 generate_verifier() {
     local circuit=$1
-    local contract_name="${CIRCUIT_NAMES[$circuit]}"
+    local contract_name=$(get_contract_name "$circuit")
     local zkey="$BUILD_DIR/$circuit/${circuit}.zkey"
-    local verifier="$CONTRACTS_DIR/${contract_name}_Verifier.sol"
+    local verifier="$CONTRACTS_DIR/${contract_name}Verifier.sol"
 
     echo "Generating verifier for $circuit..."
 
@@ -37,8 +43,8 @@ generate_verifier() {
     snarkjs zkey export solidityverifier "$zkey" "$verifier"
 
     # Rename the contract to match expected naming
-    # snarkjs generates "Groth16Verifier", we rename to "{circuit}_Verifier"
-    sed -i.bak "s/contract Groth16Verifier/contract ${contract_name}_Verifier/g" "$verifier"
+    # snarkjs generates "Groth16Verifier", we rename to "{contract_name}Verifier"
+    sed -i.bak "s/contract Groth16Verifier/contract ${contract_name}Verifier/g" "$verifier"
     rm -f "${verifier}.bak"
 
     # Update Solidity version to match project
@@ -67,7 +73,7 @@ mkdir -p "$CONTRACTS_DIR"
 if [ -n "$1" ]; then
     generate_verifier "$1"
 else
-    for circuit in "${!CIRCUIT_NAMES[@]}"; do
+    for circuit in $CIRCUITS; do
         generate_verifier "$circuit"
     done
 fi

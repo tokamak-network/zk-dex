@@ -18,7 +18,9 @@ contract ZkDaiBase is Requestable {
   uint256 public constant ETH_TOKEY_TYPE = 0;
   uint256 public constant DAI_TOKEY_TYPE = 1;
 
-  bytes32 public constant EMPTY_NOTE_HASH = 0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5;
+  // EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
+  // Computed by circomlibjs Poseidon, must match the circuit
+  bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
 
   constructor(bool _development, address _dai, IMintNBurnNoteVerifier _requestVerifier) {
     development = _development;
@@ -51,7 +53,7 @@ contract ZkDaiBase is Requestable {
    *          [uint256[2]     // a
    *          uint256[2][2]   // b
    *          uint256[2]      // c
-   *          uint256[5]]     // input
+   *          uint256[4]]     // input (Poseidon version: output, noteHash, value, tokenType)
    */
   function applyRequestInRootChain(
     bool isExit,
@@ -91,7 +93,7 @@ contract ZkDaiBase is Requestable {
     uint256[2] memory a = parseUintArray2(list[0]);
     uint256[2][2] memory b = parseUint2DArray2(list[1]);
     uint256[2] memory c = parseUintArray2(list[2]);
-    uint256[5] memory input = parseUintArray5(list[3]);
+    uint256[4] memory input = parseUintArray4(list[3]);
 
     require(requestVerifier.verifyProof(a, b, c, input), "failed to verify circuit");
     notes[noteHash] = State.Valid;
@@ -102,9 +104,9 @@ contract ZkDaiBase is Requestable {
     RLPReader.RLPItem[] memory list = item.toList();
     return [list[0].toUint(), list[1].toUint()];
   }
-  function parseUintArray5(RLPReader.RLPItem memory item) internal returns (uint256[5] memory) {
+  function parseUintArray4(RLPReader.RLPItem memory item) internal returns (uint256[4] memory) {
     RLPReader.RLPItem[] memory list = item.toList();
-    return [list[0].toUint(), list[1].toUint(), list[2].toUint(), list[3].toUint(), list[4].toUint()];
+    return [list[0].toUint(), list[1].toUint(), list[2].toUint(), list[3].toUint()];
   }
   function parseUint2DArray2(RLPReader.RLPItem memory item) internal returns (uint256[2][2] memory) {
     RLPReader.RLPItem[] memory list = item.toList();
@@ -119,8 +121,9 @@ contract ZkDaiBase is Requestable {
 
   function getNoteHash(bytes memory b) internal pure returns (bytes32) {
     RLPReader.RLPItem[] memory list = b.toRlpItem().toList();
-    RLPReader.RLPItem[] memory input = list[3].toList();  // Changed from list[8] for Groth16 format
-    return calcHash(input[0].toUint(), input[1].toUint());
+    RLPReader.RLPItem[] memory input = list[3].toList();
+    // Poseidon version: input[1] is the single field element note hash
+    return bytes32(input[1].toUint());
   }
 
   function handleIn(bytes memory trieValue) internal {
@@ -141,38 +144,5 @@ contract ZkDaiBase is Requestable {
 
     notes[noteHash] = State.Spent;
     emit NoteStateChange(noteHash, State.Spent);
-  }
-
-
-  /**
-  * @dev Concatenates the 2 chunks of the sha256 hash of the note
-  * @notice This method is required due to the field limitations imposed by the zokrates zkSnark library
-  * @param _a Most significant 128 bits of the note hash
-  * @param _b Least significant 128 bits of the note hash
-  */
-  function calcHash(uint _a, uint _b)
-    internal
-    pure
-    returns(bytes32 note)
-  {
-    bytes16 a = bytes16(uint128(_a));
-    bytes16 b = bytes16(uint128(_b));
-    bytes memory _note = new bytes(32);
-
-    for (uint i = 0; i < 16; i++) {
-      _note[i] = a[i];
-      _note[16 + i] = b[i];
-    }
-    note = _bytesToBytes32(_note, 0);
-  }
-
-  function _bytesToBytes32(bytes memory b, uint offset)
-    internal
-    pure
-    returns (bytes32 out)
-  {
-    for (uint i = 0; i < 32; i++) {
-      out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-    }
   }
 }

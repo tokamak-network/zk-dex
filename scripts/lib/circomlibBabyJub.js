@@ -6,24 +6,34 @@
  * than circomlib circuits.
  */
 
-const { buildBabyjub, buildEddsa } = require('circomlibjs');
+const { buildBabyjub, buildEddsa, buildPoseidon } = require('circomlibjs');
 
 // Singleton instances
 let babyJub = null;
 let eddsa = null;
+let poseidon = null;
 let F = null;
 
 /**
- * Initialize the BabyJubJub library
+ * Initialize the BabyJubJub and Poseidon library
  * Must be called before using any other functions
  */
 async function init() {
     if (!babyJub) {
         babyJub = await buildBabyjub();
         eddsa = await buildEddsa();
+        poseidon = await buildPoseidon();
         F = babyJub.F;
     }
-    return { babyJub, eddsa, F };
+    return { babyJub, eddsa, poseidon, F };
+}
+
+/**
+ * Get the Poseidon hash function
+ */
+async function getPoseidon() {
+    await init();
+    return poseidon;
 }
 
 /**
@@ -200,25 +210,48 @@ async function randomSecretKey() {
 }
 
 /**
- * Convert a public key to address format (first 160 bits of hash)
- * This is a helper for deriving note addresses
+ * Compute Poseidon hash
+ * @param {Array<bigint|string|number>} inputs - Array of field elements (up to 16)
+ * @returns {Promise<bigint>} Poseidon hash as bigint
+ */
+async function poseidonHash(inputs) {
+    await init();
+    const bigInputs = inputs.map(x => {
+        if (typeof x === 'bigint') return x;
+        if (typeof x === 'number') return BigInt(x);
+        if (typeof x === 'string') {
+            return BigInt(x.startsWith('0x') ? x : (x.match(/^[0-9]+$/) ? x : '0x' + x));
+        }
+        throw new Error(`Invalid input type: ${typeof x}`);
+    });
+    const hash = poseidon(bigInputs);
+    return poseidon.F.toObject(hash);
+}
+
+/**
+ * Truncate a field element to 160 bits (for address derivation)
+ * @param {bigint} value - Field element (254 bits)
+ * @returns {bigint} Lower 160 bits
+ */
+function truncateTo160Bits(value) {
+    const MASK_160 = (BigInt(1) << BigInt(160)) - BigInt(1);
+    return value & MASK_160;
+}
+
+/**
+ * Convert a public key to address format using Poseidon
+ * address = Poseidon(pk.x, pk.y) truncated to 160 bits
  * @param {object} pubKey - Public key {x, y}
- * @returns {Promise<string>} Address as hex string
+ * @returns {Promise<string>} 160-bit address as hex string with 0x prefix
  */
 async function pubKeyToAddress(pubKey) {
-    const crypto = require('crypto');
+    // Poseidon hash of public key coordinates
+    const hash = await poseidonHash([pubKey.x, pubKey.y]);
 
-    // Pack the public key
-    const xHex = pubKey.x.toString(16).padStart(64, '0');
-    const yHex = pubKey.y.toString(16).padStart(64, '0');
+    // Truncate to 160 bits
+    const address = truncateTo160Bits(hash);
 
-    // SHA256 hash of concatenated coordinates
-    const hash = crypto.createHash('sha256')
-        .update(Buffer.from(xHex + yHex, 'hex'))
-        .digest('hex');
-
-    // Return first 40 characters (160 bits)
-    return '0x' + hash.slice(0, 40);
+    return '0x' + address.toString(16).padStart(40, '0');
 }
 
 // Export class-like interface for compatibility with existing code
@@ -273,6 +306,7 @@ module.exports = {
     init,
     getF,
     getBabyJub,
+    getPoseidon,
 
     // Core functions
     getPublicKey,
@@ -286,6 +320,10 @@ module.exports = {
     unpackPoint,
     randomSecretKey,
     pubKeyToAddress,
+
+    // Poseidon hash functions
+    poseidonHash,
+    truncateTo160Bits,
 
     // Class interface
     PrivateKey,

@@ -54,24 +54,24 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
-   *  - [0]     = output (always 1 for valid proof)
-   *  - [1, 2]  = smart note hash
-   *  - [3, 4]  = original note hash (smart note's owner)
-   *  - [5, 6]  = new note hash (converted normal note)
+   * zk-SNARK public input (Groth16/snarkjs format - Poseidon version)
+   *  - [0] = output (always 1 for valid proof)
+   *  - [1] = smart note hash (single field element)
+   *  - [2] = original note hash (smart note's owner)
+   *  - [3] = new note hash (converted normal note)
    */
    function convertNote(
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[7] calldata input,
+    uint256[4] calldata input,
     bytes calldata encryptedNote
   ) external {
     require(development || convertNoteVerifier.verifyProof(a, b, c, input), "Failed to verify circuit");
 
-    bytes32 smartNote = calcHash(input[1], input[2]);
-    bytes32 originalNote = calcHash(input[3], input[4]);
-    bytes32 newNote = calcHash(input[5], input[6]);
+    bytes32 smartNote = bytes32(input[1]);
+    bytes32 originalNote = bytes32(input[2]);
+    bytes32 newNote = bytes32(input[3]);
 
     require(notes[smartNote] == State.Valid, "Smart note cannot be converted");
     require(notes[originalNote] != State.Invalid, "Original note doesn't exist");
@@ -87,10 +87,10 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
-   *  - [0]     = output (always 1 for valid proof)
-   *  - [1, 2]  = maker note hash
-   *  - [3]     = maker note type
+   * zk-SNARK public input (Groth16/snarkjs format - Poseidon version)
+   *  - [0] = output (always 1 for valid proof)
+   *  - [1] = maker note hash (single field element)
+   *  - [2] = maker note type
    */
   function makeOrder(
     bytes32 makerViewingKey,
@@ -99,13 +99,13 @@ contract ZkDex is ZkDai {
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[4] calldata input
+    uint256[3] calldata input
   ) external {
     require(development || makeOrderVerifier.verifyProof(a, b, c, input), "Failed to verify make order circuit");
 
-    bytes32 makerNote = calcHash(input[1], input[2]);
+    bytes32 makerNote = bytes32(input[1]);
 
-    require(input[3] != targetToken, "ZkDex: cannot make an order with same token pair");
+    require(input[2] != targetToken, "ZkDex: cannot make an order with same token pair");
     require(notes[makerNote] == State.Valid, "ZkDex: maker note is not available");
 
     uint orderId = orders.length;
@@ -114,7 +114,7 @@ contract ZkDex is ZkDai {
 
     order.makerViewingKey = makerViewingKey;
     order.makerNote = makerNote;
-    order.sourceToken = input[3];
+    order.sourceToken = input[2];
     order.targetToken = targetToken;
     order.price = price;
     order.state = OrderState.Created;
@@ -122,29 +122,25 @@ contract ZkDex is ZkDai {
     notes[makerNote] = State.Traiding;
 
     emit NoteStateChange(makerNote, State.Traiding);
-
-    // NOTE: cannot compile below line due to stack too deep error..
-    // emit OrderCreated(orderId, input[2], targetToken);
   }
 
 
 
   /**
-   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
-   *  - [0]     = output (always 1 for valid proof)
-   *  - [1, 2]  = parent note hash
-   *  - [3]     = parent note type
-   *
-   *  - [4, 5]  = taker note to maker note hash (stake note)
-   *  - [6, 7]  = owner of taker note to maker (== maker note)
-   *  - [8]     = taker note to maker type
+   * zk-SNARK public input (Groth16/snarkjs format - Poseidon version)
+   *  - [0] = output (always 1 for valid proof)
+   *  - [1] = parent note hash (oldNoteHash)
+   *  - [2] = parent note type (oldType)
+   *  - [3] = stake note hash (newNoteHash)
+   *  - [4] = stake note owner address (160-bit, truncated from maker note hash)
+   *  - [5] = stake note type (newType)
    */
    function takeOrder(
     uint256 orderId,
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[9] calldata input,
+    uint256[6] calldata input,
     bytes calldata encryptedStakingNote
   ) external {
     require(development || takeOrderVerifier.verifyProof(a, b, c, input), "Failed to verify take order circuit");
@@ -153,12 +149,13 @@ contract ZkDex is ZkDai {
 
     require(order.state == OrderState.Created);
 
-    require(order.targetToken == input[3], "ZkDex: parent note token type mismatch");
-    require(order.targetToken == input[8], "ZkDex: stake note token type mismatch");
-    require(order.makerNote == calcHash(input[6], input[7]), "ZkDex: owner of taker note to maker mismatch");
+    require(order.targetToken == input[2], "ZkDex: parent note token type mismatch");
+    require(order.targetToken == input[5], "ZkDex: stake note token type mismatch");
+    // Verify stake note owner == truncated maker note hash (last 160 bits)
+    require(uint160(uint256(order.makerNote)) == input[4], "ZkDex: owner of taker note to maker mismatch");
 
-    bytes32 parentNote = calcHash(input[1], input[2]);
-    bytes32 takerNoteToMaker = calcHash(input[4], input[5]);
+    bytes32 parentNote = bytes32(input[1]);
+    bytes32 takerNoteToMaker = bytes32(input[3]);
 
     require(notes[parentNote] == State.Valid, "ZkDex: taker note is not available");
     require(notes[takerNoteToMaker] == State.Invalid, "ZkDex: taker send valid note to maker");
@@ -178,33 +175,28 @@ contract ZkDex is ZkDai {
   }
 
   /**
-   * zk-SNARK public input (Groth16/snarkjs format - outputs come first)
-   *  - [0]     = output (always 1 for valid proof)
-   *  - [1, 2]  = maker note hash
-   *  - [3]     = maker note type
-   *
-   *  - [4, 5]  = taker note to maker note hash
-   *  - [6]     = taker note to maker type
-   *
-   *  - [7, 8]  = reward note hash
-   *  - [9, 10] = owner of reward note (parent note (for taker))
-   *  - [11]    = reward note type
-   *
-   *  - [12, 13]= payment note hash
-   *  - [14, 15]= owner of payment note (maker note (for maker))
-   *  - [16]    = payment note type
-   *
-   *  - [17, 18]= change note hash
-   *  - [19]    = change note type
-   *
-   *  - [20]    = price
+   * zk-SNARK public input (Groth16/snarkjs format - Poseidon version)
+   *  - [0]  = output (always 1 for valid proof)
+   *  - [1]  = maker note hash (o0Hash)
+   *  - [2]  = maker note type (o0Type)
+   *  - [3]  = taker stake note hash (o1Hash)
+   *  - [4]  = taker stake note type (o1Type)
+   *  - [5]  = reward note hash (n0Hash)
+   *  - [6]  = reward note owner (160-bit, truncated parent note hash)
+   *  - [7]  = reward note type (n0Type)
+   *  - [8]  = payment note hash (n1Hash)
+   *  - [9]  = payment note owner (160-bit, truncated maker note hash)
+   *  - [10] = payment note type (n1Type)
+   *  - [11] = change note hash (n2Hash)
+   *  - [12] = change note type (n2Type)
+   *  - [13] = price
    */
   function settleOrder(
     uint256 orderId,
     uint256[2] calldata a,
     uint256[2][2] calldata b,
     uint256[2] calldata c,
-    uint256[21] calldata input,
+    uint256[14] calldata input,
 
     bytes calldata encDatas // [encryptedRewardNote, encryptedPaymentNote, encryptedChangeNote]
   ) external {
@@ -212,28 +204,33 @@ contract ZkDex is ZkDai {
 
     Order storage order = orders[orderId];
 
-    require(order.makerNote == calcHash(input[1], input[2]), "ZkDex: maker note mismatch");
-    require(order.sourceToken == input[3], "ZkDex: source token mismatch");
-    require(order.takerNoteToMaker == calcHash(input[4], input[5]), "ZkDex: taker note to maker mismatch");
-    require(order.targetToken == input[6], "ZkDex: target token mismatch");
+    require(order.makerNote == bytes32(input[1]), "ZkDex: maker note mismatch");
+    require(order.sourceToken == input[2], "ZkDex: source token mismatch");
+    require(order.takerNoteToMaker == bytes32(input[3]), "ZkDex: taker note to maker mismatch");
+    require(order.targetToken == input[4], "ZkDex: target token mismatch");
 
-    require(order.sourceToken == input[11], "ZkDex: reward token type mismatch");
-    require(order.parentNote == calcHash(input[9], input[10]), "ZkDex: owner of reward note mismatch");
-    require(order.targetToken == input[16], "ZkDex: payment token type mismatch");
-    require(order.makerNote == calcHash(input[14], input[15]), "ZkDex: owner of payment note mismatch");
+    require(order.sourceToken == input[7], "ZkDex: reward token type mismatch");
+    // Verify reward note owner == truncated parent note hash (160-bit)
+    require(uint160(uint256(order.parentNote)) == input[6], "ZkDex: owner of reward note mismatch");
+    require(order.targetToken == input[10], "ZkDex: payment token type mismatch");
+    // Verify payment note owner == truncated maker note hash (160-bit)
+    require(uint160(uint256(order.makerNote)) == input[9], "ZkDex: owner of payment note mismatch");
 
-    require(order.price == input[20], "ZkDex: order price mismatch");
+    require(order.price == input[13], "ZkDex: order price mismatch");
 
     require(order.state == OrderState.Taken, "ZkDex: order cannot be settled");
 
+    bytes32 rewardNote = bytes32(input[5]);
+    bytes32 paymentNote = bytes32(input[8]);
+    bytes32 changeNote = bytes32(input[11]);
 
-    require(notes[calcHash(input[7], input[8])] == State.Invalid, "ZkDex: reward note must be invalid");
-    require(notes[calcHash(input[12], input[13])] == State.Invalid, "ZkDex: payment note must be invalid");
-    require(notes[calcHash(input[17], input[18])] == State.Invalid, "ZkDex: change note must be invalid");
+    require(notes[rewardNote] == State.Invalid, "ZkDex: reward note must be invalid");
+    require(notes[paymentNote] == State.Invalid, "ZkDex: payment note must be invalid");
+    require(notes[changeNote] == State.Invalid, "ZkDex: change note must be invalid");
 
-    notes[calcHash(input[7], input[8])] = State.Valid;
-    notes[calcHash(input[12], input[13])] = State.Valid;
-    notes[calcHash(input[17], input[18])] = State.Valid;
+    notes[rewardNote] = State.Valid;
+    notes[paymentNote] = State.Valid;
+    notes[changeNote] = State.Valid;
 
     notes[order.makerNote] = State.Spent;
     notes[order.parentNote] = State.Spent;
@@ -241,21 +238,21 @@ contract ZkDex is ZkDai {
 
     RLPReader.RLPItem[] memory encList = encDatas.toRlpItem().toList();
 
-    encryptedNotes[calcHash(input[7], input[8])] = encList[0].toBytes();
-    encryptedNotes[calcHash(input[12], input[13])] = encList[1].toBytes();
-    encryptedNotes[calcHash(input[17], input[18])] = encList[2].toBytes();
+    encryptedNotes[rewardNote] = encList[0].toBytes();
+    encryptedNotes[paymentNote] = encList[1].toBytes();
+    encryptedNotes[changeNote] = encList[2].toBytes();
 
     order.state = OrderState.Settled;
 
-    emit NoteStateChange(calcHash(input[7], input[8]), State.Valid);
-    emit NoteStateChange(calcHash(input[12], input[13]), State.Valid);
-    emit NoteStateChange(calcHash(input[17], input[18]), State.Valid);
+    emit NoteStateChange(rewardNote, State.Valid);
+    emit NoteStateChange(paymentNote, State.Valid);
+    emit NoteStateChange(changeNote, State.Valid);
 
     emit NoteStateChange(order.makerNote, State.Spent);
     emit NoteStateChange(order.parentNote, State.Spent);
     emit NoteStateChange(order.takerNoteToMaker, State.Spent);
 
-    emit OrderSettled(orderId, calcHash(input[7], input[8]), calcHash(input[12], input[13]), calcHash(input[17], input[18]));
+    emit OrderSettled(orderId, rewardNote, paymentNote, changeNote);
   }
 
   function hashOrder(Order memory order) internal view returns (bytes32) {

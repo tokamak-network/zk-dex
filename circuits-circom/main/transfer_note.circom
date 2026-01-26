@@ -1,13 +1,13 @@
 pragma circom 2.1.0;
 
-include "../utils/sha256/sha256_note_address.circom";
+include "../utils/poseidon/poseidon_note.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
 include "../utils/math/safe_math.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/gates.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 
-// TransferNote Circuit (Address-based ownership)
+// TransferNote Circuit (Poseidon-based, Address-based ownership)
 // Spend 1-2 old notes and create 2 new notes (main + change)
 //
 // Supports:
@@ -19,23 +19,15 @@ include "../node_modules/circomlib/circuits/mux1.circom";
 // - Value conservation: sum(old values) == sum(new values)
 // - Type consistency: all notes must have same token type
 //
-// Public inputs: [o0h0, o0h1, o1h0, o1h1, nh0, nh1, changeH0, changeH1]
+// Public inputs: [o0Hash, o1Hash, newHash, changeHash]
 template TransferNote() {
-    // Public inputs - Old note 0
-    signal input o0h0;
-    signal input o0h1;
+    // Public inputs - Old note hashes
+    signal input o0Hash;       // Old note 0 hash (single field element)
+    signal input o1Hash;       // Old note 1 hash (single field element)
 
-    // Public inputs - Old note 1
-    signal input o1h0;
-    signal input o1h1;
-
-    // Public inputs - New note
-    signal input nh0;
-    signal input nh1;
-
-    // Public inputs - Change note
-    signal input changeH0;
-    signal input changeH1;
+    // Public inputs - New note hashes
+    signal input newHash;      // New note hash (single field element)
+    signal input changeHash;   // Change note hash (single field element)
 
     // Private inputs - Old note 0
     signal input o0OwnerAddress;  // 160-bit address
@@ -77,8 +69,7 @@ template TransferNote() {
     signal output out;
 
     // Check if old note 1 is empty (single transfer)
-    // SECURITY FIX: Must check ALL fields are zero, not just ownerAddress
-    // Original Zokrates: o1owner0 == 0 && o1owner1 == 0 && o1val == 0 && o1type == 0 && o1vk0 == 0 && o1vk1 == 0 && o1salt == 0
+    // SECURITY: Must check ALL fields are zero
     component isO1AddrZero = IsZero();
     component isO1ValueZero = IsZero();
     component isO1TypeZero = IsZero();
@@ -94,7 +85,6 @@ template TransferNote() {
     isO1SaltZero.in <== o1Salt;
 
     // All fields must be zero for the note to be considered empty
-    // AND all the zero checks together
     signal allZero1;
     signal allZero2;
     signal allZero3;
@@ -113,7 +103,6 @@ template TransferNote() {
     ownership0.sk <== sk0;
 
     // 2. Verify ownership of old note 1 (if not empty)
-    // If empty, we skip this check by using a conditional
     component ownership1 = VerifyOwnershipByAddress();
     ownership1.address <== o1OwnerAddress;
     ownership1.sk <== sk1;
@@ -125,7 +114,7 @@ template TransferNote() {
     orGate.out === 1;
 
     // 3. Verify old note 0 hash
-    component hash0 = Sha256NoteWithAddress();
+    component hash0 = PoseidonNoteWithAddress();
     hash0.ownerAddress <== o0OwnerAddress;
     hash0.value <== o0Value;
     hash0.tokenType <== o0Type;
@@ -133,11 +122,10 @@ template TransferNote() {
     hash0.vk1 <== o0Vk1;
     hash0.salt <== o0Salt;
 
-    hash0.out[0] === o0h0;
-    hash0.out[1] === o0h1;
+    hash0.out === o0Hash;
 
     // 4. Verify old note 1 hash
-    component hash1 = Sha256NoteWithAddress();
+    component hash1 = PoseidonNoteWithAddress();
     hash1.ownerAddress <== o1OwnerAddress;
     hash1.value <== o1Value;
     hash1.tokenType <== o1Type;
@@ -145,11 +133,10 @@ template TransferNote() {
     hash1.vk1 <== o1Vk1;
     hash1.salt <== o1Salt;
 
-    hash1.out[0] === o1h0;
-    hash1.out[1] === o1h1;
+    hash1.out === o1Hash;
 
     // 5. Verify new note hash
-    component hashNew = Sha256NoteWithAddress();
+    component hashNew = PoseidonNoteWithAddress();
     hashNew.ownerAddress <== nOwnerAddress;
     hashNew.value <== nValue;
     hashNew.tokenType <== nType;
@@ -157,11 +144,10 @@ template TransferNote() {
     hashNew.vk1 <== nVk1;
     hashNew.salt <== nSalt;
 
-    hashNew.out[0] === nh0;
-    hashNew.out[1] === nh1;
+    hashNew.out === newHash;
 
     // 6. Verify change note hash
-    component hashChange = Sha256NoteWithAddress();
+    component hashChange = PoseidonNoteWithAddress();
     hashChange.ownerAddress <== cOwnerAddress;
     hashChange.value <== cValue;
     hashChange.tokenType <== cType;
@@ -169,8 +155,7 @@ template TransferNote() {
     hashChange.vk1 <== cVk1;
     hashChange.salt <== cSalt;
 
-    hashChange.out[0] === changeH0;
-    hashChange.out[1] === changeH1;
+    hashChange.out === changeHash;
 
     // 7. Value conservation: o0Value + o1Value == nValue + cValue
     signal totalIn;
@@ -180,7 +165,6 @@ template TransferNote() {
     totalIn === totalOut;
 
     // 8. Type consistency: all notes same type
-    // If note1 is empty, we only check note0 type
     component typeEq01 = IsEqual();
     typeEq01.in[0] <== o0Type;
     typeEq01.in[1] <== o1Type;
@@ -198,4 +182,4 @@ template TransferNote() {
     out <== 1;
 }
 
-component main {public [o0h0, o0h1, o1h0, o1h1, nh0, nh1, changeH0, changeH1]} = TransferNote();
+component main {public [o0Hash, o1Hash, newHash, changeHash]} = TransferNote();

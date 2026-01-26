@@ -6,7 +6,7 @@ import "./ZkDaiBase.sol";
 
 
 abstract contract SpendNotes is ZkDaiBase {
-  uint8 internal constant SPEND_NUM_PUBLIC_INPUTS = 9;
+  uint8 internal constant SPEND_NUM_PUBLIC_INPUTS = 5;
 
   ITransferNoteVerifier public spendNoteVerifier;
 
@@ -17,18 +17,18 @@ abstract contract SpendNotes is ZkDaiBase {
   /**
   * @dev Hashes the submitted proof and adds it to the submissions mapping that tracks
   *      submission time, type, public inputs of the zkSnark and the submitter
-  *      public input (Groth16/snarkjs format - outputs come first)
-  *       - [0]     = output (always 1 for valid proof)
-  *       - [1, 2]  = old note 1 hash
-  *       - [3, 4]  = old note 2 hash
-  *       - [5, 6]  = new note 1 hash
-  *       - [7, 8]  = new note 2 hash
+  *      public input (Groth16/snarkjs format - Poseidon version)
+  *       - [0] = output (always 1 for valid proof)
+  *       - [1] = old note 0 hash (single field element)
+  *       - [2] = old note 1 hash (single field element)
+  *       - [3] = new note hash (single field element)
+  *       - [4] = change note hash (single field element)
 */
   function submit(
     uint256[2] memory a,
     uint256[2][2] memory b,
     uint256[2] memory c,
-    uint256[9] memory input,
+    uint256[5] memory input,
     bytes memory encryptedNote1,
     bytes memory encryptedNote2
   )
@@ -67,16 +67,16 @@ abstract contract SpendNotes is ZkDaiBase {
     }
   }
 
-  function get4Notes(uint256[9] memory input)
+  function get4Notes(uint256[5] memory input)
     internal
     pure
     returns(bytes32[4] memory noteHashes)
   {
-    // snarkjs format: output first, then note hashes
-    noteHashes[0] = calcHash(input[1], input[2]);
-    noteHashes[1] = calcHash(input[3], input[4]);
-    noteHashes[2] = calcHash(input[5], input[6]);
-    noteHashes[3] = calcHash(input[7], input[8]);
+    // Poseidon version: each input is a single field element note hash
+    noteHashes[0] = bytes32(input[1]);  // old note 0
+    noteHashes[1] = bytes32(input[2]);  // old note 1
+    noteHashes[2] = bytes32(input[3]);  // new note
+    noteHashes[3] = bytes32(input[4]);  // change note
   }
 
   function isEmptyHash(bytes32 note) internal pure returns (bool) {

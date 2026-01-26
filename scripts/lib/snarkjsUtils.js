@@ -1,7 +1,12 @@
 /**
  * snarkjsUtils.js
  * Replacement for dockerUtils.js - uses snarkjs for proof generation
- * Uses circomlibjs for BabyJubJub operations (compatible with circom circuits)
+ * Uses circomlibjs for BabyJubJub and Poseidon operations (compatible with circom circuits)
+ *
+ * Poseidon Migration:
+ * - Note hash: Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) -> single field element
+ * - Address: Poseidon(pk.x, pk.y) truncated to 160 bits
+ * - ViewingKey: Poseidon(pk.x, pk.y) (full 254-bit hash, can derive address from it)
  */
 
 const snarkjs = require('snarkjs');
@@ -12,7 +17,10 @@ const circomlibBabyJub = require('./circomlibBabyJub');
 const CIRCUITS_DIR = path.join(__dirname, '../../circuits-circom/build');
 
 // Re-export circomlibBabyJub for convenience
-const { PrivateKey, PublicKey, getPublicKey, randomSecretKey, init: initBabyJub } = circomlibBabyJub;
+const {
+    PrivateKey, PublicKey, getPublicKey, randomSecretKey,
+    init: initBabyJub, poseidonHash, truncateTo160Bits
+} = circomlibBabyJub;
 
 /**
  * Convert BigInt to string for JSON serialization
@@ -46,7 +54,6 @@ function formatProofForContract(proof, publicSignals) {
     //
     // snarkjs returns public signals as [output, ...public_inputs]
     // This is the SAME order the Solidity verifier expects (circom outputs come first)
-    // No reordering needed!
 
     return {
         a: [proof.pi_a[0], proof.pi_a[1]],
@@ -93,8 +100,15 @@ async function generateProof(circuitName, inputs) {
 function hexToBigInt(hex) {
     if (typeof hex === 'bigint') return hex;
     if (typeof hex === 'number') return BigInt(hex);
-    const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
-    return BigInt('0x' + cleanHex);
+    if (typeof hex === 'string') {
+        const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+        // Handle decimal strings
+        if (/^[0-9]+$/.test(cleanHex) && !hex.startsWith('0x')) {
+            return BigInt(hex);
+        }
+        return BigInt('0x' + cleanHex);
+    }
+    throw new Error(`Cannot convert to BigInt: ${hex}`);
 }
 
 /**
@@ -106,56 +120,24 @@ function maskTo254Bits(value) {
 }
 
 /**
- * Compute note hash matching circuit computation (1184-bit SHA256)
- * Hash format: SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+ * Compute note hash using Poseidon
+ * hash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
  * @param {Object} note - Note object with ownerAddress, value, token, viewingKey, salt
- * @returns {{h0: string, h1: string}} Hash split into two 128-bit parts
+ * @returns {Promise<string>} Hash as decimal string
  */
-function computeCircuitHash(note) {
-    const crypto = require('crypto');
-
-    // Helper to convert a 160-bit address to 20 bytes (big-endian)
-    function addressTo20Bytes(val) {
-        const bigVal = hexToBigInt(val) & ((BigInt(1) << BigInt(160)) - BigInt(1));
-        const hex = bigVal.toString(16).padStart(40, '0');
-        return Buffer.from(hex, 'hex');
-    }
-
-    // Helper to convert a field element (254 bits max) to 32 bytes (big-endian)
-    function fieldTo32Bytes(val) {
-        const bigVal = maskTo254Bits(val);
-        const hex = bigVal.toString(16).padStart(64, '0');
-        return Buffer.from(hex, 'hex');
-    }
-
-    // Helper to convert 128-bit value to 16 bytes
-    function to16Bytes(val) {
-        const bigVal = hexToBigInt(val) & ((BigInt(1) << BigInt(128)) - BigInt(1));
-        const hex = bigVal.toString(16).padStart(32, '0');
-        return Buffer.from(hex, 'hex');
-    }
-
-    // Build 148-byte (1184-bit) message matching circuit structure:
-    // ownerAddress (20B) | value (32B) | type (32B) | vk0 (16B) | vk1 (16B) | salt (32B)
+async function computeCircuitHash(note) {
     const [vk0, vk1] = split256To128(note.viewingKey);
 
-    const message = Buffer.concat([
-        addressTo20Bytes(note.ownerAddress),  // 20 bytes (160 bits)
-        fieldTo32Bytes(note.value),           // 32 bytes
-        fieldTo32Bytes(note.token),           // 32 bytes
-        to16Bytes(vk0),                       // 16 bytes (vk high part)
-        to16Bytes(vk1),                       // 16 bytes (vk low part)
-        fieldTo32Bytes(note.salt)             // 32 bytes
+    const hash = await poseidonHash([
+        hexToBigInt(note.ownerAddress),
+        hexToBigInt(note.value),
+        hexToBigInt(note.token),
+        BigInt(vk0),
+        BigInt(vk1),
+        hexToBigInt(note.salt)
     ]);
 
-    // Compute SHA256
-    const digest = crypto.createHash('sha256').update(message).digest('hex');
-
-    // Split into two 128-bit parts
-    return {
-        h0: digest.slice(0, 32),  // First 128 bits (high)
-        h1: digest.slice(32)      // Last 128 bits (low)
-    };
+    return hash.toString();
 }
 
 /**
@@ -170,38 +152,46 @@ function split256To128(value) {
 }
 
 /**
- * EMPTY_NOTE_HASH parts (precomputed)
- * EMPTY_NOTE_HASH = 0x5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5
+ * EMPTY_NOTE_HASH (Poseidon version)
+ * EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
+ * This will be computed on first use
  */
-// EMPTY_NOTE_HASH = 0x3b18c58c739716e76429634a61375c45b3b5cd470c22ab6d3e14cee23dd992e1
-const EMPTY_NOTE_HASH_PARTS = ['78553073638322975829184534289877261381', '238875780499818765291310502715196019425'];
+let EMPTY_NOTE_HASH = null;
 
-/**
- * Get note hash parts from note object
- * For null/undefined notes, returns the EMPTY_NOTE_HASH parts
- */
-function getNoteHashParts(note) {
-    if (!note) {
-        return EMPTY_NOTE_HASH_PARTS;
+async function getEmptyNoteHash() {
+    if (EMPTY_NOTE_HASH === null) {
+        EMPTY_NOTE_HASH = await poseidonHash([0, 0, 0, 0, 0, 0]);
     }
-    const hash = note.hash ? note.hash() : note.noteHash;
-    return split256To128(hash);
+    return EMPTY_NOTE_HASH.toString();
 }
 
 /**
- * Generate proof for MintNBurnNote circuit
+ * Get note hash from note object using Poseidon
+ * For null/undefined notes, returns the EMPTY_NOTE_HASH
+ * Always computes Poseidon hash, ignoring any note.hash() method (which may use SHA256)
+ */
+async function getNoteHash(note) {
+    if (!note) {
+        return await getEmptyNoteHash();
+    }
+    // If note already has a computed Poseidon hash, use it
+    if (note.poseidonHash) {
+        return hexToBigInt(note.poseidonHash).toString();
+    }
+    // Always compute Poseidon hash from note fields
+    return await computeCircuitHash(note);
+}
+
+/**
+ * Generate proof for MintNBurnNote circuit (Poseidon version)
+ * Public inputs: [noteHash, value, tokenType]
  */
 async function getMintNBurnProof(note, sk) {
-    // Use circuit-compatible hash computation
-    const circuitHash = computeCircuitHash(note);
-    const nh0 = BigInt('0x' + circuitHash.h0).toString();
-    const nh1 = BigInt('0x' + circuitHash.h1).toString();
-
+    const noteHash = await computeCircuitHash(note);
     const [vk0, vk1] = split256To128(note.viewingKey);
 
     const inputs = {
-        nh0,
-        nh1,
+        noteHash,
         value: maskTo254Bits(note.value).toString(),
         tokenType: maskTo254Bits(note.token).toString(),
         ownerAddress: hexToBigInt(note.ownerAddress).toString(),
@@ -215,13 +205,14 @@ async function getMintNBurnProof(note, sk) {
 }
 
 /**
- * Generate proof for TransferNote circuit
+ * Generate proof for TransferNote circuit (Poseidon version)
+ * Public inputs: [o0Hash, o1Hash, newHash, changeHash]
  */
 async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk1) {
-    const [o0h0, o0h1] = getNoteHashParts(oldNote0);
-    const [o1h0, o1h1] = getNoteHashParts(oldNote1);  // Now handles null correctly
-    const [nh0, nh1] = getNoteHashParts(newNote);
-    const [changeH0, changeH1] = getNoteHashParts(changeNote);
+    const o0Hash = await getNoteHash(oldNote0);
+    const o1Hash = await getNoteHash(oldNote1);
+    const newHash = await getNoteHash(newNote);
+    const changeHash = await getNoteHash(changeNote);
 
     const [o0vk0, o0vk1] = split256To128(oldNote0.viewingKey);
     const [o1vk0, o1vk1] = oldNote1 ? split256To128(oldNote1.viewingKey) : ['0', '0'];
@@ -230,10 +221,10 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
 
     const inputs = {
         // Public inputs
-        o0h0, o0h1,
-        o1h0, o1h1,
-        nh0, nh1,
-        changeH0, changeH1,
+        o0Hash,
+        o1Hash,
+        newHash,
+        changeHash,
 
         // Old note 0
         o0OwnerAddress: hexToBigInt(oldNote0.ownerAddress).toString(),
@@ -276,12 +267,13 @@ async function getTransferProof(oldNote0, oldNote1, newNote, changeNote, sk0, sk
 }
 
 /**
- * Generate proof for ConvertNote circuit
+ * Generate proof for ConvertNote circuit (Poseidon version)
+ * Public inputs: [smartHash, originHash, newHash]
  */
 async function getConvertProof(smartNote, originNote, newNote, sk) {
-    const [smartH0, smartH1] = getNoteHashParts(smartNote);
-    const [originH0, originH1] = getNoteHashParts(originNote);
-    const [nh0, nh1] = getNoteHashParts(newNote);
+    const smartHash = await getNoteHash(smartNote);
+    const originHash = await getNoteHash(originNote);
+    const newHash = await getNoteHash(newNote);
 
     const [smartVk0, smartVk1] = split256To128(smartNote.viewingKey);
     const [originVk0, originVk1] = split256To128(originNote.viewingKey);
@@ -289,9 +281,9 @@ async function getConvertProof(smartNote, originNote, newNote, sk) {
 
     const inputs = {
         // Public inputs
-        smartH0, smartH1,
-        originH0, originH1,
-        nh0, nh1,
+        smartHash,
+        originHash,
+        newHash,
 
         // Smart note (ownerAddress is truncated hash of origin note)
         smartOwnerAddress: hexToBigInt(smartNote.ownerAddress).toString(),
@@ -321,14 +313,15 @@ async function getConvertProof(smartNote, originNote, newNote, sk) {
 }
 
 /**
- * Generate proof for MakeOrder circuit
+ * Generate proof for MakeOrder circuit (Poseidon version)
+ * Public inputs: [noteHash, tokenType]
  */
 async function getMakeOrderProof(makerNote, sk) {
-    const [nh0, nh1] = getNoteHashParts(makerNote);
+    const noteHash = await getNoteHash(makerNote);
     const [vk0, vk1] = split256To128(makerNote.viewingKey);
 
     const inputs = {
-        nh0, nh1,
+        noteHash,
         tokenType: hexToBigInt(makerNote.token).toString(),
         ownerAddress: hexToBigInt(makerNote.ownerAddress).toString(),
         value: hexToBigInt(makerNote.value).toString(),
@@ -341,36 +334,37 @@ async function getMakeOrderProof(makerNote, sk) {
 }
 
 /**
- * Generate proof for TakeOrder circuit
+ * Generate proof for TakeOrder circuit (Poseidon version)
+ * Public inputs: [oldNoteHash, oldType, newNoteHash, newOwnerAddress, newType]
  * @param {Object} parentNote - Taker's parent note (normal note)
  * @param {Object} stakeNote - Smart note with owner = truncated hash of maker's note
  * @param {string} sk - Secret key of the taker
  */
 async function getTakeOrderProof(parentNote, stakeNote, sk) {
-    const [oh0, oh1] = getNoteHashParts(parentNote);
-    const [nh0, nh1] = getNoteHashParts(stakeNote);
+    const oldNoteHash = await getNoteHash(parentNote);
+    const newNoteHash = await getNoteHash(stakeNote);
 
     const [oVk0, oVk1] = split256To128(parentNote.viewingKey);
     const [nVk0, nVk1] = split256To128(stakeNote.viewingKey);
 
     const inputs = {
         // Public inputs
-        oh0, oh1,
-        oType: hexToBigInt(parentNote.token).toString(),
-        nh0, nh1,
-        nOwnerAddress: hexToBigInt(stakeNote.ownerAddress).toString(),  // 160-bit truncated maker hash
-        nType: hexToBigInt(stakeNote.token).toString(),
+        oldNoteHash,
+        oldType: hexToBigInt(parentNote.token).toString(),
+        newNoteHash,
+        newOwnerAddress: hexToBigInt(stakeNote.ownerAddress).toString(),  // 160-bit truncated maker hash
+        newType: hexToBigInt(stakeNote.token).toString(),
 
         // Parent note private
-        oOwnerAddress: hexToBigInt(parentNote.ownerAddress).toString(),
-        oValue: hexToBigInt(parentNote.value).toString(),
-        oVk0, oVk1,
-        oSalt: hexToBigInt(parentNote.salt).toString(),
+        oldOwnerAddress: hexToBigInt(parentNote.ownerAddress).toString(),
+        oldValue: hexToBigInt(parentNote.value).toString(),
+        oldVk0: oVk0, oldVk1: oVk1,
+        oldSalt: hexToBigInt(parentNote.salt).toString(),
 
         // Stake note private
-        nValue: hexToBigInt(stakeNote.value).toString(),
-        nVk0, nVk1,
-        nSalt: hexToBigInt(stakeNote.salt).toString(),
+        newValue: hexToBigInt(stakeNote.value).toString(),
+        newVk0: nVk0, newVk1: nVk1,
+        newSalt: hexToBigInt(stakeNote.salt).toString(),
 
         sk: hexToBigInt(sk).toString()
     };
@@ -379,7 +373,11 @@ async function getTakeOrderProof(parentNote, stakeNote, sk) {
 }
 
 /**
- * Generate proof for SettleOrder circuit
+ * Generate proof for SettleOrder circuit (Poseidon version)
+ * Public inputs: [o0Hash, o0Type, o1Hash, o1Type,
+ *                 n0Hash, n0OwnerAddress, n0Type,
+ *                 n1Hash, n1OwnerAddress, n1Type,
+ *                 n2Hash, n2Type, price]
  */
 async function getSettleOrderProof(
     makerNote,      // o0
@@ -391,11 +389,11 @@ async function getSettleOrderProof(
     sk,
     q0, r0, q1, r1  // Division witnesses
 ) {
-    const [o0h0, o0h1] = getNoteHashParts(makerNote);
-    const [o1h0, o1h1] = getNoteHashParts(takerStakeNote);
-    const [n0h0, n0h1] = getNoteHashParts(rewardNote);
-    const [n1h0, n1h1] = getNoteHashParts(paymentNote);
-    const [n2h0, n2h1] = getNoteHashParts(changeNote);
+    const o0Hash = await getNoteHash(makerNote);
+    const o1Hash = await getNoteHash(takerStakeNote);
+    const n0Hash = await getNoteHash(rewardNote);
+    const n1Hash = await getNoteHash(paymentNote);
+    const n2Hash = await getNoteHash(changeNote);
 
     const [o0Vk0, o0Vk1] = split256To128(makerNote.viewingKey);
     const [o1Vk0, o1Vk1] = split256To128(takerStakeNote.viewingKey);
@@ -405,17 +403,17 @@ async function getSettleOrderProof(
 
     const inputs = {
         // Public inputs
-        o0h0, o0h1,
+        o0Hash,
         o0Type: hexToBigInt(makerNote.token).toString(),
-        o1h0, o1h1,
+        o1Hash,
         o1Type: hexToBigInt(takerStakeNote.token).toString(),
-        n0h0, n0h1,
+        n0Hash,
         n0OwnerAddress: hexToBigInt(rewardNote.ownerAddress).toString(),
         n0Type: hexToBigInt(rewardNote.token).toString(),
-        n1h0, n1h1,
+        n1Hash,
         n1OwnerAddress: hexToBigInt(paymentNote.ownerAddress).toString(),
         n1Type: hexToBigInt(paymentNote.token).toString(),
-        n2h0, n2h1,
+        n2Hash,
         n2Type: hexToBigInt(changeNote.token).toString(),
         price: hexToBigInt(price).toString(),
 
@@ -466,9 +464,6 @@ async function verifyProofLocal(circuitName, proof, publicSignals) {
     const vkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_vkey.json`);
     const vkey = JSON.parse(fs.readFileSync(vkeyPath, 'utf8'));
 
-    // publicSignals is already in snarkjs format: [output, ...public_inputs]
-    // No reordering needed
-
     // Reconstruct proof object from formatted proof
     const proofObj = {
         pi_a: [proof.a[0], proof.a[1], '1'],
@@ -493,84 +488,64 @@ async function initialized() {
 }
 
 /**
- * Derive 160-bit address from BabyJubJub public key
- * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
+ * Derive 160-bit address from BabyJubJub public key using Poseidon
+ * address = Poseidon(pk.x, pk.y) truncated to 160 bits
  * @param {Object} publicKey - Public key with x, y coordinates
- * @returns {string} 160-bit address as hex string (40 chars, no 0x prefix)
+ * @returns {Promise<string>} 160-bit address as hex string (40 chars, with 0x prefix)
  */
-function getAddressFromPublicKey(publicKey) {
-    const crypto = require('crypto');
+async function getAddressFromPublicKey(publicKey) {
+    // Validate input
+    if (!publicKey || !publicKey.x || !publicKey.y) {
+        throw new Error(`Invalid publicKey: ${JSON.stringify(publicKey)}`);
+    }
 
-    // Convert coordinates to 32 bytes each (256 bits, padded from 254-bit field elements)
-    const pkX = hexToBigInt(publicKey.x);
-    const pkY = hexToBigInt(publicKey.y);
-
-    const xHex = pkX.toString(16).padStart(64, '0');
-    const yHex = pkY.toString(16).padStart(64, '0');
-
-    // Concatenate: pk.x (32B) || pk.y (32B) = 64 bytes
-    const message = Buffer.concat([
-        Buffer.from(xHex, 'hex'),
-        Buffer.from(yHex, 'hex')
+    // Poseidon hash of public key coordinates
+    const hash = await poseidonHash([
+        hexToBigInt(publicKey.x),
+        hexToBigInt(publicKey.y)
     ]);
 
-    // SHA256 hash
-    const digest = crypto.createHash('sha256').update(message).digest('hex');
-
-    // Take last 160 bits (40 hex chars) = bits[96:256]
-    return digest.slice(-40);
+    // Truncate to 160 bits
+    const address = truncateTo160Bits(hash);
+    return '0x' + address.toString(16).padStart(40, '0');
 }
 
 /**
- * Derive viewing key from BabyJubJub public key
- * viewingKey = SHA256(pk.x || pk.y) = 256 bits
- * Split into vk0 (first 128 bits) and vk1 (last 128 bits)
+ * Derive viewing key from BabyJubJub public key using Poseidon
+ * viewingKey = Poseidon(pk.x, pk.y) = 254 bits (single field element)
  *
  * Relationship with ownerAddress:
- * - ownerAddress = hash[96:256] = vk0[96:128] + vk1 = 160 bits
- * - This allows deriving ownerAddress from viewingKey
+ * - ownerAddress = viewingKey truncated to 160 bits
  *
  * @param {Object} publicKey - Public key with x, y coordinates
- * @returns {{vk0: string, vk1: string, fullHash: string}} Viewing key parts (hex with 0x prefix)
+ * @returns {Promise<{vk: string, vk0: string, vk1: string}>} Viewing key (full and split)
  */
-function getViewingKeyFromPublicKey(publicKey) {
-    const crypto = require('crypto');
-
-    // Convert coordinates to 32 bytes each (256 bits, padded from 254-bit field elements)
-    const pkX = hexToBigInt(publicKey.x);
-    const pkY = hexToBigInt(publicKey.y);
-
-    const xHex = pkX.toString(16).padStart(64, '0');
-    const yHex = pkY.toString(16).padStart(64, '0');
-
-    // Concatenate: pk.x (32B) || pk.y (32B) = 64 bytes
-    const message = Buffer.concat([
-        Buffer.from(xHex, 'hex'),
-        Buffer.from(yHex, 'hex')
+async function getViewingKeyFromPublicKey(publicKey) {
+    // Poseidon hash of public key coordinates
+    const hash = await poseidonHash([
+        hexToBigInt(publicKey.x),
+        hexToBigInt(publicKey.y)
     ]);
 
-    // SHA256 hash = 256 bits = 64 hex chars
-    const fullHash = crypto.createHash('sha256').update(message).digest('hex');
+    // Full viewing key (254 bits)
+    const vk = '0x' + hash.toString(16).padStart(64, '0');
 
-    // Split into vk0 (first 128 bits = 32 hex chars) and vk1 (last 128 bits = 32 hex chars)
-    const vk0 = '0x' + fullHash.slice(0, 32);
-    const vk1 = '0x' + fullHash.slice(32, 64);
+    // Split into vk0 (high 128 bits) and vk1 (low 128 bits)
+    const [vk0, vk1] = split256To128(hash);
 
-    return { vk0, vk1, fullHash: '0x' + fullHash };
+    return { vk, vk0: '0x' + BigInt(vk0).toString(16).padStart(32, '0'), vk1: '0x' + BigInt(vk1).toString(16).padStart(32, '0') };
 }
 
 /**
  * Get smart note owner address from parent note hash
- * Circuit takes: high 32 bits of h0 + all 128 bits of h1 = 160 bits
- * In hex: noteHash[0:8] + noteHash[32:64] = 40 hex chars
- * @param {string} noteHash - 256-bit note hash (64 hex chars)
- * @returns {string} 160-bit address (40 hex chars)
+ * Simply truncate the Poseidon hash to 160 bits
+ * @param {string} noteHash - Note hash (field element as decimal or hex string)
+ * @returns {string} 160-bit address as hex string
  */
 function getSmartNoteOwnerAddress(noteHash) {
-    const cleanHash = noteHash.startsWith('0x') ? noteHash.slice(2) : noteHash;
-    const padded = cleanHash.padStart(64, '0');
-    // Take first 8 hex chars (high 32 bits of h0) + last 32 hex chars (all of h1)
-    return padded.slice(0, 8) + padded.slice(32, 64);
+    const hash = hexToBigInt(noteHash);
+    const address = truncateTo160Bits(hash);
+    return '0x' + address.toString(16).padStart(40, '0');
 }
 
 module.exports = {
@@ -586,10 +561,17 @@ module.exports = {
     generateProof,
     formatProofForContract,
 
+    // Hash utilities
+    computeCircuitHash,
+    getNoteHash,
+    getEmptyNoteHash,
+    poseidonHash,
+
     // Address and viewing key utilities
     getAddressFromPublicKey,
     getViewingKeyFromPublicKey,
     getSmartNoteOwnerAddress,
+    truncateTo160Bits,
 
     // BabyJubJub (circomlib compatible)
     PrivateKey,

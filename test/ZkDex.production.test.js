@@ -12,7 +12,7 @@ const MakeOrderVerifier = artifacts.require("MakeOrderVerifier");
 const TakeOrderVerifier = artifacts.require("TakeOrderVerifier");
 const SettleOrderVerifier = artifacts.require("SettleOrderVerifier");
 
-const { Note, constants } = require('../scripts/lib/Note');
+const { Note, constants, init: initNote } = require('../scripts/lib/Note');
 const noteProofHelper = require('../scripts/lib/noteProofHelper');
 const snarkjsUtils = require('../scripts/lib/snarkjsUtils');
 
@@ -24,6 +24,9 @@ contract('ZkDex Production Mode', function(accounts) {
     let makeOrderVerifier, takeOrderVerifier, settleOrderVerifier;
 
     before(async () => {
+        // Initialize Poseidon for Note.hash()
+        await initNote();
+
         // Check if circuits are initialized
         const initialized = await snarkjsUtils.initialized();
         if (!initialized) {
@@ -95,8 +98,9 @@ contract('ZkDex Production Mode', function(accounts) {
             // 6. Check event
             assert.ok(tx.logs.length > 0, 'Should emit events');
 
-            // 7. Verify note state
-            const noteHash = note.hash();
+            // 7. Verify note state using Poseidon hash from proof
+            // proof.input[1] is the noteHash (Poseidon hash)
+            const noteHash = '0x' + BigInt(proof.input[1]).toString(16).padStart(64, '0');
             const state = await zkdex.notes(noteHash);
             assert.equal(state.toString(), '1', 'Note should be in Valid state');
         });
@@ -269,8 +273,9 @@ contract('ZkDex Production Mode', function(accounts) {
                 { value: senderValue.toString(), from: accounts[0] }
             );
 
-            // Verify sender note was minted
-            const senderNoteState = await zkdex.notes(senderNote.hash());
+            // Verify sender note was minted (use Poseidon hash from proof)
+            const senderNoteHash = '0x' + BigInt(mintProof.input[1]).toString(16).padStart(64, '0');
+            const senderNoteState = await zkdex.notes(senderNoteHash);
             assert.equal(senderNoteState.toString(), '1', 'Sender note should be Valid');
 
             // 3. Create new note for receiver (2 ETH)
@@ -360,8 +365,9 @@ contract('ZkDex Production Mode', function(accounts) {
                 { value: value.toString(), from: accounts[0] }
             );
 
-            // Verify note was minted
-            const noteStateBefore = await zkdex.notes(note.hash());
+            // Verify note was minted (use Poseidon hash from proof)
+            const noteHash = '0x' + BigInt(mintProof.input[1]).toString(16).padStart(64, '0');
+            const noteStateBefore = await zkdex.notes(noteHash);
             assert.equal(noteStateBefore.toString(), '1', 'Note should be Valid');
 
             // 3. Get recipient balance before
@@ -383,8 +389,8 @@ contract('ZkDex Production Mode', function(accounts) {
             assert.ok(tx.logs.length > 0, 'Should emit events');
 
             // State enum: {Invalid=0, Valid=1, Traiding=2, Spent=3}
-            // 6. Verify note state is Spent
-            const noteStateAfter = await zkdex.notes(note.hash());
+            // 6. Verify note state is Spent (use same Poseidon hash)
+            const noteStateAfter = await zkdex.notes(noteHash);
             assert.equal(noteStateAfter.toString(), '3', 'Note should be Spent');
 
             // 7. Verify recipient received ETH
@@ -587,10 +593,11 @@ contract('ZkDex Production Mode', function(accounts) {
                 '0x' + 'e2e005'.padStart(64, '0')
             );
 
-            // 3. Create change note (ETH change for taker, smart note owned by taker's parent note)
-            // The circuit requires change note to also be a smart note (IsSmartStrict on line 242)
+            // 3. Create change note (ETH change back to maker)
+            // When bit=1 (o0Value >= o1ValueOverPrice), change goes to maker
+            // Circuit requires: n2OwnerAddress == truncated maker note hash
             changeNote = noteProofHelper.createSmartNote(
-                takerParentNote,  // Change goes to taker, owned by parent note
+                makerNote,  // Change goes to maker (bit=1 case)
                 changeValue,
                 constants.ETH_TOKEN_TYPE,
                 '0x0',

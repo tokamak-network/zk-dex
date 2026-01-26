@@ -32,7 +32,9 @@ circuits-circom/
 │   ├── *.zkey                      # Groth16 proving key
 │   └── *_vk.json                   # Verification key
 ├── utils/
-│   ├── sha256/
+│   ├── poseidon/
+│   │   └── poseidon_note.circom     # Poseidon-based note hash (Phase 3)
+│   ├── sha256/                       # Legacy (Phase 1-2, no longer used)
 │   │   ├── sha256_512bit.circom
 │   │   └── sha256_1536bit.circom
 │   ├── babyjubjub/
@@ -106,25 +108,27 @@ circuits-circom/
 
 | Circuit | Public Inputs (snarkjs order) | Count |
 |---------|-------------------------------|-------|
-| mint_burn_note | [output, nh0, nh1, value, tokenType] | 5 |
-| transfer_note | [output, o0h0, o0h1, o1h0, o1h1, nh0, nh1, changeH0, changeH1] | 9 |
-| convert_note | [output, smartH0, smartH1, originH0, originH1, nh0, nh1] | 7 |
-| make_order | [output, nh0, nh1, tokenType] | 4 |
-| take_order | [output, oh0, oh1, oType, nh0, nh1, nOwner0, nOwner1, nType] | 9 |
-| settle_order | [output, o0h*, o1h*, n0h*, n1h*, n2h*, price] | 21 |
+| mint_burn_note | [output, noteHash, value, tokenType] | 4 |
+| transfer_note | [output, o0Hash, o1Hash, newHash, changeHash] | 5 |
+| convert_note | [output, smartHash, originHash, newHash] | 4 |
+| make_order | [output, noteHash, tokenType] | 3 |
+| take_order | [output, oldHash, oldType, newHash, newOwnerAddress, newType] | 6 |
+| settle_order | [output, o0Hash, o0Type, o1Hash, o1Type, n0Hash, n0OwnerAddress, n0Type, n1Hash, n1OwnerAddress, n1Type, n2Hash, n2Type, price] | 14 |
+
+*Updated in Phase 3 (Poseidon migration): Note hashes are now single field elements instead of split 128-bit pairs.*
 
 ### Circuit Complexity
 
-| Circuit | Non-linear Constraints |
-|---------|------------------------|
-| mint_burn_note | 154,900 |
-| make_order | 154,900 |
-| take_order | 246,040 |
-| convert_note | 337,437 |
-| transfer_note | 492,085 |
-| settle_order | 520,481 |
+| Circuit | SHA256 (Phase 2) | Poseidon (Phase 3) | Reduction |
+|---------|-------------------|--------------------| --------- |
+| mint_burn_note | 154,900 | ~2,000 | ~98% |
+| make_order | 154,900 | ~2,000 | ~98% |
+| take_order | 246,040 | ~3,000 | ~99% |
+| convert_note | 337,437 | ~4,000 | ~99% |
+| transfer_note | 492,085 | ~5,000 | ~99% |
+| settle_order | 520,481 | ~6,000 | ~99% |
 
-*Updated after address-based ownership migration (Phase 2) and security fixes (Phase 2.2-2.3)*
+*Phase 3 (Poseidon migration): Poseidon hash (~300 constraints) replaced SHA256 (~30,000 constraints), reducing circuit size by ~97-99%. Exact Poseidon constraint counts are approximate; run `circom --r1cs` for precise values.*
 
 ## Groth16 Proof Format
 
@@ -260,12 +264,13 @@ await zkDai.mint(
 
 **Solution**: Updated all contract input array indices to match snarkjs order
 
-### 4. SHA256 Hash Format Compatibility ✓
+### 4. SHA256 Hash Format Compatibility ✓ *(Superseded by Phase 3 Poseidon migration)*
 
 **Problem**: Needed to verify circom circuit SHA256 input format matches JavaScript implementation
 
 **Solution**: Verified in `test/sha256-hash-test.js`
 - Confirmed JavaScript Note.hash() matches circom SHA256_1536bit output
+- **Note**: SHA256 has been replaced by Poseidon in Phase 3. Note.hash() now uses circomlibjs Poseidon.
 
 ### 5. SettleOrder Price and Division Witness ✓
 
@@ -300,10 +305,10 @@ const r1 = takerStakeValue % price;
 **Problem**: SettleOrder reward, payment, change notes must all be smart notes
 
 **Solution**: Added `createSmartNote` function to `noteProofHelper.js`
-- owner = hash of another note (split into 128-bit parts)
-- reward note: owner = taker's parent note
-- payment note: owner = maker note
-- change note: owner = taker's parent note
+- owner = lower 160 bits of another note's Poseidon hash
+- reward note: owner = taker's parent note hash (truncated to 160-bit)
+- payment note: owner = maker note hash (truncated to 160-bit)
+- change note: owner determined by settlement direction (bit=1: maker, bit=0: taker)
 
 ## Known Issues
 
@@ -544,14 +549,26 @@ await zkdex.mint(
     - bit=0 (taker excess) now correctly scales DAI payment to wei
     - Added 2 new bit=0 tests
 
+14. ✅ **SHA256 → Poseidon hash migration (Phase 3)**
+    - All circuits migrated from SHA256 to Poseidon hash (~97-99% constraint reduction)
+    - Note.js: async init pattern (`await initNote()` once, then `hash()` is sync)
+    - noteHelper.js: SHA256 → Poseidon hash computation
+    - noteProofHelper.js: init() calls initNote(), createSmartNote uses sync getSmartNoteOwner
+    - ZkDaiBase.sol: EMPTY_NOTE_HASH updated to `0x1fdb...53d5` (Poseidon(0,0,0,0,0,0))
+    - Smart note owner: lower 160 bits of Poseidon hash (was SHA256 truncation)
+    - Public inputs reduced (single field element hashes instead of split h0/h1)
+    - All 19 Truffle tests passing (8 dev + 11 production)
+
 ## Docker Environment
 
 ### File Structure
 
 ```
 Dockerfile              # Conditional build (uses local artifacts if available)
+vapp/Dockerfile         # Frontend multi-stage build (dev/prod)
 docker-compose.yml      # Service configuration
 .dockerignore           # Excluded files list
+vapp/.dockerignore      # Frontend build exclusions
 ```
 
 ### Dockerfile Features
@@ -559,34 +576,40 @@ docker-compose.yml      # Service configuration
 - **Conditional build**: Uses local `circuits-circom/build/*.zkey` files if present
 - Falls back to automatic ptau download + circuit compilation + trusted setup
 - Circom compiler built from Rust (multi-stage build)
+- Frontend: Multi-stage with development (Vite) and production (nginx) targets
 
 ### Service Configuration
 
-| Service | Description | Profile |
-|---------|-------------|---------|
-| `ganache` | Local Ethereum blockchain | default |
-| `zkdex` | Run tests | default |
-| `zkdex-dev` | Development shell | dev |
-| `test-frontend` | Frontend tests | test |
-| `test-production` | Production tests | test |
+| Service | Description | Port | Profile |
+|---------|-------------|------|---------|
+| `ganache` | Local Ethereum blockchain | 8545 | default |
+| `zkdex` | Run tests | - | default |
+| `vapp` | Frontend (Production/nginx) | 8080 | default |
+| `vapp-dev` | Frontend (Development/hot reload) | 8081 | dev |
+| `zkdex-dev` | Development shell | - | dev |
+| `test-frontend` | Frontend tests | - | test |
+| `test-production` | Production tests | - | test |
 
 ### Usage
 
 ```bash
-# Build (fast with local build artifacts)
-docker compose build zkdex
+# Run all tests
+docker compose run zkdex
 
-# Run tests
-docker compose up zkdex
+# Start ganache + frontend (production)
+docker compose up ganache vapp -d
+
+# Start ganache + frontend (development with hot reload)
+docker compose --profile dev up ganache vapp-dev -d
 
 # Development mode (shell access)
-docker compose --profile dev up zkdex-dev
+docker compose --profile dev run zkdex-dev
 
 # Frontend tests
-docker compose --profile test up test-frontend
+docker compose --profile test run test-frontend
 
 # Production tests
-docker compose --profile test up test-production
+docker compose --profile test run test-production
 
 # Cleanup
 docker compose down -v
@@ -616,7 +639,7 @@ docker: {
 
 ### Overview
 
-Migrated note ownership from BabyJubJub public key coordinates (owner0, owner1) to a 160-bit address derived from SHA256.
+Migrated note ownership from BabyJubJub public key coordinates (owner0, owner1) to a 160-bit address. Originally derived from SHA256 (Phase 2), now from Poseidon (Phase 3).
 
 **Migration Date:** 2026-01-25
 **Status:** ✅ Complete (All tests passing)
@@ -632,26 +655,27 @@ Migrated note ownership from BabyJubJub public key coordinates (owner0, owner1) 
 
 #### Address Derivation
 
+~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, superseded by Phase 3)*
+
 ```
-ownerAddress = SHA256(pk.x || pk.y)[96:256]  // Last 160 bits
+ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Lower 160 bits of Poseidon hash
 ```
 
 - pk.x and pk.y are 256-bit BabyJubJub public key coordinates
-- Address = last 160 bits of SHA256 hash
+- Address = lower 160 bits of Poseidon hash
 - Provides ~2^80 collision resistance (sufficient for practical security)
 
-#### Note Hash Format (1184 bits)
+#### Note Hash Format (Poseidon, single field element)
+
+~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, superseded by Phase 3)*
 
 ```
-SHA256(
-  ownerAddress (160 bits) ||
-  value (256 bits) ||
-  tokenType (256 bits) ||
-  vk0 (128 bits) ||
-  vk1 (128 bits) ||
-  salt (256 bits)
-)
+Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → single 254-bit field element
 ```
+
+- All 6 inputs are field elements (not bit-concatenated)
+- Output is a single BN254 field element (no split into h0/h1)
+- ~300 constraints vs ~30,000 for SHA256
 
 ### Circuit Changes
 
@@ -659,7 +683,8 @@ SHA256(
 
 | File | Description |
 |------|-------------|
-| `circuits-circom/utils/sha256/sha256_note_address.circom` | Note hash with 160-bit address |
+| `circuits-circom/utils/poseidon/poseidon_note.circom` | Poseidon-based note hash (Phase 3) |
+| `circuits-circom/utils/sha256/sha256_note_address.circom` | Note hash with 160-bit address *(Legacy, Phase 2)* |
 | `circuits-circom/utils/babyjubjub/get_address.circom` | Address derivation from public key |
 
 #### Modified Main Circuits
@@ -716,14 +741,14 @@ const { secretKey, ownerAddress } = await generateKeypair();
 For smart notes, the owner is derived from the parent note hash:
 
 ```javascript
-// Before: owner = parentNote.hashArr() → [nh0, nh1] (256-bit split to two 128-bit)
-
-// After: owner = SHA256(parentNoteHash)[96:256] (160-bit truncation)
-function getSmartNoteOwner(parentNoteHash) {
-    const hash = crypto.createHash('sha256')
-        .update(Buffer.from(parentNoteHash.slice(2), 'hex'))
-        .digest('hex');
-    return hash.slice(-40);  // Last 160 bits
+// Phase 1: owner = parentNote.hashArr() → [nh0, nh1] (256-bit split to two 128-bit)
+// Phase 2: owner = SHA256(parentNoteHash)[96:256] (160-bit truncation)
+// Phase 3 (current): owner = lower 160 bits of Poseidon note hash
+function getSmartNoteOwner(noteHash) {
+    const hashBigInt = BigInt(noteHash);
+    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
+    const address = hashBigInt & mask160;
+    return '0x' + address.toString(16).padStart(40, '0');
 }
 ```
 
@@ -754,24 +779,26 @@ Established a clear derivation relationship between viewing key and owner addres
 
 ### Normal Notes
 
+~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, superseded by Phase 3)*
+
 ```
-viewingKey = SHA256(pk.x || pk.y) = 256 bits
-ownerAddress = viewingKey[96:256] = last 160 bits
+viewingKey = Poseidon(pk.x, pk.y) = 254-bit field element
+ownerAddress = viewingKey & ((1 << 160) - 1) = lower 160 bits
 ```
 
 - pk.x and pk.y are BabyJubJub public key coordinates (256 bits each)
-- viewingKey is the full 256-bit hash
-- ownerAddress is derived from viewingKey (last 160 bits)
+- viewingKey is the Poseidon hash (single field element)
+- ownerAddress is derived from viewingKey (lower 160 bits)
 
 ### Smart Notes
 
 ```
-viewingKey = parentNoteHash = 256 bits
-ownerAddress = truncated(parentNoteHash) = h0[0:32 bits] + h1[all 128 bits] = 160 bits
+viewingKey = parentNoteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+ownerAddress = parentNoteHash & ((1 << 160) - 1) = lower 160 bits
 ```
 
-- parentNoteHash is split into h0 (first 128 bits) and h1 (last 128 bits)
-- ownerAddress = h0[96:128] (32 bits) + h1 (128 bits) = 160 bits
+- parentNoteHash is a single Poseidon field element (no split into h0/h1)
+- ownerAddress = lower 160 bits of parentNoteHash (simple bitmask)
 - This maintains the relationship: ownerAddress is embedded within viewingKey
 
 ### Backend Implementation
@@ -781,22 +808,22 @@ ownerAddress = truncated(parentNoteHash) = h0[0:32 bits] + h1[all 128 bits] = 16
 // Normal note creation
 async function createNote(sk, value, tokenType, viewingKey = null, salt = null) {
     const pk = await derivePublicKey(sk);
-    const ownerAddress = deriveAddressFromPK(pk);  // SHA256(pk)[96:256]
+    const ownerAddress = deriveAddressFromPK(pk);  // Poseidon(pk.x, pk.y) lower 160 bits
 
     if (!viewingKey) {
         const vkData = snarkjsUtils.getViewingKeyFromPublicKey(pk);
-        viewingKey = vkData.fullHash;  // SHA256(pk) = 256 bits
+        viewingKey = vkData.fullHash;  // Poseidon(pk.x, pk.y) = 254-bit field element
     }
     // ...
 }
 
 // Smart note creation
 function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = null) {
-    const ownerHash = ownerNote.hash();
-    const ownerAddress = snarkjsUtils.getSmartNoteOwnerAddress(ownerHash);
+    const ownerHash = ownerNote.hash();  // Poseidon hash (sync after init)
+    const ownerAddress = getSmartNoteOwner(ownerHash);  // lower 160 bits
 
     if (!viewingKey) {
-        viewingKey = ownerHash;  // parentNoteHash = 256 bits
+        viewingKey = ownerHash;  // parentNoteHash = Poseidon field element
     }
     // ...
 }
@@ -921,9 +948,119 @@ o0ValuePrice <== q0 * DECIMALS;  // q0 * 10^18 = 50×10^18
 
 ---
 
+## SHA256 → Poseidon Hash Migration (Phase 3)
+
+### Overview
+
+Migrated all hash computations from SHA256 to Poseidon, a ZK-friendly hash function. This reduces circuit constraints by ~97-99% and simplifies the note hash format from bit-concatenated SHA256 inputs to field element Poseidon inputs.
+
+**Migration Date:** 2026-01-26
+**Status:** ✅ Complete (All 19 tests passing)
+
+### Motivation
+
+| | SHA256 | Poseidon |
+|--|--------|----------|
+| Constraints per hash | ~30,000 | ~300 |
+| Note hash input format | Bit-concatenated (1184 bits) | Field elements (6 inputs) |
+| Hash output | 256-bit (split into h0/h1) | Single 254-bit field element |
+| Address derivation | SHA256 truncation | Poseidon lower 160 bits |
+| JS implementation | Node.js `crypto` module | circomlibjs (async init, sync hash) |
+
+### Key Changes
+
+#### 1. Circuit Hash Function
+
+All 6 circuits now use `PoseidonNoteWithAddress()` instead of `SHA256NoteWithAddress()`:
+
+```circom
+// Before (SHA256)
+component hashNote = SHA256NoteWithAddress();
+// 1184-bit input, 256-bit output split into h0/h1
+
+// After (Poseidon)
+component hashNote = PoseidonNoteWithAddress();
+// 6 field element inputs, 1 field element output
+hashNote.ownerAddress <== ownerAddress;
+hashNote.value <== value;
+hashNote.tokenType <== tokenType;
+hashNote.vk0 <== vk0;
+hashNote.vk1 <== vk1;
+hashNote.salt <== salt;
+```
+
+#### 2. Note.js (Async Init Pattern)
+
+```javascript
+const { Note, init: initNote, getSmartNoteOwner } = require('./Note');
+
+// Must call init() once before using Note.hash()
+await initNote();  // Loads circomlibjs Poseidon
+
+// Then hash() is synchronous
+const note = new Note(ownerAddress, value, tokenType, viewingKey, salt);
+const hash = note.hash();  // Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+```
+
+#### 3. EMPTY_NOTE_HASH
+
+```
+Poseidon(0, 0, 0, 0, 0, 0) = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+```
+
+Updated in `ZkDaiBase.sol`:
+```solidity
+bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
+```
+
+#### 4. Smart Note Owner Derivation
+
+```javascript
+// Before (SHA256): SHA256(noteHash) → last 160 bits
+// After (Poseidon): noteHash & ((1 << 160) - 1) → lower 160 bits
+function getSmartNoteOwner(noteHash) {
+    const hashBigInt = BigInt(noteHash);
+    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
+    return '0x' + (hashBigInt & mask160).toString(16).padStart(40, '0');
+}
+```
+
+#### 5. Public Input Count Reduction
+
+| Circuit | SHA256 Inputs | Poseidon Inputs | Reduction |
+|---------|---------------|-----------------|-----------|
+| mint_burn_note | 5 | 4 | -1 |
+| transfer_note | 9 | 5 | -4 |
+| convert_note | 7 | 4 | -3 |
+| make_order | 4 | 3 | -1 |
+| take_order | 9 | 6 | -3 |
+| settle_order | 21 | 14 | -7 |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `scripts/lib/Note.js` | SHA256 → Poseidon hash, async init pattern, getSmartNoteOwner |
+| `scripts/helper/noteHelper.js` | SHA256 → Poseidon hash |
+| `scripts/lib/noteProofHelper.js` | init() calls initNote(), createSmartNote uses getSmartNoteOwner |
+| `scripts/lib/snarkjsUtils.js` | getSmartNoteOwnerAddress removed async |
+| `contracts/ZkDaiBase.sol` | EMPTY_NOTE_HASH updated to Poseidon value |
+| `test/ZkDex.production.test.js` | Added initNote(), fixed settle change note owner |
+| `circuits-circom/utils/poseidon/poseidon_note.circom` | New: Poseidon-based note hash component |
+| All 6 main circuits | SHA256NoteWithAddress → PoseidonNoteWithAddress |
+
+### Test Results
+
+All 19 Truffle tests passing after Poseidon migration:
+- ✅ Development mode (8/8)
+- ✅ Production mode (11/11) including E2E flow (Make → Take → Settle → Convert)
+
+---
+
 ## Next Steps
 
 1. Performance optimization (planned - reduce proof generation time)
+2. Recompile all circuits with Poseidon and measure exact constraint counts
 
 ## Dependencies
 
