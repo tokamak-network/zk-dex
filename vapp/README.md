@@ -26,22 +26,53 @@ Frontend runs on http://localhost:5173
 Run the entire stack with Docker Compose (from project root):
 
 ```bash
-# Run tests with Ganache
-docker-compose up
+# Start full stack (ganache + API + frontend production)
+docker compose up ganache vapp-api vapp -d
+# Frontend: http://localhost:8080
+# Backend API: http://localhost:3000
 
-# Run development shell
-docker-compose --profile dev up zkdex-dev
+# Start full stack (development mode with hot reload)
+docker compose --profile dev up ganache vapp-api vapp-dev -d
+# Frontend: http://localhost:8081
 
-# Run production tests
-docker-compose --profile test up test-production
+# Run all tests
+docker compose run zkdex
+
+# Development shell
+docker compose --profile dev run zkdex-dev
+
+# Cleanup
+docker compose down -v
 ```
 
 ### Docker Services
-- **ganache**: Local Ethereum blockchain (port 8545)
-- **zkdex**: Test runner
-- **zkdex-dev**: Development shell with source mounted
-- **test-frontend**: Frontend integration tests
-- **test-production**: Production tests
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `ganache` | Local Ethereum blockchain | 8545 |
+| `vapp-api` | Backend API server (Express) | 3000 |
+| `vapp` | Frontend (Production/nginx) | 8080 |
+| `vapp-dev` | Frontend (Development/hot reload) | 8081 |
+| `zkdex` | Test runner | - |
+| `zkdex-dev` | Development shell | - |
+| `test-frontend` | Frontend integration tests | - |
+| `test-production` | Production tests | - |
+
+### Backend API (vapp-api)
+
+Express server providing:
+- Account management (create, unlock, import/export)
+- ZK-SNARK proof generation (mint, transfer, order circuits)
+- Note and order state management
+
+API endpoints:
+| Path | Description |
+|------|-------------|
+| `POST /accounts` | Create new account |
+| `POST /accounts/unlock` | Unlock account |
+| `POST /circuits` | Generate ZK proof |
+| `GET/POST /notes` | Note management |
+| `GET/POST /orders` | Order management |
 
 ## Other Commands
 

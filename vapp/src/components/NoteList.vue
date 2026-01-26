@@ -11,6 +11,7 @@
           <th>Token</th>
           <th>VALUE</th>
           <th>STATE</th>
+          <th>Created</th>
         </tr>
       </thead>
       <tbody>
@@ -21,6 +22,7 @@
             <td>{{ fmt.tokenType(note.token) }}</td>
             <td>{{ fmt.hexToNumberString(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
+            <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
         </template>
         <template v-else-if="route.path === '/transfer' || route.path === '/convert'">
@@ -30,6 +32,7 @@
             <td>{{ fmt.tokenType(note.token) }}</td>
             <td>{{ fmt.hexToNumberString(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
+            <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
         </template>
         <template v-else>
@@ -39,6 +42,7 @@
             <td>{{ fmt.tokenType(note.token) }}</td>
             <td>{{ fmt.hexToNumberString(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
+            <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
         </template>
       </tbody>
@@ -93,31 +97,37 @@ function selectNote(note: Note) {
 /* Note Hash */
 .table th:nth-child(1),
 .table td:nth-child(1) {
-  width: 22%;
+  width: 18%;
 }
 
 /* Owner */
 .table th:nth-child(2),
 .table td:nth-child(2) {
-  width: 22%;
+  width: 18%;
 }
 
 /* Token */
 .table th:nth-child(3),
 .table td:nth-child(3) {
-  width: 12%;
+  width: 10%;
 }
 
 /* VALUE */
 .table th:nth-child(4),
 .table td:nth-child(4) {
-  width: 24%;
+  width: 16%;
 }
 
 /* STATE */
 .table th:nth-child(5),
 .table td:nth-child(5) {
-  width: 20%;
+  width: 14%;
+}
+
+/* Created */
+.table th:nth-child(6),
+.table td:nth-child(6) {
+  width: 24%;
 }
 
 .table tbody tr {

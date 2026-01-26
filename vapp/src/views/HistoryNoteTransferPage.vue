@@ -31,17 +31,22 @@ const displayNotes = computed(() => {
 })
 
 onMounted(async () => {
-  const fetchedAccounts = await api.getAccounts(accountStore.key!)
-  if (fetchedAccounts) {
-    accounts.value = fetchedAccounts
-    const allTransferNotes: TransferNote[] = []
-    for (const account of fetchedAccounts) {
+  // Load accounts from browser localStorage
+  accountStore.loadAccounts()
+  accounts.value = accountStore.accounts
+
+  // Load transfer notes for all accounts
+  const allTransferNotes: TransferNote[] = []
+  for (const account of accounts.value) {
+    try {
       const n = await api.getTransferNotes(account.address)
       if (n) {
         allTransferNotes.push(...n)
       }
+    } catch (err) {
+      console.warn('Failed to load transfer notes for account:', account.address, err)
     }
-    transferNotes.value = allTransferNotes
   }
+  transferNotes.value = allTransferNotes
 })
 </script>

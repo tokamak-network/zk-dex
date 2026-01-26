@@ -124,6 +124,13 @@ export function useFormatters() {
     return `${pre}...${pos}`
   }
 
+  function formatTimestamp(ts: number | undefined): string {
+    if (!ts) return '-'
+    const d = new Date(ts * 1000)
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
   return {
     padLeft,
     hexToNumberString,
@@ -137,6 +144,7 @@ export function useFormatters() {
     tokenType,
     isSmartNote,
     abbreviate,
-    abbreviateZk
+    abbreviateZk,
+    formatTimestamp
   }
 }

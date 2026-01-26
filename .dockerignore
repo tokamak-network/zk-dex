@@ -44,6 +44,10 @@ docker-compose.yml
 # Old ZoKrates circuits (replaced by circom)
 circuits/
 
+# Large files not needed in Docker (ptau used only for setup)
+circuits-circom/ptau/
+circuits-circom/build/*_0000.zkey
+
 # Temporary files
 tmp/
 temp/

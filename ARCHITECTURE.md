@@ -538,34 +538,73 @@ node test/boundary-edge-cases.test.js
 
 ### Services
 
-| Service | Description | Profile |
-|---------|-------------|---------|
-| `ganache` | Local Ethereum blockchain | default |
-| `zkdex` | Run tests | default |
-| `zkdex-dev` | Development shell | dev |
-| `test-production` | Production tests | test |
+| Service | Description | Port | Profile |
+|---------|-------------|------|---------|
+| `ganache` | Local Ethereum blockchain | 8545 | default |
+| `vapp-api` | Backend API server (Express) | 3000 | default |
+| `zkdex` | Run tests | - | default |
+| `vapp` | Frontend (Production/nginx) | 8080 | default |
+| `vapp-dev` | Frontend (Development/hot reload) | 8081 | dev |
+| `zkdex-dev` | Development shell | - | dev |
+| `test-frontend` | Frontend integration tests | - | test |
+| `test-production` | Production tests | - | test |
+
+### Backend API Server (vapp-api)
+
+Express-based backend server providing:
+
+- **Account Management**: Create, unlock, import/export accounts
+- **Proof Generation**: ZK-SNARK proof generation (mint, transfer, order, etc.)
+- **Note Management**: Store and retrieve notes
+- **Order Management**: Create, query, update order status
+
+**API Endpoints:**
+| Path | Description |
+|------|-------------|
+| `POST /accounts` | Create new account |
+| `POST /accounts/unlock` | Unlock account (returns secret key) |
+| `POST /circuits` | Generate ZK proof |
+| `GET/POST /notes` | Query/store notes |
+| `GET/POST /orders` | Query/create orders |
 
 ### Usage
 
 ```bash
-# Build (uses local circuit artifacts if available)
-docker compose build zkdex
+# Run all tests
+docker compose run zkdex
 
-# Run tests
-docker compose up zkdex
+# Start full stack (ganache + API + frontend production)
+docker compose up ganache vapp-api vapp -d
 
-# Development mode
-docker compose --profile dev up zkdex-dev
+# Frontend: http://localhost:8080
+# Backend API: http://localhost:3000
+
+# Start full stack (development mode with hot reload)
+docker compose --profile dev up ganache vapp-api vapp-dev -d
+
+# Frontend: http://localhost:8081
+
+# Development shell
+docker compose --profile dev run zkdex-dev
 
 # Cleanup
 docker compose down -v
 ```
 
+### Docker Files
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | Main ZK-DEX build (circuits, contracts, tests) |
+| `vapp/Dockerfile` | Frontend multi-stage build (dev/prod) |
+| `docker-compose.yml` | Service orchestration |
+| `.dockerignore` | Excludes large files (ptau, intermediate zkeys) |
+
 ### Dockerfile Features
 
 - **Conditional build:** Uses pre-built `.zkey` files if present
 - **Fallback:** Downloads Powers of Tau and compiles if no artifacts
-- **Multi-stage:** Circom compiler built from Rust
+- **Multi-stage:** Circom compiler built from Rust, frontend with nginx
 
 ---
 

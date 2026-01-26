@@ -49,7 +49,7 @@ const filteredNotes = computed(() => {
   }
   return noteStore.notes.filter(note => {
     const noteToken = BigInt(note.token).toString()
-    return noteToken === tokenType
+    return noteToken === tokenType && note.state === '0x1'
   })
 })
 

@@ -39,6 +39,9 @@
         <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(account) }}</a>
       </p>
     </div>
+    <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+      <p class="help">{{ proofProgress }}</p>
+    </div>
     <div style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="combineNote" :class="{ 'is-static': selectedNotes.length === 0, 'is-loading': loading }">Combine</button>
     </div>
@@ -50,10 +53,13 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFormatters } from '@/composables/useFormatters'
 import { useContractStore } from '@/stores/contract'
+import { useAccountStore } from '@/stores/account'
 import { useNoteStore, type Note } from '@/stores/note'
 import * as api from '@/api'
 import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
 
 const props = defineProps<{
   account: string
@@ -61,11 +67,13 @@ const props = defineProps<{
 
 const router = useRouter()
 const contractStore = useContractStore()
+const accountStore = useAccountStore()
 const noteStore = useNoteStore()
 const fmt = useFormatters()
 
 const loading = ref(false)
 const selectedNotes = ref<Note[]>([])
+const proofProgress = ref('')
 
 const totalAmount = computed(() => {
   let total = BigInt(0)
@@ -75,21 +83,10 @@ const totalAmount = computed(() => {
   return total.toString()
 })
 
-interface CombineProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  combinedNote: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
-  combinedNoteSecretKey: string
-}
+// Get the account for the combined note
+const ownerAccount = computed(() => {
+  return accountStore.accounts.find(acc => acc.address === props.account)
+})
 
 function selectNote(note: Note) {
   // Limit to 2 notes (transfer circuit limitation)
@@ -119,6 +116,84 @@ function unselectNote(note: Note) {
   }
 }
 
+/**
+ * Generate combine proof entirely in browser
+ * Uses transfer_note circuit with 2 inputs -> 1 combined output + 0 change
+ */
+async function generateCombineProof(
+  note0: Note,
+  note1: Note,
+  ownerAddress: string
+): Promise<{ proof: FormattedProof; combinedNote: NoteData & { noteHash: string } }> {
+  if (!note0.secretKey || !note1.secretKey) {
+    throw new Error('Notes are missing secret keys. Cannot combine.')
+  }
+
+  // Create note data for both input notes
+  const noteData0: NoteData = {
+    ownerAddress: note0.ownerAddress!,
+    value: note0.value,
+    token: note0.token,
+    viewingKey: note0.viewingKey || '0x0',
+    salt: note0.salt || '0x0'
+  }
+
+  const noteData1: NoteData = {
+    ownerAddress: note1.ownerAddress!,
+    value: note1.value,
+    token: note1.token,
+    viewingKey: note1.viewingKey || '0x0',
+    salt: note1.salt || '0x0'
+  }
+
+  // Create combined note (new note with total value)
+  const combinedValue = (toBigInt(note0.value) + toBigInt(note1.value)).toString()
+
+  const combinedNote: NoteData & { noteHash: string } = {
+    ownerAddress,
+    value: combinedValue,
+    token: note0.token,
+    viewingKey: ownerAddress,
+    salt: generateSalt(),
+    noteHash: ''
+  }
+  combinedNote.noteHash = await computeCircuitHash(combinedNote)
+
+  // Create zero change note (no change in combine operation)
+  const zeroNote: NoteData = {
+    ownerAddress: ownerAddress,
+    value: '0',
+    token: note0.token,
+    viewingKey: ownerAddress,
+    salt: generateSalt()
+  }
+
+  // Prepare circuit inputs (2 old notes -> combined note + zero change note)
+  const inputs = await prepareTransferInputs(
+    noteData0,
+    noteData1,
+    combinedNote,
+    zeroNote,
+    note0.secretKey,
+    note1.secretKey
+  )
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'transfer_note',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return {
+    proof: result.proof,
+    combinedNote
+  }
+}
+
 async function combineNote() {
   if (selectedNotes.value.length < 2) {
     alert('Select 2 notes to combine.')
@@ -133,57 +208,46 @@ async function combineNote() {
     return
   }
 
+  if (!ownerAccount.value) {
+    alert('Owner account not found.')
+    return
+  }
+
   loading.value = true
 
   try {
-    // Generate combine proof
-    const params = {
-      circuit: 'combineNotes',
-      inputs: {
-        params: [
-          {
-            ownerAddress: note0.ownerAddress,
-            value: note0.value,
-            token: note0.token,
-            viewingKey: note0.viewingKey || '0x0',
-            salt: note0.salt
-          },
-          {
-            ownerAddress: note1.ownerAddress,
-            value: note1.value,
-            token: note1.token,
-            viewingKey: note1.viewingKey || '0x0',
-            salt: note1.salt
-          },
-          note0.secretKey,
-          note1.secretKey
-        ]
-      }
-    }
+    // Generate combine proof entirely in browser (secretKeys never leave browser!)
     console.log('Generating combine proof...')
-    const proofRes = await api.generateProof(params)
-    const proof = proofRes.data.proof as CombineProofResponse
+    const { proof, combinedNote } = await generateCombineProof(
+      note0,
+      note1,
+      ownerAccount.value.address
+    )
     console.log('Combine proof generated:', proof)
+    console.log('Combined note:', combinedNote)
+
+    // Extract proof components
+    const { a, b, c, input } = proof
 
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // Encode combined note using RLP for on-chain storage
     const encryptedCombinedNote = encodeNoteData({
-      ownerAddress: proof.combinedNote.ownerAddress,
-      value: proof.combinedNote.value,
-      token: proof.combinedNote.token,
-      viewingKey: proof.combinedNote.viewingKey,
-      salt: proof.combinedNote.salt
+      ownerAddress: combinedNote.ownerAddress,
+      value: combinedNote.value.toString(),
+      token: combinedNote.token.toString(),
+      viewingKey: combinedNote.viewingKey,
+      salt: combinedNote.salt.toString()
     })
     // Zero note (empty change note) - minimal encoding
     const encryptedZeroNote = encodeNoteData({
       ownerAddress: '0x0',
       value: '0x0',
-      token: proof.combinedNote.token,
+      token: combinedNote.token.toString(),
       viewingKey: '0x0',
       salt: '0x0'
     })
@@ -205,22 +269,7 @@ async function combineNote() {
       await api.updateNoteState(note0.owner, note0.hash, '0x3')
       await api.updateNoteState(note1.owner, note1.hash, '0x3')
 
-      // Add combined note
-      const combinedNoteObj: Note = {
-        owner: props.account,
-        ownerAddress: proof.combinedNote.ownerAddress,
-        value: proof.combinedNote.value,
-        token: proof.combinedNote.token,
-        viewingKey: proof.combinedNote.viewingKey,
-        salt: proof.combinedNote.salt,
-        isSmart: '0x0',
-        hash: proof.combinedNote.hash,
-        state: '0x1',
-        secretKey: proof.combinedNoteSecretKey
-      }
-      await api.addNote(props.account, combinedNoteObj)
-
-      // Reload notes
+      // Reload notes from blockchain
       await noteStore.loadNotes()
 
       alert('Notes combined successfully!')
@@ -234,6 +283,7 @@ async function combineNote() {
     alert('Failed to combine notes: ' + (err as Error).message)
   } finally {
     loading.value = false
+    proofProgress.value = ''
   }
 }
 

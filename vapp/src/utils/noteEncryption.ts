@@ -1,4 +1,5 @@
-import { encodeRlp, decodeRlp, sha256 } from 'ethers'
+import { encodeRlp, decodeRlp } from 'ethers'
+import { poseidonHash, truncateTo160Bits } from '@/lib/poseidon'
 
 export interface EncodedNoteData {
   ownerAddress: string  // 160-bit address (40 hex chars)
@@ -19,16 +20,43 @@ export interface LegacyEncodedNoteData {
 }
 
 /**
+ * Convert a value to a hex string suitable for RLP encoding.
+ * Handles decimal strings, hex strings, and bigint values.
+ */
+function toHexString(value: string | bigint | number | undefined | null): string {
+  if (value === undefined || value === null || value === '' || value === '0') return '0x00'
+
+  let hex: string
+
+  if (typeof value === 'bigint' || typeof value === 'number') {
+    hex = BigInt(value).toString(16)
+  } else if (value.startsWith('0x')) {
+    hex = value.slice(2)
+  } else if (/^[0-9]+$/.test(value)) {
+    hex = BigInt(value).toString(16)
+  } else {
+    hex = value
+  }
+
+  // ethers v6 encodeRlp requires even-length hex strings
+  if (hex.length % 2 !== 0) {
+    hex = '0' + hex
+  }
+
+  return '0x' + hex
+}
+
+/**
  * Encode note data to bytes for on-chain storage
  * Uses RLP encoding: [ownerAddress, value, token, viewingKey, salt]
  */
 export function encodeNoteData(noteData: EncodedNoteData): string {
   const fields = [
-    noteData.ownerAddress,
-    noteData.value,
-    noteData.token,
-    noteData.viewingKey || '0x0',
-    noteData.salt
+    toHexString(noteData.ownerAddress),
+    toHexString(noteData.value),
+    toHexString(noteData.token),
+    toHexString(noteData.viewingKey),
+    toHexString(noteData.salt)
   ]
   return encodeRlp(fields)
 }
@@ -38,7 +66,7 @@ export function encodeNoteData(noteData: EncodedNoteData): string {
  * Supports both new format (5 fields) and legacy format (6 fields)
  * Returns null for undecodable data
  */
-export function decodeNoteData(encodedHex: string): EncodedNoteData | null {
+export async function decodeNoteData(encodedHex: string): Promise<EncodedNoteData | null> {
   try {
     // Check if this is very old format (32 bytes = 64 hex chars + 0x prefix = 66 chars)
     if (encodedHex.length === 66) {
@@ -73,8 +101,8 @@ export function decodeNoteData(encodedHex: string): EncodedNoteData | null {
         viewingKey: decoded[4],
         salt: decoded[5]
       }
-      // Derive address from public key: SHA256(pk.x || pk.y)[96:256]
-      const address = deriveAddressFromPublicKey(legacyData.owner0, legacyData.owner1)
+      // Derive address from public key: Poseidon(pk.x, pk.y) truncated to 160 bits
+      const address = await deriveAddressFromPublicKey(legacyData.owner0, legacyData.owner1)
       return {
         ownerAddress: address,
         value: legacyData.value,
@@ -91,33 +119,24 @@ export function decodeNoteData(encodedHex: string): EncodedNoteData | null {
 }
 
 /**
- * Derive 160-bit address from BabyJubJub public key
- * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
+ * Derive 160-bit address from BabyJubJub public key using Poseidon
+ * address = Poseidon(pk.x, pk.y) truncated to 160 bits
  */
-export function deriveAddressFromPublicKey(pkX: string, pkY: string): string {
-  // Pad to 32 bytes each (256 bits)
-  const xBig = BigInt(pkX)
-  const yBig = BigInt(pkY)
-  const xHex = xBig.toString(16).padStart(64, '0')
-  const yHex = yBig.toString(16).padStart(64, '0')
-
-  // Concatenate and hash
-  const data = '0x' + xHex + yHex
-  const hash = sha256(data)
-
-  // Take last 160 bits (40 hex chars)
-  return '0x' + hash.slice(-40)
+export async function deriveAddressFromPublicKey(pkX: string, pkY: string): Promise<string> {
+  const hash = await poseidonHash([BigInt(pkX), BigInt(pkY)])
+  const address = truncateTo160Bits(hash)
+  return '0x' + address.toString(16).padStart(40, '0')
 }
 
 /**
  * Check if note belongs to account by comparing addresses
  */
-export function isNoteOwner(
+export async function isNoteOwner(
   noteData: EncodedNoteData,
   accountPublicKey: { x: string; y: string }
-): boolean {
-  // Derive address from account's public key
-  const accountAddress = deriveAddressFromPublicKey(accountPublicKey.x, accountPublicKey.y)
+): Promise<boolean> {
+  // Derive address from account's public key using Poseidon
+  const accountAddress = await deriveAddressFromPublicKey(accountPublicKey.x, accountPublicKey.y)
 
   // Normalize both to BigInt for comparison
   const noteOwnerAddress = BigInt(noteData.ownerAddress)

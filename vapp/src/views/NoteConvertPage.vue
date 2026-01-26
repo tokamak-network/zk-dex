@@ -14,6 +14,9 @@
           </a>
         </p>
       </div>
+      <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+        <p class="help">{{ proofProgress }}</p>
+      </div>
       <div style="margin-top: 10px; display: flex; justify-content: flex-end">
         <button class="button" @click="convertNote" :class="{ 'is-static': noteHash === '', 'is-loading': loading }">Convert</button>
       </div>
@@ -32,6 +35,8 @@ import NoteList from '@/components/NoteList.vue'
 import * as api from '@/api'
 import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareConvertInputs, generateSalt, computeCircuitHash, type NoteData } from '@/lib/circuitInputs'
 
 const router = useRouter()
 const accountStore = useAccountStore()
@@ -43,22 +48,7 @@ const note = ref<Note | null>(null)
 const noteHash = ref('')
 const loading = ref(false)
 const originNote = ref<Note | null>(null)
-
-interface ConvertProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  newNote: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
-  newNoteSecretKey: string
-}
+const proofProgress = ref('')
 
 onMounted(async () => {
   if (accountStore.accounts.length === 0) {
@@ -102,6 +92,48 @@ function selectNote(selectedNote: Note) {
   }
 }
 
+/**
+ * Generate convert note proof entirely in browser
+ */
+async function generateConvertProof(
+  smartNote: Note,
+  originNoteData: Note,
+  newNote: NoteData,
+  secretKey: string
+): Promise<FormattedProof> {
+  // Convert to NoteData format
+  const smartNoteData: NoteData = {
+    ownerAddress: smartNote.ownerAddress!,
+    value: smartNote.value,
+    token: smartNote.token,
+    viewingKey: smartNote.viewingKey || '0x0',
+    salt: smartNote.salt || '0x0'
+  }
+
+  const originNoteDataConverted: NoteData = {
+    ownerAddress: originNoteData.ownerAddress!,
+    value: originNoteData.value,
+    token: originNoteData.token,
+    viewingKey: originNoteData.viewingKey || '0x0',
+    salt: originNoteData.salt || '0x0'
+  }
+
+  // Prepare circuit inputs
+  const inputs = await prepareConvertInputs(smartNoteData, originNoteDataConverted, newNote, secretKey)
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating convert proof...'
+  const result = await proofGenerator.generateProof(
+    'convert_note',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return result.proof
+}
+
 async function convertNote() {
   if (!note.value || note.value.isSmart !== '0x1') {
     alert('Please select a smart note to convert.')
@@ -118,57 +150,64 @@ async function convertNote() {
     return
   }
 
+  if (!originNote.value.ownerAddress) {
+    alert('Origin note does not have ownerAddress. Cannot convert.')
+    return
+  }
+
+  if (!note.value.ownerAddress) {
+    alert('Smart note does not have ownerAddress. Cannot convert.')
+    return
+  }
+
   loading.value = true
+  proofProgress.value = ''
 
   try {
-    // Generate convert proof
-    const params = {
-      circuit: 'convertNote',
-      inputs: {
-        params: [
-          // Smart note data
-          {
-            ownerAddress: note.value.ownerAddress,
-            value: note.value.value,
-            token: note.value.token,
-            viewingKey: note.value.viewingKey || '0x0',
-            salt: note.value.salt
-          },
-          // Origin note data
-          {
-            ownerAddress: originNote.value.ownerAddress,
-            value: originNote.value.value,
-            token: originNote.value.token,
-            viewingKey: originNote.value.viewingKey || '0x0',
-            salt: originNote.value.salt
-          },
-          // Secret key of origin note
-          originNote.value.secretKey
-        ]
-      }
+    // Create new regular note with same value/token but owned by user's account
+    // The new note uses the same secretKey as the origin note since it comes from the same ownership
+    const newNoteData: NoteData = {
+      ownerAddress: originNote.value.ownerAddress,
+      value: note.value.value,
+      token: note.value.token,
+      viewingKey: originNote.value.ownerAddress,
+      salt: generateSalt()
     }
-    console.log('Generating convert proof...')
-    const proofRes = await api.generateProof(params)
-    const proof = proofRes.data.proof as ConvertProofResponse
-    console.log('Convert proof generated:', proof)
+
+    // Compute new note hash
+    const newNoteHash = await computeCircuitHash(newNoteData)
+
+    // Generate proof entirely in browser (secretKey never leaves browser!)
+    console.log('Generating convertNote proof...')
+    const proof = await generateConvertProof(
+      note.value,
+      originNote.value,
+      newNoteData,
+      originNote.value.secretKey
+    )
+    console.log('ConvertNote proof generated:', proof)
+
+    // Extract proof components
+    const { a, b, c, input } = proof
 
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // Encode new note using RLP for on-chain storage
     const encryptedNewNote = encodeNoteData({
-      ownerAddress: proof.newNote.ownerAddress,
-      value: proof.newNote.value,
-      token: proof.newNote.token,
-      viewingKey: proof.newNote.viewingKey,
-      salt: proof.newNote.salt
+      ownerAddress: newNoteData.ownerAddress,
+      value: newNoteData.value.toString(),
+      token: newNoteData.token.toString(),
+      viewingKey: newNoteData.viewingKey,
+      salt: newNoteData.salt.toString()
     })
 
-    // Call convert on contract (assuming there's a convert function)
-    console.log('Calling contract convert...')
+    // Call convert on contract
+    proofProgress.value = 'Submitting transaction...'
+    console.log('Calling contract convert with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.convert(
       aBigInt, bBigInt, cBigInt, inputBigInt,
       encryptedNewNote
@@ -182,18 +221,18 @@ async function convertNote() {
       // Update smart note state to SPENT
       await api.updateNoteState(note.value.owner, note.value.hash, '0x3')
 
-      // Add new regular note
+      // Add new regular note (with same secretKey as origin)
       const newNoteObj: Note = {
         owner: note.value.owner,
-        ownerAddress: proof.newNote.ownerAddress,
-        value: proof.newNote.value,
-        token: proof.newNote.token,
-        viewingKey: proof.newNote.viewingKey,
-        salt: proof.newNote.salt,
+        ownerAddress: newNoteData.ownerAddress,
+        value: newNoteData.value.toString(),
+        token: newNoteData.token.toString(),
+        viewingKey: newNoteData.viewingKey,
+        salt: newNoteData.salt.toString(),
         isSmart: '0x0',
-        hash: proof.newNote.hash,
+        hash: newNoteHash,
         state: '0x1',
-        secretKey: proof.newNoteSecretKey
+        secretKey: originNote.value.secretKey
       }
       await api.addNote(note.value.owner, newNoteObj)
 
@@ -210,6 +249,7 @@ async function convertNote() {
     alert('Failed to convert note: ' + (err as Error).message)
   } finally {
     loading.value = false
+    proofProgress.value = ''
   }
 }
 </script>

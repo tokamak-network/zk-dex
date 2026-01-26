@@ -1,7 +1,7 @@
 <template>
   <div class="box">
     <div>
-      <p style="margin-left: 10px; margin-bottom: 40px;">Liquidate {{ token }} Note</p>
+      <p style="margin-left: 10px; margin-bottom: 40px;">Redeem {{ token }} Note</p>
     </div>
     <div class="field has-addons">
       <p class="control">
@@ -33,16 +33,19 @@
         <a class="button is-static" style="width: 140px">Passphrase</a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" type="password" v-model="passphrase" placeholder="Unlock account to liquidate">
+        <input style="width: 100%; text-align: right;" class="input" type="password" v-model="passphrase" placeholder="Unlock account to redeem">
       </p>
       <p class="control">
-        <button class="button" :class="{ 'is-success': isUnlocked, 'is-loading': unlocking }" @click="unlockAccount" :disabled="!passphrase">
+        <button class="button" :class="{ 'is-success': isUnlocked, 'is-loading': unlocking }" @click="unlockAccountHandler" :disabled="!passphrase">
           {{ isUnlocked ? '✓ Unlocked' : 'Unlock' }}
         </button>
       </p>
     </div>
+    <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+      <p class="help">{{ proofProgress }}</p>
+    </div>
     <div style="display: flex; justify-content: flex-end">
-      <a class="button is-link" style="margin-top: 20px;" :class="{ 'is-static': !canLiquidate, 'is-loading': loading }" @click="liquidateNote">Liquidate</a>
+      <a class="button is-link" style="margin-top: 20px;" :class="{ 'is-static': !canLiquidate, 'is-loading': loading }" @click="liquidateNote">Redeem</a>
     </div>
   </div>
 </template>
@@ -57,7 +60,8 @@ import { useNoteStore, type Note } from '@/stores/note'
 import { useOrderStore } from '@/stores/order'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
-import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareMintInputs, type NoteData } from '@/lib/circuitInputs'
 
 defineProps<{
   token: string
@@ -80,6 +84,7 @@ const noteValue = ref('')
 const passphrase = ref('')
 const isUnlocked = ref(false)
 const unlockedSecretKey = ref('')
+const proofProgress = ref('')
 
 // Check if we need to unlock (only for VALID notes that don't have secretKey)
 const needsUnlock = computed(() => {
@@ -116,17 +121,23 @@ function selectNote(note: Note) {
   isUnlocked.value = false
   unlockedSecretKey.value = ''
   passphrase.value = ''
+  proofProgress.value = ''
 }
 
-async function unlockAccount() {
+async function unlockAccountHandler() {
   if (!ownerAccount.value || !passphrase.value) return
 
   unlocking.value = true
   try {
-    const res = await api.unlockAccount(passphrase.value, ownerAccount.value.keystore)
-    unlockedSecretKey.value = res.data.secretKey
+    // Unlock account in browser (secret key never leaves browser!)
+    const result = await accountStore.unlockAccountLocal(
+      ownerAccount.value.address,
+      passphrase.value
+    )
+    unlockedSecretKey.value = result.secretKey
     isUnlocked.value = true
   } catch (err) {
+    console.error('Failed to unlock account:', err)
     alert('Failed to unlock account: Wrong passphrase?')
     isUnlocked.value = false
   } finally {
@@ -134,22 +145,11 @@ async function unlockAccount() {
   }
 }
 
-interface BurnProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  note: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
-}
-
-async function generateProof(): Promise<BurnProofResponse> {
+/**
+ * Generate burn proof entirely in browser
+ * Uses the same mint_burn_note circuit
+ */
+async function generateBurnProof(): Promise<FormattedProof> {
   if (!effectiveSecretKey.value) {
     throw new Error('No secret key available. Please unlock account.')
   }
@@ -157,30 +157,36 @@ async function generateProof(): Promise<BurnProofResponse> {
     throw new Error('Note does not have ownerAddress. Cannot generate burn proof.')
   }
 
-  const params = {
-    circuit: 'burnNote',
-    inputs: {
-      params: [
-        {
-          ownerAddress: selectedNote.value.ownerAddress,
-          value: selectedNote.value.value,
-          token: selectedNote.value.token,
-          viewingKey: selectedNote.value.viewingKey || '0x0',
-          salt: selectedNote.value.salt
-        },
-        effectiveSecretKey.value
-      ]
-    }
+  // Create note data for circuit input
+  const noteData: NoteData = {
+    ownerAddress: selectedNote.value.ownerAddress,
+    value: selectedNote.value.value,
+    token: selectedNote.value.token,
+    viewingKey: selectedNote.value.viewingKey || '0x0',
+    salt: selectedNote.value.salt || '0x0'
   }
-  const res = await api.generateProof(params)
-  return res.data.proof as BurnProofResponse
+
+  // Prepare circuit inputs (same as mint - mint_burn_note circuit)
+  const inputs = await prepareMintInputs(noteData, effectiveSecretKey.value)
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'mint_burn_note',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return result.proof
 }
 
 async function liquidateNote() {
   if (!selectedNote.value) return
 
   if (selectedNote.value.state !== '0x1') {
-    alert('Note is not in VALID state. Cannot liquidate.')
+    alert('Note is not in VALID state. Cannot redeem.')
     return
   }
 
@@ -193,14 +199,17 @@ async function liquidateNote() {
 
   try {
     console.log('Generating burn proof...')
-    const proof = await generateProof()
+    const proof = await generateBurnProof()
     console.log('Burn proof generated:', proof)
 
+    // Extract proof components
+    const { a, b, c, input } = proof
+
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // First parameter is the recipient address for the liquidated funds
     const recipientAddress = web3Store.account
@@ -218,17 +227,20 @@ async function liquidateNote() {
       await api.updateNoteState(noteOwner.value, noteHash.value, '0x3')
       await noteStore.loadNotes()
       await updateDaiAmount()
-      alert('Liquidation successful!')
+      alert('Redemption successful!')
     } else {
       alert('Transaction failed')
     }
 
     router.push({ path: '/' })
   } catch (err) {
-    console.error('Failed to liquidate note:', err)
-    alert('Failed to liquidate note: ' + (err as Error).message)
+    console.error('Failed to redeem note:', err)
+    alert('Failed to redeem note: ' + (err as Error).message)
   } finally {
     loading.value = false
+    // Clear secret key from memory after use
+    unlockedSecretKey.value = ''
+    proofProgress.value = ''
   }
 }
 

@@ -58,36 +58,7 @@
         </template>
       </p>
     </div>
-    <template v-if="!isSelfTransfer">
-      <div class="field has-addons">
-        <p class="control">
-          <a class="button is-static" style="width: 140px">PublicKey X</a>
-        </p>
-        <p class="control is-expanded">
-          <input
-            style="width: 100%;"
-            class="input"
-            type="text"
-            placeholder="Recipient public key X (0x...)"
-            v-model="manualPublicKeyX"
-          >
-        </p>
-      </div>
-      <div class="field has-addons">
-        <p class="control">
-          <a class="button is-static" style="width: 140px">PublicKey Y</a>
-        </p>
-        <p class="control is-expanded">
-          <input
-            style="width: 100%;"
-            class="input"
-            type="text"
-            placeholder="Recipient public key Y (0x...)"
-            v-model="manualPublicKeyY"
-          >
-        </p>
-      </div>
-    </template>
+    <!-- No public key needed - address is sufficient for creating notes -->
     <div class="field has-addons">
       <p class="control">
         <a class="button is-static" style="width: 140px">Amount</a>
@@ -95,6 +66,9 @@
       <p class="control is-expanded">
         <input style="width: 100%; text-align: right;" class="input" type="text" v-model="amount" @keypress="onlyNumber">
       </p>
+    </div>
+    <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+      <p class="help">{{ proofProgress }}</p>
     </div>
     <div style="margin-top: 20px; display: flex; justify-content: flex-end">
       <button
@@ -145,12 +119,14 @@
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useContractStore } from '@/stores/contract'
-import { useAccountStore, type Account, type BabyJubJubPublicKey } from '@/stores/account'
+import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore, type Note } from '@/stores/note'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
 import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareTransferInputs, computeCircuitHash, generateSalt, hexToBigInt, type NoteData } from '@/lib/circuitInputs'
 
 const router = useRouter()
 const contractStore = useContractStore()
@@ -171,25 +147,7 @@ const isSelfTransfer = ref(false)
 const passphrase = ref('')
 const unlockedSecretKey = ref('')
 const showPassphraseModal = ref(false)
-const manualPublicKeyX = ref('')
-const manualPublicKeyY = ref('')
-
-// Get the recipient account object with publicKey (for self-transfer)
-const recipientAccount = computed(() => {
-  return accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
-})
-
-// Get the effective recipient public key (from account or manual input)
-const recipientPublicKey = computed((): BabyJubJubPublicKey | null => {
-  if (isSelfTransfer.value) {
-    return recipientAccount.value?.publicKey || null
-  } else {
-    if (manualPublicKeyX.value && manualPublicKeyY.value) {
-      return { x: manualPublicKeyX.value, y: manualPublicKeyY.value }
-    }
-    return null
-  }
-})
+const proofProgress = ref('')
 
 // Get the sender account object with publicKey
 const senderAccount = computed(() => {
@@ -205,9 +163,7 @@ const effectiveSecretKey = computed(() => {
 const canClickTransfer = computed(() => {
   return noteHash.value !== '' &&
          amount.value !== '' &&
-         toAccountAddress.value !== '' &&
-         recipientPublicKey.value &&
-         senderAccount.value?.publicKey
+         toAccountAddress.value !== ''
 })
 
 function onlyNumber(event: KeyboardEvent) {
@@ -230,10 +186,9 @@ function selectNote(note: Note) {
   unlockedSecretKey.value = ''
   passphrase.value = ''
   showPassphraseModal.value = false
+  proofProgress.value = ''
   // Reset recipient fields
   toAccountAddress.value = isSelfTransfer.value ? noteOwner.value : ''
-  manualPublicKeyX.value = ''
-  manualPublicKeyY.value = ''
 }
 
 function selectAccountFromModal(account: Account) {
@@ -259,12 +214,17 @@ async function confirmPassphrase() {
 
   unlocking.value = true
   try {
-    const res = await api.unlockAccount(passphrase.value, senderAccount.value.keystore)
-    unlockedSecretKey.value = res.data.secretKey
+    // Unlock account in browser (secret key never leaves browser!)
+    const result = await accountStore.unlockAccountLocal(
+      senderAccount.value.address,
+      passphrase.value
+    )
+    unlockedSecretKey.value = result.secretKey
     showPassphraseModal.value = false
     // Now proceed with transfer
     await doTransfer()
   } catch (err) {
+    console.error('Failed to unlock account:', err)
     alert('Failed to unlock account: Wrong passphrase?')
   } finally {
     unlocking.value = false
@@ -277,8 +237,7 @@ function calculateChange(originalValue: string, transferAmount: string): bigint 
 }
 
 function isValidRecipient(): boolean {
-  // Check if we have a valid recipient address and public key
-  return !!toAccountAddress.value && !!recipientPublicKey.value
+  return !!toAccountAddress.value
 }
 
 function isValidAmount(fromValue: string, toAmount: string): boolean {
@@ -287,68 +246,82 @@ function isValidAmount(fromValue: string, toAmount: string): boolean {
   return from >= to
 }
 
-interface TransferProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  newNote: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
-  changeNote: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
+interface GeneratedNotes {
+  newNote: NoteData & { noteHash: string }
+  changeNote: NoteData & { noteHash: string }
 }
 
-async function generateProof(
+/**
+ * Generate transfer proof entirely in browser
+ * Only requires recipient address — no public key needed
+ */
+async function generateTransferProof(
   oldNote: Note,
   newNoteValue: string,
   changeNoteValue: string,
   secretKey: string,
-  recipientPubKey: BabyJubJubPublicKey,
-  senderPubKey: BabyJubJubPublicKey
-): Promise<TransferProofResponse> {
+  recipientAddress: string,
+  senderAddress: string
+): Promise<{ proof: FormattedProof; notes: GeneratedNotes }> {
   if (!oldNote.ownerAddress) {
     throw new Error('Note does not have ownerAddress. Cannot generate transfer proof.')
   }
 
-  const params = {
-    circuit: 'transferNote',
-    inputs: {
-      params: [
-        // Old note data
-        {
-          ownerAddress: oldNote.ownerAddress,
-          value: oldNote.value,
-          token: oldNote.token,
-          viewingKey: oldNote.viewingKey || '0x0',
-          salt: oldNote.salt
-        },
-        // New note params (for recipient)
-        { value: newNoteValue, token: oldNote.token },
-        // Change note params (back to sender)
-        { value: changeNoteValue, token: oldNote.token },
-        // Secret key
-        secretKey,
-        // Recipient's public key
-        recipientPubKey,
-        // Sender's public key (for change note)
-        senderPubKey
-      ]
-    }
+  // Create old note data
+  const oldNoteData: NoteData = {
+    ownerAddress: oldNote.ownerAddress,
+    value: oldNote.value,
+    token: oldNote.token,
+    viewingKey: oldNote.viewingKey || '0x0',
+    salt: oldNote.salt || '0x0'
   }
-  const res = await api.generateProof(params)
-  return res.data.proof as TransferProofResponse
+
+  // Create new note for recipient (viewingKey = address)
+  const newNote: NoteData & { noteHash: string } = {
+    ownerAddress: recipientAddress,
+    value: newNoteValue,
+    token: oldNote.token,
+    viewingKey: recipientAddress,
+    salt: generateSalt(),
+    noteHash: ''
+  }
+  newNote.noteHash = await computeCircuitHash(newNote)
+
+  // Create change note for sender (viewingKey = address)
+  const changeNote: NoteData & { noteHash: string } = {
+    ownerAddress: senderAddress,
+    value: changeNoteValue,
+    token: oldNote.token,
+    viewingKey: senderAddress,
+    salt: generateSalt(),
+    noteHash: ''
+  }
+  changeNote.noteHash = await computeCircuitHash(changeNote)
+
+  // Prepare circuit inputs (single note transfer: oldNote0, null, newNote, changeNote)
+  const inputs = await prepareTransferInputs(
+    oldNoteData,
+    null,  // No second old note
+    newNote,
+    changeNote,
+    secretKey,
+    null   // No second secret key
+  )
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'transfer_note',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return {
+    proof: result.proof,
+    notes: { newNote, changeNote }
+  }
 }
 
 async function doTransfer() {
@@ -367,8 +340,8 @@ async function doTransfer() {
     return
   }
 
-  if (!senderAccount.value || !senderAccount.value.publicKey) {
-    alert('Sender account not found or missing public key')
+  if (!senderAccount.value) {
+    alert('Sender account not found')
     return
   }
 
@@ -377,40 +350,44 @@ async function doTransfer() {
   try {
     const change = calculateChange(selectedNote.value.value, amount.value)
 
-    console.log('Generating transfer proof with public keys...')
-    console.log('Recipient:', recipientPublicKey.value)
-    console.log('Sender:', senderAccount.value.publicKey)
+    console.log('Generating transfer proof with addresses...')
+    console.log('Recipient:', toAccountAddress.value)
+    console.log('Sender:', noteOwner.value)
 
-    const proof = await generateProof(
+    const { proof, notes } = await generateTransferProof(
       selectedNote.value,
       amount.value,
       change.toString(),
       effectiveSecretKey.value,
-      recipientPublicKey.value!,
-      senderAccount.value.publicKey
+      toAccountAddress.value,
+      noteOwner.value
     )
     console.log('Transfer proof generated:', proof)
+    console.log('Generated notes:', notes)
+
+    // Extract proof components
+    const { a, b, c, input } = proof
 
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // Encode notes using RLP for on-chain storage and recovery
     const encryptedNewNote = encodeNoteData({
-      ownerAddress: proof.newNote.ownerAddress,
-      value: proof.newNote.value,
-      token: proof.newNote.token,
-      viewingKey: proof.newNote.viewingKey,
-      salt: proof.newNote.salt
+      ownerAddress: notes.newNote.ownerAddress,
+      value: notes.newNote.value.toString(),
+      token: notes.newNote.token.toString(),
+      viewingKey: notes.newNote.viewingKey,
+      salt: notes.newNote.salt.toString()
     })
     const encryptedChangeNote = encodeNoteData({
-      ownerAddress: proof.changeNote.ownerAddress,
-      value: proof.changeNote.value,
-      token: proof.changeNote.token,
-      viewingKey: proof.changeNote.viewingKey,
-      salt: proof.changeNote.salt
+      ownerAddress: notes.changeNote.ownerAddress,
+      value: notes.changeNote.value.toString(),
+      token: notes.changeNote.token.toString(),
+      viewingKey: notes.changeNote.viewingKey,
+      salt: notes.changeNote.salt.toString()
     })
 
     console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
@@ -443,7 +420,7 @@ async function doTransfer() {
 
       // Receiver record (type: '0x1' = Receive)
       await api.addTransferNote(toAccountAddress.value, {
-        hash: proof.newNote.hash,
+        hash: notes.newNote.noteHash,
         type: '0x1',
         from: noteOwner.value,
         to: toAccountAddress.value,
@@ -467,14 +444,15 @@ async function doTransfer() {
     alert('Failed to transfer note: ' + (err as Error).message)
   } finally {
     loading.value = false
+    // Clear secret key from memory after use
+    unlockedSecretKey.value = ''
+    proofProgress.value = ''
   }
 }
 
 watch(isSelfTransfer, (selfTransfer) => {
   // Reset recipient fields when toggling self-transfer
   toAccountAddress.value = ''
-  manualPublicKeyX.value = ''
-  manualPublicKeyY.value = ''
   if (selfTransfer) {
     createAccountModalActive.value = true
   }

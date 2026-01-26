@@ -2,7 +2,23 @@
   <div>
     <NoteBalanceList :notes="filteredNotes" :accounts="accountStore.accounts || []" />
     <AccountList :accounts="accountStore.accounts || []" :selectedAccount="selectedAccount" @selectAccount="handleSelectAccount" />
-    <NoteList :notes="filteredNotes" @selectNote="handleSelectNote" />
+
+    <div class="note-view-tabs">
+      <button
+        class="tab-btn"
+        :class="{ active: noteViewTab === 'list' }"
+        @click="noteViewTab = 'list'"
+      >Note List</button>
+      <button
+        class="tab-btn"
+        :class="{ active: noteViewTab === 'tree' }"
+        @click="noteViewTab = 'tree'"
+      >Note Tree</button>
+    </div>
+
+    <NoteList v-if="noteViewTab === 'list'" :notes="filteredNotes" @selectNote="handleSelectNote" />
+    <NoteTree v-else :notes="filteredNotes" />
+
     <NoteListTransferHistory :transferNotes="noteStore.transferNotes || []" />
   </div>
 </template>
@@ -16,12 +32,14 @@ import AccountList from '@/components/AccountList.vue'
 import NoteList from '@/components/NoteList.vue'
 import NoteBalanceList from '@/components/NoteBalanceList.vue'
 import NoteListTransferHistory from '@/components/NoteListTransferHistory.vue'
+import NoteTree from '@/components/NoteTree.vue'
 
 const accountStore = useAccountStore()
 const contractStore = useContractStore()
 const noteStore = useNoteStore()
 
 const selectedAccount = ref<Account | null>(null)
+const noteViewTab = ref<'list' | 'tree'>('list')
 
 // Filter notes by selected account, or show all if none selected
 const filteredNotes = computed(() => {
@@ -71,3 +89,38 @@ function handleSelectNote(note: Note) {
   noteStore.setSelectedNote(note)
 }
 </script>
+
+<style scoped>
+.note-view-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border: 1px solid #ddd;
+  border-bottom: none;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9em;
+  border-radius: 4px 4px 0 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn.active {
+  background: #fff;
+  color: #363636;
+  font-weight: 600;
+  border-color: #ddd;
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
+  padding-bottom: 9px;
+}
+
+.tab-btn:not(.active):hover {
+  background: #e8e8e8;
+}
+</style>

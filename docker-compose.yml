@@ -110,6 +110,70 @@ services:
     profiles:
       - test
 
+  # ============================================
+  # Backend API Server (Express)
+  # ============================================
+  vapp-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zkdex-vapp-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./vapp:/app/vapp
+      - /app/vapp/node_modules
+      - ./scripts:/app/scripts  # Mount scripts for live code changes
+    working_dir: /app/vapp
+    command: node app.cjs
+    depends_on:
+      ganache:
+        condition: service_healthy
+    networks:
+      - zkdex-network
+
+  # ============================================
+  # Frontend (Vue.js + Vite)
+  # ============================================
+
+  # Development mode with hot reload
+  vapp-dev:
+    build:
+      context: .
+      dockerfile: vapp/Dockerfile
+      target: development
+    container_name: zkdex-vapp-dev
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./vapp:/app
+      - /app/node_modules
+    environment:
+      - VITE_GANACHE_URL=http://ganache:8545
+      - VITE_API_URL=http://localhost:3000  # Browser accesses via host port
+    depends_on:
+      - ganache
+      - vapp-api
+    networks:
+      - zkdex-network
+    profiles:
+      - dev
+
+  # Production mode with nginx
+  vapp:
+    build:
+      context: .
+      dockerfile: vapp/Dockerfile
+      target: production
+    container_name: zkdex-vapp
+    ports:
+      - "8080:80"
+    depends_on:
+      - ganache
+      - vapp-api
+    networks:
+      - zkdex-network
+
 networks:
   zkdex-network:
     driver: bridge

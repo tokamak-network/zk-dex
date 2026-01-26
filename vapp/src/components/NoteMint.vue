@@ -1,7 +1,7 @@
 <template>
   <div class="box">
     <div>
-      <p style="margin-left: 10px; margin-bottom: 40px;">Create {{ token }} Note</p>
+      <p style="margin-left: 10px; margin-bottom: 40px;">Issue {{ token }} Note</p>
     </div>
     <div class="field has-addons">
       <p class="control">
@@ -30,17 +30,20 @@
         style="margin-top: 20px;"
         :class="{ 'is-static': !canCreate, 'is-loading': loading }"
         @click="createNewNote"
-      >Create</a>
+      >Issue</a>
     </div>
     <!-- Passphrase modal -->
     <o-modal v-model:active="showPassphraseModal">
       <div class="box" style="width: 400px;">
         <p class="title is-5">Enter Passphrase</p>
-        <p class="subtitle is-6">Unlock account to create note</p>
+        <p class="subtitle is-6">Unlock account to issue note</p>
         <div class="field">
           <p class="control">
             <input class="input" type="password" v-model="passphrase" placeholder="Passphrase" @keyup.enter="confirmPassphrase">
           </p>
+        </div>
+        <div v-if="proofProgress" class="field">
+          <p class="help">{{ proofProgress }}</p>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button class="button" @click="showPassphraseModal = false">Cancel</button>
@@ -54,15 +57,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Contract } from 'ethers'
 import { useWeb3Store } from '@/stores/web3'
 import { useContractStore } from '@/stores/contract'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore } from '@/stores/note'
 import { useOrderStore } from '@/stores/order'
 import { useFormatters } from '@/composables/useFormatters'
-import * as api from '@/api'
-import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareMintInputs, computeCircuitHash, generateSalt } from '@/lib/circuitInputs'
+import { deriveAddress } from '@/lib/accountCrypto'
 
 const fmt = useFormatters()
 
@@ -85,6 +90,7 @@ const passphrase = ref('')
 const amount = ref('')
 const showPassphraseModal = ref(false)
 const unlockedSecretKey = ref('')
+const proofProgress = ref('')
 
 const ETH_TOKEN_TYPE = '0x0'
 const DAI_TOKEN_TYPE = '0x1'
@@ -107,64 +113,87 @@ async function confirmPassphrase() {
   if (!selectedAccount.value || !passphrase.value) return
 
   unlocking.value = true
+  proofProgress.value = ''
   try {
-    const res = await api.unlockAccount(passphrase.value, selectedAccount.value.keystore)
-    unlockedSecretKey.value = res.data.secretKey
+    // Unlock account in browser (secret key never leaves browser!)
+    const result = await accountStore.unlockAccountLocal(
+      selectedAccount.value.address,
+      passphrase.value
+    )
+    unlockedSecretKey.value = result.secretKey
     showPassphraseModal.value = false
     // Now proceed with note creation
     await doCreateNote()
   } catch (err) {
+    console.error('Failed to unlock account:', err)
     alert('Failed to unlock account: Wrong passphrase?')
   } finally {
     unlocking.value = false
     passphrase.value = ''
+    proofProgress.value = ''
   }
 }
 
-interface MintProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  note: {
-    ownerAddress: string
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
-  }
+interface MintNoteData {
+  ownerAddress: string
+  value: string
+  token: string
+  viewingKey: string
+  salt: string
+  noteHash: string
 }
 
-async function generateProof(value: string, tokenType: string): Promise<MintProofResponse> {
+/**
+ * Generate mint proof entirely in browser
+ */
+async function generateMintProof(
+  value: string,
+  tokenType: string
+): Promise<{ proof: FormattedProof; note: MintNoteData }> {
   if (!unlockedSecretKey.value || !selectedAccount.value?.publicKey) {
     throw new Error('Account not unlocked or missing public key')
   }
 
-  const params = {
-    circuit: 'mintNBurnNote',
-    inputs: {
-      params: [
-        { value, token: tokenType, viewingKey: '0x0' },
-        unlockedSecretKey.value,
-        selectedAccount.value.publicKey
-      ]
-    }
-  }
-  const res = await api.generateProof(params)
-  return res.data.proof as MintProofResponse
-}
+  const sk = unlockedSecretKey.value
 
-function encryptNote(noteData: MintProofResponse['note']): string {
-  // Encode note data using RLP for on-chain storage
-  // This allows note recovery by scanning blockchain events
-  return encodeNoteData({
-    ownerAddress: noteData.ownerAddress,
-    value: noteData.value,
-    token: noteData.token,
-    viewingKey: noteData.viewingKey,
-    salt: noteData.salt
-  })
+  // Derive public key and address from secret key
+  const { derivePublicKey } = await import('@/lib/accountCrypto')
+  const pk = await derivePublicKey(sk)
+  const ownerAddress = await deriveAddress(pk)
+  const viewingKey = ownerAddress
+  const salt = generateSalt()
+
+  // Create note data
+  const note: MintNoteData = {
+    ownerAddress,
+    value,
+    token: tokenType,
+    viewingKey,
+    salt,
+    noteHash: '' // Will be computed
+  }
+
+  // Compute note hash using Poseidon (single field element)
+  const noteHash = await computeCircuitHash(note)
+  note.noteHash = noteHash
+
+  // Prepare circuit inputs (async - uses Poseidon)
+  const inputs = await prepareMintInputs(note, sk)
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'mint_burn_note',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return {
+    proof: result.proof,
+    note
+  }
 }
 
 async function createNewNote() {
@@ -180,12 +209,10 @@ async function doCreateNote() {
   try {
     const tokenType = props.token === 'DAI' ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
 
-    console.log('Generating proof with account public key:', selectedAccount.value?.publicKey)
-    const proof = await generateProof(amount.value, tokenType)
-    console.log('Proof generated:', proof)
+    const { proof, note } = await generateMintProof(amount.value, tokenType)
 
-    // Extract only the proof components needed by the contract
-    const { a, b, c, input, note: generatedNote } = proof
+    // Extract proof components
+    const { a, b, c, input } = proof
 
     // Convert proof values to BigInt for ethers v6
     const aBigInt = a.map(v => BigInt(v))
@@ -193,35 +220,40 @@ async function doCreateNote() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    const encryptedNote = encryptNote(generatedNote)
-    console.log('Calling contract mint with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt, encryptedNote })
+    // Encode note data for on-chain storage
+    const encryptedNote = encodeNoteData({
+      ownerAddress: note.ownerAddress,
+      value: note.value,
+      token: note.token,
+      viewingKey: note.viewingKey,
+      salt: note.salt
+    })
+    // Use inline ABI to avoid stale build artifact cache issues
+    // Poseidon version: uint256[4] input = [output, noteHash, value, tokenType]
+    const mintAbi = ['function mint(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[4] input, bytes encryptedNote) external payable']
+    const mintContract = new Contract(contractStore.dexAddress, mintAbi, web3Store.signer!)
 
     let tx
     if (props.token === 'DAI') {
-      console.log('Approving DAI...')
       const approveTx = await contractStore.daiContract!.approve(
         contractStore.dexAddress,
         BigInt(amount.value)
       )
       await approveTx.wait()
-      console.log('DAI approved, calling mint...')
 
-      tx = await contractStore.dexContract!.mint(
+      tx = await mintContract.mint(
         aBigInt, bBigInt, cBigInt, inputBigInt,
         encryptedNote
       )
     } else {
-      console.log('Calling ETH mint with value:', amount.value)
-      tx = await contractStore.dexContract!.mint(
+      tx = await mintContract.mint(
         aBigInt, bBigInt, cBigInt, inputBigInt,
         encryptedNote,
         { value: BigInt(amount.value) }
       )
     }
 
-    console.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       // Note data is now stored on-chain via RLP encoding
@@ -231,17 +263,19 @@ async function doCreateNote() {
       // Update DAI amount (non-blocking)
       updateDaiAmount().catch(err => console.warn('Failed to update DAI:', err))
 
-      alert('Note created successfully!')
+      alert('Note issued successfully!')
     } else {
       alert('Transaction failed')
     }
 
     router.push({ path: '/' })
   } catch (err) {
-    console.error('Failed to create note:', err)
-    alert('Failed to create note: ' + (err as Error).message)
+    console.error('Failed to issue note:', err)
+    alert('Failed to issue note: ' + (err as Error).message)
   } finally {
     loading.value = false
+    // Clear secret key from memory after use
+    unlockedSecretKey.value = ''
   }
 }
 

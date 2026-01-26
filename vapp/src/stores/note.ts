@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAccountStore } from './account'
 import { useContractStore } from './contract'
-import { decodeNoteData, isNoteOwner, deriveAddressFromPublicKey } from '@/utils/noteEncryption'
-import { sha256 } from 'ethers'
+import { decodeNoteData, isNoteOwner } from '@/utils/noteEncryption'
+import { computeCircuitHash, type NoteData } from '@/lib/circuitInputs'
 import * as api from '@/api'
 
 export interface Note {
@@ -17,6 +17,10 @@ export interface Note {
   salt?: string
   viewingKey?: string
   secretKey?: string      // For proving ownership in transfers
+  createdAt?: number      // Unix timestamp from block when note was created
+  createdInTx?: string    // Transaction hash that created (VALID) this note
+  createdBy?: string      // Ethereum address that sent the createdInTx
+  spentInTx?: string      // Transaction hash that spent this note
 }
 
 export interface TransferNote {
@@ -96,32 +100,18 @@ export const useNoteStore = defineStore('note', () => {
   }
 
   /**
-   * Compute note hash from note data (matching circuit's SHA256 hash)
-   * Hash format: SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+   * Compute note hash using Poseidon
+   * hash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
    */
-  function computeNoteHash(ownerAddress: string, value: string, token: string, viewingKey: string, salt: string): string {
-    // Convert to BigInt and pad to correct sizes
-    const addrBig = BigInt(ownerAddress)
-    const valueBig = BigInt(value)
-    const tokenBig = BigInt(token)
-    const vkBig = BigInt(viewingKey || '0')
-    const saltBig = BigInt(salt)
-
-    // Split viewingKey into two 128-bit parts
-    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1)
-    const vk1 = vkBig & mask128          // low 128 bits
-    const vk0 = vkBig >> BigInt(128)     // high 128 bits
-
-    // Build message: ownerAddress(20B) + value(32B) + token(32B) + vk0(16B) + vk1(16B) + salt(32B) = 148 bytes
-    const addrHex = addrBig.toString(16).padStart(40, '0')   // 160 bits = 40 hex
-    const valueHex = valueBig.toString(16).padStart(64, '0') // 256 bits = 64 hex
-    const tokenHex = tokenBig.toString(16).padStart(64, '0') // 256 bits = 64 hex
-    const vk0Hex = vk0.toString(16).padStart(32, '0')        // 128 bits = 32 hex
-    const vk1Hex = vk1.toString(16).padStart(32, '0')        // 128 bits = 32 hex
-    const saltHex = saltBig.toString(16).padStart(64, '0')   // 256 bits = 64 hex
-
-    const data = '0x' + addrHex + valueHex + tokenHex + vk0Hex + vk1Hex + saltHex
-    return sha256(data)
+  async function computeNoteHashPoseidon(ownerAddress: string, value: string, token: string, viewingKey: string, salt: string): Promise<string> {
+    const noteData: NoteData = {
+      ownerAddress,
+      value,
+      token,
+      viewingKey: viewingKey || '0x0',
+      salt
+    }
+    return await computeCircuitHash(noteData)
   }
 
   /**
@@ -157,6 +147,9 @@ export const useNoteStore = defineStore('note', () => {
 
       // Track note states and data
       const noteStates = new Map<string, number>()
+      const noteCreatedBlock = new Map<string, number>() // block when note first became Valid
+      const noteCreatedTx = new Map<string, string>()    // tx that created (VALID) the note
+      const noteSpentTx = new Map<string, string>()      // tx that spent the note
       const noteDataMap = new Map<string, Note>()
 
       for (const event of events) {
@@ -167,8 +160,44 @@ export const useNoteStore = defineStore('note', () => {
         const noteHash = eventLog.args[0] as string
         const state = Number(eventLog.args[1])
 
+        // Capture block number and tx when note first becomes Valid (created)
+        if (state === 1 && !noteCreatedBlock.has(noteHash)) {
+          noteCreatedBlock.set(noteHash, eventLog.blockNumber)
+          noteCreatedTx.set(noteHash, eventLog.transactionHash)
+        }
+
+        // Capture tx when note becomes Spent
+        if (state === 3) {
+          noteSpentTx.set(noteHash, eventLog.transactionHash)
+        }
+
         // Update state (later events override earlier ones)
         noteStates.set(noteHash, state)
+      }
+
+      // Resolve block timestamps
+      const blockTimestamps = new Map<number, number>()
+      const uniqueBlocks = [...new Set(noteCreatedBlock.values())]
+      const web3Store = (await import('./web3')).useWeb3Store()
+      if (web3Store.provider) {
+        await Promise.all(uniqueBlocks.map(async (blockNum) => {
+          try {
+            const block = await web3Store.provider!.getBlock(blockNum)
+            if (block) blockTimestamps.set(blockNum, block.timestamp)
+          } catch { /* skip */ }
+        }))
+      }
+
+      // Resolve tx senders for createdInTx
+      const txSenders = new Map<string, string>()
+      const uniqueCreateTxs = [...new Set(noteCreatedTx.values())]
+      if (web3Store.provider) {
+        await Promise.all(uniqueCreateTxs.map(async (txHash) => {
+          try {
+            const tx = await web3Store.provider!.getTransaction(txHash)
+            if (tx) txSenders.set(txHash, tx.from)
+          } catch { /* skip */ }
+        }))
       }
 
       // For each note, try to get encrypted data and decode
@@ -182,15 +211,16 @@ export const useNoteStore = defineStore('note', () => {
           }
 
           // Decode the note data
-          const decoded = decodeNoteData(encryptedData)
+          const decoded = await decodeNoteData(encryptedData)
           if (!decoded) {
             continue
           }
 
           // Check if this note belongs to any of our accounts
           for (const account of accounts) {
-            if (account.publicKey && isNoteOwner(decoded, account.publicKey)) {
+            if (account.publicKey && await isNoteOwner(decoded, account.publicKey)) {
               // Create note with address-based ownership
+              const createdBlock = noteCreatedBlock.get(noteHash)
               const note: Note = {
                 hash: noteHash,
                 owner: account.address,
@@ -200,7 +230,11 @@ export const useNoteStore = defineStore('note', () => {
                 viewingKey: decoded.viewingKey,
                 salt: decoded.salt,
                 state: STATE_MAP[state] || '0x0',
-                isSmart: '0x0'
+                isSmart: '0x0',
+                createdAt: createdBlock ? blockTimestamps.get(createdBlock) : undefined,
+                createdInTx: noteCreatedTx.get(noteHash),
+                createdBy: noteCreatedTx.has(noteHash) ? txSenders.get(noteCreatedTx.get(noteHash)!) : undefined,
+                spentInTx: noteSpentTx.get(noteHash)
               }
 
               noteDataMap.set(noteHash, note)

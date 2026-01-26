@@ -43,11 +43,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAccountStore, type BabyJubJubPublicKey } from '@/stores/account'
+import { useAccountStore, type BabyJubJubPublicKey, type Keystore } from '@/stores/account'
 import AccountList from '@/components/AccountList.vue'
 import * as api from '@/api'
 
-interface Keystore {
+// Partial keystore interface for file loading (before validation)
+interface PartialKeystore {
   address?: string
   crypto?: unknown
   id?: string
@@ -56,7 +57,7 @@ interface Keystore {
 
 const accountStore = useAccountStore()
 
-const keystore = ref<Keystore | null>(null)
+const keystore = ref<PartialKeystore | null>(null)
 const keystoreLoaded = ref(false)
 const passphrase = ref('')
 const isImporting = ref(false)
@@ -98,7 +99,7 @@ async function importAccount() {
     const { publicKey, address } = res.data
 
     const account = {
-      keystore: keystore.value,
+      keystore: keystore.value as Keystore,
       address: address.startsWith('0x') ? address : `0x${address}`,
       publicKey: publicKey as BabyJubJubPublicKey
     }

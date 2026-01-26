@@ -1,6 +1,32 @@
 const LocalStorage = require('node-localstorage').LocalStorage;
 localStorage = new LocalStorage('./localstorage');
 
+/**
+ * Security Note: Server-side storage should NEVER contain:
+ * - keystore (encrypted private keys)
+ * - secretKey (decrypted private keys)
+ * - passphrase
+ *
+ * These sensitive items should only be stored in the browser's localStorage.
+ * This server storage is only for public metadata (address, publicKey).
+ */
+
+/**
+ * Strip sensitive data from account object
+ * @param {Object} account - Account object that may contain sensitive data
+ * @returns {Object} - Account object without sensitive data
+ */
+function stripSensitiveData(account) {
+  if (!account || typeof account !== 'object') {
+    return account;
+  }
+  const { keystore, secretKey, passphrase, ...safeAccount } = account;
+  if (keystore || secretKey || passphrase) {
+    console.warn('WARNING: Stripping sensitive data (keystore/secretKey/passphrase) from account before storage');
+  }
+  return safeAccount;
+}
+
 function getViewingKey (key) {
   try {
     return localStorage.getItem(`${key}viewingkey`);
@@ -87,7 +113,9 @@ function addAccount (key, account) {
   } else {
     accounts = JSON.parse(accounts);
   }
-  accounts.push(account);
+  // Security: Strip any sensitive data before storing
+  const safeAccount = stripSensitiveData(account);
+  accounts.push(safeAccount);
   _setAccounts(key, JSON.stringify(accounts));
   return accounts;
 }
@@ -99,7 +127,10 @@ function addNote (account, note) {
   } else {
     notes = JSON.parse(notes);
   }
-  notes.push(note);
+  // Security: Strip secretKey from note before storing
+  // Note: secretKey should be derived from the account's keystore in the browser
+  const safeNote = stripSensitiveData(note);
+  notes.push(safeNote);
   _setNotes(account, JSON.stringify(notes));
   return notes;
 }
@@ -297,4 +328,5 @@ module.exports = {
   updateOrderState,
   updateOrderTaker,
   deleteAccount,
+  stripSensitiveData,
 };

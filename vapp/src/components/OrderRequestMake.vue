@@ -24,6 +24,9 @@
         <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
       </p>
     </div>
+    <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+      <p class="help">{{ proofProgress }}</p>
+    </div>
     <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="makeNewOrder" :class="{ 'is-static': noteHash === '' || price === '', 'is-loading': loading }">Buy ETH</button>
     </div>
@@ -43,6 +46,8 @@ import { useOrderStore } from '@/stores/order'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
 import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareMakeOrderInputs, type NoteData } from '@/lib/circuitInputs'
 
 defineProps<{
   radio: string
@@ -60,6 +65,7 @@ const selectedNote = ref<Note | null>(null)
 const noteHash = ref('')
 const noteValue = ref('')
 const price = ref('')
+const proofProgress = ref('')
 
 const ETH_TOKEN_TYPE = '0x0'
 const DAI_TOKEN_TYPE = '0x1'
@@ -74,13 +80,40 @@ function selectNote(note: Note) {
   selectedNote.value = note
   noteHash.value = note.hash
   noteValue.value = note.value
+  proofProgress.value = ''
 }
 
-interface MakeOrderProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
+/**
+ * Generate makeOrder proof entirely in browser
+ */
+async function generateMakeOrderProof(note: Note, secretKey: string): Promise<FormattedProof> {
+  if (!note.ownerAddress) {
+    throw new Error('Note does not have ownerAddress. Cannot make order.')
+  }
+
+  // Create note data for circuit input
+  const noteData: NoteData = {
+    ownerAddress: note.ownerAddress,
+    value: note.value,
+    token: note.token,
+    viewingKey: note.viewingKey || '0x0',
+    salt: note.salt || '0x0'
+  }
+
+  // Prepare circuit inputs
+  const inputs = await prepareMakeOrderInputs(noteData, secretKey)
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'make_order',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return result.proof
 }
 
 async function makeNewOrder() {
@@ -99,35 +132,22 @@ async function makeNewOrder() {
   loading.value = true
 
   try {
-    // Generate proof with note data and secretKey
-    const params = {
-      circuit: 'makeOrder',
-      inputs: {
-        params: [
-          {
-            ownerAddress: selectedNote.value.ownerAddress,
-            value: selectedNote.value.value,
-            token: selectedNote.value.token,
-            viewingKey: selectedNote.value.viewingKey || '0x0',
-            salt: selectedNote.value.salt
-          },
-          selectedNote.value.secretKey
-        ]
-      }
-    }
+    // Generate proof entirely in browser (secretKey never leaves browser!)
     console.log('Generating makeOrder proof...')
-    const proofRes = await api.generateProof(params)
-    const proof = proofRes.data.proof as MakeOrderProofResponse
+    const proof = await generateMakeOrderProof(selectedNote.value, selectedNote.value.secretKey)
     console.log('MakeOrder proof generated:', proof)
 
     // Determine target token
     const targetToken = selectedNote.value.token === ETH_TOKEN_TYPE ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
 
+    // Extract proof components
+    const { a, b, c, input } = proof
+
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // Execute make order
     console.log('Calling contract makeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
@@ -163,6 +183,7 @@ async function makeNewOrder() {
     alert('Failed to make order: ' + (err as Error).message)
   } finally {
     loading.value = false
+    proofProgress.value = ''
   }
 }
 
@@ -171,6 +192,7 @@ function clear() {
   noteValue.value = ''
   price.value = ''
   selectedNote.value = null
+  proofProgress.value = ''
 }
 
 defineExpose({ selectNote })

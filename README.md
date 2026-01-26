@@ -55,16 +55,64 @@ npx truffle test test/ZkDex.production.test.js
 #### Docker Testing
 
 ```bash
-# Build and run tests
-docker compose build zkdex
-docker compose up zkdex
+# Build and run all tests
+docker compose run zkdex
 
-# Development shell
-docker compose --profile dev up zkdex-dev
+# Run frontend integration tests only
+docker compose --profile test run test-frontend
+
+# Run production tests only
+docker compose --profile test run test-production
 
 # Cleanup
 docker compose down -v
 ```
+
+## Docker Environment
+
+### Available Services
+
+| Service | Description | Port | Command |
+|---------|-------------|------|---------|
+| `ganache` | Local Ethereum blockchain | 8545 | `docker compose up ganache -d` |
+| `vapp-api` | Backend API server (Express) | 3000 | `docker compose up vapp-api -d` |
+| `zkdex` | Main test runner | - | `docker compose run zkdex` |
+| `vapp` | Frontend (Production/nginx) | 8080 | `docker compose up vapp -d` |
+| `vapp-dev` | Frontend (Development/hot reload) | 8081 | `docker compose --profile dev up vapp-dev -d` |
+| `zkdex-dev` | Development shell | - | `docker compose --profile dev run zkdex-dev` |
+| `test-frontend` | Frontend integration tests | - | `docker compose --profile test run test-frontend` |
+| `test-production` | Production tests | - | `docker compose --profile test run test-production` |
+
+### Quick Start with Docker
+
+```bash
+# Start full stack (ganache + backend API + frontend production)
+docker compose up ganache vapp-api vapp -d
+
+# Access frontend at http://localhost:8080
+# Backend API at http://localhost:3000
+
+# Start full stack (development mode with hot reload)
+docker compose --profile dev up ganache vapp-api vapp-dev -d
+
+# Access frontend at http://localhost:8081
+
+# Run all tests in Docker
+docker compose run zkdex
+
+# Interactive development shell
+docker compose --profile dev run zkdex-dev
+```
+
+### Docker Files
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | Main ZK-DEX build (circuits, contracts, tests) |
+| `vapp/Dockerfile` | Frontend multi-stage build (dev/prod) |
+| `docker-compose.yml` | Service orchestration |
+| `.dockerignore` | Excludes large files (ptau, intermediate zkeys) |
+| `vapp/.dockerignore` | Frontend build exclusions |
 
 ## Circuits
 

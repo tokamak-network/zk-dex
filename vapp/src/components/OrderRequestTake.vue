@@ -32,6 +32,9 @@
         <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
       </p>
     </div>
+    <div v-if="proofProgress" class="field" style="margin-top: 10px;">
+      <p class="help">{{ proofProgress }}</p>
+    </div>
     <div v-if="radio === 'buy'" style="margin-top: 10px; display: flex; justify-content: flex-end">
       <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Buy DAI</button>
     </div>
@@ -73,6 +76,8 @@ import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
 import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
+import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
+import { prepareTakeOrderInputs, computeCircuitHash, generateSalt, getSmartNoteOwnerAddress, hexToBigInt, type NoteData } from '@/lib/circuitInputs'
 
 interface TakeableOrder extends Order {
   orderId: string
@@ -88,21 +93,6 @@ interface TakeableOrder extends Order {
     token: string
     viewingKey: string
     salt: string
-  }
-}
-
-interface TakeOrderProofResponse {
-  a: string[]
-  b: string[][]
-  c: string[]
-  input: string[]
-  stakeNote: {
-    ownerAddress: string  // 160-bit truncated hash of maker's note
-    value: string
-    token: string
-    viewingKey: string
-    salt: string
-    hash: string
   }
 }
 
@@ -126,6 +116,7 @@ const availableOrders = ref<TakeableOrder[]>([])
 const selectedNote = ref<Note | null>(null)
 const noteHash = ref('')
 const noteValue = ref('')
+const proofProgress = ref('')
 
 function closeModal() {
   orderModalActive.value = false
@@ -135,6 +126,7 @@ function selectNote(note: Note) {
   selectedNote.value = note
   noteHash.value = note.hash
   noteValue.value = note.value
+  proofProgress.value = ''
 }
 
 function selectOrderFromModal(order: TakeableOrder) {
@@ -147,6 +139,62 @@ function selectOrderFromModal(order: TakeableOrder) {
 function selectOrders(orders: TakeableOrder[]) {
   orderModalActive.value = true
   availableOrders.value = orders
+}
+
+/**
+ * Generate takeOrder proof entirely in browser
+ */
+async function generateTakeOrderProof(
+  makerNoteData: NoteData,
+  takerNote: Note,
+  targetToken: string,
+  secretKey: string
+): Promise<{ proof: FormattedProof; stakeNote: NoteData & { noteHash: string } }> {
+  if (!takerNote.ownerAddress) {
+    throw new Error('Taker note does not have ownerAddress')
+  }
+
+  // Create taker note data
+  const takerNoteData: NoteData = {
+    ownerAddress: takerNote.ownerAddress,
+    value: takerNote.value,
+    token: takerNote.token,
+    viewingKey: takerNote.viewingKey || '0x0',
+    salt: takerNote.salt || '0x0'
+  }
+
+  // Compute maker note hash to derive stake note owner address
+  const makerNoteHashStr = await computeCircuitHash(makerNoteData)
+  const stakeOwnerAddress = getSmartNoteOwnerAddress(makerNoteHashStr)
+
+  // Create stake note (smart note with owner = truncated hash of maker's note)
+  const stakeNote: NoteData & { noteHash: string } = {
+    ownerAddress: stakeOwnerAddress,
+    value: takerNote.value,
+    token: targetToken,
+    viewingKey: takerNote.viewingKey || '0x0',
+    salt: generateSalt(),
+    noteHash: ''
+  }
+  stakeNote.noteHash = await computeCircuitHash(stakeNote)
+
+  // Prepare circuit inputs
+  const inputs = await prepareTakeOrderInputs(takerNoteData, stakeNote, secretKey)
+
+  // Generate proof in browser Web Worker
+  proofProgress.value = 'Generating proof...'
+  const result = await proofGenerator.generateProof(
+    'take_order',
+    inputs,
+    (stage, progress, message) => {
+      proofProgress.value = message || `${stage}: ${Math.round(progress * 100)}%`
+    }
+  )
+
+  return {
+    proof: result.proof,
+    stakeNote
+  }
 }
 
 async function takeOrder() {
@@ -170,46 +218,33 @@ async function takeOrder() {
   loading.value = true
 
   try {
-    // Generate proof with proper parameters
-    const params = {
-      circuit: 'takeOrder',
-      inputs: {
-        params: [
-          // Parent note (maker's note)
-          selectedOrder.value.makerNoteData,
-          // Taker's note
-          {
-            ownerAddress: selectedNote.value.ownerAddress,
-            value: selectedNote.value.value,
-            token: selectedNote.value.token,
-            viewingKey: selectedNote.value.viewingKey || '0x0',
-            salt: selectedNote.value.salt
-          },
-          // Stake note params
-          { value: selectedNote.value.value, token: selectedOrder.value.targetToken },
-          // Secret key
-          selectedNote.value.secretKey
-        ]
-      }
-    }
+    // Generate proof entirely in browser (secretKey never leaves browser!)
     console.log('Generating takeOrder proof...')
-    const proofRes = await api.generateProof(params)
-    const proof = proofRes.data.proof as TakeOrderProofResponse
+    const { proof, stakeNote } = await generateTakeOrderProof(
+      selectedOrder.value.makerNoteData,
+      selectedNote.value,
+      selectedOrder.value.targetToken,
+      selectedNote.value.secretKey
+    )
     console.log('TakeOrder proof generated:', proof)
+    console.log('Stake note:', stakeNote)
+
+    // Extract proof components
+    const { a, b, c, input } = proof
 
     // Convert proof values to BigInt for ethers v6
-    const aBigInt = proof.a.map(v => BigInt(v))
-    const bBigInt = proof.b.map(row => row.map(v => BigInt(v)))
-    const cBigInt = proof.c.map(v => BigInt(v))
-    const inputBigInt = proof.input.map(v => BigInt(v))
+    const aBigInt = a.map(v => BigInt(v))
+    const bBigInt = b.map(row => row.map(v => BigInt(v)))
+    const cBigInt = c.map(v => BigInt(v))
+    const inputBigInt = input.map(v => BigInt(v))
 
     // Encode stake note using RLP for on-chain storage
     const encryptedStakeNote = encodeNoteData({
-      ownerAddress: proof.stakeNote.ownerAddress,  // 160-bit truncated maker hash
-      value: proof.stakeNote.value,
-      token: proof.stakeNote.token,
-      viewingKey: proof.stakeNote.viewingKey,
-      salt: proof.stakeNote.salt
+      ownerAddress: stakeNote.ownerAddress,  // 160-bit truncated maker hash
+      value: stakeNote.value.toString(),
+      token: stakeNote.token.toString(),
+      viewingKey: stakeNote.viewingKey,
+      salt: stakeNote.salt.toString()
     })
 
     // Execute take order
@@ -234,21 +269,7 @@ async function takeOrder() {
       await api.updateOrderState(selectedOrder.value.orderId, '0x1')
       await api.updateOrderTaker(selectedOrder.value.orderId, noteOwner)
 
-      // Save stake note
-      const stakeNoteObj: Note = {
-        owner: noteOwner,
-        ownerAddress: proof.stakeNote.ownerAddress,  // 160-bit truncated maker hash
-        value: proof.stakeNote.value,
-        token: proof.stakeNote.token,
-        viewingKey: proof.stakeNote.viewingKey,
-        salt: proof.stakeNote.salt,
-        isSmart: '0x1',
-        hash: proof.stakeNote.hash,
-        state: '0x1'
-      }
-      await api.addNote(noteOwner, stakeNoteObj)
-
-      // Reload data
+      // Reload data from blockchain
       await noteStore.loadNotes()
       await orderStore.loadOrders()
       await orderStore.loadOrderHistory()
@@ -263,6 +284,7 @@ async function takeOrder() {
     alert('Failed to take order: ' + (err as Error).message)
   } finally {
     loading.value = false
+    proofProgress.value = ''
   }
 }
 
@@ -273,6 +295,7 @@ function clear() {
   noteValue.value = ''
   selectedNote.value = null
   selectedOrder.value = null
+  proofProgress.value = ''
 }
 
 defineExpose({ selectNote, selectOrders })

@@ -3,7 +3,7 @@ import { ref, shallowRef, computed } from 'vue'
 import { Contract } from 'ethers'
 import { useWeb3Store } from './web3'
 
-// Import contract ABIs (these will need to be generated from compiled contracts)
+// Import contract ABIs (recompiled for Poseidon migration - uint256[4] inputs)
 import ZkDexABI from '../../../build/contracts/ZkDex.json'
 import MockDaiABI from '../../../build/contracts/MockDai.json'
 

@@ -532,34 +532,73 @@ node test/boundary-edge-cases.test.js
 
 ### 서비스
 
-| 서비스 | 설명 | 프로필 |
-|--------|------|--------|
-| `ganache` | 로컬 이더리움 블록체인 | 기본 |
-| `zkdex` | 테스트 실행 | 기본 |
-| `zkdex-dev` | 개발용 쉘 | dev |
-| `test-production` | 프로덕션 테스트 | test |
+| 서비스 | 설명 | 포트 | 프로필 |
+|--------|------|------|--------|
+| `ganache` | 로컬 이더리움 블록체인 | 8545 | 기본 |
+| `vapp-api` | 백엔드 API 서버 (Express) | 3000 | 기본 |
+| `zkdex` | 테스트 실행 | - | 기본 |
+| `vapp` | 프론트엔드 (Production/nginx) | 8080 | 기본 |
+| `vapp-dev` | 프론트엔드 (Development/hot reload) | 8081 | dev |
+| `zkdex-dev` | 개발용 쉘 | - | dev |
+| `test-frontend` | 프론트엔드 통합 테스트 | - | test |
+| `test-production` | 프로덕션 테스트 | - | test |
+
+### 백엔드 API 서버 (vapp-api)
+
+Express 기반 백엔드 서버로 다음 기능을 제공합니다:
+
+- **계정 관리**: 계정 생성, 잠금 해제, 가져오기/내보내기
+- **증명 생성**: ZK-SNARK 증명 생성 (mint, transfer, order 등)
+- **노트 관리**: 노트 저장 및 조회
+- **주문 관리**: 주문 생성, 조회, 상태 업데이트
+
+**API 엔드포인트:**
+| 경로 | 설명 |
+|------|------|
+| `POST /accounts` | 새 계정 생성 |
+| `POST /accounts/unlock` | 계정 잠금 해제 (비밀키 반환) |
+| `POST /circuits` | ZK 증명 생성 |
+| `GET/POST /notes` | 노트 조회/저장 |
+| `GET/POST /orders` | 주문 조회/생성 |
 
 ### 사용법
 
 ```bash
-# 빌드 (로컬 회로 아티팩트 있으면 사용)
-docker compose build zkdex
+# 모든 테스트 실행
+docker compose run zkdex
 
-# 테스트 실행
-docker compose up zkdex
+# 전체 스택 시작 (ganache + API + 프론트엔드 프로덕션)
+docker compose up ganache vapp-api vapp -d
 
-# 개발 모드
-docker compose --profile dev up zkdex-dev
+# 프론트엔드: http://localhost:8080
+# 백엔드 API: http://localhost:3000
+
+# 전체 스택 시작 (개발 모드/hot reload)
+docker compose --profile dev up ganache vapp-api vapp-dev -d
+
+# 프론트엔드: http://localhost:8081
+
+# 개발용 쉘
+docker compose --profile dev run zkdex-dev
 
 # 정리
 docker compose down -v
 ```
 
+### Docker 파일
+
+| 파일 | 설명 |
+|------|------|
+| `Dockerfile` | 메인 ZK-DEX 빌드 (회로, 컨트랙트, 테스트) |
+| `vapp/Dockerfile` | 프론트엔드 멀티스테이지 빌드 (dev/prod) |
+| `docker-compose.yml` | 서비스 오케스트레이션 |
+| `.dockerignore` | 대용량 파일 제외 (ptau, 중간 zkey) |
+
 ### Dockerfile 특징
 
 - **조건부 빌드:** 사전 빌드된 `.zkey` 파일이 있으면 사용
 - **폴백:** 아티팩트가 없으면 Powers of Tau 다운로드 및 컴파일
-- **멀티 스테이지:** Rust에서 Circom 컴파일러 빌드
+- **멀티 스테이지:** Rust에서 Circom 컴파일러 빌드, nginx로 프론트엔드 서빙
 
 ---
 

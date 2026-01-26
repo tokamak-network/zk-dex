@@ -13,7 +13,9 @@
         <tr>
           <th>Index</th>
           <th>Address</th>
-          <th>Total Notes</th>
+          <th>Notes</th>
+          <th>ETH</th>
+          <th>DAI</th>
         </tr>
       </thead>
       <tbody>
@@ -25,7 +27,9 @@
         >
           <td>{{ index }}</td>
           <td>{{ fmt.formatZkAddress(account.address) }}</td>
-          <td>{{ noteStore.numberOfNotesInAccount(account.address) }}</td>
+          <td>{{ noteCount(account.address) }}</td>
+          <td>{{ accountBalance(account.address, '0') }}</td>
+          <td>{{ accountBalance(account.address, '1') }}</td>
         </tr>
       </tbody>
     </table>
@@ -52,10 +56,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAccountStore, type Account, type BabyJubJubPublicKey } from '@/stores/account'
+import { toBigInt } from 'ethers'
+import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore } from '@/stores/note'
 import { useFormatters } from '@/composables/useFormatters'
-import * as api from '@/api'
 
 defineProps<{
   accounts: Account[]
@@ -79,6 +83,20 @@ function selectAccount(account: Account) {
   emit('selectAccount', account)
 }
 
+function noteCount(address: string): string {
+  const accountNotes = noteStore.notes.filter(n => n.owner === address)
+  const valid = accountNotes.filter(n => n.state === '0x1').length
+  const validAndSpent = accountNotes.filter(n => n.state === '0x1' || n.state === '0x3').length
+  return `${valid}/${validAndSpent}`
+}
+
+function accountBalance(address: string, tokenType: string): string {
+  const sum = noteStore.notes
+    .filter(n => n.owner === address && n.state === '0x1' && fmt.hexToNumberString(n.token) === tokenType)
+    .reduce((acc, n) => acc + toBigInt(n.value), BigInt(0))
+  return sum.toString()
+}
+
 function openModal() {
   createAccountModalActive.value = true
 }
@@ -88,31 +106,8 @@ async function createNewAccount() {
 
   done.value = false
   try {
-    const res = await api.createAccount(passphrase.value)
-
-    // Check for error response
-    if (res.data.error) {
-      throw new Error(res.data.error)
-    }
-
-    if (!res.data.account) {
-      throw new Error('No account data returned from server')
-    }
-
-    // res.data.account contains { address, publicKey: {x, y}, keystore }
-    const { address, publicKey, keystore } = res.data.account as {
-      address: string
-      publicKey: BabyJubJubPublicKey
-      keystore: unknown
-    }
-    const account: Account = {
-      address: `0x${address}`,
-      publicKey,
-      keystore
-    }
-
-    await api.addAccount(accountStore.key!, account)
-    accountStore.addAccount(account)
+    // Create account entirely in the browser (secret key never leaves browser)
+    await accountStore.createAccountLocal(passphrase.value)
     createAccountModalActive.value = false
     passphrase.value = ''
   } catch (err) {
