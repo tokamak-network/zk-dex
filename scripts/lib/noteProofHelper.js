@@ -10,9 +10,11 @@
 
 const Web3Utils = require('web3-utils');
 const crypto = require('crypto');
+const RLP = require('rlp');
 const { Note, constants, init: initNote, getSmartNoteOwner } = require('./Note');
 const snarkjsUtils = require('./snarkjsUtils');
 const circomlibBabyJub = require('./circomlibBabyJub');
+const ecdhCrypto = require('./ecdhCrypto');
 
 /**
  * Initialize the crypto libraries (including Poseidon for Note.hash())
@@ -307,10 +309,47 @@ async function verifyProof(circuitName, proof, publicSignals) {
 }
 
 /**
+ * Encrypt a Note object for on-chain storage using ECDH
+ * RLP-encodes note fields then encrypts with recipient's BabyJubJub public key
+ *
+ * @param {Note} note - The note to encrypt
+ * @param {{x: bigint, y: bigint}} recipientPk - Recipient's BabyJubJub public key
+ * @returns {Promise<string>} ECDH-encrypted hex string
+ */
+async function encryptNoteForRecipient(note, recipientPk) {
+    // RLP-encode note fields: [ownerAddress, value, token, viewingKey, salt]
+    // Note class stores fields as 0x-prefixed padded hex strings
+    function hexToBuffer(hexStr) {
+        const clean = hexStr.replace('0x', '');
+        // Remove leading zeros but keep at least 2 chars
+        const trimmed = clean.replace(/^0+/, '') || '00';
+        const padded = trimmed.length % 2 === 0 ? trimmed : '0' + trimmed;
+        return Buffer.from(padded, 'hex');
+    }
+
+    const fields = [
+        hexToBuffer(note.ownerAddress),
+        hexToBuffer(note.value),
+        hexToBuffer(note.token),
+        hexToBuffer(note.viewingKey),
+        hexToBuffer(note.salt)
+    ];
+    const rlpEncoded = RLP.encode(fields);
+
+    // Normalize pk to {x: bigint, y: bigint} (accepts hex strings or bigints)
+    const pk = {
+        x: typeof recipientPk.x === 'bigint' ? recipientPk.x : BigInt(recipientPk.x),
+        y: typeof recipientPk.y === 'bigint' ? recipientPk.y : BigInt(recipientPk.y)
+    };
+
+    return await ecdhCrypto.encryptForRecipient(Buffer.from(rlpEncoded), pk);
+}
+
+/**
  * Format proof for contract call with note encryption
  * @param {Object} proof - The proof object
  * @param {Note} note - The note to encrypt
- * @param {string} encKey - Encryption key
+ * @param {string} encKey - Encryption key (legacy)
  * @returns {Object} Proof and encrypted note for contract
  */
 function formatProofWithEncryptedNote(proof, note, encKey) {
@@ -363,6 +402,7 @@ module.exports = {
     verifyProof,
 
     // Utilities
+    encryptNoteForRecipient,
     formatProofWithEncryptedNote,
     proofToArray,
 

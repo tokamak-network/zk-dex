@@ -82,8 +82,8 @@ contract('ZkDex Production Mode', function(accounts) {
             // 3. Generate real Groth16 proof
             const proof = await snarkjsUtils.getMintNBurnProof(note, sk);
 
-            // 4. Prepare encrypted note
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            // 4. Prepare encrypted note (ECDH encrypted for note owner)
+            const encryptedNote = await noteProofHelper.encryptNoteForRecipient(note, keypair.pk);
 
             // 5. Mint the note with actual proof verification
             const tx = await zkdex.mint(
@@ -130,8 +130,8 @@ contract('ZkDex Production Mode', function(accounts) {
                 input: proof.input
             };
 
-            // 5. Prepare encrypted note
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            // 5. Prepare encrypted note (ECDH encrypted for note owner)
+            const encryptedNote = await noteProofHelper.encryptNoteForRecipient(note, keypair.pk);
 
             // 6. Try to mint with invalid proof - should fail
             try {
@@ -173,8 +173,8 @@ contract('ZkDex Production Mode', function(accounts) {
             // 3. Generate real Groth16 proof
             const proof = await snarkjsUtils.getMintNBurnProof(note, sk);
 
-            // 4. Prepare encrypted note
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            // 4. Prepare encrypted note (ECDH encrypted for note owner)
+            const encryptedNote = await noteProofHelper.encryptNoteForRecipient(note, keypair.pk);
 
             // 5. Mint the note
             const tx = await zkdex.mint(
@@ -211,7 +211,7 @@ contract('ZkDex Production Mode', function(accounts) {
 
             // 3. First mint the note
             const mintProof = await snarkjsUtils.getMintNBurnProof(makerNote, sk);
-            const encryptedNote = '0x' + Buffer.from(makerNote.toString()).toString('hex');
+            const encryptedNote = await noteProofHelper.encryptNoteForRecipient(makerNote, keypair.pk);
 
             await zkdex.mint(
                 mintProof.a,
@@ -262,7 +262,7 @@ contract('ZkDex Production Mode', function(accounts) {
             );
 
             const mintProof = await snarkjsUtils.getMintNBurnProof(senderNote, senderSk);
-            const encryptedSenderNote = '0x' + Buffer.from(senderNote.toString()).toString('hex');
+            const encryptedSenderNote = await noteProofHelper.encryptNoteForRecipient(senderNote, senderKeypair.pk);
 
             await zkdex.mint(
                 mintProof.a,
@@ -308,8 +308,8 @@ contract('ZkDex Production Mode', function(accounts) {
                 null           // sk1 (not used)
             );
 
-            const encryptedReceiverNote = '0x' + Buffer.from(receiverNote.toString()).toString('hex');
-            const encryptedChangeNote = '0x' + Buffer.from(changeNote.toString()).toString('hex');
+            const encryptedReceiverNote = await noteProofHelper.encryptNoteForRecipient(receiverNote, receiverKeypair.pk);
+            const encryptedChangeNote = await noteProofHelper.encryptNoteForRecipient(changeNote, senderKeypair.pk);
 
             // 6. Execute spend
             const tx = await zkdex.spend(
@@ -354,7 +354,7 @@ contract('ZkDex Production Mode', function(accounts) {
             );
 
             const mintProof = await snarkjsUtils.getMintNBurnProof(note, sk);
-            const encryptedNote = '0x' + Buffer.from(note.toString()).toString('hex');
+            const encryptedNote = await noteProofHelper.encryptNoteForRecipient(note, keypair.pk);
 
             await zkdex.mint(
                 mintProof.a,
@@ -436,7 +436,7 @@ contract('ZkDex Production Mode', function(accounts) {
 
             // 2. Mint the maker note
             const mintProof = await snarkjsUtils.getMintNBurnProof(makerNote, makerSk);
-            const encryptedMakerNote = '0x' + Buffer.from(makerNote.toString()).toString('hex');
+            const encryptedMakerNote = await noteProofHelper.encryptNoteForRecipient(makerNote, makerKeypair.pk);
 
             await zkdex.mint(
                 mintProof.a,
@@ -492,7 +492,7 @@ contract('ZkDex Production Mode', function(accounts) {
             await dai.approve(zkdex.address, takerValue.toString());
 
             const mintProof = await snarkjsUtils.getMintNBurnProof(takerParentNote, takerSk);
-            const encryptedTakerNote = '0x' + Buffer.from(takerParentNote.toString()).toString('hex');
+            const encryptedTakerNote = await noteProofHelper.encryptNoteForRecipient(takerParentNote, takerKeypair.pk);
 
             await zkdex.mint(
                 mintProof.a,
@@ -523,7 +523,7 @@ contract('ZkDex Production Mode', function(accounts) {
                 takerSk
             );
 
-            const encryptedStakeNote = '0x' + Buffer.from(stakeNote.toString()).toString('hex');
+            const encryptedStakeNote = await noteProofHelper.encryptNoteForRecipient(stakeNote, takerKeypair.pk);
 
             // 5. Take the order
             const tx = await zkdex.takeOrder(
@@ -629,12 +629,16 @@ contract('ZkDex Production Mode', function(accounts) {
                 q0, r0, q1, r1
             );
 
-            // 5. RLP encode encrypted notes
+            // 5. ECDH encrypt notes, then RLP-wrap for settleOrder
             const RLP = require('rlp');
-            const encryptedReward = Buffer.from(rewardNote.toString());
-            const encryptedPayment = Buffer.from(paymentNote.toString());
-            const encryptedChange = Buffer.from(changeNote.toString());
-            const encDatas = '0x' + RLP.encode([encryptedReward, encryptedPayment, encryptedChange]).toString('hex');
+            const encryptedReward = await noteProofHelper.encryptNoteForRecipient(rewardNote, makerKeypair.pk);
+            const encryptedPayment = await noteProofHelper.encryptNoteForRecipient(paymentNote, makerKeypair.pk);
+            const encryptedChange = await noteProofHelper.encryptNoteForRecipient(changeNote, makerKeypair.pk);
+            const encDatas = '0x' + RLP.encode([
+                Buffer.from(encryptedReward.replace('0x', ''), 'hex'),
+                Buffer.from(encryptedPayment.replace('0x', ''), 'hex'),
+                Buffer.from(encryptedChange.replace('0x', ''), 'hex')
+            ]).toString('hex');
 
             // 6. Settle the order
             const tx = await zkdex.settleOrder(
@@ -703,7 +707,7 @@ contract('ZkDex Production Mode', function(accounts) {
                 takerSk          // sk for originNote ownership
             );
 
-            const encryptedConvertedNote = '0x' + Buffer.from(convertedNote.toString()).toString('hex');
+            const encryptedConvertedNote = await noteProofHelper.encryptNoteForRecipient(convertedNote, takerKeypair.pk);
 
             // Execute convertNote
             const tx = await zkdex.convertNote(

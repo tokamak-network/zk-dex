@@ -7,6 +7,8 @@
     "compile": "truffle compile",
     "migrate": "truffle migrate --reset",
     "test": "truffle test",
+    "test:frontend": "cd vapp && npx vitest run",
+    "test:all": "npm test && npm run test:frontend",
     "lint": "solium --dir ./contracts",
     "lint:fix": "solium -d contracts/ --fix",
     "docker": "npm run docker:start && npm run docker:init",
