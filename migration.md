@@ -119,16 +119,16 @@ circuits-circom/
 
 ### Circuit Complexity
 
-| Circuit | SHA256 (Phase 2) | Poseidon (Phase 3) | Reduction |
-|---------|-------------------|--------------------| --------- |
-| mint_burn_note | 154,900 | ~2,000 | ~98% |
-| make_order | 154,900 | ~2,000 | ~98% |
-| take_order | 246,040 | ~3,000 | ~99% |
-| convert_note | 337,437 | ~4,000 | ~99% |
-| transfer_note | 492,085 | ~5,000 | ~99% |
-| settle_order | 520,481 | ~6,000 | ~99% |
+| Circuit | SHA256 (Phase 2) | Poseidon (Phase 3) | Change |
+|---------|-------------------|--------------------| ------ |
+| mint_burn_note | 154,900 | ~131,000 | -15% |
+| make_order | 154,900 | ~131,000 | -15% |
+| take_order | 246,040 | ~258,000 | +5% |
+| convert_note | 337,437 | ~385,000 | +14% |
+| transfer_note | 492,085 | ~516,000 | +5% |
+| settle_order | 520,481 | ~641,000 | +23% |
 
-*Phase 3 (Poseidon migration): Poseidon hash (~300 constraints) replaced SHA256 (~30,000 constraints), reducing circuit size by ~97-99%. Exact Poseidon constraint counts are approximate; run `circom --r1cs` for precise values.*
+*Phase 3 (Poseidon migration): Poseidon hash (~300 constraints) replaced SHA256 (~30,000 constraints per hash). However, total circuit size is dominated by BabyJubJub scalar multiplication (`EscalarMulFix` at ~128K constraints per ownership proof, ~98% of circuit cost). Some circuits increased overall due to added security constraints (settle_order) and additional ownership proofs. The hash reduction (~30K→~300 per hash) is significant but secondary to `EscalarMulFix`.*
 
 ## Groth16 Proof Format
 
@@ -1056,6 +1056,39 @@ All 19 Truffle tests passing after Poseidon migration:
 - ✅ Production mode (11/11) including E2E flow (Make → Take → Settle → Convert)
 
 ---
+
+## ECDH Note Encryption (Phase 4)
+
+### Overview
+
+Added ECDH key agreement on BabyJubJub + AES-256-GCM to encrypt note data before on-chain storage. Previously, note data was stored as plaintext RLP.
+
+**Date:** 2026-01-27
+**Status:** ✅ Complete
+
+### On-chain Format
+
+```
+0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+- `0x01` prefix distinguishes ECDH-encrypted notes from legacy plaintext RLP
+- `epk` = ephemeral BabyJubJub public key (generated per encryption)
+- Shared secret derived via ECDH: `sharedSecret = sk_recipient × epk`
+- AES-256-GCM key derived from shared secret via Poseidon KDF
+
+### Key Files
+
+| File | Description |
+|------|-------------|
+| `vapp/src/lib/ecdhCrypto.ts` | ECDH shared secret + AES-256-GCM encrypt/decrypt |
+| `vapp/src/utils/noteEncryption.ts` | Note encoding/decoding (ECDH + legacy RLP) |
+
+### Backward Compatibility
+
+- `decodeNoteData()` detects `0x01` prefix → ECDH decryption
+- No `0x01` prefix → legacy plaintext RLP decoding
+- New notes always use ECDH encryption
 
 ## Next Steps
 

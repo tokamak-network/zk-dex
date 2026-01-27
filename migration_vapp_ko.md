@@ -328,6 +328,63 @@ npm run preview
 npm run server
 ```
 
+## 마이그레이션 후 추가 기능
+
+### 클라이언트 암호화 모듈 (`src/lib/`)
+
+| 모듈 | 설명 |
+|------|------|
+| `accountCrypto.ts` | BabyJubJub 키 생성, scrypt 키스토어 암호화 |
+| `poseidon.ts` | Poseidon 해시 (노트 해싱, 주소 유도) |
+| `ecdhCrypto.ts` | ECDH 공유 비밀 (BabyJubJub) + AES-256-GCM |
+| `circuitInputs.ts` | 6개 회로의 회로 입력 준비 |
+| `circuitLoader.ts` | IndexedDB 캐시 기반 회로 wasm/zkey 로딩 |
+| `proofGenerator.ts` | Web Worker 기반 증명 생성 서비스 |
+
+### Web Worker 증명 생성 (`src/workers/`)
+
+ZK 증명은 메인 스레드 차단을 방지하기 위해 Web Worker에서 생성됩니다:
+
+```typescript
+import { ProofGeneratorService } from '@/lib/proofGenerator'
+
+const prover = new ProofGeneratorService()
+await prover.preloadCircuit('mint_burn_note')
+const result = await prover.generateProof('mint_burn_note', inputs)
+```
+
+### ECDH 노트 암호화 (`src/utils/noteEncryption.ts`)
+
+노트 데이터는 수신자의 BabyJubJub 공개키로 암호화된 후 온체인에 저장됩니다:
+
+```
+온체인 형식: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+하위 호환: `0x01` 접두사로 ECDH 감지, 그 외에는 레거시 평문 RLP 디코딩.
+
+### 노트 전송 트리 시각화 (`src/composables/useNoteTreeLayout.ts`)
+
+D3.js 기반 계층적 SVG 레이아웃으로 노트 전송 체인을 시각화합니다. `d3-hierarchy`를 사용한 트리 계산과 커스텀 SVG 렌더링.
+
+### 단위 테스트 인프라
+
+| 도구 | 설명 |
+|------|------|
+| Vitest | 테스트 러너 (16개 파일, 308개 이상 테스트) |
+| `src/test-utils/fixtures.ts` | 암호학적으로 유효한 테스트 픽스처 (BabyJubJub 키, Poseidon 해시) |
+
+테스트 범위: 스토어 (account, note, order, web3, contract), 라이브러리 (accountCrypto, poseidon, ecdhCrypto, circuitInputs, noteEncryption, keystoreStorage, circuitLoader, proofGenerator), 컴포저블 (useNoteTreeLayout, useFormatters), API 레이어.
+
+### 새 타입 정의 (`src/types/`)
+
+| 타입 | 설명 |
+|------|------|
+| `note.ts` | Note, NoteState, TokenType 인터페이스 |
+| `order.ts` | Order, OrderHistory, OrderState 인터페이스 |
+| `noteTree.ts` | NoteTreeNode, CreatorGroup (트리 시각화용) |
+| `circuit.ts` | CircuitName, CircuitInput 타입 |
+
 ## 알려진 이슈 및 참고 사항
 
 1. **청크 크기 경고**: 프로덕션 빌드에서 청크 크기(>500 kB) 경고가 표시됩니다. 프로덕션 최적화를 위해 코드 분할 구현을 고려하세요.
@@ -338,15 +395,15 @@ npm run server
 
 ## 테스트 체크리스트
 
-- [ ] MetaMask 연결
-- [ ] 계정 가져오기/내보내기/삭제
-- [ ] 노트 발행(mint) 및 청산(liquidate)
-- [ ] 노트 전송
-- [ ] 노트 결합
-- [ ] 주문 생성 (make order)
-- [ ] 주문 수락 (take order)
-- [ ] 주문 정산
-- [ ] 주문 내역 표시
+- [x] MetaMask 연결
+- [x] 계정 가져오기/내보내기/삭제
+- [x] 노트 발행(mint) 및 청산(liquidate)
+- [x] 노트 전송
+- [x] 노트 결합
+- [x] 주문 생성 (make order)
+- [x] 주문 수락 (take order)
+- [x] 주문 정산
+- [x] 주문 내역 표시
 
 ## 의존성
 

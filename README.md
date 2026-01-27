@@ -300,146 +300,139 @@ ZK proofs are generated entirely in the browser:
 
 ## FAQ
 
-### Viewing Key와 Salt는 무엇인가?
+### What are Viewing Key and Salt?
 
-노트 해시는 6개 필드의 Poseidon 해시로 계산됩니다:
+Note hashes are computed as a Poseidon hash of 6 fields:
 
 ```
 noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
 ```
 
 **Viewing Key** (`viewingKey`):
-- BabyJubJub 공개키로부터 생성: `viewingKey = Poseidon(pk.x, pk.y)` (254-bit)
-- 소유자 주소는 viewing key의 하위 160비트: `ownerAddress = truncate160(viewingKey)`
-- 노트 해시에는 128비트씩 분할되어 `vk0`, `vk1`로 입력됨
-- 역할: 공개키를 직접 노출하지 않으면서 노트의 소유권을 공개키에 연결
-- Smart Note의 경우: `viewingKey = parentNoteHash` (부모 노트의 해시)
+- Derived from the BabyJubJub public key: `viewingKey = Poseidon(pk.x, pk.y)` (254-bit)
+- The owner address is the lower 160 bits of the viewing key: `ownerAddress = truncate160(viewingKey)`
+- Split into two 128-bit halves (`vk0`, `vk1`) for the note hash circuit input
+- Purpose: Links note ownership to the public key without directly exposing it
+- For Smart Notes: `viewingKey = parentNoteHash` (the parent note's hash)
 
 **Salt**:
-- `crypto.randomBytes(32)`로 생성된 랜덤 값, 254비트로 마스킹 (BN128 필드 호환)
-- 역할: Pre-image 공격 방지. 동일한 owner/value/token 조합이라도 salt가 다르면 해시가 달라짐
-- salt 없이는 "같은 사람이 같은 금액을 두 번 입금했다"는 정보가 해시 충돌로 노출됨
+- Random value generated via `crypto.randomBytes(32)`, masked to 254 bits (BN128 field compatible)
+- Purpose: Prevents pre-image attacks. Even identical owner/value/token combinations produce different hashes
+- Without salt, repeated deposits of the same amount by the same user would be revealed by hash collisions
 
-### 노트 데이터는 어떻게 보호되는가?
+### How is note data protected?
 
-프라이버시는 **서킷 레벨**과 **온체인 저장 레벨** 두 계층에서 결정됩니다.
+Privacy is determined at two layers: the **circuit layer** and the **on-chain storage layer**.
 
-**서킷 레벨: 연산별로 다른 공개 범위**
+**Circuit layer: Different visibility per operation**
 
-각 서킷의 public input에 포함된 정보만 외부에 공개됩니다:
+Only information included in each circuit's public inputs is revealed externally:
 
-| 서킷 | Public inputs | 금액 | 소유자 |
-|------|--------------|------|--------|
-| `mint_burn_note` | noteHash, value, tokenType | **공개** (필수: `msg.value` 검증) | 비공개 |
-| `transfer_note` | o0Hash, o1Hash, newHash, changeHash | **비공개** | **비공개** |
-| `make_order` | noteHash, tokenType | 비공개 | 비공개 |
-| `take_order` | hashes, newOwnerAddress, types | 비공개 | 일부 공개 |
-| `settle_order` | hashes, ownerAddresses, types, price | 비공개 (price만) | 일부 공개 |
-| `convert_note` | smartHash, originHash, newHash | **비공개** | **비공개** |
+| Circuit | Public inputs | Value | Owner |
+|---------|--------------|-------|-------|
+| `mint_burn_note` | noteHash, value, tokenType | **Public** (required: `msg.value` verification) | Private |
+| `transfer_note` | o0Hash, o1Hash, newHash, changeHash | **Private** | **Private** |
+| `make_order` | noteHash, tokenType | Private | Private |
+| `take_order` | hashes, newOwnerAddress, types | Private | Partially public |
+| `settle_order` | hashes, ownerAddresses, types, price | Private (price only) | Partially public |
+| `convert_note` | smartHash, originHash, newHash | **Private** | **Private** |
 
-- **입출금 경계** (mint/liquidate): 금액이 반드시 공개됩니다. ETH가 시스템에 들어오고 나갈 때 컨트랙트가 `msg.value`와 노트 금액의 일치를 검증해야 하기 때문입니다.
-- **내부 전송** (transfer, convert): 해시만 공개되고 금액과 소유자는 비공개입니다. 값 보존(입력 합 = 출력 합)은 서킷 내부에서 검증됩니다.
+- **Deposit/Withdraw boundary** (mint/liquidate): Value is always public. The contract must verify `msg.value` matches the note value when ETH enters or leaves the system.
+- **Internal transfers** (transfer, convert): Only hashes are public; value and owner remain private. Value conservation (input sum = output sum) is verified inside the circuit.
 
-**온체인 저장 레벨: 현재 구현의 한계**
+**On-chain storage layer: ECDH encryption**
 
-서킷이 금액을 비공개로 처리하더라도, `encryptedNotes` 매핑이 모든 필드를 평문으로 저장하여 프라이버시를 무효화합니다:
+Note data is encrypted before being stored on-chain using ECDH key agreement on BabyJubJub + AES-256-GCM:
 
 ```solidity
 // ZkDaiBase.sol
-mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → RLP 데이터 (암호화 아님)
+mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH encrypted bytes
 ```
 
-이 매핑은 이름과 달리 RLP 인코딩(가역적 직렬화)만 사용하며, `public` 매핑이므로 누구나 읽을 수 있습니다:
+The client encrypts note data with the recipient's BabyJubJub public key before submitting to the contract:
 
 ```
-1. NoteStateChange 이벤트 전체 스캔 → 모든 noteHash 수집
-2. encryptedNotes(noteHash) 호출 → RLP 데이터 획득
-3. RLP 디코딩 → { ownerAddress, value, token, viewingKey, salt } 전부 노출
+On-chain format: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
 ```
 
-**요약: 현재 시스템의 프라이버시 보장 범위**
+Only the note owner (holding the corresponding BabyJubJub secret key) can decrypt. Third parties can read the encrypted bytes from the public mapping but cannot recover the plaintext `{ownerAddress, value, token, viewingKey, salt}`.
 
-| 계층 | 보호 여부 | 설명 |
-|------|----------|------|
-| 서킷 (ZK 증명) | **부분 보호** | transfer/convert에서 금액·소유자 비공개, mint에서 금액 공개 |
-| 온체인 저장 | **보호 안 됨** | `encryptedNotes`가 평문 RLP → 모든 필드 누구나 조회 가능 |
-| 소유권 (노트 사용) | **보호됨** | secret key + ZK 증명 없이는 전송/소비 불가능 |
+> **Note**: Legacy notes (pre-ECDH migration) are stored as plaintext RLP and remain publicly readable. Only newly created notes use ECDH encryption.
 
-서킷 설계는 내부 전송의 프라이버시를 보호하지만, 온체인 저장이 이를 무효화합니다. `encryptedNotes`에 실제 암호화를 적용하면 서킷의 프라이버시 설계가 의미를 갖게 됩니다. 이에 대한 개선 방향은 [Future Improvements #1](#1-온체인-노트-데이터-암호화)을 참조하세요.
+**Summary: Current privacy guarantees**
 
-### 특정 노트만 특정인에게 공개할 수 있는가?
+| Layer | Protection | Description |
+|-------|-----------|-------------|
+| Circuit (ZK proofs) | **Partial** | Value/owner private in transfer/convert; value public in mint |
+| On-chain storage | **Protected** | ECDH-encrypted — only the note owner can decrypt |
+| On-chain storage (legacy) | **Not protected** | Pre-migration notes stored as plaintext RLP |
+| Ownership (note spending) | **Protected** | Secret key + ZK proof required to transfer or spend |
 
-**현재 구현에서는 불가능합니다.** 온체인 데이터가 암호화되지 않았으므로 모든 노트가 이미 공개 상태입니다.
+### Can specific notes be selectively disclosed to specific parties?
 
-선택적 공개를 구현하려면 먼저 온체인 노트 데이터를 실제 암호화해야 하며, 이후 3가지 수준의 접근법이 가능합니다:
+Three approaches are possible with the current ECDH-encrypted on-chain storage:
 
-**1. 노트 단위 공개** (추가 서킷 불필요):
-   - 특정 노트의 프리이미지 `{ownerAddress, value, tokenType, viewingKey, salt}`를 직접 전달
-   - 수신자가 Poseidon 해시를 재계산하여 온체인 노트 해시와 일치 확인
-   - 단점: 해당 노트의 모든 필드가 노출됨
+**1. Note-level disclosure** (no additional circuit required):
+   - Share the note preimage `{ownerAddress, value, tokenType, viewingKey, salt}` directly
+   - The recipient recomputes the Poseidon hash and verifies it matches the on-chain note hash
+   - Downside: All fields of the note are revealed
 
-**2. 계정 단위 공개** (Zcash viewing key 방식):
-   - viewing key를 특정인에게 공유 → 해당 계정의 모든 노트 스캔 가능
-   - 단점: 전부 아니면 전무 — 특정 노트만 골라서 공개 불가
+**2. Account-level disclosure** (Zcash viewing key approach):
+   - Share the viewing key with a specific party — they can scan all notes for that account
+   - Downside: All-or-nothing — cannot selectively reveal individual notes
 
-**3. ZK 증명 기반 선택적 공개** (가장 강력):
-   - 별도 서킷으로 "내가 소유한 노트가 조건 X를 만족한다"는 것만 증명
-   - 예: "100 ETH 이상의 유효한 노트를 보유하고 있다"
-   - 노트의 구체적 내용(해시, salt 등)은 비공개
-   - 단점: 별도 서킷 개발 및 trusted setup 필요
+**3. ZK proof-based selective disclosure** (strongest):
+   - A dedicated circuit proves "my owned note satisfies condition X" without revealing the note
+   - Example: "I hold a valid note worth at least 100 ETH"
+   - Specific note content (hash, salt, exact amount) remains private
+   - Downside: Requires separate circuit development and trusted setup
 
-### ZK 증명 기반 선택적 공개의 proving cost는?
+### What is the proving cost for ZK-based selective disclosure?
 
-서킷 비용의 98%는 BabyJubJub 스칼라 곱(`EscalarMulFix`)에서 발생하며, 이는 소유권 증명 1회당 ~128K constraints의 고정 비용입니다.
+98% of circuit cost comes from BabyJubJub scalar multiplication (`EscalarMulFix`), which is a fixed cost of ~128K constraints per ownership proof.
 
-`mint_burn_note` 서킷 (131K constraints)의 비용 분해:
+Cost breakdown of the `mint_burn_note` circuit (131K constraints):
 
-| 컴포넌트 | 연산 | Constraints | 비율 |
-|----------|------|-------------|------|
-| `EscalarMulFix(254)` | sk × G (BabyJubJub 스칼라 곱) | ~128K | 97.7% |
-| `Poseidon(6)` | 노트 해시 | ~1,500 | 1.1% |
+| Component | Operation | Constraints | Ratio |
+|-----------|-----------|-------------|-------|
+| `EscalarMulFix(254)` | sk × G (BabyJubJub scalar mul) | ~128K | 97.7% |
+| `Poseidon(6)` | Note hash | ~1,500 | 1.1% |
 | `Poseidon(2)` + truncation | pk → address | ~350 | 0.3% |
-| `Num2Bits(254)` + 기타 | bit 분해, 등호 비교 | ~300 | 0.2% |
+| `Num2Bits(254)` + misc | Bit decomposition, equality checks | ~300 | 0.2% |
 
-선택적 공개 서킷의 비용은 "무엇을 증명하느냐"에 따라 달라집니다:
+Selective disclosure circuit cost depends on what is being proved:
 
-| 시나리오 | 필요 연산 | Constraints | 브라우저 proving time |
-|----------|----------|-------------|---------------------|
-| 프리이미지만 검증 (소유권 증명 없음) | Poseidon(6) + 값 비교 | ~2K | < 1초 |
-| 소유권 + 속성 증명 (1개 노트) | EscalarMulFix + Poseidon 해시 + 비교 | ~131K | 3~10초 |
-| N개 노트 잔액 합산 증명 | N × (EscalarMulFix + Poseidon) | ~N × 131K | N × 3~10초 |
+| Scenario | Required operations | Constraints | Browser proving time |
+|----------|-------------------|-------------|---------------------|
+| Preimage verification only (no ownership proof) | Poseidon(6) + value comparison | ~2K | < 1 sec |
+| Ownership + attribute proof (1 note) | EscalarMulFix + Poseidon hash + comparison | ~131K | 3–10 sec |
+| N-note balance aggregation proof | N × (EscalarMulFix + Poseidon) | ~N × 131K | N × 3–10 sec |
 
-소유권 증명이 필요한 경우, 비용은 증명에 포함하는 **노트 수에 선형 비례**합니다. 선택적 공개 로직 자체(해시 검증 + 값 비교 ~2K)는 무시할 수준이며, BabyJubJub 스칼라 곱 횟수가 비용을 결정합니다.
+When ownership proof is required, cost scales **linearly with the number of notes**. The selective disclosure logic itself (hash verification + value comparison ~2K) is negligible — the number of BabyJubJub scalar multiplications determines the cost.
 
 ## Future Improvements
 
-### 1. 온체인 노트 데이터 암호화
+### 1. ZK Proof-Based Selective Disclosure
 
-현재 `encryptedNotes` 매핑은 RLP 인코딩만 사용하며 실제 암호화가 적용되지 않습니다. 블록체인 상의 모든 노트 데이터(금액, 토큰 타입, 소유자, viewing key, salt)가 누구에게나 공개되어 있습니다.
+With ECDH encryption now applied to on-chain note data, dedicated Circom circuits can be added for selective attribute disclosure:
 
-**개선 방향**: 노트 데이터를 소유자의 공개키로 ECIES 등 비대칭 암호화하여 저장하면, 소유자만 복호화 가능하고 제3자는 노트 내용을 볼 수 없게 됩니다. 이는 아래 선택적 공개 기능의 선행 조건입니다.
+- **Balance proof**: "The total value of my owned notes exceeds X"
+- **Ownership proof**: "I own the note with a specific hash"
+- **Token type proof**: "My held notes are ETH/DAI"
 
-### 2. ZK 증명 기반 선택적 공개
+This proves conditions without exposing note content (hash, salt, exact amounts), achieving both regulatory compliance (proof of funds) and privacy simultaneously.
 
-온체인 데이터 암호화가 적용된 후, 별도의 Circom 서킷을 추가하여 특정 속성만 선택적으로 공개할 수 있습니다:
+### 2. Server-Side Proving
 
-- **잔액 증명**: "내가 소유한 노트의 가치가 X 이상이다"
-- **소유 증명**: "특정 해시의 노트를 내가 소유하고 있다"
-- **토큰 타입 증명**: "내가 보유한 노트가 ETH/DAI이다"
+Currently all ZK proofs are generated in the browser (WASM). Complex circuits (settle_order at 641K constraints) may require tens of seconds in the browser.
 
-노트 내용(해시, salt, 구체적 금액 등)을 노출하지 않고 조건만 증명하므로, 규제 준수(자금 증명)와 프라이버시를 동시에 달성할 수 있습니다.
+**Improvement**: Introducing server-side proving with rapidsnark in a native environment can provide 10–100x speedup. Private inputs would be encrypted on the client before transmission, with the server generating and returning only the proof.
 
-### 3. 서버 사이드 Proving
+### 3. Incremental Proving
 
-현재 모든 ZK 증명이 브라우저(WASM)에서 생성됩니다. 복잡한 서킷(settle_order 641K constraints)의 경우 브라우저에서 수십 초 이상 소요될 수 있습니다.
+Aggregate proofs over multiple notes (e.g., balance sum of 5 notes) currently require proving all notes simultaneously in a single circuit. Cost increases linearly with note count (N × ~131K constraints).
 
-**개선 방향**: 네이티브 환경에서 rapidsnark 등을 활용한 서버 사이드 proving을 도입하면 10~100배 속도 개선이 가능합니다. 사용자의 private input은 클라이언트에서 암호화하여 전송하고, 서버는 증명만 생성하여 반환하는 구조가 필요합니다.
-
-### 4. 증분 증명 (Incremental Proving)
-
-다중 노트에 대한 집계 증명(예: 5개 노트의 잔액 합산)은 현재 모든 노트를 하나의 서킷에서 동시에 증명해야 합니다. 노트 수에 선형 비례하여 비용이 증가합니다(N × ~131K constraints).
-
-**개선 방향**: 개별 노트의 증명을 미리 생성해두고, 이를 집계하는 경량 서킷(recursive proof aggregation)으로 최종 증명을 구성하면, 사용자가 체감하는 대기 시간을 크게 줄일 수 있습니다. Groth16은 재귀 합성이 어려우므로 PLONK 또는 Nova 등의 proof system 전환이 필요합니다.
+**Improvement**: Pre-generate proofs for individual notes, then compose a final proof using a lightweight recursive proof aggregation circuit. Since Groth16 does not natively support recursive composition, this would require transitioning to PLONK or Nova proof systems.
 
 ## Documents
 

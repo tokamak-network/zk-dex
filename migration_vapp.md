@@ -328,6 +328,63 @@ npm run preview
 npm run server
 ```
 
+## Post-Migration Enhancements
+
+### Client-side Cryptography (`src/lib/`)
+
+| Module | Description |
+|--------|-------------|
+| `accountCrypto.ts` | BabyJubJub key generation, scrypt keystore encryption |
+| `poseidon.ts` | Poseidon hash (note hashing, address derivation) |
+| `ecdhCrypto.ts` | ECDH shared secret (BabyJubJub) + AES-256-GCM |
+| `circuitInputs.ts` | Circuit input preparation for all 6 circuits |
+| `circuitLoader.ts` | IndexedDB-cached circuit wasm/zkey loading |
+| `proofGenerator.ts` | Web Worker-based proof generation service |
+
+### Web Worker Proof Generation (`src/workers/`)
+
+ZK proofs are generated in a Web Worker to avoid blocking the main thread:
+
+```typescript
+import { ProofGeneratorService } from '@/lib/proofGenerator'
+
+const prover = new ProofGeneratorService()
+await prover.preloadCircuit('mint_burn_note')
+const result = await prover.generateProof('mint_burn_note', inputs)
+```
+
+### ECDH Note Encryption (`src/utils/noteEncryption.ts`)
+
+Note data is encrypted with the recipient's BabyJubJub public key before on-chain storage:
+
+```
+On-chain format: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+Backward compatible: detects `0x01` prefix for ECDH, otherwise decodes legacy plaintext RLP.
+
+### Note Transfer Tree Visualization (`src/composables/useNoteTreeLayout.ts`)
+
+D3.js-based hierarchical SVG layout for visualizing note transfer chains. Uses `d3-hierarchy` for tree computation and custom SVG rendering.
+
+### Unit Test Infrastructure
+
+| Tool | Description |
+|------|-------------|
+| Vitest | Test runner (16 test files, 308+ tests) |
+| `src/test-utils/fixtures.ts` | Cryptographically valid test fixtures (BabyJubJub keys, Poseidon hashes) |
+
+Test files cover: stores (account, note, order, web3, contract), lib (accountCrypto, poseidon, ecdhCrypto, circuitInputs, noteEncryption, keystoreStorage, circuitLoader, proofGenerator), composables (useNoteTreeLayout, useFormatters), and API layer.
+
+### New Type Definitions (`src/types/`)
+
+| Type | Description |
+|------|-------------|
+| `note.ts` | Note, NoteState, TokenType interfaces |
+| `order.ts` | Order, OrderHistory, OrderState interfaces |
+| `noteTree.ts` | NoteTreeNode, CreatorGroup for tree visualization |
+| `circuit.ts` | CircuitName, CircuitInput types |
+
 ## Known Issues and Notes
 
 1. **Chunk Size Warning**: The production build shows a warning about chunk size (>500 kB). Consider implementing code splitting for production optimization.
@@ -338,15 +395,15 @@ npm run server
 
 ## Testing Checklist
 
-- [ ] MetaMask connection
-- [ ] Account import/export/delete
-- [ ] Note minting and liquidation
-- [ ] Note transfer
-- [ ] Note combining
-- [ ] Order creation (make order)
-- [ ] Order taking (take order)
-- [ ] Order settlement
-- [ ] Order history display
+- [x] MetaMask connection
+- [x] Account import/export/delete
+- [x] Note minting and liquidation
+- [x] Note transfer
+- [x] Note combining
+- [x] Order creation (make order)
+- [x] Order taking (take order)
+- [x] Order settlement
+- [x] Order history display
 
 ## Dependencies
 

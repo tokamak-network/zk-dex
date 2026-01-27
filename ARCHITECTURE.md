@@ -42,7 +42,7 @@ zk-dex/
 │   │   ├── take_order.circom
 │   │   └── settle_order.circom
 │   ├── utils/                # Utility circuits
-│   │   ├── sha256/          # SHA256 implementations
+│   │   ├── poseidon/        # Poseidon hash implementations
 │   │   ├── babyjubjub/      # ECC operations
 │   │   ├── pack/            # Bit packing utilities
 │   │   └── math/            # Mathematical operations
@@ -87,7 +87,7 @@ zk-dex/
 | **Framework** | Truffle 5.11, Ganache |
 | **ZK Proofs** | Circom 2.1.0, snarkjs 0.7.x |
 | **Proof System** | Groth16 (BN128 curve) |
-| **Cryptography** | BabyJubJub (circomlibjs), SHA-256 |
+| **Cryptography** | BabyJubJub (circomlibjs), Poseidon (circomlibjs) |
 | **Testing** | Mocha, Chai |
 
 ---
@@ -169,26 +169,27 @@ Circuits are written in Circom 2.1 and compiled to Groth16 proving systems.
 
 ```
 Note = {
-  ownerAddress,  // 160-bit address derived from SHA256(pk.x || pk.y)[96:256]
+  ownerAddress,  // 160-bit address derived from Poseidon(pk.x, pk.y) & MASK_160
   value,         // Token amount (256-bit)
   type,          // 0=ETH, 1=DAI (256-bit)
-  viewingKey,    // vk0(128-bit) + vk1(128-bit) for note decryption
-  salt           // Random value (256-bit)
+  viewingKey,    // Poseidon(pk.x, pk.y) full 254-bit field element, split into vk0(128-bit) + vk1(128-bit)
+  salt           // Random value (254-bit, BN128 field compatible)
 }
 ```
 
 ### Address Derivation
 
-Owner address is derived from BabyJubJub public key using SHA256:
+Owner address is derived from BabyJubJub public key using Poseidon:
 
 ```
-address = SHA256(pk.x || pk.y)[96:256]  // Last 160 bits
+address = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Lower 160 bits of Poseidon hash
 ```
 
 This provides:
 - Compact representation (160-bit vs 512-bit public key)
 - Collision resistance (~2^80 security level)
 - Compatible with Ethereum address format
+- SNARK-friendly (Poseidon is native to BN128 field arithmetic)
 
 ### Circuit Descriptions
 
@@ -196,7 +197,7 @@ This provides:
 
 **Purpose:** Proves ownership and correct hash computation for new notes.
 
-**Constraints:** ~154,900
+**Constraints:** ~131,000
 
 **Public Signals (snarkjs order):**
 ```
@@ -204,14 +205,14 @@ This provides:
 ```
 
 **Operations:**
-1. Verify ownership via address derivation (sk → pk → SHA256 → address)
-2. Compute and verify SHA256 hash of note (1184-bit input)
+1. Verify ownership via address derivation (sk → pk → Poseidon → address)
+2. Compute and verify Poseidon hash of note (6 field element inputs)
 
 #### 2. transfer_note (Spend & Split)
 
 **Purpose:** Spend 1-2 notes and create 2 new notes with value conservation.
 
-**Constraints:** ~492,085
+**Constraints:** ~516,000
 
 **Verification:**
 - Ownership of input notes
@@ -222,7 +223,7 @@ This provides:
 
 **Purpose:** Convert smart notes (from trading) to normal notes.
 
-**Constraints:** ~337,437
+**Constraints:** ~385,000
 
 **Verification:**
 - Smart note owner matches origin note hash
@@ -232,7 +233,7 @@ This provides:
 
 **Purpose:** Create trading order without revealing amount.
 
-**Constraints:** ~154,900
+**Constraints:** ~131,000
 
 **Output:** Commitment to order parameters with ownership proof.
 
@@ -240,7 +241,7 @@ This provides:
 
 **Purpose:** Accept order by creating a stake note for the maker.
 
-**Constraints:** ~246,040
+**Constraints:** ~258,000
 
 **Verification:**
 - Taker owns parent note
@@ -251,7 +252,7 @@ This provides:
 
 **Purpose:** Atomic swap with price calculation (most complex circuit).
 
-**Constraints:** ~520,221
+**Constraints:** ~641,000
 
 **Math Operations:**
 ```
@@ -268,14 +269,14 @@ takerValue == q1 * price + r1
 
 | Circuit | Non-linear Constraints |
 |---------|------------------------|
-| mint_burn_note | 154,900 |
-| make_order | 154,900 |
-| take_order | 246,040 |
-| convert_note | 337,437 |
-| transfer_note | 492,085 |
-| settle_order | 520,221 |
+| mint_burn_note | ~131,000 |
+| make_order | ~131,000 |
+| take_order | ~258,000 |
+| convert_note | ~385,000 |
+| transfer_note | ~516,000 |
+| settle_order | ~641,000 |
 
-**Note:** Constraint counts increased for ownership verification (SHA256-based address derivation) but decreased overall due to smaller note hash input (1184-bit vs 1536-bit).
+**Note:** ~98% of constraint cost comes from BabyJubJub scalar multiplication (EscalarMulFix) for ownership verification, not from hashing. Poseidon hashing is extremely SNARK-efficient compared to the previous SHA-256 approach.
 
 ---
 
@@ -291,14 +292,15 @@ Main entry point for proof generation.
 // Initialize (required once)
 await noteProofHelper.init();
 
-// Key generation - returns 160-bit ownerAddress
-const { secretKey, ownerAddress } = await noteProofHelper.generateKeypair();
+// Key generation - returns { sk, pk } (BabyJubJub keypair)
+// Address derived via Poseidon(pk.x, pk.y) & MASK_160
+const { sk, pk } = await noteProofHelper.generateKeypair();
 
-// Note creation with ownerAddress
-const { note, sk } = await noteProofHelper.createNote(secretKey, value, tokenType, viewingKey, salt);
+// Note creation with Poseidon-derived address
+const note = await noteProofHelper.createNote(sk, value, tokenType);
 
 // Smart note creation (for trading)
-// owner = SHA256(parentNoteHash)[96:256] (160-bit truncation)
+// owner = Poseidon(parentNoteHash) lower 160 bits
 const smartNote = await noteProofHelper.createSmartNote(ownerNote, value, tokenType, viewingKey, salt);
 
 // Proof generation
@@ -336,15 +338,14 @@ Core Note class for managing privacy notes.
 class Note {
   constructor(ownerAddress, value, type, viewingKey, salt)
   // ownerAddress: 160-bit address (hex string)
-  // viewingKey: { vk0, vk1 } - two 128-bit values
+  // viewingKey: { vk0, vk1 } - two 128-bit values (from Poseidon(pk.x, pk.y))
 
-  hash()              // SHA256 hash of note (1184-bit input)
-  hashArr()           // [nh0, nh1] 128-bit split
+  hash()              // Poseidon hash of note (single field element output)
   toCircuitInput()    // Format for circuit
 }
 
-// Note hash computation (1184 bits total):
-// SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+// Note hash computation:
+// Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) — 6 field element inputs, single field element output
 
 // Constants
 EMPTY_NOTE_HASH = '0x...'  // Computed with zero ownerAddress
@@ -456,31 +457,33 @@ DAI_TOKEN_TYPE = 1
 ### Privacy Model
 
 - **Note-based UTXO:** Similar to Zcash, balances are represented as notes
-- **Encrypted Storage:** Note data encrypted with viewing keys
+- **ECDH Encryption:** Note data encrypted with BabyJubJub ECDH + AES-256-GCM before on-chain storage
 - **ZK Proofs:** Ownership and validity proven without revealing data
-- **Address-based Ownership:** Owner = 160-bit address derived from SHA256(pk)
-- **Smart Notes:** Owner = SHA256(parentNoteHash)[96:256] (160-bit truncation, enables atomic swaps)
+- **Address-based Ownership:** Owner = Poseidon(pk.x, pk.y) & MASK_160 (lower 160 bits of Poseidon hash)
+- **Smart Notes:** Owner = Poseidon(parentNoteHash) lower 160 bits (enables atomic swaps)
 
 ### Cryptographic Primitives
 
 | Primitive | Usage |
 |-----------|-------|
 | **BabyJubJub** | Ownership keys (efficient in SNARKs) |
-| **SHA-256** | Address derivation (512-bit → 160-bit) and note hash (1184-bit) |
+| **Poseidon** | Address derivation (pk → 160-bit), note hashing (6 inputs → single field element) |
+| **ECDH (BabyJubJub) + AES-256-GCM** | Note encryption for on-chain storage |
 | **Groth16** | SNARK proof system |
 | **BN128** | Elliptic curve for pairings |
 
-### Hash Splitting
+### Hash Splitting (Legacy)
 
-ZK circuits have field element limitations (~254 bits). SHA-256 hashes (256 bits) are split:
+With the migration from SHA-256 to Poseidon, hash splitting is no longer needed for note hashes. Poseidon outputs a single BN128 field element (~254 bits), which fits directly into a circuit signal without splitting.
+
+Previously, SHA-256 produced 256-bit outputs that exceeded the ~254-bit BN128 field limit, requiring a split into two 128-bit halves (nh0, nh1). This added complexity to both circuits and smart contracts.
 
 ```javascript
-// Split 256-bit hash to two 128-bit values
-note.hashArr() → [nh0, nh1]
+// Legacy (SHA-256): required splitting
+// note.hashArr() → [nh0, nh1]  // two 128-bit values
 
-// In circuit: verify nh0 and nh1 separately
-// In contract: reconstruct full hash
-calcHash(nh0, nh1) → original hash
+// Current (Poseidon): single field element output
+// note.hash() → noteHash        // single ~254-bit field element
 ```
 
 ### Public Signal Order (snarkjs)
@@ -488,11 +491,11 @@ calcHash(nh0, nh1) → original hash
 **Important:** snarkjs places circuit outputs FIRST in public signals:
 
 ```
-Circuit: signal output out; signal input public nh0;
-snarkjs: [out, nh0, ...]  // output comes first!
+Circuit: signal output out; signal input public noteHash;
+snarkjs: [out, noteHash, ...]  // output comes first!
 ```
 
-All contracts have been updated to use this order.
+With Poseidon, note hashes are single field elements (no split h0/h1), simplifying the public signal layout. All contracts have been updated to use this order.
 
 ---
 

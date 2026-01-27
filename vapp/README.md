@@ -74,6 +74,22 @@ API endpoints:
 | `GET/POST /notes` | Note management |
 | `GET/POST /orders` | Order management |
 
+## Testing
+
+### Unit Tests
+
+```bash
+npx vitest run
+```
+
+16 test files with 308+ tests covering:
+- **Stores**: account, note, order, web3, contract
+- **Lib**: accountCrypto, poseidon, ecdhCrypto, circuitInputs, noteEncryption, keystoreStorage, circuitLoader, proofGenerator
+- **Composables**: useNoteTreeLayout, useFormatters
+- **API**: index (axios mock tests)
+
+Test fixtures use cryptographically valid data (BabyJubJub keys, Poseidon hashes) from `src/test-utils/fixtures.ts`.
+
 ## Other Commands
 
 ### Production build
@@ -144,3 +160,23 @@ npm run preview
   - Order (`/orders`)
 - **Exchange**
   - Exchange (`/exchange`)
+
+### 2026-01-27: Client-side Crypto & Testing
+
+#### Client-side Cryptography
+- BabyJubJub key generation and scrypt keystore encryption
+- Poseidon hash (note hashing, address derivation)
+- ECDH shared secret (BabyJubJub) + AES-256-GCM note encryption
+- Circuit input preparation for all 6 ZK circuits
+- IndexedDB-cached circuit wasm/zkey loading
+- Web Worker-based non-blocking proof generation
+
+#### ECDH Note Encryption
+- Note data encrypted with recipient's BabyJubJub public key before on-chain storage
+- Format: `0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)`
+- Backward compatible with legacy plaintext RLP notes
+
+#### Unit Test Infrastructure
+- Vitest test suite: 16 files, 308+ tests
+- Cryptographically valid fixtures (real BabyJubJub keys, Poseidon hashes)
+- Coverage: stores, lib, composables, API layer

@@ -42,7 +42,7 @@ zk-dex/
 │   │   ├── take_order.circom
 │   │   └── settle_order.circom
 │   ├── utils/                # 유틸리티 회로
-│   │   ├── sha256/          # SHA256 구현
+│   │   ├── poseidon/        # Poseidon 해시 구현
 │   │   ├── babyjubjub/      # ECC 연산
 │   │   ├── pack/            # 비트 패킹
 │   │   └── math/            # 수학 연산
@@ -81,7 +81,7 @@ zk-dex/
 | **프레임워크** | Truffle 5.11, Ganache |
 | **ZK 증명** | Circom 2.1.0, snarkjs 0.7.x |
 | **증명 시스템** | Groth16 (BN128 곡선) |
-| **암호화** | BabyJubJub (circomlibjs), SHA-256 |
+| **암호화** | BabyJubJub (circomlibjs), Poseidon (circomlibjs) |
 | **테스트** | Mocha, Chai |
 
 ---
@@ -163,26 +163,27 @@ function verifyProof(
 
 ```
 Note = {
-  ownerAddress,  // SHA256(pk.x || pk.y)[96:256]에서 파생된 160비트 주소
+  ownerAddress,  // Poseidon(pk.x, pk.y) & MASK_160에서 파생된 160비트 주소 (Poseidon 해시의 하위 160비트)
   value,         // 토큰 금액 (256비트)
   type,          // 0=ETH, 1=DAI (256비트)
-  viewingKey,    // vk0(128비트) + vk1(128비트) 노트 복호화용
-  salt           // 랜덤 값 (256비트)
+  viewingKey,    // Poseidon(pk.x, pk.y) (254비트 필드 원소)
+  salt           // 랜덤 값 (254비트, BN128 필드 호환)
 }
 ```
 
 ### 주소 유도
 
-소유자 주소는 BabyJubJub 공개키에서 SHA256을 사용하여 유도됩니다:
+소유자 주소는 BabyJubJub 공개키에서 Poseidon 해시를 사용하여 유도됩니다:
 
 ```
-address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
+address = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Poseidon 해시의 하위 160비트
 ```
 
 이를 통해:
 - 컴팩트한 표현 (512비트 공개키 대신 160비트)
 - 충돌 저항성 (~2^80 보안 수준)
 - 이더리움 주소 형식과 호환
+- ZK 회로 내 효율적 계산 (Poseidon은 SNARK 친화적 해시)
 
 ### 회로 설명
 
@@ -190,7 +191,7 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 
 **목적:** 새 노트에 대한 소유권과 올바른 해시 계산을 증명합니다.
 
-**제약 조건:** ~154,900개
+**제약 조건:** ~131,000개
 
 **공개 신호 (snarkjs 순서):**
 ```
@@ -198,14 +199,14 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 ```
 
 **작업:**
-1. 주소 유도를 통한 소유권 검증 (sk → pk → SHA256 → address)
-2. 노트의 SHA256 해시 계산 및 검증 (1184비트 입력)
+1. 주소 유도를 통한 소유권 검증 (sk → pk → Poseidon → address)
+2. 노트의 Poseidon 해시 계산 및 검증 (6개 필드 원소 입력)
 
 #### 2. transfer_note (소비 및 분할)
 
 **목적:** 1-2개의 노트를 소비하고 가치 보존과 함께 2개의 새 노트를 생성합니다.
 
-**제약 조건:** ~492,085개
+**제약 조건:** ~516,000개
 
 **검증:**
 - 입력 노트의 소유권
@@ -216,7 +217,7 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 
 **목적:** 스마트 노트(거래에서 생성된)를 일반 노트로 변환합니다.
 
-**제약 조건:** ~337,437개
+**제약 조건:** ~385,000개
 
 **검증:**
 - 스마트 노트 소유자가 원본 노트 해시와 일치
@@ -226,7 +227,7 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 
 **목적:** 금액을 노출하지 않고 거래 주문을 생성합니다.
 
-**제약 조건:** ~154,900개
+**제약 조건:** ~131,000개
 
 **출력:** 소유권 증명과 함께 주문 매개변수에 대한 커밋먼트.
 
@@ -234,7 +235,7 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 
 **목적:** 메이커를 위한 스테이크 노트를 생성하여 주문을 수락합니다.
 
-**제약 조건:** ~246,040개
+**제약 조건:** ~258,000개
 
 **검증:**
 - 테이커가 부모 노트 소유
@@ -245,7 +246,7 @@ address = SHA256(pk.x || pk.y)[96:256]  // 마지막 160비트
 
 **목적:** 가격 계산이 포함된 원자적 스왑 (가장 복잡한 회로).
 
-**제약 조건:** ~520,221개
+**제약 조건:** ~641,000개
 
 **수학 연산:**
 ```
@@ -262,14 +263,14 @@ takerValue == q1 * price + r1
 
 | 회로 | 비선형 제약 조건 |
 |------|------------------|
-| mint_burn_note | 154,900 |
-| make_order | 154,900 |
-| take_order | 246,040 |
-| convert_note | 337,437 |
-| transfer_note | 492,085 |
-| settle_order | 520,221 |
+| mint_burn_note | ~131,000 |
+| make_order | ~131,000 |
+| take_order | ~258,000 |
+| convert_note | ~385,000 |
+| transfer_note | ~516,000 |
+| settle_order | ~641,000 |
 
-**참고:** 소유권 검증(SHA256 기반 주소 유도)으로 인해 일부 제약 조건이 증가했지만, 노트 해시 입력 크기 감소(1536비트 → 1184비트)로 전체적으로 감소했습니다.
+**참고:** Poseidon 해시 함수로 전환하여 SHA256 대비 주소 유도 및 노트 해싱의 회로 내 제약 조건 수가 크게 감소했습니다. Poseidon은 SNARK 친화적 해시로, 필드 원소를 직접 입력받아 효율적으로 동작합니다.
 
 ---
 
@@ -292,7 +293,7 @@ const { secretKey, ownerAddress } = await noteProofHelper.generateKeypair();
 const { note, sk } = await noteProofHelper.createNote(secretKey, value, tokenType, viewingKey, salt);
 
 // 스마트 노트 생성 (거래용)
-// owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
+// owner = Poseidon(parentNoteHash) & ((1 << 160) - 1) (하위 160비트)
 const smartNote = await noteProofHelper.createSmartNote(ownerNote, value, tokenType, viewingKey, salt);
 
 // 증명 생성
@@ -330,15 +331,15 @@ verifyProofLocal(circuitName, proof, signals) // 로컬 검증
 class Note {
   constructor(ownerAddress, value, type, viewingKey, salt)
   // ownerAddress: 160비트 주소 (hex 문자열)
-  // viewingKey: { vk0, vk1 } - 128비트 값 두 개
+  // viewingKey: Poseidon(pk.x, pk.y) (254비트 필드 원소)
 
-  hash()              // 노트의 SHA256 해시 (1184비트 입력)
+  hash()              // 노트의 Poseidon 해시
   hashArr()           // [nh0, nh1] 128비트 분할
   toCircuitInput()    // 회로용 형식
 }
 
-// 노트 해시 계산 (총 1184비트):
-// SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+// 노트 해시 계산:
+// Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) — 6개 필드 원소 입력, 단일 필드 원소 출력
 
 // 상수
 EMPTY_NOTE_HASH = '0x...'  // 0 ownerAddress로 계산
@@ -450,31 +451,34 @@ DAI_TOKEN_TYPE = 1
 ### 프라이버시 모델
 
 - **노트 기반 UTXO:** Zcash와 유사하게 잔액이 노트로 표현됨
-- **암호화된 저장소:** 노트 데이터가 뷰잉키로 암호화됨
+- **ECDH 암호화:** BabyJubJub ECDH + AES-256-GCM으로 노트 데이터를 온체인 저장 전 암호화
 - **ZK 증명:** 데이터 노출 없이 소유권과 유효성 증명
-- **주소 기반 소유권:** 소유자 = SHA256(pk)에서 유도된 160비트 주소
-- **스마트 노트:** 소유자 = SHA256(부모노트해시)[96:256] (160비트 자르기, 원자적 스왑 가능)
+- **주소 기반 소유권:** 소유자 = Poseidon(pk.x, pk.y) 하위 160비트에서 유도된 주소
+- **스마트 노트:** 소유자 = Poseidon(부모노트해시) 하위 160비트 (원자적 스왑 가능)
 
 ### 암호화 기본 요소
 
 | 기본 요소 | 용도 |
 |----------|------|
 | **BabyJubJub** | 소유권 키 (SNARKs에서 효율적) |
-| **SHA-256** | 주소 유도 (512비트 → 160비트) 및 노트 해시 (1184비트) |
+| **Poseidon** | 주소 유도 (pk → 160비트), 노트 해싱 (6개 입력 → 단일 필드 원소) |
+| **ECDH** | BabyJubJub ECDH 키 교환 + AES-256-GCM 노트 암호화 |
 | **Groth16** | SNARK 증명 시스템 |
 | **BN128** | 페어링을 위한 타원 곡선 |
 
 ### 해시 분할
 
-ZK 회로는 필드 요소 제한이 있습니다 (~254비트). SHA-256 해시(256비트)는 분할됩니다:
+Poseidon 해시는 단일 BN128 필드 원소(~254비트)를 출력하므로, SHA-256과 달리 본질적으로 분할이 불필요합니다. 그러나 스마트 컨트랙트 호환성을 위해 레거시 분할 인터페이스가 유지됩니다:
 
 ```javascript
-// 256비트 해시를 두 개의 128비트 값으로 분할
+// Poseidon 해시를 두 개의 128비트 값으로 분할 (컨트랙트 호환용)
 note.hashArr() → [nh0, nh1]
 
-// 회로에서: nh0과 nh1을 별도로 검증
 // 컨트랙트에서: 전체 해시 재구성
 calcHash(nh0, nh1) → 원본 해시
+
+// 참고: Poseidon 출력은 단일 필드 원소이므로
+// 새로운 컨트랙트에서는 분할 없이 직접 사용 가능
 ```
 
 ### 공개 신호 순서 (snarkjs)

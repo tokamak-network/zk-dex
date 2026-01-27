@@ -119,16 +119,16 @@ circuits-circom/
 
 ### 회로 복잡도
 
-| 회로 | SHA256 (Phase 2) | Poseidon (Phase 3) | 감소율 |
+| 회로 | SHA256 (Phase 2) | Poseidon (Phase 3) | 변화 |
 |------|-------------------|--------------------| ------ |
-| mint_burn_note | 154,900 | ~2,000 | ~98% |
-| make_order | 154,900 | ~2,000 | ~98% |
-| take_order | 246,040 | ~3,000 | ~99% |
-| convert_note | 337,437 | ~4,000 | ~99% |
-| transfer_note | 492,085 | ~5,000 | ~99% |
-| settle_order | 520,481 | ~6,000 | ~99% |
+| mint_burn_note | 154,900 | ~131,000 | -15% |
+| make_order | 154,900 | ~131,000 | -15% |
+| take_order | 246,040 | ~258,000 | +5% |
+| convert_note | 337,437 | ~385,000 | +14% |
+| transfer_note | 492,085 | ~516,000 | +5% |
+| settle_order | 520,481 | ~641,000 | +23% |
 
-*Phase 3 (Poseidon 마이그레이션): Poseidon 해시 (~300 제약)가 SHA256 (~30,000 제약)를 대체하여 회로 크기가 ~97-99% 감소. 정확한 Poseidon 제약 수는 근사값이며, `circom --r1cs`로 정확한 값을 확인할 수 있습니다.*
+*Phase 3 (Poseidon 마이그레이션): Poseidon 해시 (~300 제약)가 SHA256 (~30,000 제약/해시)를 대체. 그러나 전체 회로 크기는 BabyJubJub 스칼라 곱(`EscalarMulFix`, 소유권 증명당 ~128K 제약, 회로 비용의 ~98%)이 지배적. 일부 회로는 보안 제약 추가(settle_order)와 추가 소유권 증명으로 인해 전체적으로 증가. 해시 감소(~30K→~300/해시)는 유의미하나 `EscalarMulFix` 대비 부차적.*
 
 ## Groth16 증명 포맷
 
@@ -1030,6 +1030,39 @@ Poseidon 마이그레이션 후 전체 19개 Truffle 테스트 통과:
 - ✅ 프로덕션 모드 (11/11) E2E 플로우 포함 (Make → Take → Settle → Convert)
 
 ---
+
+## ECDH 노트 암호화 (Phase 4)
+
+### 개요
+
+BabyJubJub 상의 ECDH 키 합의 + AES-256-GCM을 추가하여 노트 데이터를 온체인 저장 전에 암호화합니다. 이전에는 노트 데이터가 평문 RLP로 저장되었습니다.
+
+**일자:** 2026-01-27
+**상태:** ✅ 완료
+
+### 온체인 형식
+
+```
+0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+- `0x01` 접두사로 ECDH 암호화된 노트와 레거시 평문 RLP을 구분
+- `epk` = 임시 BabyJubJub 공개키 (암호화마다 새로 생성)
+- ECDH로 공유 비밀 유도: `sharedSecret = sk_recipient × epk`
+- Poseidon KDF로 공유 비밀에서 AES-256-GCM 키 유도
+
+### 주요 파일
+
+| 파일 | 설명 |
+|------|------|
+| `vapp/src/lib/ecdhCrypto.ts` | ECDH 공유 비밀 + AES-256-GCM 암복호화 |
+| `vapp/src/utils/noteEncryption.ts` | 노트 인코딩/디코딩 (ECDH + 레거시 RLP) |
+
+### 하위 호환성
+
+- `decodeNoteData()`가 `0x01` 접두사를 감지 → ECDH 복호화
+- `0x01` 접두사 없음 → 레거시 평문 RLP 디코딩
+- 새 노트는 항상 ECDH 암호화 사용
 
 ## 다음 단계
 
