@@ -14,7 +14,7 @@ let babyJub: BabyJub | null = null
 // BN128 field prime - circuits represent all signals as field elements mod p.
 // If sk >= p, the circuit uses (sk mod p) for Num2Bits decomposition,
 // so the browser must also reduce sk mod p before scalar multiplication.
-const BN128_FIELD_PRIME = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617')
+export const BN128_FIELD_PRIME = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617')
 
 export interface Keystore {
   crypto: {
@@ -259,14 +259,23 @@ async function decryptSecretKey(keystore: Keystore, passphrase: string): Promise
   }
 }
 
+/**
+ * Get the BabyJubJub instance (lazy-initialized singleton)
+ */
+export async function getBabyJub(): Promise<BabyJub> {
+  await initCrypto()
+  if (!babyJub) throw new Error('BabyJubJub not initialized')
+  return babyJub
+}
+
 // Utility functions
-function bytesToHex(bytes: Uint8Array): string {
+export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
   const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex
   const bytes = new Uint8Array(cleanHex.length / 2)
   for (let i = 0; i < bytes.length; i++) {

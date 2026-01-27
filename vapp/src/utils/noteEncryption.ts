@@ -1,5 +1,7 @@
 import { encodeRlp, decodeRlp } from 'ethers'
 import { poseidonHash, truncateTo160Bits } from '@/lib/poseidon'
+import { encryptForRecipient, decryptWithSecretKey, isECDHEncrypted } from '@/lib/ecdhCrypto'
+import { hexToBytes } from '@/lib/accountCrypto'
 
 export interface EncodedNoteData {
   ownerAddress: string  // 160-bit address (40 hex chars)
@@ -47,10 +49,9 @@ function toHexString(value: string | bigint | number | undefined | null): string
 }
 
 /**
- * Encode note data to bytes for on-chain storage
- * Uses RLP encoding: [ownerAddress, value, token, viewingKey, salt]
+ * RLP-encode note fields (internal helper, produces plaintext bytes)
  */
-export function encodeNoteData(noteData: EncodedNoteData): string {
+function rlpEncodeNoteFields(noteData: EncodedNoteData): string {
   const fields = [
     toHexString(noteData.ownerAddress),
     toHexString(noteData.value),
@@ -62,18 +63,71 @@ export function encodeNoteData(noteData: EncodedNoteData): string {
 }
 
 /**
- * Decode note data from on-chain bytes
- * Supports both new format (5 fields) and legacy format (6 fields)
- * Returns null for undecodable data
+ * Encode note data to ECDH-encrypted bytes for on-chain storage.
+ * Encrypts RLP-encoded note data with the recipient's BabyJubJub public key.
+ *
+ * @param noteData - Note fields to encode
+ * @param recipientPk - Recipient's BabyJubJub public key {x, y} as hex strings
+ * @returns ECDH-encrypted hex string: 0x01 || epk || nonce || ciphertext || authTag
  */
-export async function decodeNoteData(encodedHex: string): Promise<EncodedNoteData | null> {
+export async function encodeNoteData(
+  noteData: EncodedNoteData,
+  recipientPk: { x: string; y: string }
+): Promise<string> {
+  // RLP-encode note fields to get plaintext
+  const rlpHex = rlpEncodeNoteFields(noteData)
+  const plaintext = hexToBytes(rlpHex.startsWith('0x') ? rlpHex.slice(2) : rlpHex)
+
+  // ECDH encrypt for recipient
+  return encryptForRecipient(plaintext, recipientPk)
+}
+
+/**
+ * Decode note data from on-chain bytes.
+ * Supports:
+ *   - ECDH encrypted format (0x01 prefix) — requires secretKey
+ *   - Legacy RLP plaintext (0xc0-0xff prefix) — no secretKey needed
+ *   - Legacy 6-field RLP format
+ *
+ * @param encodedHex - On-chain encrypted/encoded note data
+ * @param secretKey - Recipient's secret key (required for ECDH, optional for legacy)
+ * @returns Decoded note data, or null if decryption/decoding fails
+ */
+export async function decodeNoteData(
+  encodedHex: string,
+  secretKey?: string
+): Promise<EncodedNoteData | null> {
   try {
     // Check if this is very old format (32 bytes = 64 hex chars + 0x prefix = 66 chars)
     if (encodedHex.length === 66) {
       return null
     }
 
-    const decoded = decodeRlp(encodedHex) as string[]
+    // ECDH encrypted format: starts with version byte 0x01
+    if (isECDHEncrypted(encodedHex)) {
+      if (!secretKey) return null
+
+      const plaintext = await decryptWithSecretKey(encodedHex, secretKey)
+      if (!plaintext) return null
+
+      // Plaintext is RLP-encoded note data
+      const rlpHex = '0x' + Array.from(plaintext).map(b => b.toString(16).padStart(2, '0')).join('')
+      return decodeRlpNoteData(rlpHex)
+    }
+
+    // Legacy RLP plaintext format
+    return decodeRlpNoteData(encodedHex)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Decode RLP-encoded note data (legacy plaintext or decrypted ECDH payload)
+ */
+async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null> {
+  try {
+    const decoded = decodeRlp(rlpHex) as string[]
 
     if (!Array.isArray(decoded)) {
       return null
@@ -113,7 +167,7 @@ export async function decodeNoteData(encodedHex: string): Promise<EncodedNoteDat
     }
 
     return null
-  } catch (err) {
+  } catch {
     return null
   }
 }
@@ -130,6 +184,7 @@ export async function deriveAddressFromPublicKey(pkX: string, pkY: string): Prom
 
 /**
  * Check if note belongs to account by comparing addresses
+ * (Used for legacy RLP plaintext notes where decryption is not needed)
  */
 export async function isNoteOwner(
   noteData: EncodedNoteData,
