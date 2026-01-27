@@ -209,9 +209,7 @@ export const useAccountStore = defineStore('account', () => {
   }
 
   async function loadViewingKey() {
-    // Note: viewing key functionality may need to be reviewed
-    // For now, keep as no-op since we're moving to browser-only storage
-    console.log('loadViewingKey called - consider migrating viewing key to localStorage')
+    // No-op: viewing key is now derived client-side from BabyJubJub keypair
   }
 
   function reset() {

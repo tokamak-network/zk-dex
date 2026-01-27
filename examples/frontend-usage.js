@@ -169,19 +169,20 @@ async function transfer(senderWallet, senderNote, recipientPublicKey, amountWei,
         tokenType
     );
 
-    // Note: For real recipient notes, you need to create a Note with their public key
-    // The createNote function derives pk from sk, so for recipient notes you'd do:
+    // Note: For recipient notes, derive their address from their BabyJubJub public key
+    // using Poseidon: address = truncate160(Poseidon(pk.x, pk.y))
+    // Prefer noteProofHelper.createNote(sk, value, tokenType) when you have the secret key.
     const { Note } = require('../scripts/lib/Note');
-    const Web3Utils = require('web3-utils');
-    const crypto = require('crypto');
+    const snarkjsUtils = require('../scripts/lib/snarkjsUtils');
 
+    const recipientAddress = await snarkjsUtils.getAddressFromPublicKey(recipientPublicKey);
+    const recipientVk = await snarkjsUtils.getViewingKeyFromPublicKey(recipientPublicKey);
     const recipientNoteReal = new Note(
-        Web3Utils.padLeft(recipientPublicKey.x, 64),
-        Web3Utils.padLeft(recipientPublicKey.y, 64),
-        Web3Utils.padLeft(Web3Utils.toHex(amountWei), 64),
-        tokenType,
-        '0x0', // viewingKey
-        '0x' + crypto.randomBytes(32).toString('hex') // random salt
+        recipientAddress,                              // ownerAddress (160-bit)
+        amountWei,                                     // value
+        tokenType,                                     // token type
+        recipientVk.vk,                                // viewingKey (Poseidon hash)
+        '0x' + crypto.randomBytes(32).toString('hex')  // random salt
     );
 
     // Create change note back to sender

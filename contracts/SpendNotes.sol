@@ -78,8 +78,4 @@ abstract contract SpendNotes is ZkDaiBase {
     noteHashes[2] = bytes32(input[3]);  // new note
     noteHashes[3] = bytes32(input[4]);  // change note
   }
-
-  function isEmptyHash(bytes32 note) internal pure returns (bool) {
-    return true;
-  }
 }

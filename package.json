@@ -10,14 +10,7 @@
     "test:frontend": "cd vapp && npx vitest run",
     "test:all": "npm test && npm run test:frontend",
     "lint": "solium --dir ./contracts",
-    "lint:fix": "solium -d contracts/ --fix",
-    "docker": "npm run docker:start && npm run docker:init",
-    "docker:start": "docker run -d -it --name zokrates -v $(pwd)/circuits:/home/zokrates/circuits -v $(pwd)/contracts:/home/zokrates/contracts 4000d/zokrates:latest /bin/bash",
-    "docker:clean": "docker stop zokrates && docker rm zokrates",
-    "docker:restart": "npm run docker:clean && npm run docker:start",
-    "docker:init": "docker exec -it --workdir /home/zokrates/circuits zokrates /bin/bash /home/zokrates/circuits/zk-initialize.sh",
-    "docker:init:dir": "docker exec -it --workdir /home/zokrates/circuits zokrates /bin/bash /home/zokrates/circuits/zk-initialize.sh $DIR",
-    "docker:console": "docker exec -it --workdir /home/zokrates/circuits zokrates /bin/bash"
+    "lint:fix": "solium -d contracts/ --fix"
   },
   "author": "",
   "license": "ISC",
@@ -37,17 +30,10 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.3",
-    "babyjubjub": "^1.0.2",
     "bn.js": "^5.0.0",
-    "child-process-promise": "^2.2.1",
     "circomlibjs": "^0.1.7",
-    "dockerode": "^2.5.8",
-    "dockerode-promise": "^0.1.0",
-    "eccrypto": "^1.1.0",
     "ethlint": "^1.2.2",
     "ffjavascript": "^0.3.1",
-    "node-docker-api": "^1.1.22",
-    "secp256k1": "^3.6.1",
     "snarkjs": "^0.7.6",
     "truffle": "^5.0.0-beta.1"
   }

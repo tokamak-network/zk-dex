@@ -119,9 +119,9 @@ contract ZkDex is ZkDai {
     order.price = price;
     order.state = OrderState.Created;
 
-    notes[makerNote] = State.Traiding;
+    notes[makerNote] = State.Trading;
 
-    emit NoteStateChange(makerNote, State.Traiding);
+    emit NoteStateChange(makerNote, State.Trading);
   }
 
 
@@ -160,8 +160,8 @@ contract ZkDex is ZkDai {
     require(notes[parentNote] == State.Valid, "ZkDex: taker note is not available");
     require(notes[takerNoteToMaker] == State.Invalid, "ZkDex: taker send valid note to maker");
 
-    notes[parentNote] = State.Traiding;
-    notes[takerNoteToMaker] = State.Traiding;
+    notes[parentNote] = State.Trading;
+    notes[takerNoteToMaker] = State.Trading;
 
     encryptedNotes[takerNoteToMaker] = encryptedStakingNote;
 
@@ -169,8 +169,8 @@ contract ZkDex is ZkDai {
     order.takerNoteToMaker = takerNoteToMaker;
     order.state = OrderState.Taken;
 
-    emit NoteStateChange(parentNote, State.Traiding);
-    emit NoteStateChange(takerNoteToMaker, State.Traiding);
+    emit NoteStateChange(parentNote, State.Trading);
+    emit NoteStateChange(takerNoteToMaker, State.Trading);
     emit OrderTaken(orderId, takerNoteToMaker, parentNote);
   }
 

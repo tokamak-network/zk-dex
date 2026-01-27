@@ -5,8 +5,12 @@
 
 import { buildPoseidon } from 'circomlibjs'
 
-let poseidon: any = null
-let initPromise: Promise<any> | null = null
+type PoseidonFunction = ((inputs: (bigint | number | string)[]) => Uint8Array) & {
+  F: { toObject: (val: Uint8Array) => bigint }
+}
+
+let poseidon: PoseidonFunction | null = null
+let initPromise: Promise<PoseidonFunction> | null = null
 
 async function init() {
   if (poseidon) {

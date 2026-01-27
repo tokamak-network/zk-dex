@@ -46,7 +46,6 @@ class Wallet {
     }
 
     this._notes[addr].push(note);
-    console.log(`[${addr}] has Note#${note.hash()}`);
   }
 
   getNotes(addr) {
@@ -74,19 +73,22 @@ class Wallet {
     return false;
   }
 
-  // TODO: implement below functions
+  /** @todo Implement note transfer logic */
   async transferNote(from, to, value, vk = '', oldNote, originalNote = null) {
 
   }
 
+  /** @todo Implement make order logic */
   async makeOrder() {
 
   }
 
+  /** @todo Implement take order logic */
   async takeOrder() {
 
   }
 
+  /** @todo Implement settle order logic */
   async settleOrder() {
 
   }
@@ -104,8 +106,6 @@ class Wallet {
       }
 
       const { note, state } = res.args;
-      console.log(`[Note#${note}] ${NoteState.toString(state)}`);
-
       const encryptedNote = await this.zkdex.encryptedNotes(note);
 
       // short circuit for unknown encrypted note

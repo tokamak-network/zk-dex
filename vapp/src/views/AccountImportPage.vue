@@ -43,9 +43,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAccountStore, type BabyJubJubPublicKey, type Keystore } from '@/stores/account'
+import { useAccountStore, type Keystore } from '@/stores/account'
 import AccountList from '@/components/AccountList.vue'
-import * as api from '@/api'
 
 // Partial keystore interface for file loading (before validation)
 interface PartialKeystore {
@@ -94,18 +93,13 @@ async function importAccount() {
 
   isImporting.value = true
   try {
-    // Unlock to get publicKey and address
-    const res = await api.unlockAccount(passphrase.value, keystore.value)
-    const { publicKey, address } = res.data
+    // Import keystore JSON and add to browser localStorage
+    const jsonData = JSON.stringify(keystore.value)
+    accountStore.importAccountJson(jsonData)
 
-    const account = {
-      keystore: keystore.value as Keystore,
-      address: address.startsWith('0x') ? address : `0x${address}`,
-      publicKey: publicKey as BabyJubJubPublicKey
-    }
-
-    await api.addAccount(accountStore.key!, account)
-    accountStore.addAccount(account)
+    // Verify passphrase by attempting unlock
+    const imported = accountStore.accounts[accountStore.accounts.length - 1]
+    await accountStore.unlockAccountLocal(imported.address, passphrase.value)
 
     // Reset
     keystore.value = null

@@ -13,6 +13,7 @@ const snarkjs = require('snarkjs');
 const path = require('path');
 const fs = require('fs');
 const circomlibBabyJub = require('./circomlibBabyJub');
+const { _split256To128 } = require('./Note');
 
 const CIRCUITS_DIR = path.join(__dirname, '../../circuits-circom/build');
 
@@ -141,13 +142,11 @@ async function computeCircuitHash(note) {
 }
 
 /**
- * Split 256-bit value into two 128-bit values
+ * Split 256-bit value into two 128-bit values (high, low) as strings
+ * Delegates to Note._split256To128 for the core logic.
  */
 function split256To128(value) {
-    const bigValue = hexToBigInt(value);
-    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
-    const low = bigValue & mask128;
-    const high = bigValue >> BigInt(128);
+    const [high, low] = _split256To128(value);
     return [high.toString(), low.toString()];
 }
 

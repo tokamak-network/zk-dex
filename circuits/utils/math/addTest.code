@@ -1,8 +1,0 @@
-import "./add.code" as add
-
-def main() -> (field):
-  field z = add(10000, 20000)
-  field result = 30000
-  z == result
-  return z
-

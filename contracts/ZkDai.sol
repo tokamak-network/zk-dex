@@ -37,9 +37,9 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     payable
   {
     // input[2] = value, input[3] = tokenType (Poseidon version)
-    if (input[3] == ETH_TOKEY_TYPE) {
+    if (input[3] == ETH_TOKEN_TYPE) {
       require(msg.value == input[2],"ether amount doesn't match");
-    } else if (input[3] == DAI_TOKEY_TYPE) {
+    } else if (input[3] == DAI_TOKEN_TYPE) {
       require(msg.value == 0, "msg.value should be 0 for creating dai note");
       require(
         dai.transferFrom(msg.sender, address(this), input[2]),
@@ -88,9 +88,9 @@ contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
     LiquidateNotes.submit(to, a, b, c, input);
 
     // input[2] = value, input[3] = tokenType (Poseidon version)
-    if (input[3] == ETH_TOKEY_TYPE) {
+    if (input[3] == ETH_TOKEN_TYPE) {
       to.transfer(input[2]);
-    } else if (input[3] == DAI_TOKEY_TYPE) {
+    } else if (input[3] == DAI_TOKEN_TYPE) {
       require(
         dai.transfer(to, input[2]),
         "dai transfer failed"

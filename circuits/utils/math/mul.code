@@ -1,5 +1,0 @@
-def main(field x, field y) -> (field):
-  field check = if y == 0 || x * y / y == x then 1 else 0 fi
-  check == 1
-  field z = x * y
-  return z

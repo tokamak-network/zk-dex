@@ -6,7 +6,6 @@
  * 테스트 항목:
  * - 활성 API: getViewingKey, setViewingKey, getNotes, addNote, etc.
  * - 주문 API: getOrders, addOrder, etc.
- * - 더 이상 사용되지 않는(deprecated) 함수들이 올바른 에러를 던지는지
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -52,12 +51,6 @@ import {
   updateOrderHistoryState,
   updateOrderState,
   updateOrderTaker,
-  createAccount,
-  unlockAccount,
-  generateProof,
-  getAccounts,
-  addAccount as apiAddAccount,
-  deleteAccount as apiDeleteAccount,
 } from './index'
 
 describe('api/index', () => {
@@ -240,32 +233,4 @@ describe('api/index', () => {
     })
   })
 
-  // ═══════════════════════════════════════════
-  // Deprecated functions
-  // ═══════════════════════════════════════════
-  describe('Deprecated functions', () => {
-    it('createAccount → DEPRECATED 에러', () => {
-      expect(() => createAccount('password')).toThrow('DEPRECATED')
-    })
-
-    it('unlockAccount → DEPRECATED 에러', () => {
-      expect(() => unlockAccount('password', {})).toThrow('DEPRECATED')
-    })
-
-    it('generateProof → DEPRECATED 에러', () => {
-      expect(() => generateProof({ circuit: 'mint', inputs: {} })).toThrow('DEPRECATED')
-    })
-
-    it('getAccounts → DEPRECATED 에러', async () => {
-      await expect(getAccounts(ALICE_ADDRESS)).rejects.toThrow('DEPRECATED')
-    })
-
-    it('addAccount → DEPRECATED 에러', async () => {
-      await expect(apiAddAccount(ALICE_ADDRESS, {})).rejects.toThrow('DEPRECATED')
-    })
-
-    it('deleteAccount → DEPRECATED 에러', async () => {
-      await expect(apiDeleteAccount(ALICE_ADDRESS, ALICE_ADDRESS)).rejects.toThrow('DEPRECATED')
-    })
-  })
 })

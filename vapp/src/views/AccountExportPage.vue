@@ -56,7 +56,6 @@ import { ref, onMounted } from 'vue'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useFormatters } from '@/composables/useFormatters'
 import AccountList from '@/components/AccountList.vue'
-import * as api from '@/api'
 
 const accountStore = useAccountStore()
 const fmt = useFormatters()
@@ -87,13 +86,11 @@ async function unlockAccountHandler() {
 
   unlocking.value = true
   try {
-    const res = await api.unlockAccount(
-      passphrase.value,
-      accountToExport.value.keystore
+    const result = await accountStore.unlockAccountLocal(
+      accountToExport.value.address,
+      passphrase.value
     )
-    const secretKey = res.data.secretKey
-
-    if (!secretKey) {
+    if (!result.secretKey) {
       alert('Failed to verify: Invalid response')
       return
     }

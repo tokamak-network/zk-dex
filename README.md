@@ -245,7 +245,7 @@ npm run server
 - Note Transfer Tree visualization (D3.js SVG)
 - ZK privacy masking toggle
 
-For detailed migration information, see [migration_vapp.md](migration_vapp.md) or [migration_vapp_ko.md](migration_vapp_ko.md).
+For detailed migration information, see [migration-frontend.md](docs/migration-frontend.md) or [migration-frontend_ko.md](docs/migration-frontend_ko.md).
 
 ## Testing
 
@@ -294,8 +294,8 @@ ZK proofs are generated entirely in the browser:
 
 ### Migration History
 
-- **ZoKrates → Circom/snarkjs**: See [migration.md](migration.md)
-- **SHA256 → Poseidon hash**: See [migration.md](migration.md)
+- **ZoKrates → Circom/snarkjs**: See [migration-circuits.md](docs/migration-circuits.md)
+- **SHA256 → Poseidon hash**: See [migration-circuits.md](docs/migration-circuits.md)
 - **Public key ownership → Address-based ownership**: 160-bit address derived from BabyJubJub public key
 
 ## FAQ
@@ -436,9 +436,10 @@ Aggregate proofs over multiple notes (e.g., balance sum of 5 notes) currently re
 
 ## Documents
 
-- [Architecture (EN)](ARCHITECTURE.md) / [Architecture (KO)](ARCHITECTURE_ko.md)
-- [Circuit Migration (EN)](migration.md) / [Circuit Migration (KO)](migration_ko.md)
-- [Frontend Migration (EN)](migration_vapp.md) / [Frontend Migration (KO)](migration_vapp_ko.md)
+- [Core Concepts (KO)](docs/concept.md)
+- [Architecture (EN)](docs/architecture.md) / [Architecture (KO)](docs/architecture_ko.md)
+- [Circuit Migration (EN)](docs/migration-circuits.md) / [Circuit Migration (KO)](docs/migration-circuits_ko.md)
+- [Frontend Migration (EN)](docs/migration-frontend.md) / [Frontend Migration (KO)](docs/migration-frontend_ko.md)
 - [Architecture Presentation](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [Demo Video](https://youtu.be/QvKaqMH_5lk)
 

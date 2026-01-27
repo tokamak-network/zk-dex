@@ -245,7 +245,7 @@ npm run server
 - 노트 전송 트리 시각화 (D3.js SVG)
 - ZK 프라이버시 마스킹 토글
 
-자세한 마이그레이션 정보는 [migration_vapp.md](migration_vapp.md) 또는 [migration_vapp_ko.md](migration_vapp_ko.md)를 참조하세요.
+자세한 마이그레이션 정보는 [migration-frontend.md](docs/migration-frontend.md) 또는 [migration-frontend_ko.md](docs/migration-frontend_ko.md)를 참조하세요.
 
 ## 테스트
 
@@ -294,8 +294,8 @@ ZK 증명은 전적으로 브라우저에서 생성됩니다:
 
 ### 마이그레이션 이력
 
-- **ZoKrates → Circom/snarkjs**: [migration.md](migration.md) 참조
-- **SHA256 → Poseidon 해시**: [migration.md](migration.md) 참조
+- **ZoKrates → Circom/snarkjs**: [migration-circuits.md](docs/migration-circuits.md) 참조
+- **SHA256 → Poseidon 해시**: [migration-circuits.md](docs/migration-circuits.md) 참조
 - **공개키 소유권 → 주소 기반 소유권**: BabyJubJub 공개키에서 도출된 160비트 주소
 
 ## FAQ
@@ -436,9 +436,10 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 
 ## 문서
 
-- [아키텍처 (EN)](ARCHITECTURE.md) / [아키텍처 (KO)](ARCHITECTURE_ko.md)
-- [회로 마이그레이션 (EN)](migration.md) / [회로 마이그레이션 (KO)](migration_ko.md)
-- [프론트엔드 마이그레이션 (EN)](migration_vapp.md) / [프론트엔드 마이그레이션 (KO)](migration_vapp_ko.md)
+- [핵심 개념 가이드](docs/concept.md)
+- [아키텍처 (EN)](docs/architecture.md) / [아키텍처 (KO)](docs/architecture_ko.md)
+- [회로 마이그레이션 (EN)](docs/migration-circuits.md) / [회로 마이그레이션 (KO)](docs/migration-circuits_ko.md)
+- [프론트엔드 마이그레이션 (EN)](docs/migration-frontend.md) / [프론트엔드 마이그레이션 (KO)](docs/migration-frontend_ko.md)
 - [아키텍처 프레젠테이션](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [데모 영상](https://youtu.be/QvKaqMH_5lk)
 

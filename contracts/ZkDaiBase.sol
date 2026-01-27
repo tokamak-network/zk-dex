@@ -15,8 +15,8 @@ contract ZkDaiBase is Requestable {
   ERC20 public dai;
   IMintNBurnNoteVerifier public requestVerifier;
 
-  uint256 public constant ETH_TOKEY_TYPE = 0;
-  uint256 public constant DAI_TOKEY_TYPE = 1;
+  uint256 public constant ETH_TOKEN_TYPE = 0;
+  uint256 public constant DAI_TOKEN_TYPE = 1;
 
   // EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
   // Computed by circomlibjs Poseidon, must match the circuit
@@ -31,7 +31,7 @@ contract ZkDaiBase is Requestable {
   // note hash --> encrypted note data
   mapping(bytes32 => bytes) public encryptedNotes;
 
-  enum State {Invalid, Valid, Traiding, Spent}
+  enum State {Invalid, Valid, Trading, Spent}
 
   // maps note to State
   mapping(bytes32 => State) public notes;

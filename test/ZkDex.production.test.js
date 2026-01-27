@@ -324,7 +324,7 @@ contract('ZkDex Production Mode', function(accounts) {
 
             assert.ok(tx.logs.length > 0, 'Should emit events');
 
-            // State enum: {Invalid=0, Valid=1, Traiding=2, Spent=3}
+            // State enum: {Invalid=0, Valid=1, Trading=2, Spent=3}
 
             // 7. Verify note states
             const senderNoteStateAfter = await zkdex.notes(senderNote.hash());
@@ -388,7 +388,7 @@ contract('ZkDex Production Mode', function(accounts) {
 
             assert.ok(tx.logs.length > 0, 'Should emit events');
 
-            // State enum: {Invalid=0, Valid=1, Traiding=2, Spent=3}
+            // State enum: {Invalid=0, Valid=1, Trading=2, Spent=3}
             // 6. Verify note state is Spent (use same Poseidon hash)
             const noteStateAfter = await zkdex.notes(noteHash);
             assert.equal(noteStateAfter.toString(), '3', 'Note should be Spent');

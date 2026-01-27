@@ -13,7 +13,6 @@ import { ref, onMounted } from 'vue'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useFormatters } from '@/composables/useFormatters'
 import AccountList from '@/components/AccountList.vue'
-import * as api from '@/api'
 
 const accountStore = useAccountStore()
 const fmt = useFormatters()
@@ -35,7 +34,6 @@ function selectAccount(account: Account) {
 async function deleteAccountHandler() {
   if (!accountToDelete.value) return
 
-  await api.deleteAccount(accountStore.key!, addressToDelete.value)
   accountStore.deleteAccount(accountToDelete.value)
   accountToDelete.value = null
   addressToDelete.value = ''

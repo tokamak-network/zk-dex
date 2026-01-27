@@ -59,13 +59,13 @@ function _split256To128(value) {
 const NoteState = {
   Invalid: Web3Utils.toBN('0'),
   Valid: Web3Utils.toBN('1'),
-  Traiding: Web3Utils.toBN('2'),
+  Trading: Web3Utils.toBN('2'),
   Spent: Web3Utils.toBN('3'),
 
   toString(s) {
     if (this.Invalid.cmp(s) === 0) { return 'Invalid'; }
     if (this.Valid.cmp(s) === 0) { return 'Valid'; }
-    if (this.Traiding.cmp(s) === 0) { return 'Traiding'; }
+    if (this.Trading.cmp(s) === 0) { return 'Trading'; }
     if (this.Spent.cmp(s) === 0) { return 'Spent'; }
 
     throw new Error(`Undefined state: ${s}`);
@@ -331,6 +331,9 @@ module.exports = {
   decrypt,
   getSmartNoteOwner,
   createSmartNote,
+  // Shared hash utilities (used by snarkjsUtils.js)
+  _hexToBigInt,
+  _split256To128,
   createProof: {
     dummyProofCreateNote,
     dummyProofSpendNote,
