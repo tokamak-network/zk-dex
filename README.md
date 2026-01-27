@@ -436,7 +436,7 @@ Aggregate proofs over multiple notes (e.g., balance sum of 5 notes) currently re
 
 ## Documents
 
-- [Core Concepts (KO)](docs/concept.md)
+- [Core Concepts (EN)](docs/concept.md) / [Core Concepts (KO)](docs/concept_ko.md)
 - [Architecture (EN)](docs/architecture.md) / [Architecture (KO)](docs/architecture_ko.md)
 - [Circuit Migration (EN)](docs/migration-circuits.md) / [Circuit Migration (KO)](docs/migration-circuits_ko.md)
 - [Frontend Migration (EN)](docs/migration-frontend.md) / [Frontend Migration (KO)](docs/migration-frontend_ko.md)

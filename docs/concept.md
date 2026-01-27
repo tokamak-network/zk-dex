@@ -1,49 +1,49 @@
-# ZK-DEX 핵심 개념 가이드
+# ZK-DEX Core Concepts Guide
 
-ZK-DEX 구현에 사용된 모든 개념적 요소를 정리한 문서.
-
----
-
-## 목차
-
-1. [노트 (Note)](#1-노트-note)
-2. [노트 해시 (Note Hash)](#2-노트-해시-note-hash)
-3. [노트 상태 (Note State)](#3-노트-상태-note-state)
-4. [계정 (Account)](#4-계정-account)
-5. [ZK 계정 (ZK Account)](#5-zk-계정-zk-account)
-6. [소유권 모델 (Ownership Model)](#6-소유권-모델-ownership-model)
-7. [노트 생성 — Mint](#7-노트-생성--mint)
-8. [노트 소각 — Liquidate](#8-노트-소각--liquidate)
-9. [노트 전송 — Transfer (Spend)](#9-노트-전송--transfer-spend)
-10. [스마트 노트 (Smart Note)](#10-스마트-노트-smart-note)
-11. [노트 변환 — Convert](#11-노트-변환--convert)
-12. [주문 생성 — Make Order](#12-주문-생성--make-order)
-13. [주문 수락 — Take Order](#13-주문-수락--take-order)
-14. [주문 체결 — Settle Order](#14-주문-체결--settle-order)
-15. [암호학 기본 요소](#15-암호학-기본-요소)
-16. [노트 암호화 (ECDH)](#16-노트-암호화-ecdh)
-17. [프라이버시 모델](#17-프라이버시-모델)
-18. [보안 속성](#18-보안-속성)
+A comprehensive reference of all conceptual elements used in the ZK-DEX implementation.
 
 ---
 
-## 1. 노트 (Note)
+## Table of Contents
 
-**노트**는 ZK-DEX의 기본 가치 단위로, Bitcoin의 UTXO와 유사한 개념이다. 각 노트는 특정 토큰의 특정 금액에 대한 소유권을 나타내는 암호학적 커밋먼트(commitment)다.
+1. [Note](#1-note)
+2. [Note Hash](#2-note-hash)
+3. [Note State](#3-note-state)
+4. [Account](#4-account)
+5. [ZK Account](#5-zk-account)
+6. [Ownership Model](#6-ownership-model)
+7. [Note Creation — Mint](#7-note-creation--mint)
+8. [Note Destruction — Liquidate](#8-note-destruction--liquidate)
+9. [Note Transfer — Transfer (Spend)](#9-note-transfer--transfer-spend)
+10. [Smart Note](#10-smart-note)
+11. [Note Conversion — Convert](#11-note-conversion--convert)
+12. [Order Creation — Make Order](#12-order-creation--make-order)
+13. [Order Acceptance — Take Order](#13-order-acceptance--take-order)
+14. [Order Settlement — Settle Order](#14-order-settlement--settle-order)
+15. [Cryptographic Primitives](#15-cryptographic-primitives)
+16. [Note Encryption (ECDH)](#16-note-encryption-ecdh)
+17. [Privacy Model](#17-privacy-model)
+18. [Security Properties](#18-security-properties)
 
-### 노트 구조 (5개 필드)
+---
 
-| 필드 | 크기 | 설명 |
-|------|------|------|
-| `ownerAddress` | 160비트 | 소유자의 BabyJubJub 공개키에서 Poseidon 해시로 파생된 주소 |
-| `value` | 254비트 | 토큰 보유량 (wei 단위) |
-| `tokenType` | 256비트 | 토큰 종류 (0 = ETH, 1 = DAI) |
-| `viewingKey` | 256비트 | 소유자의 공개키에서 파생, 두 개의 128비트로 분할하여 회로에 입력 |
-| `salt` | 254비트 | 무작위 값, 동일 조건의 노트가 같은 해시를 갖는 것을 방지 |
+## 1. Note
 
-### 빈 노트 (Empty Note)
+A **note** is the fundamental unit of value in ZK-DEX, analogous to Bitcoin's UTXO. Each note is a cryptographic commitment representing ownership of a specific amount of a specific token.
 
-모든 필드가 0인 특수 노트. 전송 회로에서 입력 노트가 1개일 때 두 번째 슬롯을 채우는 데 사용한다.
+### Note Structure (5 Fields)
+
+| Field | Size | Description |
+|-------|------|-------------|
+| `ownerAddress` | 160 bits | Address derived from the owner's BabyJubJub public key via Poseidon hash |
+| `value` | 254 bits | Token balance (in wei) |
+| `tokenType` | 256 bits | Token type (0 = ETH, 1 = DAI) |
+| `viewingKey` | 256 bits | Derived from the owner's public key; split into two 128-bit halves for circuit input |
+| `salt` | 254 bits | Random value preventing identical notes from producing the same hash |
+
+### Empty Note
+
+A special note with all fields set to 0. Used to fill the second input slot when the transfer circuit has only one input note.
 
 ```
 EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
@@ -52,486 +52,486 @@ EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
 
 ---
 
-## 2. 노트 해시 (Note Hash)
+## 2. Note Hash
 
-노트의 5개 필드를 Poseidon 해시 함수에 입력하여 하나의 필드 원소(254비트)로 압축한 값. 온체인에서는 이 해시만 저장되므로, 원본 필드를 알지 못하면 노트의 내용을 알 수 없다.
+The 5 fields of a note are fed into the Poseidon hash function to produce a single field element (254 bits). Only this hash is stored on-chain, so the note's contents cannot be determined without knowing the original fields.
 
 ```
 noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
 ```
 
-여기서 `vk0`, `vk1`은 `viewingKey`를 128비트씩 분할한 값이다:
+Here `vk0` and `vk1` are the viewing key split into 128-bit halves:
 ```
-vk0 = viewingKey >> 128      (상위 128비트)
-vk1 = viewingKey & (2^128-1) (하위 128비트)
+vk0 = viewingKey >> 128      (upper 128 bits)
+vk1 = viewingKey & (2^128-1) (lower 128 bits)
 ```
 
-분할 이유: Circom 회로의 필드 크기가 254비트이므로 256비트 값을 직접 다룰 수 없어 두 조각으로 나눈다.
+Reason for splitting: Circom circuits operate over a 254-bit field, so a 256-bit value cannot be handled directly and must be split into two pieces.
 
 ---
 
-## 3. 노트 상태 (Note State)
+## 3. Note State
 
-온체인 컨트랙트에서 각 노트 해시의 생명주기를 추적하는 상태 머신:
+A state machine on the on-chain contract that tracks the lifecycle of each note hash:
 
 ```
-Invalid ──(mint/transfer)──▶ Valid ──(spend)──▶ Spent
-                               │
-                               └──(makeOrder/takeOrder)──▶ Trading
+Invalid ──(mint/transfer)──> Valid ──(spend)──> Spent
+                               |
+                               └──(makeOrder/takeOrder)──> Trading
 ```
 
-| 상태 | 값 | 설명 |
-|------|---|------|
-| `Invalid` | 0 | 존재하지 않거나 이미 소비된 노트 |
-| `Valid` | 1 | 유효한 노트, 전송/소각/주문 가능 |
-| `Trading` | 2 | 주문에 잠긴 노트, 직접 전송 불가 |
-| `Spent` | 3 | 소비 완료, 재사용 불가 |
+| State | Value | Description |
+|-------|-------|-------------|
+| `Invalid` | 0 | Does not exist or has already been consumed |
+| `Valid` | 1 | Active note; can be transferred, liquidated, or used in orders |
+| `Trading` | 2 | Locked in an order; cannot be transferred directly |
+| `Spent` | 3 | Consumed; cannot be reused |
 
-### 상태 전이 규칙
+### State Transition Rules
 
-- **Mint**: `Invalid → Valid` (새 노트 생성)
-- **Transfer**: 입력 `Valid → Spent`, 출력 `Invalid → Valid`
-- **Liquidate**: `Valid → Spent` (소각)
-- **MakeOrder**: `Valid → Trading` (거래 잠금)
-- **SettleOrder**: 입력 `Trading → Spent`, 출력 `Invalid → Valid`
-- **ConvertNote**: 스마트 노트 `Valid → Invalid`, 새 노트 `Invalid → Valid`
+- **Mint**: `Invalid -> Valid` (new note created)
+- **Transfer**: inputs `Valid -> Spent`, outputs `Invalid -> Valid`
+- **Liquidate**: `Valid -> Spent` (note destroyed)
+- **MakeOrder**: `Valid -> Trading` (locked for trading)
+- **SettleOrder**: inputs `Trading -> Spent`, outputs `Invalid -> Valid`
+- **ConvertNote**: smart note `Valid -> Invalid`, new note `Invalid -> Valid`
 
 ---
 
-## 4. 계정 (Account)
+## 4. Account
 
-ZK-DEX에서 "계정"은 두 가지 키 체계를 모두 포함한다:
+In ZK-DEX, an "account" encompasses two key systems:
 
-### Ethereum 계정 (MetaMask)
-- 표준 secp256k1 키 쌍
-- 컨트랙트 호출 및 ETH/DAI 입출금에 사용
-- MetaMask 지갑으로 관리
+### Ethereum Account (MetaMask)
+- Standard secp256k1 key pair
+- Used for contract calls and ETH/DAI deposits/withdrawals
+- Managed via MetaMask wallet
 
-### ZK 계정 (BabyJubJub)
-- BabyJubJub 곡선 위의 키 쌍
-- 노트 소유권 증명 및 프라이버시 보장에 사용
-- scrypt 기반 키스토어(JSON)로 로컬 저장
+### ZK Account (BabyJubJub)
+- Key pair on the BabyJubJub curve
+- Used for note ownership proofs and privacy guarantees
+- Stored locally as a scrypt-based keystore (JSON)
 
-하나의 사용자는 두 계정을 모두 보유하며, Ethereum 계정은 트랜잭션 전송에, ZK 계정은 노트 소유/암호화에 사용한다.
+A single user holds both accounts: the Ethereum account for submitting transactions, and the ZK account for note ownership and encryption.
 
 ---
 
-## 5. ZK 계정 (ZK Account)
+## 5. ZK Account
 
-ZK 계정은 BabyJubJub 타원곡선에 기반한 키 체계다. 주요 구성 요소:
+A ZK account is a key system based on the BabyJubJub elliptic curve. Key components:
 
-### 비밀키 (Secret Key, sk)
-- 254비트 무작위 스칼라
-- BN128 필드 내에서 유효해야 함 (순서 `l`보다 작아야 함)
-- 노트 소유권을 증명하는 유일한 수단
+### Secret Key (sk)
+- 254-bit random scalar
+- Must be valid within the BN128 field (less than the subgroup order `l`)
+- The sole means of proving note ownership
 
-### 공개키 (Public Key, pk)
-- BabyJubJub 곡선 위의 점 `(x, y)`
-- 비밀키에서 파생: `pk = sk × G` (G는 생성자 점 BASE8)
-- 직접 공개되지 않음 — 주소 파생에만 사용
+### Public Key (pk)
+- A point `(x, y)` on the BabyJubJub curve
+- Derived from the secret key: `pk = sk * G` (G is the generator point BASE8)
+- Never directly exposed — used only for address derivation
 
-### 소유자 주소 (Owner Address)
-- 공개키에서 Poseidon 해시로 파생한 160비트 값
+### Owner Address
+- A 160-bit value derived from the public key via Poseidon hash
 - `ownerAddress = Poseidon(pk.x, pk.y) & MASK_160`
-- Ethereum 주소(160비트)와 동일한 크기
+- Same size as an Ethereum address (160 bits)
 
-### 뷰잉 키 (Viewing Key)
+### Viewing Key
 
-공개키에서 Poseidon 해시로 파생한 전체 254비트 값.
+The full 254-bit value derived from the public key via Poseidon hash.
 
 ```
 viewingKey = Poseidon(pk.x, pk.y)
 ```
 
-#### 왜 뷰잉 키가 필요한가?
+#### Why Is the Viewing Key Needed?
 
-ZK-DEX의 노트 해시는 6개 필드의 Poseidon 해시다:
+The ZK-DEX note hash is a Poseidon hash of 6 fields:
 ```
 noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
 ```
 
-이때 `ownerAddress`(160비트)만으로는 노트를 고유하게 식별하기에 불충분하다. 같은 주소, 같은 금액, 같은 토큰의 노트가 여러 개 존재할 수 있기 때문이다. `salt`가 고유성을 보장하지만, 그것만으로는 소유자의 공개키 정보가 해시에 커밋(commit)되지 않는다.
+The `ownerAddress` (160 bits) alone is insufficient to uniquely identify a note. Multiple notes can exist with the same address, amount, and token type. While `salt` ensures uniqueness, it alone does not commit the owner's full public key information into the hash.
 
-**뷰잉 키는 공개키 전체(254비트)를 노트 해시에 바인딩하는 역할을 한다.** 160비트 주소만 포함하면 94비트의 공개키 정보가 손실되는데, 뷰잉 키를 통해 이 정보를 해시에 포함시킨다.
+**The viewing key binds the full public key (254 bits) into the note hash.** Using only the 160-bit address would lose 94 bits of public key information; the viewing key includes this information in the hash.
 
-#### 뷰잉 키의 7가지 역할
+#### Seven Roles of the Viewing Key
 
-**역할 1: 노트 해시 커밋먼트 (Note Hash Commitment)**
+**Role 1: Note Hash Commitment**
 
-뷰잉 키는 128비트씩 분할(vk0, vk1)되어 노트 해시의 4번째·5번째 입력으로 들어간다. 이를 통해 노트 해시가 소유자의 공개키에 암호학적으로 바인딩된다.
+The viewing key is split into 128-bit halves (vk0, vk1) and enters as the 4th and 5th inputs of the note hash. This cryptographically binds the note hash to the owner's public key.
 
 ```
-vk0 = viewingKey >> 128      (상위 128비트)
-vk1 = viewingKey & (2^128-1) (하위 128비트)
+vk0 = viewingKey >> 128      (upper 128 bits)
+vk1 = viewingKey & (2^128-1) (lower 128 bits)
 
 noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
                                                     ^^^  ^^^
-                                        공개키 정보가 여기에 커밋됨
+                                       public key info committed here
 ```
 
-만약 뷰잉 키 없이 `Poseidon(ownerAddress, value, tokenType, salt)`만 사용한다면, 동일한 주소를 가진 다른 공개키로도 같은 해시를 생성할 수 있어 소유권 위조가 가능해진다.
+Without the viewing key, using only `Poseidon(ownerAddress, value, tokenType, salt)` would allow a different public key with the same address to generate the same hash, enabling ownership forgery.
 
-**역할 2: 소유자 주소 내포 (Address Embedding)**
+**Role 2: Address Embedding**
 
-소유자 주소는 뷰잉 키의 하위 160비트와 정확히 일치한다:
+The owner address is exactly the lower 160 bits of the viewing key:
 
 ```
 ownerAddress = viewingKey & MASK_160
 ```
 
-따라서 뷰잉 키를 알면 소유자 주소를 복원할 수 있고, 역으로 소유자 주소는 뷰잉 키의 일부분이다. 이 관계는 회로 안에서 자동으로 보장된다.
+Therefore, knowing the viewing key allows recovering the owner address, and conversely the owner address is a subset of the viewing key. This relationship is automatically enforced inside the circuit.
 
-**역할 3: 노트 탐색 (Note Discovery)**
+**Role 3: Note Discovery**
 
-뷰잉 키를 아는 사람은 온체인에 저장된 암호화된 노트 중 자신에게 속한 것을 식별할 수 있다:
+A party who knows the viewing key can identify which of the encrypted notes stored on-chain belong to them:
 
 ```
-1. 온체인 NoteStateChange 이벤트 수신
-2. encryptedNotes[noteHash]에서 암호화된 데이터 조회
-3. ECDH 복호화 시도 (자신의 비밀키 사용)
-4. 복호화 성공 → 노트 필드 복원 (ownerAddress, value, token, vk, salt)
-5. 복원된 vk가 자신의 뷰잉 키와 일치하면 자신의 노트
+1. Listen for on-chain NoteStateChange events
+2. Retrieve encrypted data from encryptedNotes[noteHash]
+3. Attempt ECDH decryption (using own secret key)
+4. On successful decryption -> recover note fields (ownerAddress, value, token, vk, salt)
+5. If recovered vk matches own viewing key -> this is their note
 ```
 
-지갑(Wallet)은 이 과정을 자동화하여 사용자의 모든 노트를 추적한다.
+The wallet automates this process to track all of a user's notes.
 
-**역할 4: 선택적 공개 (Selective Disclosure)**
+**Role 4: Selective Disclosure**
 
-뷰잉 키를 제3자에게 공유하면, 해당 계정의 모든 노트를 조회할 수 있게 된다 (Zcash의 viewing key 방식). 비밀키를 공유하지 않으므로 노트를 소비할 수는 없다.
+Sharing the viewing key with a third party allows them to query all notes for that account (similar to Zcash's viewing key approach). Since the secret key is not shared, they cannot spend the notes.
 
-| 공유 대상 | 할 수 있는 것 | 할 수 없는 것 |
-|-----------|--------------|--------------|
-| 뷰잉 키 보유자 | 노트 잔액 조회, 거래 이력 확인 | 노트 전송, 소비, 주문 |
-| 비밀키 보유자 | 위 모든 것 + 노트 전송/소비/주문 | — |
+| Recipient | Can Do | Cannot Do |
+|-----------|--------|-----------|
+| Viewing key holder | View note balances, verify transaction history | Transfer, spend, or create orders |
+| Secret key holder | All of the above + transfer/spend/create orders | — |
 
-예: 감사인에게 뷰잉 키를 공유하면 자산을 열람할 수 있지만 이동시킬 수 없다.
+Example: Sharing the viewing key with an auditor allows them to inspect assets but not move them.
 
-**역할 5: 주문 메타데이터 (Order Metadata)**
+**Role 5: Order Metadata**
 
-메이커가 주문을 생성할 때 `makerViewingKey`를 온체인에 저장한다:
+When a maker creates an order, the `makerViewingKey` is stored on-chain:
 
 ```solidity
 struct Order {
-    bytes32 makerViewingKey;  // ← 뷰잉 키 저장
+    bytes32 makerViewingKey;  // <- viewing key stored
     bytes32 makerNote;
     ...
 }
 ```
 
-이를 통해:
-- 테이커가 메이커의 노트 구조를 이해하고 스테이크 노트를 올바르게 생성
-- 주문 해시(`hashOrder`)에 뷰잉 키가 포함되어 주문 고유성 보장
-- 메이커의 신원(비밀키)은 노출되지 않으면서 거래 상대방이 주문을 검증 가능
+This enables:
+- The taker to understand the maker's note structure and correctly create the stake note
+- The order hash (`hashOrder`) includes the viewing key, ensuring order uniqueness
+- The maker's identity (secret key) remains hidden while the counterparty can verify the order
 
-**역할 6: 스마트 노트에서의 부모 연결 (Smart Note Linking)**
+**Role 6: Smart Note Linking**
 
-스마트 노트의 경우 뷰잉 키가 일반적인 `Poseidon(pk.x, pk.y)`가 아니라 **부모 노트의 해시**로 설정된다:
-
-```
-일반 노트:   viewingKey = Poseidon(pk.x, pk.y)
-스마트 노트: viewingKey = parentNoteHash
-```
-
-이 설계를 통해:
-- 스마트 노트의 소유자 주소 = `parentNoteHash & MASK_160`
-- 부모 노트의 소유자만 `convertNote`로 스마트 노트를 일반 노트로 변환 가능
-- 주문 체결(settle) 시 출력 노트가 올바른 당사자에게 귀속되는 것을 보장
-
-**역할 7: 암호화된 노트 데이터에 포함 (Encrypted Note Payload)**
-
-노트가 ECDH로 암호화되어 온체인에 저장될 때, 뷰잉 키는 암호화된 페이로드의 일부로 포함된다:
+For smart notes, the viewing key is set to the **parent note's hash** instead of the usual `Poseidon(pk.x, pk.y)`:
 
 ```
-암호화 전 평문: RLP([ownerAddress, value, tokenType, viewingKey, salt])
-암호화 후:     0x01 || epk || nonce || AES-GCM(plaintext) || authTag
+Normal note:  viewingKey = Poseidon(pk.x, pk.y)
+Smart note:   viewingKey = parentNoteHash
 ```
 
-수신자가 복호화하면 뷰잉 키를 복원할 수 있고, 이를 통해 노트의 완전한 해시를 재계산하여 온체인 상태와 대조할 수 있다.
+This design ensures:
+- Smart note owner address = `parentNoteHash & MASK_160`
+- Only the parent note's owner can convert the smart note to a normal note via `convertNote`
+- Order settlement (settle) outputs are guaranteed to belong to the correct parties
 
-#### 뷰잉 키가 없다면?
+**Role 7: Encrypted Note Payload**
 
-뷰잉 키 없이 `ownerAddress`(160비트)만 사용하는 경우 발생하는 문제:
-
-1. **공개키 바인딩 손실**: 160비트 주소 충돌 가능성이 이론적으로 존재. 서로 다른 공개키가 같은 주소를 가질 때, 뷰잉 키가 없으면 노트 해시가 동일해져 소유권 혼동 발생
-2. **노트 탐색 불가**: 노트가 누구의 것인지 식별하려면 공개키 전체 정보가 필요. 160비트 주소만으로는 복호화 후 검증 단계에서 확신도가 낮아짐
-3. **스마트 노트 불가능**: 스마트 노트의 `viewingKey = parentNoteHash` 메커니즘이 작동하지 않아, 주문 체결 시 노트 간 연결을 강제할 수단이 없어짐
-
-### 키 파생 체인
+When a note is ECDH-encrypted and stored on-chain, the viewing key is included as part of the encrypted payload:
 
 ```
-sk (254비트 무작위)
-  │
-  ▼ BabyJubJub 스칼라 곱셈 (sk × G)
-pk (x, y) — BabyJubJub 곡선 위의 점
-  │
-  ▼ Poseidon(pk.x, pk.y)
-viewingKey (254비트)
-  │
-  ├── vk0 = viewingKey >> 128     (상위 128비트)
-  ├── vk1 = viewingKey & MASK_128 (하위 128비트)
-  │
-  ▼ 하위 160비트 절단
-ownerAddress (160비트)
+Plaintext before encryption: RLP([ownerAddress, value, tokenType, viewingKey, salt])
+After encryption:            0x01 || epk || nonce || AES-GCM(plaintext) || authTag
 ```
 
----
+Upon decryption, the recipient recovers the viewing key and can recompute the complete note hash to verify against the on-chain state.
 
-## 6. 소유권 모델 (Ownership Model)
+#### What If There Were No Viewing Key?
 
-ZK-DEX는 **주소 기반 소유권** 모델을 사용한다. 노트 소유를 증명하려면 다음을 ZK 회로 안에서 검증한다:
+Issues that would arise using only `ownerAddress` (160 bits) without a viewing key:
 
-1. 비밀키 `sk`에서 공개키 `pk` 파생: `pk = sk × G`
-2. 공개키에서 주소 파생: `addr = Poseidon(pk.x, pk.y) & MASK_160`
-3. 파생된 주소가 노트의 `ownerAddress`와 일치하는지 확인
+1. **Loss of public key binding**: A theoretical possibility of 160-bit address collisions exists. When different public keys produce the same address, without the viewing key the note hashes become identical, causing ownership confusion.
+2. **Note discovery failure**: Identifying which notes belong to whom requires the full public key information. With only 160 bits of address, confidence in the post-decryption verification step is reduced.
+3. **Smart notes become impossible**: The `viewingKey = parentNoteHash` mechanism for smart notes would not work, leaving no means to enforce inter-note linkage during order settlement.
 
-이 과정은 회로 내부에서 수행되므로 `sk`와 `pk`는 외부에 공개되지 않는다. 온체인에서는 ZK 증명이 유효한지만 검증하면 되므로, 소유자의 신원이 보호된다.
-
-### VerifyOwnershipByAddress (회로 컴포넌트)
+### Key Derivation Chain
 
 ```
-입력: sk, expectedAddress
-내부: pk = sk × G
-      addr = Poseidon(pk.x, pk.y) truncated to 160-bit
-출력: result = (addr == expectedAddress) ? 1 : 0
+sk (254-bit random)
+  |
+  v BabyJubJub scalar multiplication (sk * G)
+pk (x, y) — point on the BabyJubJub curve
+  |
+  v Poseidon(pk.x, pk.y)
+viewingKey (254 bits)
+  |
+  |-- vk0 = viewingKey >> 128     (upper 128 bits)
+  |-- vk1 = viewingKey & MASK_128 (lower 128 bits)
+  |
+  v lower 160-bit truncation
+ownerAddress (160 bits)
 ```
 
 ---
 
-## 7. 노트 생성 — Mint
+## 6. Ownership Model
 
-ETH 또는 DAI를 컨트랙트에 입금하고, 해당 금액에 대한 새로운 노트를 생성하는 연산.
+ZK-DEX uses an **address-based ownership** model. To prove note ownership, the following is verified inside the ZK circuit:
 
-### 회로: MintNBurnNote
+1. Derive public key `pk` from secret key `sk`: `pk = sk * G`
+2. Derive address from public key: `addr = Poseidon(pk.x, pk.y) & MASK_160`
+3. Verify that the derived address matches the note's `ownerAddress`
 
-**공개 입력 (4개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 (유효성 마커) |
-| 1 | noteHash | 생성할 노트의 해시 |
-| 2 | value | 입금 금액 (공개 — `msg.value` 검증 필요) |
-| 3 | tokenType | 토큰 종류 (공개) |
+This process is performed inside the circuit, so `sk` and `pk` are never revealed externally. On-chain, only the validity of the ZK proof needs to be checked, preserving the owner's identity.
 
-**비공개 입력**: ownerAddress, vk0, vk1, salt, sk
+### VerifyOwnershipByAddress (Circuit Component)
 
-**검증 내용**:
-1. `sk`로부터 `ownerAddress` 소유권 증명
-2. 노트 해시가 공개 입력 `noteHash`와 일치하는지 확인
-3. 노트의 `value`와 `tokenType`이 공개 입력과 일치하는지 확인
+```
+Input: sk, expectedAddress
+Internal: pk = sk * G
+          addr = Poseidon(pk.x, pk.y) truncated to 160-bit
+Output: result = (addr == expectedAddress) ? 1 : 0
+```
 
-### 온체인 동작
+---
+
+## 7. Note Creation — Mint
+
+An operation that deposits ETH or DAI into the contract and creates a new note for the deposited amount.
+
+### Circuit: MintNBurnNote
+
+**Public inputs (4)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 (validity marker) |
+| 1 | noteHash | Hash of the note to be created |
+| 2 | value | Deposit amount (public — required for `msg.value` verification) |
+| 3 | tokenType | Token type (public) |
+
+**Private inputs**: ownerAddress, vk0, vk1, salt, sk
+
+**Verification**:
+1. Prove ownership of `ownerAddress` from `sk`
+2. Verify note hash matches the public input `noteHash`
+3. Verify note's `value` and `tokenType` match the public inputs
+
+### On-chain Behavior
 
 ```solidity
 function mint(a, b, c, input, encryptedNote) external payable {
-    // ETH: msg.value == input[2] 검증
+    // ETH: verify msg.value == input[2]
     // DAI: transferFrom(msg.sender, address(this), input[2])
-    // 증명 검증 후 notes[noteHash] = Valid
-    // 암호화된 노트 데이터 저장
+    // After proof verification: notes[noteHash] = Valid
+    // Store encrypted note data
 }
 ```
 
-**핵심**: `value`가 공개 입력인 이유는 컨트랙트가 실제 입금액(`msg.value` 또는 DAI 전송량)과 노트의 값이 일치하는지 검증해야 하기 때문이다. 이것은 시스템 경계(외부 자산 ↔ ZK 노트)에서 불가피한 정보 공개다.
+**Key point**: The reason `value` is a public input is that the contract must verify the actual deposit (`msg.value` or DAI transfer amount) matches the note's value. This is an unavoidable information disclosure at the system boundary (external assets <-> ZK notes).
 
 ---
 
-## 8. 노트 소각 — Liquidate
+## 8. Note Destruction — Liquidate
 
-노트를 소각하고 해당 금액의 ETH 또는 DAI를 지정 주소로 인출하는 연산.
+An operation that destroys a note and withdraws the equivalent amount of ETH or DAI to a specified address.
 
-### 회로: MintNBurnNote (Mint과 동일 회로 재사용)
+### Circuit: MintNBurnNote (Same circuit reused from Mint)
 
-**공개 입력 (4개)**: output, noteHash, value, tokenType (Mint과 동일 구조)
+**Public inputs (4)**: output, noteHash, value, tokenType (same structure as Mint)
 
-**검증 내용**: Mint과 동일 — 소유권 증명 + 해시 일치 + 값/토큰 일치
+**Verification**: Same as Mint — ownership proof + hash match + value/token match
 
-### 온체인 동작
+### On-chain Behavior
 
 ```solidity
 function liquidate(to, a, b, c, input) external {
-    // 증명 검증 후 notes[noteHash] = Spent
-    // ETH: to.transfer(value) 또는 DAI: dai.transfer(to, value)
+    // After proof verification: notes[noteHash] = Spent
+    // ETH: to.transfer(value) or DAI: dai.transfer(to, value)
 }
 ```
 
-**상태 변화**: `Valid → Spent`
+**State change**: `Valid -> Spent`
 
 ---
 
-## 9. 노트 전송 — Transfer (Spend)
+## 9. Note Transfer — Transfer (Spend)
 
-1~2개의 입력 노트를 소비하고 2개의 출력 노트(수신자 + 거스름돈)를 생성하는 연산. 금액과 소유자가 완전히 비공개로 처리된다.
+An operation that consumes 1-2 input notes and creates 2 output notes (recipient + change). Both amount and owner are kept fully private.
 
-### 회로: TransferNote
+### Circuit: TransferNote
 
-**공개 입력 (5개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 |
-| 1 | o0Hash | 입력 노트 0의 해시 |
-| 2 | o1Hash | 입력 노트 1의 해시 (1개만 전송 시 EMPTY_NOTE_HASH) |
-| 3 | newHash | 수신자 노트의 해시 |
-| 4 | changeHash | 거스름돈 노트의 해시 |
+**Public inputs (5)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 |
+| 1 | o0Hash | Input note 0 hash |
+| 2 | o1Hash | Input note 1 hash (EMPTY_NOTE_HASH when transferring only 1) |
+| 3 | newHash | Recipient note hash |
+| 4 | changeHash | Change note hash |
 
-**비공개 입력**:
-- 입력 노트 0, 1의 전체 필드 (ownerAddress, value, tokenType, vk0, vk1, salt)
-- 출력 노트 2개의 전체 필드
-- 비밀키 sk0, sk1
+**Private inputs**:
+- Full fields of input notes 0, 1 (ownerAddress, value, tokenType, vk0, vk1, salt)
+- Full fields of 2 output notes
+- Secret keys sk0, sk1
 
-**검증 내용**:
-1. 입력 노트 0의 소유권 증명 (`sk0` → 주소 일치)
-2. 입력 노트 1의 소유권 증명 (빈 노트가 아닌 경우)
-3. 4개 노트의 해시가 각각 공개 입력과 일치
-4. **가치 보존**: `input0.value + input1.value == new.value + change.value`
-5. **토큰 일관성**: 모든 노트의 `tokenType`이 동일
+**Verification**:
+1. Prove ownership of input note 0 (`sk0` -> address match)
+2. Prove ownership of input note 1 (if not an empty note)
+3. All 4 note hashes match their respective public inputs
+4. **Value conservation**: `input0.value + input1.value == new.value + change.value`
+5. **Token consistency**: All notes have the same `tokenType`
 
-### 핵심 속성
+### Key Properties
 
-- `value`가 공개 입력에 포함되지 않으므로 전송 금액이 비공개
-- `ownerAddress`가 공개 입력에 포함되지 않으므로 수신자가 비공개
-- 가치 보존은 회로 내부에서만 검증 — 외부에서는 해시만 보임
+- `value` is not included in public inputs, so the transfer amount is private
+- `ownerAddress` is not included in public inputs, so the recipient is private
+- Value conservation is verified only inside the circuit — externally only hashes are visible
 
 ---
 
-## 10. 스마트 노트 (Smart Note)
+## 10. Smart Note
 
-**스마트 노트**는 소유자가 사용자의 공개키가 아닌 **다른 노트의 해시**에서 파생된 특수 노트다. 주문(order) 프로토콜에서 노트 간 연결 관계를 암호학적으로 강제하는 데 사용한다.
+A **smart note** is a special note whose owner is derived not from a user's public key but from **another note's hash**. It is used in the order protocol to cryptographically enforce linkage relationships between notes.
 
-### 일반 노트 vs 스마트 노트
+### Normal Note vs Smart Note
 
-| 속성 | 일반 노트 | 스마트 노트 |
-|------|-----------|------------|
+| Property | Normal Note | Smart Note |
+|----------|-------------|------------|
 | ownerAddress | `Poseidon(pk.x, pk.y) & MASK_160` | `parentNoteHash & MASK_160` |
 | viewingKey | `Poseidon(pk.x, pk.y)` | `parentNoteHash` |
-| 생성 시점 | mint, transfer | takeOrder, settleOrder |
-| 소유권 증명 | 비밀키로 직접 증명 | 부모 노트 소유자만 convertNote로 변환 가능 |
+| Created during | mint, transfer | takeOrder, settleOrder |
+| Ownership proof | Directly proved with secret key | Only the parent note's owner can convert via convertNote |
 
-### 스마트 노트 감지
+### Smart Note Detection
 
-스마트 노트의 소유자 주소는 254비트 해시의 하위 160비트이므로 상위 비트가 비어있을 확률이 높다. 회로에서는 `ownerAddress < 2^128`인지 확인하여 스마트 노트를 구별한다.
+Since a smart note's owner address is the lower 160 bits of a 254-bit hash, the upper bits are likely non-zero. The circuit distinguishes smart notes by checking whether `ownerAddress < 2^128`.
 
-### 사용 목적
+### Purpose
 
-주문에서 "이 노트는 특정 다른 노트와 연결되어 있다"를 암호학적으로 증명하는 메커니즘. 예를 들어, 테이커의 스테이크 노트는 메이커 노트 해시에서 소유자가 파생되므로, 메이커만이 해당 스테이크를 최종적으로 사용할 수 있다.
+A mechanism to cryptographically prove that "this note is linked to a specific other note" within orders. For example, a taker's stake note has its owner derived from the maker note hash, so only the maker can ultimately use that stake.
 
 ---
 
-## 11. 노트 변환 — Convert
+## 11. Note Conversion — Convert
 
-스마트 노트를 일반 노트로 변환하는 연산. 스마트 노트의 원본(origin) 노트 소유자만 수행할 수 있다.
+An operation that converts a smart note into a normal note. Only the owner of the smart note's origin note can perform this.
 
-### 회로: ConvertNote
+### Circuit: ConvertNote
 
-**공개 입력 (4개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 |
-| 1 | smartHash | 변환 대상 스마트 노트의 해시 |
-| 2 | originHash | 원본 노트의 해시 (스마트 노트의 부모) |
-| 3 | newHash | 변환 결과 일반 노트의 해시 |
+**Public inputs (4)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 |
+| 1 | smartHash | Hash of the smart note to be converted |
+| 2 | originHash | Hash of the origin note (the smart note's parent) |
+| 3 | newHash | Hash of the resulting normal note |
 
-**비공개 입력**: 스마트/원본/새 노트의 전체 필드 + sk
+**Private inputs**: Full fields of smart/origin/new notes + sk
 
-**검증 내용**:
-1. 스마트 노트의 `ownerAddress == originHash & MASK_160` (연결 확인)
-2. 원본 노트의 소유권 증명 (`sk` → 주소 일치)
-3. 3개 노트의 해시가 공개 입력과 일치
-4. **가치 보존**: `smartNote.value == newNote.value`
-5. **토큰 보존**: `smartNote.tokenType == newNote.tokenType`
+**Verification**:
+1. `smartNote.ownerAddress == originHash & MASK_160` (linkage verification)
+2. Prove ownership of the origin note (`sk` -> address match)
+3. All 3 note hashes match their public inputs
+4. **Value conservation**: `smartNote.value == newNote.value`
+5. **Token conservation**: `smartNote.tokenType == newNote.tokenType`
 
-### 온체인 동작
+### On-chain Behavior
 
 ```solidity
 function convertNote(a, b, c, input, encryptedNote) external {
-    // notes[smartHash] = Invalid (스마트 노트 소멸)
-    // notes[newHash] = Valid (새 일반 노트 생성)
+    // notes[smartHash] = Invalid (smart note destroyed)
+    // notes[newHash] = Valid (new normal note created)
 }
 ```
 
 ---
 
-## 12. 주문 생성 — Make Order
+## 12. Order Creation — Make Order
 
-메이커가 보유 노트를 기반으로 거래 주문을 생성하는 연산.
+An operation where a maker creates a trade order based on a note they hold.
 
-### 회로: MakeOrder
+### Circuit: MakeOrder
 
-**공개 입력 (3개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 |
-| 1 | noteHash | 메이커 노트의 해시 |
-| 2 | tokenType | 메이커가 제공하는 토큰 종류 (공개) |
+**Public inputs (3)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 |
+| 1 | noteHash | Maker note hash |
+| 2 | tokenType | Token type the maker offers (public) |
 
-**비공개 입력**: ownerAddress, value, vk0, vk1, salt, sk
+**Private inputs**: ownerAddress, value, vk0, vk1, salt, sk
 
-**검증 내용**:
-1. 메이커 노트의 소유권 증명
-2. 노트 해시 일치 확인
-3. `value`는 비공개 유지
+**Verification**:
+1. Prove ownership of the maker note
+2. Verify note hash match
+3. `value` remains private
 
-### 온체인 동작
+### On-chain Behavior
 
 ```solidity
 function makeOrder(makerViewingKey, targetToken, price, a, b, c, input) external {
-    // Order 구조체 생성:
-    //   - makerViewingKey: 메이커의 뷰잉 키 (주문 조회용)
-    //   - makerNote: 메이커 노트 해시
-    //   - sourceToken: 메이커가 제공하는 토큰 (input[2])
-    //   - targetToken: 메이커가 원하는 토큰
-    //   - price: 교환 비율
+    // Create Order struct:
+    //   - makerViewingKey: maker's viewing key (for order lookup)
+    //   - makerNote: maker note hash
+    //   - sourceToken: token the maker offers (input[2])
+    //   - targetToken: token the maker wants
+    //   - price: exchange rate
     //   - state: Created
-    // notes[makerNote] = Trading (거래 잠금)
+    // notes[makerNote] = Trading (locked for trading)
 }
 ```
 
-### Order 구조체
+### Order Struct
 
 ```solidity
 struct Order {
-    bytes32 makerViewingKey;    // 메이커 뷰잉 키
-    bytes32 makerNote;          // 메이커 노트 해시
-    uint256 sourceToken;        // 메이커 토큰 종류
-    uint256 targetToken;        // 원하는 토큰 종류
-    uint256 price;              // 교환 비율 (10^18 단위)
-    bytes32 takerNoteToMaker;   // 테이커 스테이크 노트
-    bytes32 parentNote;         // 테이커 부모 노트
-    OrderState state;           // Created → Taken → Settled
+    bytes32 makerViewingKey;    // Maker viewing key
+    bytes32 makerNote;          // Maker note hash
+    uint256 sourceToken;        // Maker token type
+    uint256 targetToken;        // Desired token type
+    uint256 price;              // Exchange rate (10^18 units)
+    bytes32 takerNoteToMaker;   // Taker stake note
+    bytes32 parentNote;         // Taker parent note
+    OrderState state;           // Created -> Taken -> Settled
 }
 ```
 
 ---
 
-## 13. 주문 수락 — Take Order
+## 13. Order Acceptance — Take Order
 
-테이커가 메이커의 주문에 자산을 스테이크하여 수락하는 연산. 테이커의 노트에서 메이커에게 연결된 **스마트 노트**를 생성한다.
+An operation where a taker accepts a maker's order by staking assets. Creates a **smart note** from the taker's note linked to the maker.
 
-### 회로: TakeOrder
+### Circuit: TakeOrder
 
-**공개 입력 (6개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 |
-| 1 | parentNoteHash | 테이커의 부모(원본) 노트 해시 |
-| 2 | parentNoteType | 부모 노트의 토큰 종류 |
-| 3 | stakeNoteHash | 생성되는 스테이크 노트(스마트 노트) 해시 |
-| 4 | stakeNoteOwner | 메이커 노트 해시의 하위 160비트 |
-| 5 | stakeNoteType | 스테이크 노트의 토큰 종류 |
+**Public inputs (6)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 |
+| 1 | parentNoteHash | Taker's parent (original) note hash |
+| 2 | parentNoteType | Parent note's token type |
+| 3 | stakeNoteHash | Hash of the stake note (smart note) being created |
+| 4 | stakeNoteOwner | Lower 160 bits of maker note hash |
+| 5 | stakeNoteType | Stake note's token type |
 
-**비공개 입력**: 부모 노트 필드, 스테이크 노트 필드 (ownerAddress 제외), sk
+**Private inputs**: Parent note fields, stake note fields (excluding ownerAddress), sk
 
-**검증 내용**:
-1. 부모 노트의 소유권 증명 (`sk` → 주소 일치)
-2. 부모 노트 해시 일치
-3. 스테이크 노트 해시 일치
-4. **가치 보존**: `parentNote.value == stakeNote.value`
-5. **스마트 노트 연결**: `stakeNote.ownerAddress == makerNoteHash & MASK_160`
+**Verification**:
+1. Prove ownership of the parent note (`sk` -> address match)
+2. Parent note hash match
+3. Stake note hash match
+4. **Value conservation**: `parentNote.value == stakeNote.value`
+5. **Smart note linkage**: `stakeNote.ownerAddress == makerNoteHash & MASK_160`
 
-### 온체인 동작
+### On-chain Behavior
 
 ```solidity
 function takeOrder(orderId, a, b, c, input, encryptedStakingNote) external {
-    // 주문 상태 확인: Created
-    // 토큰 타입 일치 확인: order.targetToken == input[2] == input[5]
-    // 소유자 연결 확인: makerNote의 하위 160비트 == input[4]
+    // Verify order state: Created
+    // Verify token type match: order.targetToken == input[2] == input[5]
+    // Verify owner linkage: lower 160 bits of makerNote == input[4]
     // notes[parentNote] = Trading
     // notes[stakeNote] = Trading
     // order.state = Taken
@@ -540,73 +540,73 @@ function takeOrder(orderId, a, b, c, input, encryptedStakingNote) external {
 
 ---
 
-## 14. 주문 체결 — Settle Order
+## 14. Order Settlement — Settle Order
 
-메이커와 테이커의 노트를 가격에 따라 원자적으로 교환하는 연산. ZK-DEX에서 가장 복잡한 회로.
+An operation that atomically exchanges the maker's and taker's notes according to the price. The most complex circuit in ZK-DEX.
 
-### 회로: SettleOrder
+### Circuit: SettleOrder
 
-**공개 입력 (14개)**:
-| 인덱스 | 이름 | 설명 |
-|--------|------|------|
-| 0 | output | 항상 1 |
-| 1 | o0Hash | 메이커 노트 해시 |
-| 2 | o0Type | 메이커 노트 토큰 종류 |
-| 3 | o1Hash | 테이커 스테이크 노트 해시 |
-| 4 | o1Type | 테이커 스테이크 노트 토큰 종류 |
-| 5 | n0Hash | 보상 노트 해시 (테이커에게) |
-| 6 | n0Owner | 보상 노트 소유자 (parentNote 해시의 하위 160비트) |
-| 7 | n0Type | 보상 노트 토큰 종류 |
-| 8 | n1Hash | 지불 노트 해시 (메이커에게) |
-| 9 | n1Owner | 지불 노트 소유자 (makerNote 해시의 하위 160비트) |
-| 10 | n1Type | 지불 노트 토큰 종류 |
-| 11 | n2Hash | 잔돈 노트 해시 |
-| 12 | n2Type | 잔돈 노트 토큰 종류 |
-| 13 | price | 교환 비율 |
+**Public inputs (14)**:
+| Index | Name | Description |
+|-------|------|-------------|
+| 0 | output | Always 1 |
+| 1 | o0Hash | Maker note hash |
+| 2 | o0Type | Maker note token type |
+| 3 | o1Hash | Taker stake note hash |
+| 4 | o1Type | Taker stake note token type |
+| 5 | n0Hash | Reward note hash (to taker) |
+| 6 | n0Owner | Reward note owner (lower 160 bits of parentNote hash) |
+| 7 | n0Type | Reward note token type |
+| 8 | n1Hash | Payment note hash (to maker) |
+| 9 | n1Owner | Payment note owner (lower 160 bits of makerNote hash) |
+| 10 | n1Type | Payment note token type |
+| 11 | n2Hash | Change note hash |
+| 12 | n2Type | Change note token type |
+| 13 | price | Exchange rate |
 
-### 가격 계산 로직
+### Price Calculation Logic
 
-회로 내에서 **비결정론적 나눗셈 검증**(division witness)을 사용한다:
-
-```
-o0Value × price = q0 × 10^18 + r0    (메이커 가치의 가격 환산)
-o1Value = q1 × price + r1            (테이커 가치의 가격 역환산)
-
-조건: r0 < 10^18, r1 < price
-```
-
-`q0`, `r0`, `q1`, `r1`은 비공개 입력으로 제공되며, 회로는 위 관계가 성립하는지만 검증한다. 이것은 ZK 회로에서 나눗셈을 처리하는 표준 기법이다.
-
-### 체결 방향 (누가 더 많은 가치를 제공했는가)
+The circuit uses **non-deterministic division verification** (division witness):
 
 ```
-bit = (o0Value ≥ o1Value ÷ price) ? 1 : 0
+o0Value * price = q0 * 10^18 + r0    (maker value converted at price)
+o1Value = q1 * price + r1            (taker value reverse-converted at price)
 
-bit == 1 (메이커 가치 ≥ 테이커 가치):
-  보상(n0) = o1Value ÷ price      → 테이커에게 (메이커 토큰)
-  지불(n1) = o1Value              → 메이커에게 (테이커 토큰)
-  잔돈(n2) = o0Value - 보상값     → 메이커에게 반환
-
-bit == 0 (테이커 가치 > 메이커 가치):
-  보상(n0) = o0Value              → 테이커에게 (메이커 토큰 전부)
-  지불(n1) = o0Value × price      → 메이커에게 (가격 환산 금액)
-  잔돈(n2) = o1Value - 지불값     → 테이커에게 반환
+Conditions: r0 < 10^18, r1 < price
 ```
 
-### 출력 노트 소유자 규칙
+`q0`, `r0`, `q1`, `r1` are provided as private inputs, and the circuit only verifies the above relationships hold. This is a standard technique for handling division in ZK circuits.
 
-| 노트 | 소유자 | 파생 방식 |
-|------|--------|-----------|
-| 보상 (n0) | 테이커 | `parentNote 해시 & MASK_160` (스마트 노트) |
-| 지불 (n1) | 메이커 | `makerNote 해시 & MASK_160` (스마트 노트) |
-| 잔돈 (n2) | 상황에 따라 다름 | bit==1: `makerNote 해시 & MASK_160`, bit==0: `parentNote 해시 & MASK_160` |
+### Settlement Direction (Who Provided More Value)
 
-### 온체인 동작
+```
+bit = (o0Value >= o1Value / price) ? 1 : 0
+
+bit == 1 (maker value >= taker value):
+  reward(n0) = o1Value / price      -> to taker (maker's token)
+  payment(n1) = o1Value             -> to maker (taker's token)
+  change(n2) = o0Value - reward     -> returned to maker
+
+bit == 0 (taker value > maker value):
+  reward(n0) = o0Value              -> to taker (all of maker's token)
+  payment(n1) = o0Value * price     -> to maker (price-converted amount)
+  change(n2) = o1Value - payment    -> returned to taker
+```
+
+### Output Note Owner Rules
+
+| Note | Owner | Derivation |
+|------|-------|------------|
+| Reward (n0) | Taker | `parentNote hash & MASK_160` (smart note) |
+| Payment (n1) | Maker | `makerNote hash & MASK_160` (smart note) |
+| Change (n2) | Depends on direction | bit==1: `makerNote hash & MASK_160`, bit==0: `parentNote hash & MASK_160` |
+
+### On-chain Behavior
 
 ```solidity
 function settleOrder(orderId, a, b, c, input, encDatas) external {
-    // 주문 데이터 일치 검증 (makerNote, takerNote, 토큰 종류, 가격)
-    // 소유자 연결 검증 (reward → parentNote, payment → makerNote)
+    // Verify order data match (makerNote, takerNote, token types, price)
+    // Verify owner linkage (reward -> parentNote, payment -> makerNote)
     // notes[makerNote] = Spent
     // notes[parentNote] = Spent
     // notes[takerNoteToMaker] = Spent
@@ -617,186 +617,186 @@ function settleOrder(orderId, a, b, c, input, encDatas) external {
 }
 ```
 
-### 체결 후
+### After Settlement
 
-보상/지불/잔돈 노트는 모두 **스마트 노트**이므로, 수신자는 `convertNote`를 호출하여 일반 노트로 변환해야 자유롭게 사용할 수 있다.
+The reward, payment, and change notes are all **smart notes**, so recipients must call `convertNote` to convert them into normal notes before they can be freely used.
 
 ---
 
-## 15. 암호학 기본 요소
+## 15. Cryptographic Primitives
 
-### Poseidon 해시
+### Poseidon Hash
 
-ZK 친화적 해시 함수. SHA256 대비 회로 내 비용이 약 100배 낮다.
+A ZK-friendly hash function. Approximately 100x cheaper inside circuits compared to SHA256.
 
-| 용도 | 입력 | 출력 |
-|------|------|------|
-| 노트 해시 | (ownerAddress, value, tokenType, vk0, vk1, salt) | 254비트 해시 |
-| 주소 파생 | (pk.x, pk.y) | 254비트 해시 → 160비트 절단 |
-| 뷰잉 키 | (pk.x, pk.y) | 254비트 해시 (절단 없음) |
+| Purpose | Input | Output |
+|---------|-------|--------|
+| Note hash | (ownerAddress, value, tokenType, vk0, vk1, salt) | 254-bit hash |
+| Address derivation | (pk.x, pk.y) | 254-bit hash -> 160-bit truncation |
+| Viewing key | (pk.x, pk.y) | 254-bit hash (no truncation) |
 
-**비용 비교**:
-| 해시 | 회로 제약조건 수 |
-|------|-----------------|
+**Cost comparison**:
+| Hash | Circuit Constraints |
+|------|-------------------|
 | Poseidon(6) | ~1,500 |
 | Poseidon(2) | ~350 |
 | SHA256 | ~30,000 |
 
-### BabyJubJub 타원곡선
+### BabyJubJub Elliptic Curve
 
-- **유형**: 트위스트 에드워즈 곡선 (ax² + y² = 1 + dx²y²)
-- **필드**: 254비트 (BN128 스칼라 필드 위)
-- **용도**: 공개키 파생 (sk × G), ECDH 키 교환
-- **생성자 점**: BASE8 (circomlib에 하드코딩)
+- **Type**: Twisted Edwards curve (ax^2 + y^2 = 1 + dx^2y^2)
+- **Field**: 254-bit (over the BN128 scalar field)
+- **Purpose**: Public key derivation (sk * G), ECDH key exchange
+- **Generator point**: BASE8 (hardcoded in circomlib)
 
-**비용**: `EscalarMulFix(254)` (스칼라 곱셈) ≈ 128,000 제약조건 — 회로 비용의 97%+ 차지
+**Cost**: `EscalarMulFix(254)` (scalar multiplication) ~ 128,000 constraints — accounts for 97%+ of circuit cost
 
-### Groth16 증명 시스템
+### Groth16 Proof System
 
-- **곡선**: BN128
-- **증명 크기**: 3개 요소 (a[2], b[2][2], c[2]) — 약 256바이트
-- **검증 비용**: 온체인 ~200K 가스
-- **증명 생성**: snarkjs를 통해 브라우저(WASM) 또는 Node.js에서 수행
+- **Curve**: BN128
+- **Proof size**: 3 elements (a[2], b[2][2], c[2]) — approximately 256 bytes
+- **Verification cost**: ~200K gas on-chain
+- **Proof generation**: Performed in the browser (WASM) or Node.js via snarkjs
 
 ---
 
-## 16. 노트 암호화 (ECDH)
+## 16. Note Encryption (ECDH)
 
-노트 데이터는 수신자만 복호화할 수 있도록 ECDH + AES-256-GCM으로 암호화되어 온체인에 저장된다.
+Note data is encrypted with ECDH + AES-256-GCM so that only the recipient can decrypt it, then stored on-chain.
 
-### 암호화 과정
+### Encryption Process
 
 ```
-1. 임시 키 쌍 생성: (esk, epk) — BabyJubJub
-2. 공유 비밀 계산: sharedSecret = esk × recipientPk
-3. AES 키 파생: aesKey = SHA256(sharedSecret.x || sharedSecret.y)
-4. 랜덤 논스 생성: nonce (12바이트)
-5. 암호화: ciphertext = AES-256-GCM(aesKey, nonce, plaintext)
+1. Generate ephemeral key pair: (esk, epk) — BabyJubJub
+2. Compute shared secret: sharedSecret = esk * recipientPk
+3. Derive AES key: aesKey = SHA256(sharedSecret.x || sharedSecret.y)
+4. Generate random nonce: nonce (12 bytes)
+5. Encrypt: ciphertext = AES-256-GCM(aesKey, nonce, plaintext)
 ```
 
-### 온체인 저장 형식
+### On-chain Storage Format
 
 ```
 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
 ```
 
-### 복호화
+### Decryption
 
-수신자는 자신의 비밀키로 `sharedSecret = sk × epk`를 계산하여 동일한 AES 키를 파생하고 복호화한다.
+The recipient computes `sharedSecret = sk * epk` using their secret key, derives the same AES key, and decrypts.
 
-### 온체인 매핑
+### On-chain Mapping
 
 ```solidity
-mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → 암호화된 바이트
+mapping(bytes32 => bytes) public encryptedNotes;  // noteHash -> encrypted bytes
 ```
 
-제3자는 암호화된 바이트를 읽을 수 있지만, 비밀키 없이는 원본 `{ownerAddress, value, tokenType, viewingKey, salt}`을 복원할 수 없다.
+Third parties can read the encrypted bytes but cannot recover the original `{ownerAddress, value, tokenType, viewingKey, salt}` without the secret key.
 
 ---
 
-## 17. 프라이버시 모델
+## 17. Privacy Model
 
-### 연산별 정보 공개 수준
+### Information Disclosure by Operation
 
-| 연산 | 금액 (value) | 소유자 | 토큰 종류 |
-|------|-------------|--------|-----------|
-| Mint | **공개** (입금 검증 필요) | 비공개 | 공개 |
-| Liquidate | **공개** (출금 검증 필요) | 비공개 | 공개 |
-| Transfer | **비공개** | **비공개** | 비공개 |
-| ConvertNote | **비공개** | **비공개** | 비공개 |
-| MakeOrder | 비공개 | 비공개 | 공개 (매칭 필요) |
-| TakeOrder | 비공개 | 부분 공개 (160비트 주소) | 공개 |
-| SettleOrder | 비공개 (가격만 공개) | 부분 공개 (160비트 주소) | 공개 |
+| Operation | Value | Owner | Token Type |
+|-----------|-------|-------|------------|
+| Mint | **Public** (deposit verification required) | Private | Public |
+| Liquidate | **Public** (withdrawal verification required) | Private | Public |
+| Transfer | **Private** | **Private** | Private |
+| ConvertNote | **Private** | **Private** | Private |
+| MakeOrder | Private | Private | Public (needed for matching) |
+| TakeOrder | Private | Partially public (160-bit address) | Public |
+| SettleOrder | Private (only price is public) | Partially public (160-bit address) | Public |
 
-### 계층별 보호
+### Protection by Layer
 
-| 계층 | 보호 수준 | 설명 |
-|------|----------|------|
-| ZK 회로 | 부분적 | Transfer/Convert는 완전 비공개, Mint은 금액 공개 |
-| 온체인 저장 (ECDH) | 보호됨 | 소유자만 복호화 가능 |
-| 온체인 저장 (레거시) | 미보호 | 마이그레이션 전 노트는 평문 RLP |
-| 소유권 | 보호됨 | 비밀키 + ZK 증명이 필수 |
-
----
-
-## 18. 보안 속성
-
-### 이중 지불 방지
-
-온체인 상태 머신이 각 노트의 생명주기를 추적한다. `Valid` 상태의 노트만 소비할 수 있으며, 소비된 노트는 `Spent`로 전환되어 재사용이 불가능하다.
-
-### 가치 보존 (Value Conservation)
-
-- **Mint/Liquidate**: 외부 자산 입출금 시 `msg.value` 또는 DAI 전송량과 노트 값이 일치하는지 검증
-- **Transfer**: 회로 내에서 `입력값 합 == 출력값 합` 제약조건 강제
-- **Settle**: 회로 내에서 가격 기반 교환 수식이 정확히 성립하는지 검증
-
-### 노트 고유성
-
-무작위 `salt`가 각 노트에 포함되므로, 동일한 소유자/금액/토큰 조합이라도 서로 다른 해시를 갖는다. 이는 해시 충돌을 통한 프리이미지 공격을 방지한다.
-
-### 스마트 노트 연결 무결성
-
-- 스테이크 노트의 소유자 = 메이커 노트 해시의 하위 160비트
-- 지불 노트의 소유자 = 메이커 노트 해시의 하위 160비트
-- 보상 노트의 소유자 = 테이커 부모 노트 해시의 하위 160비트
-- 이 관계는 회로와 온체인 양쪽에서 모두 검증되므로, 제3자가 노트를 가로챌 수 없다.
-
-### 주문 원자성
-
-`settleOrder`는 5개 노트의 상태를 단일 트랜잭션에서 원자적으로 변경한다:
-- 입력 3개 (makerNote, parentNote, stakeNote) → Spent
-- 출력 3개 (reward, payment, change) → Valid
-
-부분 실행은 불가능하며, 증명이 유효하지 않으면 전체 트랜잭션이 실패한다.
+| Layer | Protection Level | Description |
+|-------|-----------------|-------------|
+| ZK circuit | Partial | Transfer/Convert are fully private; Mint exposes value |
+| On-chain storage (ECDH) | Protected | Only the owner can decrypt |
+| On-chain storage (legacy) | Unprotected | Pre-migration notes stored as plaintext RLP |
+| Ownership | Protected | Secret key + ZK proof required |
 
 ---
 
-## 회로 복잡도 요약
+## 18. Security Properties
 
-| 회로 | 제약조건 수 | 주요 연산 |
-|------|------------|-----------|
-| MintNBurnNote | ~131K | 소유권 증명 1회, 노트 해시 1회 |
-| TransferNote | ~516K | 소유권 증명 2회, 노트 해시 4회, 가치 보존 |
-| MakeOrder | ~131K | 소유권 증명 1회, 노트 해시 1회 |
-| TakeOrder | ~258K | 소유권 증명 1회, 노트 해시 2회, 가치 보존 |
-| ConvertNote | ~385K | 소유권 증명 1회, 노트 해시 3회, 해시 절단 |
-| SettleOrder | ~641K | 소유권 증명 1회, 노트 해시 5회, 나눗셈 검증, 조건 분기 |
+### Double-Spend Prevention
 
-**비용 지배 요인**: BabyJubJub 스칼라 곱셈 (`EscalarMulFix`) ≈ 128K 제약조건이 각 소유권 증명의 97%+를 차지한다.
+The on-chain state machine tracks each note's lifecycle. Only notes in `Valid` state can be spent, and consumed notes transition to `Spent`, making reuse impossible.
+
+### Value Conservation
+
+- **Mint/Liquidate**: Verifies that `msg.value` or DAI transfer amount matches the note value during external asset deposits/withdrawals
+- **Transfer**: Enforces `sum of inputs == sum of outputs` constraint inside the circuit
+- **Settle**: Verifies the price-based exchange formula holds exactly inside the circuit
+
+### Note Uniqueness
+
+Each note includes a random `salt`, so even identical owner/amount/token combinations produce different hashes. This prevents preimage attacks via hash collisions.
+
+### Smart Note Linkage Integrity
+
+- Stake note owner = lower 160 bits of maker note hash
+- Payment note owner = lower 160 bits of maker note hash
+- Reward note owner = lower 160 bits of taker parent note hash
+- These relationships are verified both in the circuit and on-chain, preventing third parties from intercepting notes.
+
+### Order Atomicity
+
+`settleOrder` atomically changes the states of 5 notes in a single transaction:
+- 3 inputs (makerNote, parentNote, stakeNote) -> Spent
+- 3 outputs (reward, payment, change) -> Valid
+
+Partial execution is impossible; if the proof is invalid, the entire transaction fails.
 
 ---
 
-## 전체 거래 흐름
+## Circuit Complexity Summary
+
+| Circuit | Constraints | Key Operations |
+|---------|-------------|----------------|
+| MintNBurnNote | ~131K | 1 ownership proof, 1 note hash |
+| TransferNote | ~516K | 2 ownership proofs, 4 note hashes, value conservation |
+| MakeOrder | ~131K | 1 ownership proof, 1 note hash |
+| TakeOrder | ~258K | 1 ownership proof, 2 note hashes, value conservation |
+| ConvertNote | ~385K | 1 ownership proof, 3 note hashes, hash truncation |
+| SettleOrder | ~641K | 1 ownership proof, 5 note hashes, division verification, conditional branching |
+
+**Dominant cost factor**: BabyJubJub scalar multiplication (`EscalarMulFix`) ~ 128K constraints accounts for 97%+ of each ownership proof.
+
+---
+
+## Complete Trading Flow
 
 ```
-[사용자 A: ETH 보유]                     [사용자 B: DAI 보유]
-      │                                        │
-  ① mint(ETH)                              ① mint(DAI)
-      │                                        │
-      ▼                                        ▼
+[User A: holds ETH]                     [User B: holds DAI]
+      |                                        |
+  (1) mint(ETH)                            (1) mint(DAI)
+      |                                        |
+      v                                        v
   NoteA (ETH, Valid)                    NoteB (DAI, Valid)
-      │                                        │
-  ② makeOrder(ETH→DAI, price)                  │
-      │                                        │
-      ▼                                        │
-  NoteA (Trading)                              │
-  Order(Created)                               │
-      │                                        │
-      │◄────────────── ③ takeOrder(orderId) ────┘
-      │                                        │
-      ▼                                        ▼
+      |                                        |
+  (2) makeOrder(ETH->DAI, price)               |
+      |                                        |
+      v                                        |
+  NoteA (Trading)                              |
+  Order(Created)                               |
+      |                                        |
+      |<------------- (3) takeOrder(orderId) --+
+      |                                        |
+      v                                        v
   Order(Taken)                          NoteB (Trading)
-  StakeNote (Trading, 스마트노트)
-      │
-  ④ settleOrder(orderId)
-      │
-      ├──▶ RewardNote (ETH→B, 스마트노트, Valid)
-      ├──▶ PaymentNote (DAI→A, 스마트노트, Valid)
-      └──▶ ChangeNote (잔돈, 스마트노트, Valid)
-              │
-  ⑤ convertNote (각 수신자가 자신의 스마트노트를 일반 노트로 변환)
-              │
-              ▼
-      NormalNote (Valid, 자유로운 전송/소각 가능)
+  StakeNote (Trading, smart note)
+      |
+  (4) settleOrder(orderId)
+      |
+      |---> RewardNote (ETH->B, smart note, Valid)
+      |---> PaymentNote (DAI->A, smart note, Valid)
+      +---> ChangeNote (change, smart note, Valid)
+              |
+  (5) convertNote (each recipient converts their smart note to a normal note)
+              |
+              v
+      NormalNote (Valid, freely transferable/liquidatable)
 ```

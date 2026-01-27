@@ -436,7 +436,7 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 
 ## 문서
 
-- [핵심 개념 가이드](docs/concept.md)
+- [핵심 개념 가이드 (EN)](docs/concept.md) / [핵심 개념 가이드 (KO)](docs/concept_ko.md)
 - [아키텍처 (EN)](docs/architecture.md) / [아키텍처 (KO)](docs/architecture_ko.md)
 - [회로 마이그레이션 (EN)](docs/migration-circuits.md) / [회로 마이그레이션 (KO)](docs/migration-circuits_ko.md)
 - [프론트엔드 마이그레이션 (EN)](docs/migration-frontend.md) / [프론트엔드 마이그레이션 (KO)](docs/migration-frontend_ko.md)
