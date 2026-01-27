@@ -18,18 +18,18 @@ let initPromise: Promise<PoseidonFunction> | null = null
  *
  * @returns The initialized PoseidonFunction instance
  */
-async function init() {
+async function init(): Promise<PoseidonFunction> {
   if (poseidon) {
     return poseidon
   }
   // Prevent concurrent buildPoseidon() calls
   if (!initPromise) {
     initPromise = buildPoseidon().then(p => {
-      poseidon = p
-      return p
+      poseidon = p as PoseidonFunction
+      return p as PoseidonFunction
     })
   }
-  return initPromise
+  return initPromise!
 }
 
 /**

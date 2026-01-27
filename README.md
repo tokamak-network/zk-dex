@@ -66,14 +66,14 @@ npx truffle test test/ZkDex.production.test.js
 #### Docker Testing
 
 ```bash
-# Build and run all tests
-docker compose run zkdex
+# Build and run contract tests (19 tests: deployment, minting, transfers, E2E trading)
+docker compose run --rm zkdex
 
 # Run frontend integration tests only
-docker compose --profile test run test-frontend
+docker compose --profile test run --rm test-frontend
 
-# Run production tests only
-docker compose --profile test run test-production
+# Run production tests only (real Groth16 proof verification)
+docker compose --profile test run --rm test-production
 
 # Cleanup
 docker compose down -v
@@ -87,7 +87,7 @@ docker compose down -v
 |---------|-------------|------|---------|
 | `ganache` | Local Ethereum blockchain | 8545 | `docker compose up ganache -d` |
 | `vapp-api` | Backend API server (Express) | 3000 | `docker compose up vapp-api -d` |
-| `zkdex` | Main test runner | - | `docker compose run zkdex` |
+| `zkdex` | Contract test runner | - | `docker compose run --rm zkdex` |
 | `vapp` | Frontend (Production/nginx) | 8080 | `docker compose up vapp -d` |
 | `vapp-dev` | Frontend (Development/hot reload) | 8081 | `docker compose --profile dev up vapp-dev -d` |
 | `zkdex-dev` | Development shell | - | `docker compose --profile dev run zkdex-dev` |
@@ -108,8 +108,8 @@ docker compose --profile dev up ganache vapp-api vapp-dev -d
 
 # Access frontend at http://localhost:8081
 
-# Run all tests in Docker
-docker compose run zkdex
+# Run contract tests in Docker
+docker compose run --rm zkdex
 
 # Interactive development shell
 docker compose --profile dev run zkdex-dev
@@ -119,11 +119,9 @@ docker compose --profile dev run zkdex-dev
 
 | File | Description |
 |------|-------------|
-| `Dockerfile` | Main ZK-DEX build (circuits, contracts, tests) |
-| `vapp/Dockerfile` | Frontend multi-stage build (dev/prod) |
+| `Dockerfile` | Multi-stage build (circuits, contracts, tests, frontend dev/prod) |
 | `docker-compose.yml` | Service orchestration |
 | `.dockerignore` | Excludes large files (ptau, intermediate zkeys) |
-| `vapp/.dockerignore` | Frontend build exclusions |
 
 ## Circuits
 
@@ -440,6 +438,7 @@ Aggregate proofs over multiple notes (e.g., balance sum of 5 notes) currently re
 - [Architecture (EN)](docs/architecture.md) / [Architecture (KO)](docs/architecture_ko.md)
 - [Circuit Migration (EN)](docs/migration-circuits.md) / [Circuit Migration (KO)](docs/migration-circuits_ko.md)
 - [Frontend Migration (EN)](docs/migration-frontend.md) / [Frontend Migration (KO)](docs/migration-frontend_ko.md)
+- [Docker (EN)](docs/docker.md) / [Docker (KO)](docs/docker_ko.md)
 - [Architecture Presentation](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [Demo Video](https://youtu.be/QvKaqMH_5lk)
 

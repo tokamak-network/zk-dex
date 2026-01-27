@@ -16,6 +16,7 @@
           <th>Notes</th>
           <th>ETH</th>
           <th>DAI</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -27,9 +28,21 @@
         >
           <td>{{ index }}</td>
           <td>{{ fmt.formatZkAddress(account.address) }}</td>
-          <td>{{ noteCount(account.address) }}</td>
-          <td>{{ accountBalance(account.address, '0') }}</td>
-          <td>{{ accountBalance(account.address, '1') }}</td>
+          <td>{{ account.secretKey ? noteCount(account.address) : '***' }}</td>
+          <td>{{ account.secretKey ? accountBalance(account.address, '0') : '***' }}</td>
+          <td>{{ account.secretKey ? accountBalance(account.address, '1') : '***' }}</td>
+          <td>
+            <button
+              v-if="!account.secretKey"
+              class="button is-small is-info is-light"
+              @click.stop="openUnlockModal(account)"
+            >Unlock</button>
+            <button
+              v-else
+              class="button is-small is-warning is-light"
+              @click.stop="lockAccount(account)"
+            >Lock</button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -49,6 +62,34 @@
           </footer>
         </div>
       </form>
+    </o-modal>
+    <!-- Unlock account modal -->
+    <o-modal v-model:active="unlockModalActive">
+      <div class="box" style="width: 400px;">
+        <p class="title is-5">Unlock Account</p>
+        <p class="subtitle is-6">Enter passphrase to decrypt notes</p>
+        <div class="field">
+          <p class="control">
+            <input
+              class="input"
+              type="password"
+              v-model="unlockPassphrase"
+              placeholder="Passphrase"
+              @keyup.enter="confirmUnlock"
+            >
+          </p>
+        </div>
+        <div v-if="unlockError" class="help is-danger" style="margin-bottom: 10px;">{{ unlockError }}</div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button class="button" @click="unlockModalActive = false">Cancel</button>
+          <button
+            class="button is-info"
+            :class="{ 'is-loading': isUnlocking }"
+            @click="confirmUnlock"
+            :disabled="!unlockPassphrase"
+          >Unlock</button>
+        </div>
+      </div>
     </o-modal>
   </div>
 </template>
@@ -78,6 +119,11 @@ const fmt = useFormatters()
 const done = ref(true)
 const createAccountModalActive = ref(false)
 const passphrase = ref('')
+const unlockModalActive = ref(false)
+const unlockPassphrase = ref('')
+const unlockError = ref('')
+const isUnlocking = ref(false)
+const accountToUnlock = ref<Account | null>(null)
 
 function selectAccount(account: Account) {
   emit('selectAccount', account)
@@ -99,6 +145,38 @@ function accountBalance(address: string, tokenType: string): string {
 
 function openModal() {
   createAccountModalActive.value = true
+}
+
+function lockAccount(account: Account) {
+  accountStore.lockAccountByAddress(account.address)
+}
+
+function openUnlockModal(account: Account) {
+  accountToUnlock.value = account
+  unlockPassphrase.value = ''
+  unlockError.value = ''
+  unlockModalActive.value = true
+}
+
+async function confirmUnlock() {
+  if (!accountToUnlock.value || !unlockPassphrase.value) return
+
+  isUnlocking.value = true
+  unlockError.value = ''
+  try {
+    await accountStore.unlockAccountLocal(
+      accountToUnlock.value.address,
+      unlockPassphrase.value
+    )
+    unlockModalActive.value = false
+    unlockPassphrase.value = ''
+    accountToUnlock.value = null
+  } catch (err) {
+    console.error('Failed to unlock account:', err)
+    unlockError.value = 'Wrong passphrase'
+  } finally {
+    isUnlocking.value = false
+  }
 }
 
 async function createNewAccount() {

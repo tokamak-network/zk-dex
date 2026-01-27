@@ -566,11 +566,9 @@ node test/boundary-edge-cases.test.js
 ### 파일 구조
 
 ```
-Dockerfile              # 조건부 빌드 (로컬 artifacts 있으면 사용)
-vapp/Dockerfile         # 프론트엔드 멀티스테이지 빌드 (dev/prod)
+Dockerfile              # 멀티스테이지 빌드 (회로, 컨트랙트, 테스트, 프론트엔드 개발/프로덕션)
 docker-compose.yml      # 서비스 구성
 .dockerignore           # 제외 파일 목록
-vapp/.dockerignore      # 프론트엔드 빌드 제외 파일
 ```
 
 ### Dockerfile 특징

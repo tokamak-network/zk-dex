@@ -11,10 +11,11 @@ BUILD_DIR="$PROJECT_DIR/build"
 PTAU_DIR="$PROJECT_DIR/ptau"
 
 # Powers of Tau file (adjust size based on circuit complexity)
-# pot22 supports up to 2^22 constraints (~4M)
-PTAU_SIZE=22
+# pot22 supports up to 2^22 constraints (~4M), pot20 supports ~1M (sufficient for all circuits)
+# Override via environment variable: PTAU_SIZE=20 bash scripts/setup.sh
+PTAU_SIZE="${PTAU_SIZE:-22}"
 PTAU_FILE="$PTAU_DIR/powersOfTau28_hez_final_${PTAU_SIZE}.ptau"
-PTAU_URL="https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${PTAU_SIZE}.ptau"
+PTAU_URL="https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_${PTAU_SIZE}.ptau"
 
 # Circuit names
 CIRCUITS=(
@@ -35,9 +36,10 @@ download_ptau() {
     fi
 
     echo "Downloading Powers of Tau (pot${PTAU_SIZE})..."
+    echo "URL: $PTAU_URL"
     echo "This may take a while..."
-    curl -L -o "$PTAU_FILE" "$PTAU_URL"
-    echo "✓ Downloaded Powers of Tau"
+    curl -L --fail --retry 3 --retry-delay 5 -o "$PTAU_FILE" "$PTAU_URL"
+    echo "✓ Downloaded Powers of Tau ($(du -h "$PTAU_FILE" | cut -f1))"
 }
 
 setup_circuit() {
@@ -61,8 +63,10 @@ setup_circuit() {
 
     # Contribute to ceremony (add randomness)
     echo "  Contributing to ceremony..."
+    local entropy
+    entropy="$(od -A n -t x1 -N 64 /dev/urandom | tr -d ' \n')"
     snarkjs zkey contribute "${circuit_dir}/${circuit}_0000.zkey" "$zkey" \
-        --name="ZK-DEX contribution" -v -e="$(head -c 64 /dev/urandom | xxd -p)"
+        --name="ZK-DEX contribution" -v -e="$entropy"
 
     # Remove intermediate file
     rm "${circuit_dir}/${circuit}_0000.zkey"

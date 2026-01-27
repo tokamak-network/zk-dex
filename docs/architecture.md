@@ -598,8 +598,7 @@ docker compose down -v
 
 | File | Description |
 |------|-------------|
-| `Dockerfile` | Main ZK-DEX build (circuits, contracts, tests) |
-| `vapp/Dockerfile` | Frontend multi-stage build (dev/prod) |
+| `Dockerfile` | Multi-stage build (circuits, contracts, tests, frontend dev/prod) |
 | `docker-compose.yml` | Service orchestration |
 | `.dockerignore` | Excludes large files (ptau, intermediate zkeys) |
 

@@ -593,8 +593,7 @@ docker compose down -v
 
 | 파일 | 설명 |
 |------|------|
-| `Dockerfile` | 메인 ZK-DEX 빌드 (회로, 컨트랙트, 테스트) |
-| `vapp/Dockerfile` | 프론트엔드 멀티스테이지 빌드 (dev/prod) |
+| `Dockerfile` | 멀티스테이지 빌드 (회로, 컨트랙트, 테스트, 프론트엔드 개발/프로덕션) |
 | `docker-compose.yml` | 서비스 오케스트레이션 |
 | `.dockerignore` | 대용량 파일 제외 (ptau, 중간 zkey) |
 

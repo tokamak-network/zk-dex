@@ -27,6 +27,9 @@ npm-debug.log*
 coverage
 .nyc_output
 
+# Debug scripts (not part of test suite, have uninstalled dependencies)
+test/debug-*.js
+
 # Environment files
 .env
 .env.local

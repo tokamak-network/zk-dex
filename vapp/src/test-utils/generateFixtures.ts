@@ -13,7 +13,9 @@ const BN128_FIELD_PRIME = BigInt('2188824287183927522224640574525727508854836440
 
 async function main() {
   const babyJub = await buildBabyjub()
-  const poseidon = await buildPoseidon()
+  const poseidon = await buildPoseidon() as ((inputs: bigint[]) => Uint8Array) & {
+    F: { toObject: (val: Uint8Array) => bigint }
+  }
 
   function poseidonHash(inputs: bigint[]): bigint {
     const hash = poseidon(inputs)

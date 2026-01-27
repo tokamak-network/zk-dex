@@ -564,11 +564,9 @@ await zkdex.mint(
 ### File Structure
 
 ```
-Dockerfile              # Conditional build (uses local artifacts if available)
-vapp/Dockerfile         # Frontend multi-stage build (dev/prod)
+Dockerfile              # Multi-stage build (circuits, contracts, tests, frontend dev/prod)
 docker-compose.yml      # Service configuration
 .dockerignore           # Excluded files list
-vapp/.dockerignore      # Frontend build exclusions
 ```
 
 ### Dockerfile Features

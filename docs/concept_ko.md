@@ -24,6 +24,7 @@ ZK-DEX 구현에 사용된 모든 개념적 요소를 정리한 문서.
 16. [노트 암호화 (ECDH)](#16-노트-암호화-ecdh)
 17. [프라이버시 모델](#17-프라이버시-모델)
 18. [보안 속성](#18-보안-속성)
+19. [FAQ](#19-faq)
 
 ---
 
@@ -197,14 +198,25 @@ ownerAddress = viewingKey & MASK_160
 
 **역할 4: 선택적 공개 (Selective Disclosure)**
 
-뷰잉 키를 제3자에게 공유하면, 해당 계정의 모든 노트를 조회할 수 있게 된다 (Zcash의 viewing key 방식). 비밀키를 공유하지 않으므로 노트를 소비할 수는 없다.
+> **주의: 현재 구현의 한계**
+>
+> Zcash에서는 viewing key만으로 온체인 암호화 데이터를 직접 복호화할 수 있도록 별도의 암호화 계층을 두고 있다. 그러나 **ZK-DEX의 현재 구현에서는 온체인 노트 데이터가 ECDH + AES-256-GCM 단일 계층으로 암호화되어 있으며, 이를 복호화하려면 반드시 비밀키(sk)가 필요하다.** 뷰잉 키만으로는 온체인 암호문을 복호화할 수 없다.
+>
+> 따라서 선택적 공개는 다음과 같은 **오프체인 방식**으로만 가능하다:
+>
+> 1. 노트 소유자가 비밀키로 온체인 데이터를 복호화
+> 2. 복호화된 노트 데이터 `(ownerAddress, value, tokenType, viewingKey, salt)`를 제3자에게 직접 전달
+> 3. 제3자가 받은 데이터로 `noteHash = Poseidon(...)`를 재계산하여 온체인 상태와 대조
+> 4. 뷰잉 키를 통해 해당 노트가 특정 계정 소유임을 검증
+
+이 방식에서 뷰잉 키는 복호화 키가 아니라 **소유자 신원 증명 마커** 역할을 한다. 제3자는 전달받은 데이터의 뷰잉 키가 소유자의 공개키에서 파생되었음을 확인하여 노트 소유권을 검증할 수 있다.
 
 | 공유 대상 | 할 수 있는 것 | 할 수 없는 것 |
 |-----------|--------------|--------------|
-| 뷰잉 키 보유자 | 노트 잔액 조회, 거래 이력 확인 | 노트 전송, 소비, 주문 |
-| 비밀키 보유자 | 위 모든 것 + 노트 전송/소비/주문 | — |
+| 뷰잉 키 + 오프체인 노트 데이터 보유자 | 노트 잔액 검증, 온체인 상태 대조 | 온체인 암호문 직접 복호화, 노트 전송/소비/주문 |
+| 비밀키 보유자 | 온체인 데이터 복호화 + 노트 전송/소비/주문 | — |
 
-예: 감사인에게 뷰잉 키를 공유하면 자산을 열람할 수 있지만 이동시킬 수 없다.
+예: 감사인에게 뷰잉 키와 복호화된 노트 데이터를 전달하면 자산을 검증할 수 있지만 이동시킬 수 없다.
 
 **역할 5: 주문 메타데이터 (Order Metadata)**
 
@@ -800,3 +812,103 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → 암호화된 �
               ▼
       NormalNote (Valid, 자유로운 전송/소각 가능)
 ```
+
+---
+
+## 19. FAQ
+
+### Q1. 노트의 소유권을 증명하려면 어떤 데이터가 필요한가?
+
+**핵심은 비밀키(sk) 하나다.** ZK 회로 내부에서 다음 과정을 거쳐 소유권을 검증한다:
+
+```
+sk → pk = sk × G → viewingKey = Poseidon(pk.x, pk.y) → ownerAddress = viewingKey & MASK_160
+```
+
+다만 ZK proof를 생성하려면 노트 해시를 재구성해야 하므로, 회로에는 sk 외에 노트의 나머지 필드도 함께 입력해야 한다:
+
+| 데이터 | 용도 |
+|--------|------|
+| **sk** (비밀키) | 소유권 증명의 핵심 — sk에서 ownerAddress를 유도하여 노트와 매칭 |
+| ownerAddress | 노트에 기록된 소유자 주소 |
+| value | 노트 잔액 |
+| tokenType | 토큰 종류 |
+| viewingKey (vk0, vk1) | 공개키 바인딩 |
+| salt | 노트 고유성 보장 |
+
+이 6개 필드로 `noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`를 재계산하고, 온체인에 기록된 noteHash와 일치하는지 회로 내에서 검증한다.
+
+### Q2. sk를 알아도 나머지 노트 데이터(ownerAddress, value, tokenType, viewingKey, salt)를 잃으면 노트를 사용할 수 없는가?
+
+**로컬 데이터만 잃은 경우라면 복구 가능하다.** 노트가 생성될 때 5개 필드가 ECDH로 암호화되어 온체인에 저장되기 때문이다:
+
+```solidity
+mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화된 바이트
+```
+
+복구 과정:
+
+1. 온체인에서 `encryptedNotes[noteHash]` 데이터를 가져옴
+2. sk로 ECDH 복호화 수행: `shared = sk × epk` → AES 키 파생 → 복호화
+3. RLP 디코딩으로 `[ownerAddress, value, tokenType, viewingKey, salt]` 복원
+4. 복원된 데이터로 ZK proof 생성 가능
+
+따라서:
+- **로컬 데이터 소실 + sk 보유**: 온체인 암호화 데이터에서 복구 가능 → 노트 사용 가능
+- **sk 소실**: 복호화도, 소유권 증명도 불가 → **노트 영구 소실**
+- **온체인 데이터 소실**: 블록체인 특성상 발생하지 않음
+
+**결론: 시스템에서 진짜 잃으면 안 되는 유일한 것은 sk다.**
+
+### Q3. 온체인에 저장되는 암호화된 노트의 키-밸류 구조는 어떻게 되는가?
+
+```solidity
+mapping(bytes32 => bytes) public encryptedNotes;
+```
+
+- **Key**: `noteHash` (bytes32) — `Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`
+- **Value**: ECDH 암호화된 바이트열 — `ECDH_Encrypt(RLP(ownerAddress, value, tokenType, viewingKey, salt))`
+
+Value의 온체인 바이트 포맷:
+
+```
+0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+| 필드 | 크기 | 설명 |
+|------|------|------|
+| version | 1 byte | 항상 `0x01` |
+| epk_x | 32 bytes | ephemeral public key의 x좌표 |
+| epk_y | 32 bytes | ephemeral public key의 y좌표 |
+| nonce | 12 bytes | AES-GCM IV (랜덤) |
+| ciphertext | 가변 | RLP 인코딩된 노트 필드의 암호문 |
+| authTag | 16 bytes | AES-GCM 인증 태그 |
+
+즉, 같은 원본 데이터의 **Poseidon 해시가 키**, **ECDH 암호화본이 밸류**인 구조다.
+
+### Q4. 뷰잉 키(Viewing Key)란 무엇이고 왜 필요한가?
+
+뷰잉 키는 공개키에서 Poseidon 해시로 파생된 254비트 값이다:
+
+```
+viewingKey = Poseidon(pk.x, pk.y)
+ownerAddress = viewingKey & MASK_160  (하위 160비트)
+```
+
+ownerAddress(160비트)만으로 부족한 이유:
+
+1. **공개키 바인딩**: 160비트 주소 충돌 가능성 존재. 뷰잉 키로 254비트 전체를 노트 해시에 커밋하여 소유권 위조 방지
+2. **노트 탐색**: 복호화 후 뷰잉 키를 비교하여 내 노트인지 식별
+3. **스마트 노트 연결**: 스마트 노트에서 `viewingKey = parentNoteHash`로 설정하여 부모 노트와의 연결고리 역할
+
+자세한 내용은 [5장 뷰잉 키 섹션](#뷰잉-키-viewing-key)을 참고한다.
+
+### Q5. 뷰잉 키만으로 온체인 노트 데이터를 복호화할 수 있는가?
+
+**아니다.** 현재 ZK-DEX 구현에서는 불가능하다.
+
+온체인 노트 데이터는 ECDH + AES-256-GCM으로 암호화되어 있으며, 복호화에는 `shared = sk × epk` 계산이 필요하다. 뷰잉 키 `Poseidon(pk.x, pk.y)`는 일방향 해시값이므로 공개키 좌표 `(pk.x, pk.y)`를 역으로 복원할 수 없고, 따라서 ECDH 공유 비밀을 계산할 수 없다.
+
+Zcash에서는 viewing key로 직접 온체인 데이터를 복호화할 수 있도록 별도의 암호화 계층(in-band secret distribution)을 두고 있지만, ZK-DEX는 ECDH 단일 계층만 사용하므로 이 기능이 지원되지 않는다.
+
+선택적 공개가 필요한 경우, 노트 소유자가 sk로 복호화한 데이터를 오프체인으로 제3자에게 전달하고, 제3자가 noteHash를 재계산하여 온체인 상태와 대조하는 방식으로 검증한다. 자세한 내용은 [5장 역할 4: 선택적 공개](#뷰잉-키의-7가지-역할)를 참고한다.

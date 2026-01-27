@@ -66,14 +66,14 @@ npx truffle test test/ZkDex.production.test.js
 #### Docker 테스트
 
 ```bash
-# 빌드 및 전체 테스트 실행
-docker compose run zkdex
+# 컨트랙트 테스트 빌드 및 실행 (19개: 배포, 민팅, 전송, E2E 거래)
+docker compose run --rm zkdex
 
 # 프론트엔드 통합 테스트만 실행
-docker compose --profile test run test-frontend
+docker compose --profile test run --rm test-frontend
 
-# 프로덕션 테스트만 실행
-docker compose --profile test run test-production
+# 프로덕션 테스트만 실행 (실제 Groth16 증명 검증)
+docker compose --profile test run --rm test-production
 
 # 정리
 docker compose down -v
@@ -87,7 +87,7 @@ docker compose down -v
 |--------|------|------|--------|
 | `ganache` | 로컬 이더리움 블록체인 | 8545 | `docker compose up ganache -d` |
 | `vapp-api` | 백엔드 API 서버 (Express) | 3000 | `docker compose up vapp-api -d` |
-| `zkdex` | 메인 테스트 러너 | - | `docker compose run zkdex` |
+| `zkdex` | 컨트랙트 테스트 러너 | - | `docker compose run --rm zkdex` |
 | `vapp` | 프론트엔드 (프로덕션/nginx) | 8080 | `docker compose up vapp -d` |
 | `vapp-dev` | 프론트엔드 (개발/핫 리로드) | 8081 | `docker compose --profile dev up vapp-dev -d` |
 | `zkdex-dev` | 개발 셸 | - | `docker compose --profile dev run zkdex-dev` |
@@ -108,8 +108,8 @@ docker compose --profile dev up ganache vapp-api vapp-dev -d
 
 # 프론트엔드 접속: http://localhost:8081
 
-# Docker에서 전체 테스트 실행
-docker compose run zkdex
+# Docker에서 컨트랙트 테스트 실행
+docker compose run --rm zkdex
 
 # 인터랙티브 개발 셸
 docker compose --profile dev run zkdex-dev
@@ -119,11 +119,9 @@ docker compose --profile dev run zkdex-dev
 
 | 파일 | 설명 |
 |------|------|
-| `Dockerfile` | 메인 ZK-DEX 빌드 (회로, 컨트랙트, 테스트) |
-| `vapp/Dockerfile` | 프론트엔드 멀티스테이지 빌드 (개발/프로덕션) |
+| `Dockerfile` | 멀티스테이지 빌드 (회로, 컨트랙트, 테스트, 프론트엔드 개발/프로덕션) |
 | `docker-compose.yml` | 서비스 오케스트레이션 |
 | `.dockerignore` | 대용량 파일 제외 (ptau, 중간 zkey) |
-| `vapp/.dockerignore` | 프론트엔드 빌드 제외 항목 |
 
 ## 회로
 
@@ -440,6 +438,7 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 - [아키텍처 (EN)](docs/architecture.md) / [아키텍처 (KO)](docs/architecture_ko.md)
 - [회로 마이그레이션 (EN)](docs/migration-circuits.md) / [회로 마이그레이션 (KO)](docs/migration-circuits_ko.md)
 - [프론트엔드 마이그레이션 (EN)](docs/migration-frontend.md) / [프론트엔드 마이그레이션 (KO)](docs/migration-frontend_ko.md)
+- [Docker (EN)](docs/docker.md) / [Docker (KO)](docs/docker_ko.md)
 - [아키텍처 프레젠테이션](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [데모 영상](https://youtu.be/QvKaqMH_5lk)
 

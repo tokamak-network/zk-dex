@@ -54,7 +54,7 @@ module.exports = {
     docker: {
       host: process.env.GANACHE_HOST || 'ganache',
       port: process.env.GANACHE_PORT || 8545,
-      network_id: '5777',
+      network_id: '1337',
       websockets: true,
       gas: 12000000,
       gasPrice: 20000000000,

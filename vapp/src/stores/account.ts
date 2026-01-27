@@ -153,6 +153,12 @@ export const useAccountStore = defineStore('account', () => {
     // Store secret key in memory (for proof generation)
     setSecretKey(result.secretKey)
 
+    // Update account in accounts array (needed for note scanning)
+    const accountInArray = accounts.value.find(a => a.address === address)
+    if (accountInArray) {
+      accountInArray.secretKey = result.secretKey
+    }
+
     // Update current account with secret key
     if (currentAccount.value?.address === address) {
       currentAccount.value = {
@@ -250,6 +256,24 @@ export const useAccountStore = defineStore('account', () => {
     }
   }
 
+  /**
+   * Lock a specific account by address (clear secret key from memory)
+   */
+  function lockAccountByAddress(address: string) {
+    const account = accounts.value.find(a => a.address === address)
+    if (account) {
+      account.secretKey = undefined
+    }
+    // Also clear store-level secretKey if it belongs to this account
+    if (currentAccount.value?.address === address) {
+      secretKey.value = null
+      currentAccount.value = {
+        ...currentAccount.value,
+        secretKey: undefined
+      }
+    }
+  }
+
   return {
     // State
     key,
@@ -279,6 +303,7 @@ export const useAccountStore = defineStore('account', () => {
     createAccountLocal,
     unlockAccountLocal,
     lockAccount,
+    lockAccountByAddress,
     exportAccountJson,
     importAccountJson,
     hasKeystore,

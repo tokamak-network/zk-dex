@@ -3,7 +3,15 @@
     <div v-if="web3Store.account" class="wallet-info" style="text-align: left; margin-bottom: 10px; padding: 8px 10px; background: #f5f5f5; border-radius: 4px; font-size: 0.85em; color: #555;">
       <span style="margin-right: 15px;">{{ fmt.abbreviate(web3Store.account) }}</span>
       <span style="margin-right: 15px;">ETH: {{ formatEthBalance }}</span>
-      <span>DAI: {{ daiBalance }}</span>
+      <span>DAI: {{ formatDaiBalance }}</span>
+      <button
+        class="button is-small is-link is-light"
+        style="margin-left: 8px; padding: 0 8px; height: 22px; font-size: 0.75em;"
+        :disabled="isMinting"
+        @click="mintDai"
+      >
+        {{ isMinting ? 'Minting...' : 'Faucet (+100)' }}
+      </button>
     </div>
     <div style="float: left; display: flex; align-items: center; gap: 10px;">
       <p style="margin-left: 10px;">Total Note Balance</p>
@@ -59,7 +67,7 @@ import { useFormatters } from '@/composables/useFormatters'
 import { useWeb3Store } from '@/stores/web3'
 import { useContractStore } from '@/stores/contract'
 import { useNoteStore, type Note } from '@/stores/note'
-import type { Account } from '@/stores/account'
+import { useAccountStore, type Account } from '@/stores/account'
 
 interface Token {
   type: string
@@ -82,9 +90,19 @@ const fmt = useFormatters()
 const web3Store = useWeb3Store()
 const contractStore = useContractStore()
 const noteStore = useNoteStore()
+const accountStore = useAccountStore()
 
 const isRefreshing = computed(() => noteStore.isScanning)
 const daiBalance = ref('0')
+const isMinting = ref(false)
+
+const formatDaiBalance = computed(() => {
+  if (daiBalance.value === '0') return '0'
+  const full = formatEther(daiBalance.value)
+  const dot = full.indexOf('.')
+  if (dot === -1) return full
+  return full.slice(0, dot + 4)
+})
 
 const formatEthBalance = computed(() => {
   if (!web3Store.balance) return '0'
@@ -93,6 +111,20 @@ const formatEthBalance = computed(() => {
   if (dot === -1) return full
   return full.slice(0, dot + 4) // 소수점 3자리
 })
+
+async function mintDai() {
+  if (!contractStore.daiContract) return
+  isMinting.value = true
+  try {
+    const tx = await contractStore.daiContract.mint()
+    await tx.wait()
+    await loadDaiBalance()
+  } catch (err) {
+    console.error('Failed to mint DAI:', err)
+  } finally {
+    isMinting.value = false
+  }
+}
 
 async function loadDaiBalance() {
   if (!contractStore.daiContract || !web3Store.account) return
@@ -110,6 +142,13 @@ onMounted(() => {
 
 watch(() => contractStore.isInitialized, (initialized) => {
   if (initialized) loadDaiBalance()
+})
+
+// Re-scan notes when an account is unlocked (secretKey becomes available)
+watch(() => accountStore.secretKey, (newKey, oldKey) => {
+  if (newKey && !oldKey && contractStore.isInitialized) {
+    noteStore.scanBlockchainNotes()
+  }
 })
 
 async function refreshNotes() {

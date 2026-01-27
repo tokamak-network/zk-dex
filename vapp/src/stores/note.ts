@@ -229,7 +229,6 @@ export const useNoteStore = defineStore('note', () => {
       if (accountStore.secretKey && accountStore.currentAccount) {
         accountSecretKeys.set(accountStore.currentAccount.address, accountStore.secretKey)
       }
-
       // For each note, try to get encrypted data and decode
       for (const [noteHash, state] of noteStates) {
         try {

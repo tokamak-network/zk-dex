@@ -8,7 +8,7 @@ services:
     command:
       - --host=0.0.0.0
       - --port=8545
-      - --networkId=5777
+      - --networkId=1337
       - --accounts=10
       - --defaultBalanceEther=1000
       - --gasLimit=12000000
@@ -23,11 +23,30 @@ services:
     networks:
       - zkdex-network
 
-  # ZK-DEX Application
+  # Contract deployment (runs once before app services start)
+  # Deploys ZkDex, MockDai, and verifier contracts to Ganache
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: zkdex-base
+    container_name: zkdex-migrate
+    depends_on:
+      ganache:
+        condition: service_healthy
+    environment:
+      - GANACHE_HOST=ganache
+      - GANACHE_PORT=8545
+    networks:
+      - zkdex-network
+    command: npx truffle migrate --network docker
+
+  # ZK-DEX Contract Test Runner
   zkdex:
     build:
       context: .
       dockerfile: Dockerfile
+      target: zkdex-base
     container_name: zkdex-app
     depends_on:
       ganache:
@@ -36,22 +55,16 @@ services:
       - NODE_ENV=development
       - GANACHE_HOST=ganache
       - GANACHE_PORT=8545
-    volumes:
-      # Mount source code for development (optional)
-      # - .:/app
-      # - /app/node_modules
-      # - /app/circuits-circom/node_modules
-      # Mount build artifacts to persist between runs
-      - zkdex-circuits-build:/app/circuits-circom/build
     networks:
       - zkdex-network
-    command: npx truffle test --network docker
+    command: npx truffle test test/ZkDex.groth16.test.js test/ZkDex.production.test.js --network docker
 
   # Development service with shell access
   zkdex-dev:
     build:
       context: .
       dockerfile: Dockerfile
+      target: zkdex-base
     container_name: zkdex-dev
     depends_on:
       ganache:
@@ -78,11 +91,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: zkdex-base
     container_name: zkdex-test-frontend
     environment:
       - NODE_ENV=test
-    volumes:
-      - zkdex-circuits-build:/app/circuits-circom/build
     networks:
       - zkdex-network
     command: node test/frontend-integration.test.js
@@ -94,6 +106,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: zkdex-base
     container_name: zkdex-test-production
     depends_on:
       ganache:
@@ -102,8 +115,6 @@ services:
       - NODE_ENV=test
       - GANACHE_HOST=ganache
       - GANACHE_PORT=8545
-    volumes:
-      - zkdex-circuits-build:/app/circuits-circom/build
     networks:
       - zkdex-network
     command: npx truffle test test/ZkDex.production.test.js --network docker
@@ -117,18 +128,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: zkdex-base
     container_name: zkdex-vapp-api
     ports:
       - "3000:3000"
-    volumes:
-      - ./vapp:/app/vapp
-      - /app/vapp/node_modules
-      - ./scripts:/app/scripts  # Mount scripts for live code changes
     working_dir: /app/vapp
     command: node app.cjs
     depends_on:
       ganache:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - zkdex-network
 
@@ -140,20 +150,24 @@ services:
   vapp-dev:
     build:
       context: .
-      dockerfile: vapp/Dockerfile
-      target: development
+      dockerfile: Dockerfile
+      target: vapp-development
     container_name: zkdex-vapp-dev
     ports:
       - "8081:8080"
     volumes:
-      - ./vapp:/app
-      - /app/node_modules
+      - ./vapp/src:/app/src
+      - ./vapp/public:/app/public
     environment:
       - VITE_GANACHE_URL=http://ganache:8545
       - VITE_API_URL=http://localhost:3000  # Browser accesses via host port
     depends_on:
-      - ganache
-      - vapp-api
+      ganache:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      vapp-api:
+        condition: service_started
     networks:
       - zkdex-network
     profiles:
@@ -163,14 +177,18 @@ services:
   vapp:
     build:
       context: .
-      dockerfile: vapp/Dockerfile
-      target: production
+      dockerfile: Dockerfile
+      target: vapp-production
     container_name: zkdex-vapp
     ports:
       - "8080:80"
     depends_on:
-      - ganache
-      - vapp-api
+      ganache:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      vapp-api:
+        condition: service_started
     networks:
       - zkdex-network
 

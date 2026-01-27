@@ -24,6 +24,7 @@ A comprehensive reference of all conceptual elements used in the ZK-DEX implemen
 16. [Note Encryption (ECDH)](#16-note-encryption-ecdh)
 17. [Privacy Model](#17-privacy-model)
 18. [Security Properties](#18-security-properties)
+19. [FAQ](#19-faq)
 
 ---
 
@@ -197,14 +198,25 @@ The wallet automates this process to track all of a user's notes.
 
 **Role 4: Selective Disclosure**
 
-Sharing the viewing key with a third party allows them to query all notes for that account (similar to Zcash's viewing key approach). Since the secret key is not shared, they cannot spend the notes.
+> **Note: Limitation of the Current Implementation**
+>
+> In Zcash, the viewing key alone can directly decrypt on-chain encrypted data thanks to a dedicated encryption layer (in-band secret distribution). However, **in ZK-DEX's current implementation, on-chain note data is encrypted with a single ECDH + AES-256-GCM layer, and decryption requires the secret key (sk).** The viewing key alone cannot decrypt on-chain ciphertext.
+>
+> Therefore, selective disclosure is only possible via an **off-chain** workflow:
+>
+> 1. The note owner decrypts on-chain data using their secret key
+> 2. The decrypted note data `(ownerAddress, value, tokenType, viewingKey, salt)` is shared directly with a third party
+> 3. The third party recomputes `noteHash = Poseidon(...)` from the received data and verifies it against the on-chain state
+> 4. The viewing key confirms that the note belongs to a specific account
+
+In this workflow, the viewing key serves not as a decryption key but as an **owner identity verification marker**. The third party can verify that the viewing key in the received data was derived from the owner's public key, thus confirming note ownership.
 
 | Recipient | Can Do | Cannot Do |
 |-----------|--------|-----------|
-| Viewing key holder | View note balances, verify transaction history | Transfer, spend, or create orders |
-| Secret key holder | All of the above + transfer/spend/create orders | — |
+| Viewing key + off-chain note data holder | Verify note balances, cross-check on-chain state | Directly decrypt on-chain ciphertext, transfer/spend/create orders |
+| Secret key holder | Decrypt on-chain data + transfer/spend/create orders | — |
 
-Example: Sharing the viewing key with an auditor allows them to inspect assets but not move them.
+Example: Sharing the viewing key along with decrypted note data with an auditor allows them to verify assets but not move them.
 
 **Role 5: Order Metadata**
 
@@ -800,3 +812,103 @@ Partial execution is impossible; if the proof is invalid, the entire transaction
               v
       NormalNote (Valid, freely transferable/liquidatable)
 ```
+
+---
+
+## 19. FAQ
+
+### Q1. What data is required to prove ownership of a note?
+
+**The core requirement is the secret key (sk).** Inside the ZK circuit, ownership is verified through the following derivation:
+
+```
+sk -> pk = sk * G -> viewingKey = Poseidon(pk.x, pk.y) -> ownerAddress = viewingKey & MASK_160
+```
+
+However, generating a ZK proof also requires reconstructing the note hash, so the remaining note fields must be provided to the circuit alongside sk:
+
+| Data | Purpose |
+|------|---------|
+| **sk** (secret key) | Core of ownership proof — derives ownerAddress from sk and matches it to the note |
+| ownerAddress | Owner address recorded in the note |
+| value | Note balance |
+| tokenType | Token type |
+| viewingKey (vk0, vk1) | Public key binding |
+| salt | Ensures note uniqueness |
+
+These 6 fields are used to recompute `noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`, which is then verified inside the circuit against the noteHash recorded on-chain.
+
+### Q2. If I have the sk but lose the remaining note data (ownerAddress, value, tokenType, viewingKey, salt), can I still use the note?
+
+**If only the local data is lost, recovery is possible.** When a note is created, its 5 fields are ECDH-encrypted and stored on-chain:
+
+```solidity
+mapping(bytes32 => bytes) public encryptedNotes;  // noteHash -> ECDH-encrypted bytes
+```
+
+Recovery process:
+
+1. Retrieve `encryptedNotes[noteHash]` data from on-chain
+2. Perform ECDH decryption with sk: `shared = sk * epk` -> derive AES key -> decrypt
+3. RLP-decode to recover `[ownerAddress, value, tokenType, viewingKey, salt]`
+4. Use the recovered data to generate a ZK proof
+
+Therefore:
+- **Local data lost + sk retained**: Recoverable from on-chain encrypted data -> note is usable
+- **sk lost**: Neither decryption nor ownership proof is possible -> **note is permanently lost**
+- **On-chain data lost**: Cannot happen due to the nature of blockchain
+
+**Conclusion: The only thing you must never lose is sk.**
+
+### Q3. How is the encrypted note key-value pair structured on-chain?
+
+```solidity
+mapping(bytes32 => bytes) public encryptedNotes;
+```
+
+- **Key**: `noteHash` (bytes32) — `Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`
+- **Value**: ECDH-encrypted byte sequence — `ECDH_Encrypt(RLP(ownerAddress, value, tokenType, viewingKey, salt))`
+
+On-chain byte format of the value:
+
+```
+0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+```
+
+| Field | Size | Description |
+|-------|------|-------------|
+| version | 1 byte | Always `0x01` |
+| epk_x | 32 bytes | Ephemeral public key x-coordinate |
+| epk_y | 32 bytes | Ephemeral public key y-coordinate |
+| nonce | 12 bytes | AES-GCM IV (random) |
+| ciphertext | variable | Encrypted RLP-encoded note fields |
+| authTag | 16 bytes | AES-GCM authentication tag |
+
+In other words, the **Poseidon hash of the original data is the key**, and the **ECDH-encrypted version is the value**.
+
+### Q4. What is the Viewing Key and why is it needed?
+
+The viewing key is a 254-bit value derived from the public key via Poseidon hash:
+
+```
+viewingKey = Poseidon(pk.x, pk.y)
+ownerAddress = viewingKey & MASK_160  (lower 160 bits)
+```
+
+Why ownerAddress (160 bits) alone is insufficient:
+
+1. **Public key binding**: 160-bit address collisions are theoretically possible. The viewing key commits the full 254 bits into the note hash, preventing ownership forgery.
+2. **Note discovery**: After decryption, the viewing key is compared to identify whether a note belongs to the user.
+3. **Smart note linking**: For smart notes, `viewingKey = parentNoteHash` establishes the linkage to the parent note.
+
+See [Section 5: Viewing Key](#viewing-key) for details.
+
+### Q5. Can the viewing key alone decrypt on-chain note data?
+
+**No.** This is not possible in the current ZK-DEX implementation.
+
+On-chain note data is encrypted with ECDH + AES-256-GCM, and decryption requires computing `shared = sk * epk`. The viewing key `Poseidon(pk.x, pk.y)` is a one-way hash, so the public key coordinates `(pk.x, pk.y)` cannot be recovered from it, making it impossible to compute the ECDH shared secret.
+
+In Zcash, the viewing key can directly decrypt on-chain data thanks to a dedicated encryption layer (in-band secret distribution), but ZK-DEX uses only a single ECDH layer and does not support this feature.
+
+When selective disclosure is needed, the note owner decrypts the data with sk and shares it off-chain with a third party, who then recomputes the noteHash and verifies it against the on-chain state. See [Section 5, Role 4: Selective Disclosure](#seven-roles-of-the-viewing-key) for details.
