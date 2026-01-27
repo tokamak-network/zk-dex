@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useAccountStore } from './account'
 import { useContractStore } from './contract'
 import { decodeNoteData, isNoteOwner } from '@/utils/noteEncryption'
+import { isECDHEncrypted } from '@/lib/ecdhCrypto'
 import { computeCircuitHash, type NoteData } from '@/lib/circuitInputs'
 import * as api from '@/api'
 
@@ -200,6 +201,18 @@ export const useNoteStore = defineStore('note', () => {
         }))
       }
 
+      // Collect unlocked secret keys per account (for ECDH decryption)
+      const accountSecretKeys = new Map<string, string>()
+      for (const account of accounts) {
+        if (account.secretKey) {
+          accountSecretKeys.set(account.address, account.secretKey)
+        }
+      }
+      // Also check the store-level secretKey (current account)
+      if (accountStore.secretKey && accountStore.currentAccount) {
+        accountSecretKeys.set(accountStore.currentAccount.address, accountStore.secretKey)
+      }
+
       // For each note, try to get encrypted data and decode
       for (const [noteHash, state] of noteStates) {
         try {
@@ -210,36 +223,53 @@ export const useNoteStore = defineStore('note', () => {
             continue
           }
 
-          // Decode the note data
-          const decoded = await decodeNoteData(encryptedData)
-          if (!decoded) {
-            continue
+          let decoded = null
+          let ownerAccount = null
+
+          if (isECDHEncrypted(encryptedData)) {
+            // ECDH encrypted: try-decrypt with each unlocked account's sk
+            for (const account of accounts) {
+              const sk = accountSecretKeys.get(account.address)
+              if (!sk) continue
+
+              decoded = await decodeNoteData(encryptedData, sk)
+              if (decoded) {
+                ownerAccount = account
+                break // Successful decrypt = this account owns the note
+              }
+            }
+          } else {
+            // Legacy RLP plaintext: decode then check ownership by address
+            decoded = await decodeNoteData(encryptedData)
+            if (decoded) {
+              for (const account of accounts) {
+                if (account.publicKey && await isNoteOwner(decoded, account.publicKey)) {
+                  ownerAccount = account
+                  break
+                }
+              }
+            }
           }
 
-          // Check if this note belongs to any of our accounts
-          for (const account of accounts) {
-            if (account.publicKey && await isNoteOwner(decoded, account.publicKey)) {
-              // Create note with address-based ownership
-              const createdBlock = noteCreatedBlock.get(noteHash)
-              const note: Note = {
-                hash: noteHash,
-                owner: account.address,
-                ownerAddress: decoded.ownerAddress,
-                value: decoded.value,
-                token: decoded.token,
-                viewingKey: decoded.viewingKey,
-                salt: decoded.salt,
-                state: STATE_MAP[state] || '0x0',
-                isSmart: '0x0',
-                createdAt: createdBlock ? blockTimestamps.get(createdBlock) : undefined,
-                createdInTx: noteCreatedTx.get(noteHash),
-                createdBy: noteCreatedTx.has(noteHash) ? txSenders.get(noteCreatedTx.get(noteHash)!) : undefined,
-                spentInTx: noteSpentTx.get(noteHash)
-              }
-
-              noteDataMap.set(noteHash, note)
-              break // Found owner, no need to check other accounts
+          if (decoded && ownerAccount) {
+            const createdBlock = noteCreatedBlock.get(noteHash)
+            const note: Note = {
+              hash: noteHash,
+              owner: ownerAccount.address,
+              ownerAddress: decoded.ownerAddress,
+              value: decoded.value,
+              token: decoded.token,
+              viewingKey: decoded.viewingKey,
+              salt: decoded.salt,
+              state: STATE_MAP[state] || '0x0',
+              isSmart: '0x0',
+              createdAt: createdBlock ? blockTimestamps.get(createdBlock) : undefined,
+              createdInTx: noteCreatedTx.get(noteHash),
+              createdBy: noteCreatedTx.has(noteHash) ? txSenders.get(noteCreatedTx.get(noteHash)!) : undefined,
+              spentInTx: noteSpentTx.get(noteHash)
             }
+
+            noteDataMap.set(noteHash, note)
           }
         } catch (err) {
           console.warn(`Failed to process note ${noteHash}:`, err)

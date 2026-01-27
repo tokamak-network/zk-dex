@@ -238,14 +238,21 @@ async function takeOrder() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode stake note using RLP for on-chain storage
-    const encryptedStakeNote = encodeNoteData({
+    // Encrypt stake note for on-chain storage (ECDH with taker's public key)
+    // Stake note is a smart note (owner = truncated maker hash), encrypt with taker's pk
+    // so the taker can decrypt it later during convertNote
+    const takerAccount = accountStore.accounts.find(acc => acc.address === selectedNote.value!.owner)
+    if (!takerAccount?.publicKey) {
+      alert('Cannot find taker account. Cannot encrypt note.')
+      return
+    }
+    const encryptedStakeNote = await encodeNoteData({
       ownerAddress: stakeNote.ownerAddress,  // 160-bit truncated maker hash
       value: stakeNote.value.toString(),
       token: stakeNote.token.toString(),
       viewingKey: stakeNote.viewingKey,
       salt: stakeNote.salt.toString()
-    })
+    }, takerAccount.publicKey)
 
     // Execute take order
     console.log('Calling contract takeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })

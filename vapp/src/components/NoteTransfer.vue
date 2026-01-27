@@ -374,21 +374,25 @@ async function doTransfer() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode notes using RLP for on-chain storage and recovery
-    const encryptedNewNote = encodeNoteData({
+    // Encrypt notes for on-chain storage (ECDH)
+    // Recipient note: encrypt with recipient's pk (local account lookup, or sender's pk as fallback)
+    const recipientAccount = accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
+    const recipientPk = recipientAccount?.publicKey || senderAccount.value!.publicKey
+    const encryptedNewNote = await encodeNoteData({
       ownerAddress: notes.newNote.ownerAddress,
       value: notes.newNote.value.toString(),
       token: notes.newNote.token.toString(),
       viewingKey: notes.newNote.viewingKey,
       salt: notes.newNote.salt.toString()
-    })
-    const encryptedChangeNote = encodeNoteData({
+    }, recipientPk)
+    // Change note: encrypt with sender's pk (always known)
+    const encryptedChangeNote = await encodeNoteData({
       ownerAddress: notes.changeNote.ownerAddress,
       value: notes.changeNote.value.toString(),
       token: notes.changeNote.token.toString(),
       viewingKey: notes.changeNote.viewingKey,
       salt: notes.changeNote.salt.toString()
-    })
+    }, senderAccount.value!.publicKey)
 
     console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.spend(

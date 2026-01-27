@@ -220,14 +220,14 @@ async function doCreateNote() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode note data for on-chain storage
-    const encryptedNote = encodeNoteData({
+    // Encrypt note data for on-chain storage (ECDH with owner's public key)
+    const encryptedNote = await encodeNoteData({
       ownerAddress: note.ownerAddress,
       value: note.value,
       token: note.token,
       viewingKey: note.viewingKey,
       salt: note.salt
-    })
+    }, selectedAccount.value!.publicKey)
     // Use inline ABI to avoid stale build artifact cache issues
     // Poseidon version: uint256[4] input = [output, noteHash, value, tokenType]
     const mintAbi = ['function mint(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[4] input, bytes encryptedNote) external payable']

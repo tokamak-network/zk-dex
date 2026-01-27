@@ -196,14 +196,19 @@ async function convertNote() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode new note using RLP for on-chain storage
-    const encryptedNewNote = encodeNoteData({
+    // Encrypt new note for on-chain storage (ECDH with origin note owner's public key)
+    const originOwnerAccount = accountStore.accounts.find(acc => acc.address === originNote.value!.owner)
+    if (!originOwnerAccount?.publicKey) {
+      alert('Cannot find origin note owner account. Cannot encrypt note.')
+      return
+    }
+    const encryptedNewNote = await encodeNoteData({
       ownerAddress: newNoteData.ownerAddress,
       value: newNoteData.value.toString(),
       token: newNoteData.token.toString(),
       viewingKey: newNoteData.viewingKey,
       salt: newNoteData.salt.toString()
-    })
+    }, originOwnerAccount.publicKey)
 
     // Call convert on contract
     proofProgress.value = 'Submitting transaction...'

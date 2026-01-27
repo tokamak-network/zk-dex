@@ -260,28 +260,35 @@ async function settleOrder(order: OngoingOrder) {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode notes for on-chain storage using RLP
-    const encodedReward = encodeNoteData({
+    // Encrypt notes for on-chain storage (ECDH)
+    // All 3 settlement notes are smart notes. Encrypt with maker's pk (maker is settling).
+    // The taker's smart notes will be re-encrypted during convertNote with the converter's pk.
+    const makerAccount = accountStore.accounts.find(acc => acc.address === myMakerNote.owner)
+    if (!makerAccount?.publicKey) {
+      alert('Cannot find maker account. Cannot encrypt notes.')
+      return
+    }
+    const encodedReward = await encodeNoteData({
       ownerAddress: rewardNote.ownerAddress,
       value: rewardNote.value.toString(),
       token: rewardNote.token.toString(),
       viewingKey: rewardNote.viewingKey,
       salt: rewardNote.salt.toString()
-    })
-    const encodedPayment = encodeNoteData({
+    }, makerAccount.publicKey)
+    const encodedPayment = await encodeNoteData({
       ownerAddress: paymentNote.ownerAddress,
       value: paymentNote.value.toString(),
       token: paymentNote.token.toString(),
       viewingKey: paymentNote.viewingKey,
       salt: paymentNote.salt.toString()
-    })
-    const encodedChange = encodeNoteData({
+    }, makerAccount.publicKey)
+    const encodedChange = await encodeNoteData({
       ownerAddress: changeNote.ownerAddress,
       value: changeNote.value.toString(),
       token: changeNote.token.toString(),
       viewingKey: changeNote.viewingKey,
       salt: changeNote.salt.toString()
-    })
+    }, makerAccount.publicKey)
 
     // Execute settlement
     proofProgress.value = 'Submitting transaction...'

@@ -235,22 +235,22 @@ async function combineNote() {
     const cBigInt = c.map(v => BigInt(v))
     const inputBigInt = input.map(v => BigInt(v))
 
-    // Encode combined note using RLP for on-chain storage
-    const encryptedCombinedNote = encodeNoteData({
+    // Encrypt combined note for on-chain storage (ECDH with owner's public key)
+    const encryptedCombinedNote = await encodeNoteData({
       ownerAddress: combinedNote.ownerAddress,
       value: combinedNote.value.toString(),
       token: combinedNote.token.toString(),
       viewingKey: combinedNote.viewingKey,
       salt: combinedNote.salt.toString()
-    })
-    // Zero note (empty change note) - minimal encoding
-    const encryptedZeroNote = encodeNoteData({
+    }, ownerAccount.value!.publicKey)
+    // Zero note (empty change note) - encrypt with owner's pk for consistency
+    const encryptedZeroNote = await encodeNoteData({
       ownerAddress: '0x0',
       value: '0x0',
       token: combinedNote.token.toString(),
       viewingKey: '0x0',
       salt: '0x0'
-    })
+    }, ownerAccount.value!.publicKey)
 
     // Call spend (transfer) on contract
     console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
