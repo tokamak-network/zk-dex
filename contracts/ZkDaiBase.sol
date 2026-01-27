@@ -7,6 +7,13 @@ import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./Requestable.sol";
 import "./RLPReader.sol";
 
+/**
+ * @title ZkDaiBase
+ * @dev Base contract for the ZkDai privacy system. Manages note state, encrypted note
+ *      storage, cross-chain request handling via Plasma-style exits/entries, and
+ *      RLP-encoded proof parsing. Notes transition through Invalid, Valid, Trading,
+ *      and Spent states as they are minted, transferred, and liquidated.
+ */
 contract ZkDaiBase is Requestable {
   using RLPReader for bytes;
   using RLPReader for RLPReader.RLPItem;
@@ -22,6 +29,13 @@ contract ZkDaiBase is Requestable {
   // Computed by circomlibjs Poseidon, must match the circuit
   bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
 
+  /**
+   * @dev Initializes the base contract with development mode flag, DAI token address,
+   *      and the verifier used for cross-chain note request proofs.
+   * @param _development When true, bypasses zk-SNARK proof verification for testing
+   * @param _dai The address of the DAI ERC20 token contract
+   * @param _requestVerifier The verifier contract for mint/burn note proofs used in cross-chain requests
+   */
   constructor(bool _development, address _dai, IMintNBurnNoteVerifier _requestVerifier) {
     development = _development;
     dai = ERC20(_dai);
@@ -71,6 +85,17 @@ contract ZkDaiBase is Requestable {
     return true;
   }
 
+  /**
+   * @dev Handles cross-chain note requests in the child chain. The direction is inverted
+   *      relative to root chain: exits trigger handleOut (note export) and enters trigger
+   *      handleIn (note import via proof storage).
+   * @param isExit Whether the request is an exit (true) or an enter (false)
+   * @param requestId The unique identifier of the cross-chain request
+   * @param requestor The address that initiated the request
+   * @param trieKey The trie key associated with the request
+   * @param trieValue The RLP-encoded Groth16 proof data
+   * @return success Whether the request was processed successfully
+   */
   function applyRequestInChildChain(
     bool isExit,
     uint256 requestId,
@@ -87,6 +112,13 @@ contract ZkDaiBase is Requestable {
     return true;
   }
 
+  /**
+   * @dev Verifies a previously stored cross-chain note request by running the zk-SNARK
+   *      proof through the request verifier. On successful verification, the note is
+   *      activated by setting its state to Valid.
+   * @param noteHash The hash of the note whose stored proof should be verified
+   * @return success Whether the verification succeeded (implicitly returns via require)
+   */
   function verifyRequest(bytes32 noteHash) external returns (bool success) {
     RLPReader.RLPItem[] memory list = requestedNoteProofs[noteHash].toRlpItem().toList();
 
@@ -100,14 +132,32 @@ contract ZkDaiBase is Requestable {
     emit NoteStateChange(noteHash, State.Valid);
   }
 
+  /**
+   * @dev Parses an RLP-encoded item into a fixed-size array of 2 uint256 values.
+   *      Used to decode the 'a' and 'c' components of Groth16 proofs.
+   * @param item The RLP item containing a list of 2 encoded uint256 values
+   * @return A fixed-size array of 2 uint256 values decoded from the RLP item
+   */
   function parseUintArray2(RLPReader.RLPItem memory item) internal returns (uint256[2] memory) {
     RLPReader.RLPItem[] memory list = item.toList();
     return [list[0].toUint(), list[1].toUint()];
   }
+  /**
+   * @dev Parses an RLP-encoded item into a fixed-size array of 4 uint256 values.
+   *      Used to decode the public input component of Groth16 proofs.
+   * @param item The RLP item containing a list of 4 encoded uint256 values
+   * @return A fixed-size array of 4 uint256 values decoded from the RLP item
+   */
   function parseUintArray4(RLPReader.RLPItem memory item) internal returns (uint256[4] memory) {
     RLPReader.RLPItem[] memory list = item.toList();
     return [list[0].toUint(), list[1].toUint(), list[2].toUint(), list[3].toUint()];
   }
+  /**
+   * @dev Parses an RLP-encoded item into a 2x2 matrix of uint256 values.
+   *      Used to decode the 'b' component of Groth16 proofs.
+   * @param item The RLP item containing a nested list of 2x2 encoded uint256 values
+   * @return A fixed-size 2x2 array of uint256 values decoded from the RLP item
+   */
   function parseUint2DArray2(RLPReader.RLPItem memory item) internal returns (uint256[2][2] memory) {
     RLPReader.RLPItem[] memory list = item.toList();
     RLPReader.RLPItem[] memory list1 = list[0].toList();
@@ -119,6 +169,13 @@ contract ZkDaiBase is Requestable {
     ];
   }
 
+  /**
+   * @dev Extracts the note hash from RLP-encoded Groth16 proof data. Decodes the
+   *      top-level RLP list, accesses the public inputs (4th element), and returns
+   *      the note hash from input[1] (Poseidon version).
+   * @param b The raw RLP-encoded bytes containing a full Groth16 proof (a, b, c, input)
+   * @return The note hash extracted from the proof's public inputs as a bytes32 value
+   */
   function getNoteHash(bytes memory b) internal pure returns (bytes32) {
     RLPReader.RLPItem[] memory list = b.toRlpItem().toList();
     RLPReader.RLPItem[] memory input = list[3].toList();
@@ -126,6 +183,13 @@ contract ZkDaiBase is Requestable {
     return bytes32(input[1].toUint());
   }
 
+  /**
+   * @dev Processes an incoming note request by storing the RLP-encoded proof data for
+   *      later verification. The note must be in an Invalid or Spent state to be eligible
+   *      for import. The proof is not verified at this stage to save gas; call
+   *      verifyRequest() separately to activate the note.
+   * @param trieValue The RLP-encoded Groth16 proof data for the note being imported
+   */
   function handleIn(bytes memory trieValue) internal {
     bytes32 noteHash = getNoteHash(trieValue);
     require(notes[noteHash] == State.Invalid ||
@@ -135,6 +199,12 @@ contract ZkDaiBase is Requestable {
     requestedNoteProofs[noteHash] = trieValue;
   }
 
+  /**
+   * @dev Processes an outgoing note request by marking the note as Spent. The note must
+   *      be in a Valid state to be exported. The proof data is stored for reference, and
+   *      the note state is immediately transitioned to Spent.
+   * @param trieValue The RLP-encoded Groth16 proof data for the note being exported
+   */
   function handleOut(bytes memory trieValue) internal {
     bytes32 noteHash = getNoteHash(trieValue);
     require(notes[noteHash] == State.Valid, "note is not in a requestable state.");

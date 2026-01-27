@@ -23,6 +23,10 @@ export const useContractStore = defineStore('contract', () => {
 
   const isInitialized = computed(() => !!dexContract.value && !!daiContract.value)
 
+  /**
+   * Initializes ZkDex and MockDai contract instances from deployed artifacts.
+   * @returns true if initialization succeeded, false otherwise
+   */
   async function initContracts() {
     if (!web3Store.signer || !web3Store.networkId) {
       console.error('Web3 not connected')
@@ -84,6 +88,7 @@ export const useContractStore = defineStore('contract', () => {
     }
   }
 
+  /** Clears contract instances and addresses. */
   function reset() {
     dexContract.value = null
     daiContract.value = null

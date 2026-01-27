@@ -63,7 +63,11 @@ export async function initCrypto(): Promise<void> {
 }
 
 /**
- * Generate a random secret key within the BN128 field
+ * Generate a random secret key within the BN128 field.
+ * Produces 32 random bytes and reduces modulo BN128_FIELD_PRIME
+ * to guarantee the key is a valid field element.
+ *
+ * @returns The secret key as a 0x-prefixed, zero-padded 64-character hex string
  */
 function generateSecretKey(): string {
   const randomBytes = new Uint8Array(32)
@@ -155,7 +159,13 @@ export async function unlockAccount(passphrase: string, keystore: Keystore): Pro
 }
 
 /**
- * Encrypt secret key using scrypt + AES-256-GCM
+ * Encrypt a secret key using scrypt key derivation and AES-256-GCM symmetric encryption.
+ * Produces a Keystore object containing the ciphertext, IV, salt, scrypt parameters,
+ * and the GCM authentication tag (stored as `mac`).
+ *
+ * @param secretKey - The secret key to encrypt, as a hex string (with or without 0x prefix)
+ * @param passphrase - The user-supplied passphrase used for key derivation
+ * @returns A Keystore object containing all data needed for later decryption
  */
 async function encryptSecretKey(secretKey: string, passphrase: string): Promise<Keystore> {
   // Generate random salt and IV
@@ -216,7 +226,12 @@ async function encryptSecretKey(secretKey: string, passphrase: string): Promise<
 }
 
 /**
- * Decrypt secret key from keystore
+ * Decrypt a secret key from an encrypted Keystore using scrypt key derivation
+ * and AES-256-GCM decryption. Throws if the passphrase is incorrect.
+ *
+ * @param keystore - The Keystore object containing encrypted secret key data
+ * @param passphrase - The user-supplied passphrase used during encryption
+ * @returns The decrypted secret key as a 0x-prefixed hex string
  */
 async function decryptSecretKey(keystore: Keystore, passphrase: string): Promise<string> {
   const { crypto: c } = keystore
@@ -268,13 +283,25 @@ export async function getBabyJub(): Promise<BabyJub> {
   return babyJub
 }
 
-// Utility functions
+/**
+ * Convert a Uint8Array to a lowercase hex string (no 0x prefix).
+ *
+ * @param bytes - The byte array to convert
+ * @returns The hex-encoded string representation of the bytes
+ */
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
 }
 
+/**
+ * Convert a hex string to a Uint8Array.
+ * Accepts hex strings with or without the 0x prefix.
+ *
+ * @param hex - The hex string to convert
+ * @returns A Uint8Array containing the decoded bytes
+ */
 export function hexToBytes(hex: string): Uint8Array {
   const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex
   const bytes = new Uint8Array(cleanHex.length / 2)

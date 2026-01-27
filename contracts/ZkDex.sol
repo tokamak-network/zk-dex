@@ -31,6 +31,10 @@ contract ZkDex is ZkDai {
 
   Order[] public orders;
 
+  /// @notice Emitted when a new order is created via makeOrder
+  /// @param orderId The index of the newly created order in the orders array
+  /// @param sourceToken The token type the maker is offering
+  /// @param targetToken The token type the maker wants to receive
   event OrderCreated(uint256 orderId, uint256 sourceToken, uint256 targetToken);
   event OrderTaken(uint256 orderId, bytes32 takerNoteToMaker, bytes32 parentNote);
   event OrderSettled(uint256 orderId, bytes32 rewardNote, bytes32 paymentNote, bytes32 changeNote);
@@ -255,6 +259,13 @@ contract ZkDex is ZkDai {
     emit OrderSettled(orderId, rewardNote, paymentNote, changeNote);
   }
 
+  /**
+   * @dev Computes the keccak256 hash of an order's key fields for uniqueness identification.
+   *      Encodes the maker viewing key, maker note, source token, target token, and price
+   *      to produce a deterministic hash.
+   * @param order The Order struct containing the fields to hash
+   * @return The keccak256 hash of the order's key fields as a bytes32 value
+   */
   function hashOrder(Order memory order) internal view returns (bytes32) {
     return keccak256(abi.encode(
       order.makerViewingKey,
@@ -265,6 +276,10 @@ contract ZkDex is ZkDai {
     ));
   }
 
+  /**
+   * @dev Returns the total number of orders that have been created in the exchange.
+   * @return The length of the orders array, representing the count of all orders
+   */
   function getOrderCount() public view returns (uint256) {
     return orders.length;
   }

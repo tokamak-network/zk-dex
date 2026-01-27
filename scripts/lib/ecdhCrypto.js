@@ -19,7 +19,9 @@ const ECDH_VERSION = 0x01;
 const ECDH_MIN_BYTES = 94;
 
 /**
- * Convert a bigint to a 32-byte big-endian Buffer
+ * Convert a bigint to a 32-byte big-endian Buffer.
+ * @param {bigint} value - The bigint value to convert
+ * @returns {Buffer} A 32-byte Buffer containing the big-endian representation of the value
  */
 function bigIntToBuffer32(value) {
     const hex = value.toString(16).padStart(64, '0');
@@ -27,8 +29,10 @@ function bigIntToBuffer32(value) {
 }
 
 /**
- * Derive AES-256 key from ECDH shared secret using SHA-256
+ * Derive AES-256 key from ECDH shared secret using SHA-256.
  * key = SHA-256(shared_x_32bytes || shared_y_32bytes)
+ * @param {{x: bigint, y: bigint}} sharedPoint - The ECDH shared secret point on the BabyJubJub curve
+ * @returns {Buffer} A 32-byte AES-256 key derived from the SHA-256 hash of the concatenated coordinates
  */
 function deriveAESKey(sharedPoint) {
     const xBuf = bigIntToBuffer32(sharedPoint.x);
@@ -127,7 +131,9 @@ async function decryptWithSecretKey(encryptedHex, sk) {
 }
 
 /**
- * Check if a hex-encoded bytes blob is ECDH-encrypted (starts with version byte 0x01)
+ * Check if a hex-encoded bytes blob is ECDH-encrypted (starts with version byte 0x01).
+ * @param {string} hex - The hex-encoded string to check (with or without 0x prefix)
+ * @returns {boolean} True if the data has the ECDH version prefix and meets the minimum length requirement
  */
 function isECDHEncrypted(hex) {
     const clean = hex.startsWith('0x') ? hex.slice(2) : hex;

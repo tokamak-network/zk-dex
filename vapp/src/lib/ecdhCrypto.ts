@@ -17,7 +17,11 @@ const ECDH_VERSION = 0x01
 const ECDH_MIN_BYTES = 94
 
 /**
- * Convert a bigint to a 32-byte big-endian Uint8Array
+ * Convert a bigint to a 32-byte big-endian Uint8Array.
+ * The value is zero-padded on the left to fill exactly 32 bytes.
+ *
+ * @param value - The bigint value to convert (must fit in 256 bits)
+ * @returns A 32-byte Uint8Array in big-endian byte order
  */
 function bigIntToBytes32(value: bigint): Uint8Array {
   const hex = value.toString(16).padStart(64, '0')
@@ -25,9 +29,11 @@ function bigIntToBytes32(value: bigint): Uint8Array {
 }
 
 /**
- * Generate an ephemeral keypair on BabyJubJub
- * esk = random scalar mod BN128_FIELD_PRIME
- * epk = esk * Base8
+ * Generate an ephemeral keypair on BabyJubJub for ECDH key exchange.
+ * The ephemeral secret key (esk) is a random scalar reduced mod BN128_FIELD_PRIME,
+ * and the ephemeral public key (epk) is computed as esk * Base8.
+ *
+ * @returns An object containing the ephemeral secret key (esk) and public key (epk) with x, y coordinates as bigints
  */
 async function generateEphemeralKeypair(): Promise<{ esk: bigint; epk: { x: bigint; y: bigint } }> {
   const babyJub = await getBabyJub()
@@ -48,7 +54,12 @@ async function generateEphemeralKeypair(): Promise<{ esk: bigint; epk: { x: bigi
 }
 
 /**
- * Compute ECDH shared secret: scalar * point
+ * Compute the ECDH shared secret by performing scalar multiplication on BabyJubJub.
+ * The result is scalar * point, yielding a new curve point.
+ *
+ * @param scalar - The scalar multiplier (e.g., a secret key or ephemeral secret key)
+ * @param point - The BabyJubJub curve point to multiply, with x and y as bigints
+ * @returns The resulting curve point with x and y coordinates as bigints
  */
 async function computeSharedSecret(
   scalar: bigint,
@@ -66,8 +77,13 @@ async function computeSharedSecret(
 }
 
 /**
- * Derive AES-256-GCM key from ECDH shared secret using SHA-256
- * key = SHA-256(shared_x_32bytes || shared_y_32bytes)
+ * Derive an AES-256-GCM CryptoKey from an ECDH shared secret point.
+ * The key material is computed as SHA-256(shared_x_32bytes || shared_y_32bytes),
+ * then imported as a non-extractable AES-GCM key via the Web Crypto API.
+ *
+ * @param sharedPoint - The ECDH shared secret curve point with x and y as bigints
+ * @param usage - The permitted key usages (e.g., ['encrypt'] or ['decrypt'])
+ * @returns A CryptoKey suitable for AES-256-GCM operations
  */
 async function deriveAESKey(
   sharedPoint: { x: bigint; y: bigint },

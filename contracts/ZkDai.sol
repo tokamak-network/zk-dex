@@ -7,7 +7,22 @@ import "./SpendNotes.sol";
 import "./LiquidateNotes.sol";
 
 
+/**
+ * @title ZkDai
+ * @dev Main contract that composes minting, spending, and liquidating of private notes
+ *      backed by ETH or DAI tokens. Provides user-facing functions (mint, spend, liquidate)
+ *      that handle token transfers and delegate zk-SNARK proof verification to the
+ *      respective modules.
+ */
 contract ZkDai is MintNotes, SpendNotes, LiquidateNotes {
+  /**
+   * @dev Initializes the ZkDai contract with development mode, DAI token address,
+   *      and the Groth16 verifier contracts for minting and spending notes.
+   * @param _development When true, bypasses zk-SNARK proof verification for testing
+   * @param _dai The address of the DAI ERC20 token contract
+   * @param _mintNoteVerifier The verifier contract for mint and liquidate note proofs
+   * @param _spendNoteVerifier The verifier contract for transfer (spend) note proofs
+   */
   constructor(
     bool _development,
     address _dai,

@@ -5,11 +5,22 @@ import {ITransferNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
+/**
+ * @title SpendNotes
+ * @dev Abstract contract providing note spending (transfer) functionality. Verifies
+ *      Groth16 zk-SNARK proofs to spend up to two existing notes and create up to
+ *      two new notes, enabling private value transfers with change outputs.
+ */
 abstract contract SpendNotes is ZkDaiBase {
   uint8 internal constant SPEND_NUM_PUBLIC_INPUTS = 5;
 
   ITransferNoteVerifier public spendNoteVerifier;
 
+  /**
+   * @dev Initializes the spend notes module with the Groth16 verifier contract for
+   *      transfer note proofs.
+   * @param _spendNoteVerifier The verifier contract for validating transfer note zk-SNARK proofs
+   */
   constructor(ITransferNoteVerifier _spendNoteVerifier) {
     spendNoteVerifier = _spendNoteVerifier;
   }
@@ -67,6 +78,13 @@ abstract contract SpendNotes is ZkDaiBase {
     }
   }
 
+  /**
+   * @dev Extracts the 4 note hashes from the transfer circuit's public inputs. The first
+   *      input (index 0) is the proof output flag and is skipped. Inputs 1-4 correspond
+   *      to old note 0, old note 1, new note, and change note respectively.
+   * @param input The 5-element public input array from the transfer zk-SNARK proof
+   * @return noteHashes A fixed-size array of 4 note hashes (old0, old1, new, change)
+   */
   function get4Notes(uint256[5] memory input)
     internal
     pure

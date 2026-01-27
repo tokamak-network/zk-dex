@@ -61,7 +61,9 @@ async function derivePublicKey(sk) {
 }
 
 /**
- * Convert value to hex string (handles BigInt)
+ * Convert a value to a 0x-prefixed hex string, handling BigInt, string, and numeric types.
+ * @param {bigint|string|number} value - The value to convert (BigInt, hex string, or number)
+ * @returns {string} The value as a 0x-prefixed hex string
  */
 function toHexString(value) {
     if (typeof value === 'bigint') {

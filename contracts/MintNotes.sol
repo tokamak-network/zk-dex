@@ -5,11 +5,21 @@ import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
+/**
+ * @title MintNotes
+ * @dev Abstract contract providing note minting functionality. Verifies Groth16 zk-SNARK
+ *      proofs to create new private notes and stores their encrypted data on-chain.
+ */
 abstract contract MintNotes is ZkDaiBase {
   uint8 internal constant MINT_NUM_PUBLIC_INPUTS = 4;
 
   IMintNBurnNoteVerifier public mintNoteVerifier;
 
+  /**
+   * @dev Initializes the mint notes module with the Groth16 verifier contract for
+   *      mint note proofs.
+   * @param _mintNoteVerifier The verifier contract for validating mint note zk-SNARK proofs
+   */
   constructor(IMintNBurnNoteVerifier _mintNoteVerifier) {
     mintNoteVerifier = _mintNoteVerifier;
   }

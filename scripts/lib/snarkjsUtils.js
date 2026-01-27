@@ -24,7 +24,9 @@ const {
 } = circomlibBabyJub;
 
 /**
- * Convert BigInt to string for JSON serialization
+ * Recursively convert all BigInt values in an object to their string representations for JSON serialization.
+ * @param {bigint|Array|Object|*} obj - The value to convert; can be a BigInt, array, plain object, or primitive
+ * @returns {string|Array|Object|*} A deep copy with all BigInt values replaced by their decimal string form
  */
 function stringifyBigInts(obj) {
     if (typeof obj === 'bigint') {
@@ -96,7 +98,10 @@ async function generateProof(circuitName, inputs) {
 }
 
 /**
- * Convert hex string to BigInt
+ * Convert a hex string, number, or bigint to a BigInt value.
+ * Handles 0x-prefixed hex strings, plain decimal strings, numbers, and existing bigints.
+ * @param {string|number|bigint} hex - The value to convert
+ * @returns {bigint} The value as a BigInt
  */
 function hexToBigInt(hex) {
     if (typeof hex === 'bigint') return hex;
@@ -113,7 +118,9 @@ function hexToBigInt(hex) {
 }
 
 /**
- * Mask value to 254 bits (BN128 field constraint)
+ * Mask a value to 254 bits to fit within the BN128 finite field constraint.
+ * @param {string|number|bigint} value - The value to mask (hex string, number, or bigint)
+ * @returns {bigint} The value with only the lower 254 bits preserved
  */
 function maskTo254Bits(value) {
     const mask = (BigInt(1) << BigInt(254)) - BigInt(1);
@@ -142,8 +149,10 @@ async function computeCircuitHash(note) {
 }
 
 /**
- * Split 256-bit value into two 128-bit values (high, low) as strings
+ * Split a 256-bit value into two 128-bit values (high, low) as decimal strings.
  * Delegates to Note._split256To128 for the core logic.
+ * @param {string|number|bigint} value - The 256-bit value to split (hex string, number, or bigint)
+ * @returns {string[]} An array of two decimal strings: [highBits, lowBits]
  */
 function split256To128(value) {
     const [high, low] = _split256To128(value);
@@ -157,6 +166,11 @@ function split256To128(value) {
  */
 let EMPTY_NOTE_HASH = null;
 
+/**
+ * Compute and cache the Poseidon hash of an empty note (all-zero fields).
+ * The result is Poseidon(0, 0, 0, 0, 0, 0) and is cached after the first call.
+ * @returns {Promise<string>} The empty note hash as a decimal string
+ */
 async function getEmptyNoteHash() {
     if (EMPTY_NOTE_HASH === null) {
         EMPTY_NOTE_HASH = await poseidonHash([0, 0, 0, 0, 0, 0]);
@@ -457,7 +471,11 @@ async function getSettleOrderProof(
 }
 
 /**
- * Verify a proof locally (for testing)
+ * Verify a Groth16 proof locally using the circuit's verification key (for testing).
+ * @param {string} circuitName - The name of the circuit (e.g., 'mint_burn_note', 'transfer_note')
+ * @param {Object} proof - The formatted proof object containing a, b, and c arrays
+ * @param {Array<string>} publicSignals - The array of public signal values
+ * @returns {Promise<boolean>} True if the proof is valid, false otherwise
  */
 async function verifyProofLocal(circuitName, proof, publicSignals) {
     const vkeyPath = path.join(CIRCUITS_DIR, circuitName, `${circuitName}_vkey.json`);
@@ -479,7 +497,9 @@ async function verifyProofLocal(circuitName, proof, publicSignals) {
 }
 
 /**
- * Check if circuits are initialized
+ * Check if the circuit build artifacts (WASM files) are available on disk.
+ * Tests for the existence of the mint_burn_note WASM file as a proxy for all circuits.
+ * @returns {Promise<boolean>} True if the circuit WASM files exist, false otherwise
  */
 async function initialized() {
     const testWasm = path.join(CIRCUITS_DIR, 'mint_burn_note', 'mint_burn_note_js', 'mint_burn_note.wasm');

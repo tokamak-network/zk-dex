@@ -5,11 +5,22 @@ import {IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 
+/**
+ * @title LiquidateNotes
+ * @dev Abstract contract providing note liquidation functionality. Verifies Groth16
+ *      zk-SNARK proofs to burn (spend) a private note, enabling the caller to withdraw
+ *      the equivalent value in ETH or DAI tokens.
+ */
 abstract contract LiquidateNotes is ZkDaiBase {
   uint8 internal constant LIQUIDATE_NUM_PUBLIC_INPUTS = 4;
 
   IMintNBurnNoteVerifier public liquidateNoteVerifier;
 
+  /**
+   * @dev Initializes the liquidate notes module with the Groth16 verifier contract for
+   *      liquidation note proofs.
+   * @param _liquidateNoteVerifier The verifier contract for validating liquidation zk-SNARK proofs
+   */
   constructor(IMintNBurnNoteVerifier _liquidateNoteVerifier) {
     liquidateNoteVerifier = _liquidateNoteVerifier;
   }

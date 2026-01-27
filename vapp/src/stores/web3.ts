@@ -14,6 +14,10 @@ export const useWeb3Store = defineStore('web3', () => {
 
   const isConnected = computed(() => !!account.value && isListening.value)
 
+  /**
+   * Connects to MetaMask and initializes provider/signer.
+   * @returns true if connection succeeded, false otherwise
+   */
   async function connect() {
     if (typeof window.ethereum === 'undefined') {
       error.value = 'MetaMask is not installed'
@@ -51,6 +55,10 @@ export const useWeb3Store = defineStore('web3', () => {
     }
   }
 
+  /**
+   * Handles MetaMask account change event.
+   * @param accounts - the new list of connected accounts
+   */
   async function handleAccountsChanged(accounts: string[]) {
     if (accounts.length === 0) {
       disconnect()
@@ -63,10 +71,12 @@ export const useWeb3Store = defineStore('web3', () => {
     }
   }
 
+  /** Handles chain change by reloading the page. */
   function handleChainChanged() {
     window.location.reload()
   }
 
+  /** Disconnects wallet and clears all web3 state. */
   function disconnect() {
     isListening.value = false
     provider.value = null
@@ -77,6 +87,7 @@ export const useWeb3Store = defineStore('web3', () => {
     error.value = null
   }
 
+  /** Refreshes the account ETH balance. */
   async function updateBalance() {
     if (provider.value && account.value) {
       balance.value = await provider.value.getBalance(account.value)

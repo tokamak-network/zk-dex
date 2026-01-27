@@ -255,7 +255,14 @@ async function pubKeyToAddress(pubKey) {
 }
 
 // Export class-like interface for compatibility with existing code
+/**
+ * Wraps a BabyJubJub secret key for key operations.
+ */
 class PrivateKey {
+    /**
+     * Create a PrivateKey instance from a secret key value.
+     * @param {string|bigint} sk - The secret key as a hex string (with or without 0x prefix) or a bigint
+     */
     constructor(sk) {
         if (typeof sk === 'string') {
             this.sk = BigInt(sk.startsWith('0x') ? sk : '0x' + sk);
@@ -266,33 +273,63 @@ class PrivateKey {
         }
     }
 
+    /**
+     * Generate a random private key using a cryptographically secure random number.
+     * @returns {Promise<PrivateKey>} A new PrivateKey instance with a random secret key
+     */
     static async random() {
         const sk = await randomSecretKey();
         return new PrivateKey(sk);
     }
 
+    /**
+     * Convert the secret key to a 0x-prefixed, zero-padded 64-character hex string.
+     * @returns {string} The secret key as a hex string (e.g., "0x00ab...ef")
+     */
     toString() {
         return '0x' + this.sk.toString(16).padStart(64, '0');
     }
 }
 
+/**
+ * Represents a BabyJubJub public key as a point on the curve.
+ */
 class PublicKey {
+    /**
+     * Create a PublicKey from BabyJubJub curve coordinates.
+     * @param {bigint|string|number} x - The x-coordinate of the public key point
+     * @param {bigint|string|number} y - The y-coordinate of the public key point
+     */
     constructor(x, y) {
         this.x = typeof x === 'bigint' ? x : BigInt(x);
         this.y = typeof y === 'bigint' ? y : BigInt(y);
     }
 
+    /**
+     * Derive a public key from a private key using BabyJubJub scalar multiplication.
+     * @param {PrivateKey|bigint} privateKey - A PrivateKey instance or a raw bigint secret key
+     * @returns {Promise<PublicKey>} The corresponding public key on the BabyJubJub curve
+     */
     static async fromPrivate(privateKey) {
         const sk = privateKey instanceof PrivateKey ? privateKey.sk : privateKey;
         const pk = await getPublicKey(sk);
         return new PublicKey(pk.x, pk.y);
     }
 
+    /**
+     * Verify that this public key corresponds to the given private key.
+     * @param {PrivateKey|bigint} privateKey - A PrivateKey instance or a raw bigint secret key to check against
+     * @returns {Promise<boolean>} True if this public key matches the derived public key of the given private key
+     */
     async verify(privateKey) {
         const sk = privateKey instanceof PrivateKey ? privateKey.sk : privateKey;
         return await verifyPublicKey({ x: this.x, y: this.y }, sk);
     }
 
+    /**
+     * Return the public key as an array of two 0x-prefixed, zero-padded 64-character hex strings.
+     * @returns {string[]} An array of two hex strings: [x-coordinate, y-coordinate]
+     */
     toArray() {
         return [
             '0x' + this.x.toString(16).padStart(64, '0'),

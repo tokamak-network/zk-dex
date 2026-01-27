@@ -84,38 +84,53 @@ export const useOrderStore = defineStore('order', () => {
     }
   })
 
+  /** Replaces the orders list. */
   function setOrders(newOrders: Order[]) {
     orders.value = newOrders
   }
 
+  /**
+   * Appends an order to the list.
+   * @param order - the order to add
+   */
   function addOrder(order: Order) {
     orders.value.push(order)
   }
 
+  /** Replaces the order history list. */
   function setOrderHistory(history: OrderHistory[]) {
     orderHistory.value = history
   }
 
+  /**
+   * Appends an order history entry.
+   * @param history - the order history entry to add
+   */
   function addOrderHistory(history: OrderHistory) {
     orderHistory.value.push(history)
   }
 
+  /** Sets the currently selected order. */
   function setSelectedOrder(order: Order | null) {
     selectedOrder.value = order
   }
 
+  /** Sets the DAI amount for order creation. */
   function setDaiAmount(amount: string) {
     daiAmount.value = amount
   }
 
+  /** Sets the buy/sell preference. */
   function selectBuyOrSell(choice: BuyOrSell) {
     doYouWantToBuyOrSell.value = choice
   }
 
+  /** Sets the make/take preference. */
   function selectMakeOrTake(choice: MakeOrTake) {
     doYouWantToMakeOrTake.value = choice
   }
 
+  /** Fetches orders from the API. */
   async function loadOrders() {
     try {
       const data = await api.getOrders(accountStore.key!)
@@ -125,6 +140,7 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
+  /** Fetches order history from the API. */
   async function loadOrderHistory() {
     try {
       const data = await api.getOrderHistory(accountStore.key!)
@@ -134,6 +150,7 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
+  /** Resets all order state to initial values. */
   function reset() {
     orders.value = []
     orderHistory.value = []

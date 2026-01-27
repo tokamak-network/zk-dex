@@ -24,8 +24,9 @@ let _poseidonF = null;
 let _EMPTY_NOTE_HASH = null;
 
 /**
- * Initialize Poseidon hash function.
+ * Initialize the Poseidon hash function and compute the empty note hash.
  * Must be called once before using Note.hash() or EMPTY_NOTE_HASH.
+ * @returns {Promise<string>} The computed empty note hash
  */
 async function init() {
     if (!_poseidon) {
@@ -40,6 +41,13 @@ async function init() {
 
 // --- Poseidon helpers ---
 
+/**
+ * Convert a hex string, number, or bigint to a BigInt value.
+ * Handles 0x-prefixed hex strings, plain numbers, and existing bigints.
+ * Returns BigInt(0) for falsy, '0x0', or '0x00' inputs.
+ * @param {string|number|bigint} hex - The value to convert
+ * @returns {bigint} The converted BigInt value
+ */
 function _hexToBigInt(hex) {
     if (typeof hex === 'bigint') return hex;
     if (typeof hex === 'number') return BigInt(hex);
@@ -50,6 +58,11 @@ function _hexToBigInt(hex) {
     return BigInt(0);
 }
 
+/**
+ * Split a 256-bit value into its high and low 128-bit halves.
+ * @param {string|number|bigint} value - The 256-bit value to split (hex string, number, or bigint)
+ * @returns {bigint[]} An array of two bigints: [highBits, lowBits]
+ */
 function _split256To128(value) {
     const big = _hexToBigInt(value);
     const mask = (BigInt(1) << BigInt(128)) - BigInt(1);
@@ -62,6 +75,11 @@ const NoteState = {
   Trading: Web3Utils.toBN('2'),
   Spent: Web3Utils.toBN('3'),
 
+  /**
+   * Convert a numeric note state to its human-readable string name.
+   * @param {BN} s - The note state as a BN (0=Invalid, 1=Valid, 2=Trading, 3=Spent)
+   * @returns {string} The state name ('Invalid', 'Valid', 'Trading', or 'Spent')
+   */
   toString(s) {
     if (this.Invalid.cmp(s) === 0) { return 'Invalid'; }
     if (this.Valid.cmp(s) === 0) { return 'Valid'; }
@@ -123,14 +141,28 @@ class Note {
     return '0x' + _poseidonF.toObject(hash).toString(16).padStart(64, '0');
   }
 
+  /**
+   * Compute the Poseidon note hash and split it into an array of two 16-byte hex strings.
+   * @returns {string[]} An array of two hex strings representing the high and low halves of the hash
+   */
   hashArr() {
     return split32BytesTo16BytesArr(this.hash());
   }
 
+  /**
+   * Serialize the note to a JSON string representation.
+   * @returns {string} A JSON string containing all note fields
+   */
   toString() {
     return JSON.stringify(this);
   }
 
+  /**
+   * Encrypt the note using AES-256-CBC with the given encryption key.
+   * The note is serialized to JSON, encrypted, and the ciphertext is marshalled to a hex string.
+   * @param {string} encKey - The encryption key (hex-encoded)
+   * @returns {string} The encrypted note as a marshalled hex string
+   */
   encrypt(encKey) {
     const key = marshalEncDecKey(encKey);
     const cipher = crypto.createCipher(mode, key);
@@ -172,6 +204,12 @@ function createSmartNote(originNote, value, token, viewingKey, salt) {
   return new Note(smartOwner, value, token, viewingKey, salt);
 }
 
+/**
+ * Marshal an encryption/decryption key by stripping the 0x prefix, lowering case,
+ * and removing leading zeros to produce a clean hex key string.
+ * @param {string} _key - The raw key as a hex string (with or without 0x prefix)
+ * @returns {string} The cleaned and normalized key string suitable for AES operations
+ */
 function marshalEncDecKey(_key) {
   const key = unmarshal(_key.toLowerCase());
   const reg = new RegExp(/^0*(.+)/, 'g');
@@ -190,6 +228,12 @@ function marshalEncDecKey(_key) {
   return res;
 }
 
+/**
+ * Decrypt an encrypted note string using AES-256-CBC and reconstruct the Note object.
+ * @param {string} v - The encrypted note data as a marshalled hex string
+ * @param {string} decKey - The decryption key (hex-encoded viewing key)
+ * @returns {Note} The decrypted and reconstructed Note instance
+ */
 function decrypt(v, decKey) {
   const key = marshalEncDecKey(decKey);
   if (!v) {
@@ -208,7 +252,12 @@ function decrypt(v, decKey) {
 // --- Dummy proof functions (Groth16 / Poseidon format) ---
 // Used in development mode only (proofs are not verified)
 
-// MintNBurnNote: [output, noteHash, value, tokenType]
+/**
+ * Generate a dummy proof for the MintNBurnNote circuit (development mode only).
+ * Public inputs: [output, noteHash, value, tokenType].
+ * @param {Note} note - The note for which to create a dummy mint/burn proof
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofCreateNote(note) {
   return {
     a: ['0x1', '0x2'],
@@ -223,7 +272,15 @@ function dummyProofCreateNote(note) {
   };
 }
 
-// TransferNote: [output, o0Hash, o1Hash, newHash, changeHash]
+/**
+ * Generate a dummy proof for the TransferNote circuit (development mode only).
+ * Public inputs: [output, o0Hash, o1Hash, newHash, changeHash].
+ * @param {Note} oldNote0 - The first input note being spent
+ * @param {Note|null} oldNote1 - The second input note being spent (null uses EMPTY_NOTE)
+ * @param {Note} newNote - The new output note for the recipient
+ * @param {Note} changeNote - The change note returned to the sender
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
   return {
     a: ['0x1', '0x2'],
@@ -239,7 +296,14 @@ function dummyProofSpendNote(oldNote0, oldNote1, newNote, changeNote) {
   };
 }
 
-// ConvertNote: [output, smartHash, originHash, newHash]
+/**
+ * Generate a dummy proof for the ConvertNote circuit (development mode only).
+ * Public inputs: [output, smartHash, originHash, newHash].
+ * @param {Note} smartNote - The smart note (stake note) being converted
+ * @param {Note} originNote - The original note that owns the smart note
+ * @param {Note} convertedNote - The new note created from conversion
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofConvertNote(smartNote, originNote, convertedNote) {
   return {
     a: ['0x1', '0x2'],
@@ -254,7 +318,12 @@ function dummyProofConvertNote(smartNote, originNote, convertedNote) {
   };
 }
 
-// MakeOrder: [output, noteHash, tokenType]
+/**
+ * Generate a dummy proof for the MakeOrder circuit (development mode only).
+ * Public inputs: [output, noteHash, tokenType].
+ * @param {Note} makerNote - The maker's note being placed as an order
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofMakeOrder(makerNote) {
   return {
     a: ['0x1', '0x2'],
@@ -268,7 +337,13 @@ function dummyProofMakeOrder(makerNote) {
   };
 }
 
-// TakeOrder: [output, oldNoteHash, oldType, newNoteHash, newOwnerAddress, newType]
+/**
+ * Generate a dummy proof for the TakeOrder circuit (development mode only).
+ * Public inputs: [output, oldNoteHash, oldType, newNoteHash, newOwnerAddress, newType].
+ * @param {Note} parentNote - The taker's parent note being committed
+ * @param {Note} stakeNote - The stake note created with maker note hash as owner
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofTakeOrder(parentNote, stakeNote) {
   return {
     a: ['0x1', '0x2'],
@@ -285,10 +360,20 @@ function dummyProofTakeOrder(parentNote, stakeNote) {
   };
 }
 
-// SettleOrder: [output, o0Hash, o0Type, o1Hash, o1Type,
-//               n0Hash, n0OwnerAddress, n0Type,
-//               n1Hash, n1OwnerAddress, n1Type,
-//               n2Hash, n2Type, price]
+/**
+ * Generate a dummy proof for the SettleOrder circuit (development mode only).
+ * Public inputs: [output, o0Hash, o0Type, o1Hash, o1Type,
+ *                 n0Hash, n0OwnerAddress, n0Type,
+ *                 n1Hash, n1OwnerAddress, n1Type,
+ *                 n2Hash, n2Type, price].
+ * @param {Note} makerNote - The maker's original note (o0)
+ * @param {Note} stakeNote - The taker's stake note (o1)
+ * @param {Note} rewardNote - The reward note for the taker (n0)
+ * @param {Note} paymentNote - The payment note for the maker (n1)
+ * @param {Note} changeNote - The change note for remaining value (n2)
+ * @param {string|number} price - The order settlement price
+ * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
+ */
 function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, changeNote, price) {
   return {
     a: ['0x1', '0x2'],

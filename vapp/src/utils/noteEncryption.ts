@@ -24,6 +24,11 @@ export interface LegacyEncodedNoteData {
 /**
  * Convert a value to a hex string suitable for RLP encoding.
  * Handles decimal strings, hex strings, and bigint values.
+ *
+ * @param value - The value to convert, which may be a decimal string, hex string
+ *   (with 0x prefix), bigint, number, undefined, or null
+ * @returns A 0x-prefixed, even-length hex string ready for RLP encoding.
+ *   Returns '0x00' for falsy or zero values.
  */
 function toHexString(value: string | bigint | number | undefined | null): string {
   if (value === undefined || value === null || value === '' || value === '0') return '0x00'
@@ -49,7 +54,11 @@ function toHexString(value: string | bigint | number | undefined | null): string
 }
 
 /**
- * RLP-encode note fields (internal helper, produces plaintext bytes)
+ * RLP-encode note fields (internal helper, produces plaintext bytes).
+ *
+ * @param noteData - The note data containing ownerAddress, value, token,
+ *   viewingKey, and salt fields to encode
+ * @returns An RLP-encoded hex string representing the serialized note fields
  */
 function rlpEncodeNoteFields(noteData: EncodedNoteData): string {
   const fields = [
@@ -123,7 +132,13 @@ export async function decodeNoteData(
 }
 
 /**
- * Decode RLP-encoded note data (legacy plaintext or decrypted ECDH payload)
+ * Decode RLP-encoded note data (legacy plaintext or decrypted ECDH payload).
+ * Supports both the current 5-field format and the legacy 6-field format
+ * which included separate owner public key components.
+ *
+ * @param rlpHex - A 0x-prefixed hex string containing RLP-encoded note data
+ * @returns The decoded note data as an EncodedNoteData object, or null if
+ *   decoding fails or the field count is unrecognized
  */
 async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null> {
   try {

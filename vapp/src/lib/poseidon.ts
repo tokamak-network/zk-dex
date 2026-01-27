@@ -12,6 +12,12 @@ type PoseidonFunction = ((inputs: (bigint | number | string)[]) => Uint8Array) &
 let poseidon: PoseidonFunction | null = null
 let initPromise: Promise<PoseidonFunction> | null = null
 
+/**
+ * Initialize the Poseidon hash singleton.
+ * Ensures only one instance is built, even under concurrent calls.
+ *
+ * @returns The initialized PoseidonFunction instance
+ */
 async function init() {
   if (poseidon) {
     return poseidon

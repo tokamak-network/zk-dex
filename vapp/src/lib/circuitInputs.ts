@@ -30,6 +30,12 @@ export type CircuitInputs = Record<string, string>
  */
 let _emptyNoteHash: string | null = null
 
+/**
+ * Compute and cache the empty note hash, defined as Poseidon(0, 0, 0, 0, 0, 0).
+ * The result is computed lazily on the first call and then cached for subsequent use.
+ *
+ * @returns The empty note hash as a decimal string
+ */
 export async function getEmptyNoteHash(): Promise<string> {
   if (_emptyNoteHash === null) {
     const hash = await poseidonHash([0, 0, 0, 0, 0, 0])
@@ -39,7 +45,11 @@ export async function getEmptyNoteHash(): Promise<string> {
 }
 
 /**
- * Convert hex string or bigint to BigInt
+ * Convert a hex string, decimal string, number, or bigint to a BigInt.
+ * Hex strings may include a 0x prefix; plain numeric strings are parsed as decimal.
+ *
+ * @param value - The value to convert (hex string, decimal string, number, or bigint)
+ * @returns The value as a BigInt
  */
 export function hexToBigInt(value: string | bigint | number): bigint {
   if (typeof value === 'bigint') return value
@@ -52,7 +62,11 @@ export function hexToBigInt(value: string | bigint | number): bigint {
 }
 
 /**
- * Mask value to 254 bits (BN128 field constraint)
+ * Mask a value to 254 bits by applying a bitwise AND with (2^254 - 1).
+ * This ensures the value fits within the BN128 field constraint used by circuits.
+ *
+ * @param value - The value to mask, as a hex string or bigint
+ * @returns The value truncated to 254 bits as a BigInt
  */
 export function maskTo254Bits(value: string | bigint): bigint {
   const mask = (BigInt(1) << BigInt(254)) - BigInt(1)
@@ -60,8 +74,11 @@ export function maskTo254Bits(value: string | bigint): bigint {
 }
 
 /**
- * Split 256-bit value into two 128-bit values [high, low]
- * Still needed for viewingKey split (vk0, vk1)
+ * Split a 256-bit value into two 128-bit halves.
+ * Used to decompose the viewing key into (vk0, vk1) for circuit inputs.
+ *
+ * @param value - The 256-bit value to split, as a hex string or bigint
+ * @returns A tuple of [high, low] decimal strings, each representing a 128-bit half
  */
 export function split256To128(value: string | bigint): [string, string] {
   const bigValue = hexToBigInt(value)
@@ -346,8 +363,17 @@ export async function prepareSettleOrderInputs(
 }
 
 /**
- * Prepare inputs for ConvertNote circuit (Poseidon version)
+ * Prepare inputs for the ConvertNote circuit (Poseidon version).
+ * Converts a smart note back to a regular note by providing the smart note,
+ * its origin note, and the desired new note along with the owner's secret key.
+ *
  * Circuit signals: smartHash, originHash, newHash, + private inputs
+ *
+ * @param smartNote - The smart note to convert
+ * @param originNote - The original note that the smart note was derived from
+ * @param newNote - The new note to be created from the conversion
+ * @param secretKey - The owner's secret key as a hex string
+ * @returns A CircuitInputs record with all public and private circuit signal values as strings
  */
 export async function prepareConvertInputs(
   smartNote: NoteData,
@@ -398,8 +424,12 @@ export async function prepareConvertInputs(
 }
 
 /**
- * Get smart note owner address from parent note hash
- * Simply truncate the Poseidon hash to 160 bits
+ * Derive the smart note owner address from a parent note hash.
+ * The address is the Poseidon hash truncated to 160 bits, matching the
+ * on-chain derivation used for smart note ownership.
+ *
+ * @param noteHash - The parent note hash as a hex or decimal string
+ * @returns The derived 160-bit address as a 0x-prefixed, zero-padded 40-character hex string
  */
 export function getSmartNoteOwnerAddress(noteHash: string): string {
   const hash = hexToBigInt(noteHash)
@@ -408,7 +438,11 @@ export function getSmartNoteOwnerAddress(noteHash: string): string {
 }
 
 /**
- * Generate a random salt (254 bits for BN128 field compatibility)
+ * Generate a cryptographically random salt for note creation.
+ * Produces 32 random bytes and masks the result to 254 bits to ensure
+ * compatibility with the BN128 field used by zk-SNARK circuits.
+ *
+ * @returns A 0x-prefixed, zero-padded 64-character hex string representing the 254-bit salt
  */
 export function generateSalt(): string {
   const bytes = new Uint8Array(32)

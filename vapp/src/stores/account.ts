@@ -57,26 +57,38 @@ export const useAccountStore = defineStore('account', () => {
     }
   }
 
+  /** Sets the current account key. */
   function setKey(newKey: string | null) {
     key.value = newKey
   }
 
+  /** Sets the current viewing key in memory. */
   function setViewingKey(newViewingKey: string | null) {
     viewingKey.value = newViewingKey
   }
 
+  /** Sets the current secret key in memory (NEVER sent to server). */
   function setSecretKey(newSecretKey: string | null) {
     secretKey.value = newSecretKey
   }
 
+  /** Replaces the accounts list. */
   function setAccounts(newAccounts: Account[]) {
     accounts.value = newAccounts
   }
 
+  /**
+   * Appends an account to the list.
+   * @param account - the account to add
+   */
   function addAccount(account: Account) {
     accounts.value.push(account)
   }
 
+  /**
+   * Removes an account from the list and from localStorage.
+   * @param account - the account to delete
+   */
   function deleteAccount(account: Account) {
     const index = accounts.value.findIndex(a => a.address === account.address)
     if (index !== -1) {
@@ -86,10 +98,12 @@ export const useAccountStore = defineStore('account', () => {
     deleteKeystoreStorage(account.address)
   }
 
+  /** Sets the currently active account. */
   function setCurrentAccount(account: Account | null) {
     currentAccount.value = account
   }
 
+  /** Sets the current navigation path. */
   function setPath(newPath: string) {
     path.value = newPath
   }
@@ -208,10 +222,12 @@ export const useAccountStore = defineStore('account', () => {
     return getKeystore(address) !== null
   }
 
+  /** No-op: viewing key is now derived client-side from BabyJubJub keypair. */
   async function loadViewingKey() {
     // No-op: viewing key is now derived client-side from BabyJubJub keypair
   }
 
+  /** Resets all account state to initial values. */
   function reset() {
     key.value = null
     viewingKey.value = null

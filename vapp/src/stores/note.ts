@@ -69,14 +69,24 @@ export const useNoteStore = defineStore('note', () => {
     return notes.value.filter(note => note.token === '0x1' && note.state === '0x1')
   })
 
+  /**
+   * Counts notes belonging to a specific account.
+   * @param accountAddress - the account address to filter by
+   * @returns the number of notes owned by the account
+   */
   function numberOfNotesInAccount(accountAddress: string): number {
     return notes.value.filter(note => note.owner === accountAddress).length
   }
 
+  /** Replaces the notes list. */
   function setNotes(newNotes: Note[]) {
     notes.value = newNotes
   }
 
+  /**
+   * Adds a note if not already present (deduplicates by hash).
+   * @param note - the note to add
+   */
   function addNote(note: Note) {
     // Check if note already exists
     const existing = notes.value.find(n => n.hash === note.hash)
@@ -85,6 +95,11 @@ export const useNoteStore = defineStore('note', () => {
     }
   }
 
+  /**
+   * Updates the state of a note in memory.
+   * @param noteHash - the hash identifying the note
+   * @param newState - the new state hex code to set
+   */
   function updateNoteState(noteHash: string, newState: string) {
     const note = notes.value.find(n => n.hash === noteHash)
     if (note) {
@@ -92,10 +107,12 @@ export const useNoteStore = defineStore('note', () => {
     }
   }
 
+  /** Replaces the transfer notes list. */
   function setTransferNotes(newTransferNotes: TransferNote[]) {
     transferNotes.value = newTransferNotes
   }
 
+  /** Sets the currently selected note. */
   function setSelectedNote(note: Note | null) {
     selectedNote.value = note
   }
@@ -294,6 +311,7 @@ export const useNoteStore = defineStore('note', () => {
     await scanBlockchainNotes()
   }
 
+  /** Loads transfer history from the API for all accounts. */
   async function loadTransferNotes() {
     // Transfer history still uses local storage for now
     // Could be derived from blockchain events in the future
@@ -314,6 +332,7 @@ export const useNoteStore = defineStore('note', () => {
     }
   }
 
+  /** Resets all note state to initial values. */
   function reset() {
     notes.value = []
     transferNotes.value = []
