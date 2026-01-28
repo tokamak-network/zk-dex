@@ -32,42 +32,46 @@ A comprehensive reference of all conceptual elements used in the ZK-DEX implemen
 
 A **note** is the fundamental unit of value in ZK-DEX, analogous to Bitcoin's UTXO. Each note is a cryptographic commitment representing ownership of a specific amount of a specific token.
 
-### Note Structure (5 Fields)
+### Note Structure (7 Fields)
 
 | Field | Size | Description |
 |-------|------|-------------|
-| `ownerAddress` | 160 bits | Address derived from the owner's BabyJubJub public key via Poseidon hash |
+| `owner0` | 254 bits | Owner's BabyJubJub public key x-coordinate (pkX) |
+| `owner1` | 254 bits | Owner's BabyJubJub public key y-coordinate (pkY) |
 | `value` | 254 bits | Token balance (in wei) |
 | `tokenType` | 256 bits | Token type (0 = ETH, 1 = DAI) |
-| `viewingKey` | 256 bits | Derived from the owner's public key; split into two 128-bit halves for circuit input |
+| `vk0` | 254 bits | Viewing key x-coordinate (= pkX for normal notes) |
+| `vk1` | 254 bits | Viewing key y-coordinate (= pkY for normal notes) |
 | `salt` | 254 bits | Random value preventing identical notes from producing the same hash |
+
+For normal notes, the viewing key equals the public key: `vk0 = owner0 = pkX` and `vk1 = owner1 = pkY`.
 
 ### Empty Note
 
 A special note with all fields set to 0. Used to fill the second input slot when the transfer circuit has only one input note.
 
 ```
-EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
-                = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0, 0)
+                = <computed at circuit setup>
 ```
 
 ---
 
 ## 2. Note Hash
 
-The 5 fields of a note are fed into the Poseidon hash function to produce a single field element (254 bits). Only this hash is stored on-chain, so the note's contents cannot be determined without knowing the original fields.
+The 7 fields of a note are fed into the Poseidon hash function to produce a single field element (254 bits). Only this hash is stored on-chain, so the note's contents cannot be determined without knowing the original fields.
 
 ```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
 
-Here `vk0` and `vk1` are the viewing key split into 128-bit halves:
-```
-vk0 = viewingKey >> 128      (upper 128 bits)
-vk1 = viewingKey & (2^128-1) (lower 128 bits)
-```
+Where:
+- `owner0` = pkX (owner's BabyJubJub public key x-coordinate)
+- `owner1` = pkY (owner's BabyJubJub public key y-coordinate)
+- `vk0` = pkX (viewing key x-coordinate, equals owner0 for normal notes)
+- `vk1` = pkY (viewing key y-coordinate, equals owner1 for normal notes)
 
-Reason for splitting: Circom circuits operate over a 254-bit field, so a 256-bit value cannot be handled directly and must be split into two pieces.
+This 7-input Poseidon hash directly commits the full public key coordinates into the note, eliminating the need for address derivation via truncation.
 
 ---
 
@@ -127,146 +131,108 @@ A ZK account is a key system based on the BabyJubJub elliptic curve. Key compone
 - The sole means of proving note ownership
 
 ### Public Key (pk)
-- A point `(x, y)` on the BabyJubJub curve
+- A point `(pkX, pkY)` on the BabyJubJub curve
 - Derived from the secret key: `pk = sk * G` (G is the generator point BASE8)
-- Never directly exposed — used only for address derivation
+- **Directly used as the note owner** — no address derivation needed
 
-### Owner Address
-- A 160-bit value derived from the public key via Poseidon hash
-- `ownerAddress = Poseidon(pk.x, pk.y) & MASK_160`
-- Same size as an Ethereum address (160 bits)
+### Owner (pk-based)
+
+In the new architecture, note ownership is represented directly by the public key coordinates:
+- `owner0 = pkX` (public key x-coordinate)
+- `owner1 = pkY` (public key y-coordinate)
+
+There is no longer a truncated 160-bit `ownerAddress`. The full public key is committed directly into the note hash.
 
 ### Viewing Key
 
-The full 254-bit value derived from the public key via Poseidon hash.
+The viewing key is now simply the public key itself:
 
 ```
-viewingKey = Poseidon(pk.x, pk.y)
+vk0 = pkX (public key x-coordinate)
+vk1 = pkY (public key y-coordinate)
 ```
 
-#### Why Is the Viewing Key Needed?
+For normal notes, the viewing key equals the owner: `vk0 = owner0` and `vk1 = owner1`.
 
-The ZK-DEX note hash is a Poseidon hash of 6 fields:
-```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
-```
+#### Purpose of the Viewing Key
 
-The `ownerAddress` (160 bits) alone is insufficient to uniquely identify a note. Multiple notes can exist with the same address, amount, and token type. While `salt` ensures uniqueness, it alone does not commit the owner's full public key information into the hash.
-
-**The viewing key binds the full public key (254 bits) into the note hash.** Using only the 160-bit address would lose 94 bits of public key information; the viewing key includes this information in the hash.
-
-#### Seven Roles of the Viewing Key
+The viewing key serves as a **public key commitment** in the note hash. Its primary roles:
 
 **Role 1: Note Hash Commitment**
 
-The viewing key is split into 128-bit halves (vk0, vk1) and enters as the 4th and 5th inputs of the note hash. This cryptographically binds the note hash to the owner's public key.
+The viewing key (vk0, vk1) is included in the 7-input Poseidon hash:
 
 ```
-vk0 = viewingKey >> 128      (upper 128 bits)
-vk1 = viewingKey & (2^128-1) (lower 128 bits)
-
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
-                                                    ^^^  ^^^
-                                       public key info committed here
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+                                                      ^^^  ^^^
+                                       public key committed here
 ```
 
-Without the viewing key, using only `Poseidon(ownerAddress, value, tokenType, salt)` would allow a different public key with the same address to generate the same hash, enabling ownership forgery.
+For normal notes where `vk0 = owner0` and `vk1 = owner1`, the public key appears twice in the hash, providing redundant commitment.
 
-**Role 2: Address Embedding**
+**Role 2: Note Discovery**
 
-The owner address is exactly the lower 160 bits of the viewing key:
-
-```
-ownerAddress = viewingKey & MASK_160
-```
-
-Therefore, knowing the viewing key allows recovering the owner address, and conversely the owner address is a subset of the viewing key. This relationship is automatically enforced inside the circuit.
-
-**Role 3: Note Discovery**
-
-A party who knows the viewing key can identify which of the encrypted notes stored on-chain belong to them:
+A party who knows the viewing key (i.e., the public key) can identify their notes:
 
 ```
 1. Listen for on-chain NoteStateChange events
 2. Retrieve encrypted data from encryptedNotes[noteHash]
 3. Attempt ECDH decryption (using own secret key)
-4. On successful decryption -> recover note fields (ownerAddress, value, token, vk, salt)
-5. If recovered vk matches own viewing key -> this is their note
+4. On successful decryption -> recover note fields (owner0, owner1, value, token, vk0, vk1, salt)
+5. If recovered vk0/vk1 matches own public key -> this is their note
 ```
 
-The wallet automates this process to track all of a user's notes.
-
-**Role 4: Selective Disclosure**
+**Role 3: Selective Disclosure**
 
 > **Note: Limitation of the Current Implementation**
 >
-> In Zcash, the viewing key alone can directly decrypt on-chain encrypted data thanks to a dedicated encryption layer (in-band secret distribution). However, **in ZK-DEX's current implementation, on-chain note data is encrypted with a single ECDH + AES-256-GCM layer, and decryption requires the secret key (sk).** The viewing key alone cannot decrypt on-chain ciphertext.
+> On-chain note data is encrypted with ECDH + AES-256-GCM, and decryption requires the secret key (sk). The viewing key (public key) alone cannot decrypt on-chain ciphertext.
 >
-> Therefore, selective disclosure is only possible via an **off-chain** workflow:
+> Selective disclosure is only possible via an **off-chain** workflow:
 >
 > 1. The note owner decrypts on-chain data using their secret key
-> 2. The decrypted note data `(ownerAddress, value, tokenType, viewingKey, salt)` is shared directly with a third party
+> 2. The decrypted note data `(owner0, owner1, value, tokenType, vk0, vk1, salt)` is shared directly with a third party
 > 3. The third party recomputes `noteHash = Poseidon(...)` from the received data and verifies it against the on-chain state
-> 4. The viewing key confirms that the note belongs to a specific account
-
-In this workflow, the viewing key serves not as a decryption key but as an **owner identity verification marker**. The third party can verify that the viewing key in the received data was derived from the owner's public key, thus confirming note ownership.
+> 4. The viewing key (public key) confirms that the note belongs to a specific account
 
 | Recipient | Can Do | Cannot Do |
 |-----------|--------|-----------|
-| Viewing key + off-chain note data holder | Verify note balances, cross-check on-chain state | Directly decrypt on-chain ciphertext, transfer/spend/create orders |
+| Public key + off-chain note data holder | Verify note balances, cross-check on-chain state | Directly decrypt on-chain ciphertext, transfer/spend/create orders |
 | Secret key holder | Decrypt on-chain data + transfer/spend/create orders | — |
 
-Example: Sharing the viewing key along with decrypted note data with an auditor allows them to verify assets but not move them.
+**Role 4: Order Metadata**
 
-**Role 5: Order Metadata**
-
-When a maker creates an order, the `makerViewingKey` is stored on-chain:
+When a maker creates an order, the maker's public key (as viewing key) is stored on-chain:
 
 ```solidity
 struct Order {
-    bytes32 makerViewingKey;  // <- viewing key stored
+    bytes32 makerVk0;  // maker's pkX
+    bytes32 makerVk1;  // maker's pkY
     bytes32 makerNote;
     ...
 }
 ```
 
-This enables:
-- The taker to understand the maker's note structure and correctly create the stake note
-- The order hash (`hashOrder`) includes the viewing key, ensuring order uniqueness
-- The maker's identity (secret key) remains hidden while the counterparty can verify the order
+**Role 5: Smart Note Linking**
 
-**Role 6: Smart Note Linking**
-
-For smart notes, the viewing key is set to the **parent note's hash** instead of the usual `Poseidon(pk.x, pk.y)`:
+For smart notes, the viewing key is derived from the **parent note's hash**:
 
 ```
-Normal note:  viewingKey = Poseidon(pk.x, pk.y)
-Smart note:   viewingKey = parentNoteHash
+Normal note:  vk0 = pkX, vk1 = pkY
+Smart note:   vk0 = parentNoteHash >> 128     (upper 128 bits)
+              vk1 = parentNoteHash & MASK_128 (lower 128 bits)
 ```
 
-This design ensures:
-- Smart note owner address = `parentNoteHash & MASK_160`
-- Only the parent note's owner can convert the smart note to a normal note via `convertNote`
-- Order settlement (settle) outputs are guaranteed to belong to the correct parties
+This establishes cryptographic linkage between smart notes and their parent notes.
 
-**Role 7: Encrypted Note Payload**
+**Role 6: Encrypted Note Payload**
 
-When a note is ECDH-encrypted and stored on-chain, the viewing key is included as part of the encrypted payload:
+When a note is ECDH-encrypted and stored on-chain, the viewing key is included:
 
 ```
-Plaintext before encryption: RLP([ownerAddress, value, tokenType, viewingKey, salt])
+Plaintext before encryption: RLP([owner0, owner1, value, tokenType, vk0, vk1, salt])
 After encryption:            0x01 || epk || nonce || AES-GCM(plaintext) || authTag
 ```
-
-Upon decryption, the recipient recovers the viewing key and can recompute the complete note hash to verify against the on-chain state.
-
-#### What If There Were No Viewing Key?
-
-Issues that would arise using only `ownerAddress` (160 bits) without a viewing key:
-
-1. **Loss of public key binding**: A theoretical possibility of 160-bit address collisions exists. When different public keys produce the same address, without the viewing key the note hashes become identical, causing ownership confusion.
-2. **Note discovery failure**: Identifying which notes belong to whom requires the full public key information. With only 160 bits of address, confidence in the post-decryption verification step is reduced.
-3. **Smart notes become impossible**: The `viewingKey = parentNoteHash` mechanism for smart notes would not work, leaving no means to enforce inter-note linkage during order settlement.
 
 ### Key Derivation Chain
 
@@ -274,38 +240,36 @@ Issues that would arise using only `ownerAddress` (160 bits) without a viewing k
 sk (254-bit random)
   |
   v BabyJubJub scalar multiplication (sk * G)
-pk (x, y) — point on the BabyJubJub curve
+pk (pkX, pkY) — point on the BabyJubJub curve
   |
-  v Poseidon(pk.x, pk.y)
-viewingKey (254 bits)
-  |
-  |-- vk0 = viewingKey >> 128     (upper 128 bits)
-  |-- vk1 = viewingKey & MASK_128 (lower 128 bits)
-  |
-  v lower 160-bit truncation
-ownerAddress (160 bits)
+  |-- owner0 = pkX (note owner x-coordinate)
+  |-- owner1 = pkY (note owner y-coordinate)
+  |-- vk0 = pkX    (viewing key x-coordinate)
+  +-- vk1 = pkY    (viewing key y-coordinate)
 ```
+
+No truncation or hashing is required for address derivation — the public key is used directly.
 
 ---
 
 ## 6. Ownership Model
 
-ZK-DEX uses an **address-based ownership** model. To prove note ownership, the following is verified inside the ZK circuit:
+ZK-DEX uses a **pk-based ownership** model. To prove note ownership, the following is verified inside the ZK circuit:
 
 1. Derive public key `pk` from secret key `sk`: `pk = sk * G`
-2. Derive address from public key: `addr = Poseidon(pk.x, pk.y) & MASK_160`
-3. Verify that the derived address matches the note's `ownerAddress`
+2. Verify that the derived public key matches the note's owner: `pk.x == owner0` and `pk.y == owner1`
 
-This process is performed inside the circuit, so `sk` and `pk` are never revealed externally. On-chain, only the validity of the ZK proof needs to be checked, preserving the owner's identity.
+This process is performed inside the circuit, so `sk` is never revealed externally. On-chain, only the validity of the ZK proof needs to be checked, preserving the owner's identity.
 
-### VerifyOwnershipByAddress (Circuit Component)
+### VerifyOwnershipByPk (Circuit Component)
 
 ```
-Input: sk, expectedAddress
+Input: sk, expectedOwner0, expectedOwner1
 Internal: pk = sk * G
-          addr = Poseidon(pk.x, pk.y) truncated to 160-bit
-Output: result = (addr == expectedAddress) ? 1 : 0
+Output: result = (pk.x == expectedOwner0 && pk.y == expectedOwner1) ? 1 : 0
 ```
+
+This is simpler than the previous address-based model, as it eliminates the Poseidon hash and 160-bit truncation steps. The full public key coordinates are directly compared.
 
 ---
 
@@ -323,10 +287,10 @@ An operation that deposits ETH or DAI into the contract and creates a new note f
 | 2 | value | Deposit amount (public — required for `msg.value` verification) |
 | 3 | tokenType | Token type (public) |
 
-**Private inputs**: ownerAddress, vk0, vk1, salt, sk
+**Private inputs**: owner0, owner1, vk0, vk1, salt, sk
 
 **Verification**:
-1. Prove ownership of `ownerAddress` from `sk`
+1. Prove ownership: derive pk from sk, verify `pk.x == owner0` and `pk.y == owner1`
 2. Verify note hash matches the public input `noteHash`
 3. Verify note's `value` and `tokenType` match the public inputs
 
@@ -384,12 +348,12 @@ An operation that consumes 1-2 input notes and creates 2 output notes (recipient
 | 4 | changeHash | Change note hash |
 
 **Private inputs**:
-- Full fields of input notes 0, 1 (ownerAddress, value, tokenType, vk0, vk1, salt)
+- Full fields of input notes 0, 1 (owner0, owner1, value, tokenType, vk0, vk1, salt)
 - Full fields of 2 output notes
 - Secret keys sk0, sk1
 
 **Verification**:
-1. Prove ownership of input note 0 (`sk0` -> address match)
+1. Prove ownership of input note 0 (`sk0` -> pk match with owner0/owner1)
 2. Prove ownership of input note 1 (if not an empty note)
 3. All 4 note hashes match their respective public inputs
 4. **Value conservation**: `input0.value + input1.value == new.value + change.value`
@@ -398,7 +362,7 @@ An operation that consumes 1-2 input notes and creates 2 output notes (recipient
 ### Key Properties
 
 - `value` is not included in public inputs, so the transfer amount is private
-- `ownerAddress` is not included in public inputs, so the recipient is private
+- `owner0/owner1` are not included in public inputs, so the recipient is private
 - Value conservation is verified only inside the circuit — externally only hashes are visible
 
 ---
@@ -411,14 +375,29 @@ A **smart note** is a special note whose owner is derived not from a user's publ
 
 | Property | Normal Note | Smart Note |
 |----------|-------------|------------|
-| ownerAddress | `Poseidon(pk.x, pk.y) & MASK_160` | `parentNoteHash & MASK_160` |
-| viewingKey | `Poseidon(pk.x, pk.y)` | `parentNoteHash` |
+| owner0 | `pkX` | `parentNoteHash >> 128` (upper 128 bits) |
+| owner1 | `pkY` | `parentNoteHash & MASK_128` (lower 128 bits) |
+| vk0 | `pkX` | `owner0` (= `parentNoteHash >> 128`) |
+| vk1 | `pkY` | `owner1` (= `parentNoteHash & MASK_128`) |
 | Created during | mint, transfer | takeOrder, settleOrder |
 | Ownership proof | Directly proved with secret key | Only the parent note's owner can convert via convertNote |
 
+### Smart Note Derivation
+
+For a smart note linked to a parent note:
+
+```
+parentNoteHash = Poseidon(parent.owner0, parent.owner1, parent.value, parent.tokenType, parent.vk0, parent.vk1, parent.salt)
+
+smartNote.owner0 = parentNoteHash >> 128       (upper 128 bits)
+smartNote.owner1 = parentNoteHash & MASK_128   (lower 128 bits)
+smartNote.vk0 = smartNote.owner0
+smartNote.vk1 = smartNote.owner1
+```
+
 ### Smart Note Detection
 
-Since a smart note's owner address is the lower 160 bits of a 254-bit hash, the upper bits are likely non-zero. The circuit distinguishes smart notes by checking whether `ownerAddress < 2^128`.
+The circuit can distinguish smart notes from normal notes by checking the range of owner values. Normal notes have owner values that are valid BabyJubJub curve coordinates (254-bit field elements), while smart notes have owners derived from 128-bit hash splits.
 
 ### Purpose
 
@@ -443,8 +422,8 @@ An operation that converts a smart note into a normal note. Only the owner of th
 **Private inputs**: Full fields of smart/origin/new notes + sk
 
 **Verification**:
-1. `smartNote.ownerAddress == originHash & MASK_160` (linkage verification)
-2. Prove ownership of the origin note (`sk` -> address match)
+1. `smartNote.owner0 == originHash >> 128` and `smartNote.owner1 == originHash & MASK_128` (linkage verification)
+2. Prove ownership of the origin note (`sk` -> pk match with origin owner0/owner1)
 3. All 3 note hashes match their public inputs
 4. **Value conservation**: `smartNote.value == newNote.value`
 5. **Token conservation**: `smartNote.tokenType == newNote.tokenType`
@@ -473,19 +452,19 @@ An operation where a maker creates a trade order based on a note they hold.
 | 1 | noteHash | Maker note hash |
 | 2 | tokenType | Token type the maker offers (public) |
 
-**Private inputs**: ownerAddress, value, vk0, vk1, salt, sk
+**Private inputs**: owner0, owner1, value, vk0, vk1, salt, sk
 
 **Verification**:
-1. Prove ownership of the maker note
+1. Prove ownership of the maker note (`sk` -> pk match with owner0/owner1)
 2. Verify note hash match
 3. `value` remains private
 
 ### On-chain Behavior
 
 ```solidity
-function makeOrder(makerViewingKey, targetToken, price, a, b, c, input) external {
+function makeOrder(makerVk0, makerVk1, targetToken, price, a, b, c, input) external {
     // Create Order struct:
-    //   - makerViewingKey: maker's viewing key (for order lookup)
+    //   - makerVk0, makerVk1: maker's public key (viewing key) for order lookup
     //   - makerNote: maker note hash
     //   - sourceToken: token the maker offers (input[2])
     //   - targetToken: token the maker wants
@@ -499,7 +478,8 @@ function makeOrder(makerViewingKey, targetToken, price, a, b, c, input) external
 
 ```solidity
 struct Order {
-    bytes32 makerViewingKey;    // Maker viewing key
+    bytes32 makerVk0;           // Maker public key x (viewing key)
+    bytes32 makerVk1;           // Maker public key y (viewing key)
     bytes32 makerNote;          // Maker note hash
     uint256 sourceToken;        // Maker token type
     uint256 targetToken;        // Desired token type
@@ -525,17 +505,17 @@ An operation where a taker accepts a maker's order by staking assets. Creates a 
 | 1 | parentNoteHash | Taker's parent (original) note hash |
 | 2 | parentNoteType | Parent note's token type |
 | 3 | stakeNoteHash | Hash of the stake note (smart note) being created |
-| 4 | stakeNoteOwner | Lower 160 bits of maker note hash |
+| 4 | stakeNoteOwner0 | Upper 128 bits of maker note hash (owner0) |
 | 5 | stakeNoteType | Stake note's token type |
 
-**Private inputs**: Parent note fields, stake note fields (excluding ownerAddress), sk
+**Private inputs**: Parent note fields, stake note fields (excluding owner0/owner1), sk
 
 **Verification**:
-1. Prove ownership of the parent note (`sk` -> address match)
+1. Prove ownership of the parent note (`sk` -> pk match with owner0/owner1)
 2. Parent note hash match
 3. Stake note hash match
 4. **Value conservation**: `parentNote.value == stakeNote.value`
-5. **Smart note linkage**: `stakeNote.ownerAddress == makerNoteHash & MASK_160`
+5. **Smart note linkage**: `stakeNote.owner0 == makerNoteHash >> 128` and `stakeNote.owner1 == makerNoteHash & MASK_128`
 
 ### On-chain Behavior
 
@@ -543,7 +523,7 @@ An operation where a taker accepts a maker's order by staking assets. Creates a 
 function takeOrder(orderId, a, b, c, input, encryptedStakingNote) external {
     // Verify order state: Created
     // Verify token type match: order.targetToken == input[2] == input[5]
-    // Verify owner linkage: lower 160 bits of makerNote == input[4]
+    // Verify owner linkage: makerNoteHash split into owner0/owner1 matches input[4]/input[5]
     // notes[parentNote] = Trading
     // notes[stakeNote] = Trading
     // order.state = Taken
@@ -567,10 +547,10 @@ An operation that atomically exchanges the maker's and taker's notes according t
 | 3 | o1Hash | Taker stake note hash |
 | 4 | o1Type | Taker stake note token type |
 | 5 | n0Hash | Reward note hash (to taker) |
-| 6 | n0Owner | Reward note owner (lower 160 bits of parentNote hash) |
+| 6 | n0Owner0 | Reward note owner0 (upper 128 bits of parentNote hash) |
 | 7 | n0Type | Reward note token type |
 | 8 | n1Hash | Payment note hash (to maker) |
-| 9 | n1Owner | Payment note owner (lower 160 bits of makerNote hash) |
+| 9 | n1Owner0 | Payment note owner0 (upper 128 bits of makerNote hash) |
 | 10 | n1Type | Payment note token type |
 | 11 | n2Hash | Change note hash |
 | 12 | n2Type | Change note token type |
@@ -609,9 +589,9 @@ bit == 0 (taker value > maker value):
 
 | Note | Owner | Derivation |
 |------|-------|------------|
-| Reward (n0) | Taker | `parentNote hash & MASK_160` (smart note) |
-| Payment (n1) | Maker | `makerNote hash & MASK_160` (smart note) |
-| Change (n2) | Depends on direction | bit==1: `makerNote hash & MASK_160`, bit==0: `parentNote hash & MASK_160` |
+| Reward (n0) | Taker | `owner0 = parentNoteHash >> 128`, `owner1 = parentNoteHash & MASK_128` (smart note) |
+| Payment (n1) | Maker | `owner0 = makerNoteHash >> 128`, `owner1 = makerNoteHash & MASK_128` (smart note) |
+| Change (n2) | Depends on direction | bit==1: derived from makerNote hash, bit==0: derived from parentNote hash |
 
 ### On-chain Behavior
 
@@ -643,14 +623,14 @@ A ZK-friendly hash function. Approximately 100x cheaper inside circuits compared
 
 | Purpose | Input | Output |
 |---------|-------|--------|
-| Note hash | (ownerAddress, value, tokenType, vk0, vk1, salt) | 254-bit hash |
-| Address derivation | (pk.x, pk.y) | 254-bit hash -> 160-bit truncation |
-| Viewing key | (pk.x, pk.y) | 254-bit hash (no truncation) |
+| Note hash | (owner0, owner1, value, tokenType, vk0, vk1, salt) | 254-bit hash |
+
+In the new architecture, address derivation and viewing key computation are no longer needed — the public key coordinates are used directly as owner0/owner1 and vk0/vk1.
 
 **Cost comparison**:
 | Hash | Circuit Constraints |
 |------|-------------------|
-| Poseidon(6) | ~1,500 |
+| Poseidon(7) | ~1,700 |
 | Poseidon(2) | ~350 |
 | SHA256 | ~30,000 |
 
@@ -702,7 +682,7 @@ The recipient computes `sharedSecret = sk * epk` using their secret key, derives
 mapping(bytes32 => bytes) public encryptedNotes;  // noteHash -> encrypted bytes
 ```
 
-Third parties can read the encrypted bytes but cannot recover the original `{ownerAddress, value, tokenType, viewingKey, salt}` without the secret key.
+Third parties can read the encrypted bytes but cannot recover the original `{owner0, owner1, value, tokenType, vk0, vk1, salt}` without the secret key.
 
 ---
 
@@ -717,8 +697,8 @@ Third parties can read the encrypted bytes but cannot recover the original `{own
 | Transfer | **Private** | **Private** | Private |
 | ConvertNote | **Private** | **Private** | Private |
 | MakeOrder | Private | Private | Public (needed for matching) |
-| TakeOrder | Private | Partially public (160-bit address) | Public |
-| SettleOrder | Private (only price is public) | Partially public (160-bit address) | Public |
+| TakeOrder | Private | Partially public (128-bit hash splits) | Public |
+| SettleOrder | Private (only price is public) | Partially public (128-bit hash splits) | Public |
 
 ### Protection by Layer
 
@@ -749,9 +729,9 @@ Each note includes a random `salt`, so even identical owner/amount/token combina
 
 ### Smart Note Linkage Integrity
 
-- Stake note owner = lower 160 bits of maker note hash
-- Payment note owner = lower 160 bits of maker note hash
-- Reward note owner = lower 160 bits of taker parent note hash
+- Stake note owner: `owner0 = makerNoteHash >> 128`, `owner1 = makerNoteHash & MASK_128`
+- Payment note owner: `owner0 = makerNoteHash >> 128`, `owner1 = makerNoteHash & MASK_128`
+- Reward note owner: `owner0 = parentNoteHash >> 128`, `owner1 = parentNoteHash & MASK_128`
 - These relationships are verified both in the circuit and on-chain, preventing third parties from intercepting notes.
 
 ### Order Atomicity
@@ -822,25 +802,27 @@ Partial execution is impossible; if the proof is invalid, the entire transaction
 **The core requirement is the secret key (sk).** Inside the ZK circuit, ownership is verified through the following derivation:
 
 ```
-sk -> pk = sk * G -> viewingKey = Poseidon(pk.x, pk.y) -> ownerAddress = viewingKey & MASK_160
+sk -> pk = sk * G -> verify pk.x == owner0 && pk.y == owner1
 ```
 
 However, generating a ZK proof also requires reconstructing the note hash, so the remaining note fields must be provided to the circuit alongside sk:
 
 | Data | Purpose |
 |------|---------|
-| **sk** (secret key) | Core of ownership proof — derives ownerAddress from sk and matches it to the note |
-| ownerAddress | Owner address recorded in the note |
+| **sk** (secret key) | Core of ownership proof — derives pk from sk and matches it to owner0/owner1 |
+| owner0 | Owner's public key x-coordinate (pkX) |
+| owner1 | Owner's public key y-coordinate (pkY) |
 | value | Note balance |
 | tokenType | Token type |
-| viewingKey (vk0, vk1) | Public key binding |
+| vk0 | Viewing key x-coordinate (= pkX for normal notes) |
+| vk1 | Viewing key y-coordinate (= pkY for normal notes) |
 | salt | Ensures note uniqueness |
 
-These 6 fields are used to recompute `noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`, which is then verified inside the circuit against the noteHash recorded on-chain.
+These 7 fields are used to recompute `noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)`, which is then verified inside the circuit against the noteHash recorded on-chain.
 
-### Q2. If I have the sk but lose the remaining note data (ownerAddress, value, tokenType, viewingKey, salt), can I still use the note?
+### Q2. If I have the sk but lose the remaining note data (owner0, owner1, value, tokenType, vk0, vk1, salt), can I still use the note?
 
-**If only the local data is lost, recovery is possible.** When a note is created, its 5 fields are ECDH-encrypted and stored on-chain:
+**If only the local data is lost, recovery is possible.** When a note is created, its 7 fields are ECDH-encrypted and stored on-chain:
 
 ```solidity
 mapping(bytes32 => bytes) public encryptedNotes;  // noteHash -> ECDH-encrypted bytes
@@ -850,7 +832,7 @@ Recovery process:
 
 1. Retrieve `encryptedNotes[noteHash]` data from on-chain
 2. Perform ECDH decryption with sk: `shared = sk * epk` -> derive AES key -> decrypt
-3. RLP-decode to recover `[ownerAddress, value, tokenType, viewingKey, salt]`
+3. RLP-decode to recover `[owner0, owner1, value, tokenType, vk0, vk1, salt]`
 4. Use the recovered data to generate a ZK proof
 
 Therefore:
@@ -866,8 +848,8 @@ Therefore:
 mapping(bytes32 => bytes) public encryptedNotes;
 ```
 
-- **Key**: `noteHash` (bytes32) — `Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`
-- **Value**: ECDH-encrypted byte sequence — `ECDH_Encrypt(RLP(ownerAddress, value, tokenType, viewingKey, salt))`
+- **Key**: `noteHash` (bytes32) — `Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)`
+- **Value**: ECDH-encrypted byte sequence — `ECDH_Encrypt(RLP(owner0, owner1, value, tokenType, vk0, vk1, salt))`
 
 On-chain byte format of the value:
 
@@ -888,27 +870,25 @@ In other words, the **Poseidon hash of the original data is the key**, and the *
 
 ### Q4. What is the Viewing Key and why is it needed?
 
-The viewing key is a 254-bit value derived from the public key via Poseidon hash:
+In the new architecture, the viewing key is simply the owner's public key:
 
 ```
-viewingKey = Poseidon(pk.x, pk.y)
-ownerAddress = viewingKey & MASK_160  (lower 160 bits)
+vk0 = pkX (public key x-coordinate)
+vk1 = pkY (public key y-coordinate)
 ```
 
-Why ownerAddress (160 bits) alone is insufficient:
+For normal notes, `vk0 = owner0` and `vk1 = owner1`.
 
-1. **Public key binding**: 160-bit address collisions are theoretically possible. The viewing key commits the full 254 bits into the note hash, preventing ownership forgery.
-2. **Note discovery**: After decryption, the viewing key is compared to identify whether a note belongs to the user.
-3. **Smart note linking**: For smart notes, `viewingKey = parentNoteHash` establishes the linkage to the parent note.
+The viewing key's purposes:
+
+1. **Public key commitment**: The viewing key commits the full public key coordinates into the note hash, providing redundant verification.
+2. **Note discovery**: After decryption, the viewing key (public key) is compared to identify whether a note belongs to the user.
+3. **Smart note linking**: For smart notes, `vk0 = parentNoteHash >> 128` and `vk1 = parentNoteHash & MASK_128` establishes the linkage to the parent note.
 
 See [Section 5: Viewing Key](#viewing-key) for details.
 
 ### Q5. Can the viewing key alone decrypt on-chain note data?
 
-**No.** This is not possible in the current ZK-DEX implementation.
+**No.** The viewing key is now simply the public key (pkX, pkY), and on-chain note data is encrypted with ECDH + AES-256-GCM. Decryption requires computing `shared = sk * epk`, which requires the secret key.
 
-On-chain note data is encrypted with ECDH + AES-256-GCM, and decryption requires computing `shared = sk * epk`. The viewing key `Poseidon(pk.x, pk.y)` is a one-way hash, so the public key coordinates `(pk.x, pk.y)` cannot be recovered from it, making it impossible to compute the ECDH shared secret.
-
-In Zcash, the viewing key can directly decrypt on-chain data thanks to a dedicated encryption layer (in-band secret distribution), but ZK-DEX uses only a single ECDH layer and does not support this feature.
-
-When selective disclosure is needed, the note owner decrypts the data with sk and shares it off-chain with a third party, who then recomputes the noteHash and verifies it against the on-chain state. See [Section 5, Role 4: Selective Disclosure](#seven-roles-of-the-viewing-key) for details.
+When selective disclosure is needed, the note owner decrypts the data with sk and shares it off-chain with a third party, who then recomputes the noteHash and verifies it against the on-chain state. See [Section 5, Role 3: Selective Disclosure](#purpose-of-the-viewing-key) for details.

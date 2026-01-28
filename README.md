@@ -275,7 +275,7 @@ For detailed migration information, see [migration-frontend.md](docs/migration-f
 - **Curve**: BN128
 - **Hash Function**: Poseidon (note hashing, address derivation)
 - **Key Scheme**: BabyJubJub (EdDSA-compatible)
-- **Ownership**: Address-based (160-bit, derived from Poseidon(pk.x, pk.y))
+- **Ownership**: Public key-based (BabyJubJub pk coordinates used directly)
 
 ### Solidity Contracts
 
@@ -294,24 +294,27 @@ ZK proofs are generated entirely in the browser:
 
 - **ZoKrates → Circom/snarkjs**: See [migration-circuits.md](docs/migration-circuits.md)
 - **SHA256 → Poseidon hash**: See [migration-circuits.md](docs/migration-circuits.md)
-- **Public key ownership → Address-based ownership**: 160-bit address derived from BabyJubJub public key
+- **Address-based ownership → Public key-based ownership**: Direct use of BabyJubJub public key coordinates (pkX, pkY)
 
 ## FAQ
 
 ### What are Viewing Key and Salt?
 
-Note hashes are computed as a Poseidon hash of 6 fields:
+Note hashes are computed as a Poseidon hash of 7 fields:
 
 ```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
+
+Where:
+- `owner0` = pkX (BabyJubJub public key X coordinate)
+- `owner1` = pkY (BabyJubJub public key Y coordinate)
+- `vk0` = pkX, `vk1` = pkY (viewing key is the same as the public key)
 
 **Viewing Key** (`viewingKey`):
-- Derived from the BabyJubJub public key: `viewingKey = Poseidon(pk.x, pk.y)` (254-bit)
-- The owner address is the lower 160 bits of the viewing key: `ownerAddress = truncate160(viewingKey)`
-- Split into two 128-bit halves (`vk0`, `vk1`) for the note hash circuit input
-- Purpose: Links note ownership to the public key without directly exposing it
-- For Smart Notes: `viewingKey = parentNoteHash` (the parent note's hash)
+- For regular notes: The viewing key coordinates are the same as the owner public key (`vk0 = owner0 = pkX`, `vk1 = owner1 = pkY`)
+- For Smart Notes: `vk0` and `vk1` are derived from `parentNoteHash` (split into two 128-bit halves)
+- Purpose: Links note ownership to the public key; enables selective disclosure without revealing the spending key
 
 **Salt**:
 - Random value generated via `crypto.randomBytes(32)`, masked to 254 bits (BN128 field compatible)
@@ -353,7 +356,7 @@ The client encrypts note data with the recipient's BabyJubJub public key before 
 On-chain format: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
 ```
 
-Only the note owner (holding the corresponding BabyJubJub secret key) can decrypt. Third parties can read the encrypted bytes from the public mapping but cannot recover the plaintext `{ownerAddress, value, token, viewingKey, salt}`.
+Only the note owner (holding the corresponding BabyJubJub secret key) can decrypt. Third parties can read the encrypted bytes from the public mapping but cannot recover the plaintext `{pkX, pkY, value, token, salt}`.
 
 > **Note**: Legacy notes (pre-ECDH migration) are stored as plaintext RLP and remain publicly readable. Only newly created notes use ECDH encryption.
 
@@ -371,7 +374,7 @@ Only the note owner (holding the corresponding BabyJubJub secret key) can decryp
 Three approaches are possible with the current ECDH-encrypted on-chain storage:
 
 **1. Note-level disclosure** (no additional circuit required):
-   - Share the note preimage `{ownerAddress, value, tokenType, viewingKey, salt}` directly
+   - Share the note preimage `{pkX, pkY, value, tokenType, salt}` directly
    - The recipient recomputes the Poseidon hash and verifies it matches the on-chain note hash
    - Downside: All fields of the note are revealed
 
@@ -394,15 +397,14 @@ Cost breakdown of the `mint_burn_note` circuit (131K constraints):
 | Component | Operation | Constraints | Ratio |
 |-----------|-----------|-------------|-------|
 | `EscalarMulFix(254)` | sk × G (BabyJubJub scalar mul) | ~128K | 97.7% |
-| `Poseidon(6)` | Note hash | ~1,500 | 1.1% |
-| `Poseidon(2)` + truncation | pk → address | ~350 | 0.3% |
+| `Poseidon(7)` | Note hash | ~1,700 | 1.3% |
 | `Num2Bits(254)` + misc | Bit decomposition, equality checks | ~300 | 0.2% |
 
 Selective disclosure circuit cost depends on what is being proved:
 
 | Scenario | Required operations | Constraints | Browser proving time |
 |----------|-------------------|-------------|---------------------|
-| Preimage verification only (no ownership proof) | Poseidon(6) + value comparison | ~2K | < 1 sec |
+| Preimage verification only (no ownership proof) | Poseidon(7) + value comparison | ~2K | < 1 sec |
 | Ownership + attribute proof (1 note) | EscalarMulFix + Poseidon hash + comparison | ~131K | 3–10 sec |
 | N-note balance aggregation proof | N × (EscalarMulFix + Poseidon) | ~N × 131K | N × 3–10 sec |
 

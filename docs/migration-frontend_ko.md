@@ -385,6 +385,150 @@ D3.js 기반 계층적 SVG 레이아웃으로 노트 전송 체인을 시각화�
 | `noteTree.ts` | NoteTreeNode, CreatorGroup (트리 시각화용) |
 | `circuit.ts` | CircuitName, CircuitInput 타입 |
 
+### PK 기반 노트 해시 아키텍처
+
+노트 해시 시스템이 주소 기반 소유권에서 BabyJubJub 공개키(pk) 기반 소유권으로 마이그레이션되었습니다.
+
+#### NoteData 인터페이스
+
+**이전 (주소 기반):**
+```typescript
+interface NoteData {
+  ownerAddress: string    // 이더리움 주소
+  value: string | bigint
+  token: string | bigint
+  viewingKey: string
+  salt: string | bigint
+}
+```
+
+**이후 (pk 기반):**
+```typescript
+// src/lib/circuitInputs.ts
+export interface NoteData {
+  pkX: string             // BabyJubJub 공개키 X 좌표
+  pkY: string             // BabyJubJub 공개키 Y 좌표
+  value: string | bigint
+  token: string | bigint
+  salt: string | bigint
+  noteHash?: string
+}
+
+// DEX 스마트 노트용
+export interface SmartNoteData {
+  parentHash: string      // 부모 노트 해시 (owner0/owner1로 분할)
+  value: string | bigint
+  token: string | bigint
+  salt: string | bigint
+  noteHash?: string
+}
+```
+
+#### Note 스토어 인터페이스
+
+```typescript
+// src/stores/note.ts
+export interface Note {
+  hash: string
+  owner: string           // 계정 주소 (표시/조회 용도만)
+  pkX: string             // BabyJubJub 공개키 X 좌표
+  pkY: string             // BabyJubJub 공개키 Y 좌표
+  value: string
+  token: string           // '0x0' = ETH, '0x1' = DAI
+  state: string           // '0x0' = INVALID, '0x1' = VALID, '0x2' = TRADING, '0x3' = SPENT
+  isSmart: string         // '0x0' = false, '0x1' = true
+  salt?: string
+  secretKey?: string      // 전송 시 소유권 증명용
+  createdAt?: number
+  createdInTx?: string
+  createdBy?: string
+  spentInTx?: string
+}
+```
+
+#### 7-입력 Poseidon 노트 해시
+
+노트 해시는 이제 7개 입력을 사용하는 Poseidon으로 계산됩니다:
+
+```typescript
+// 일반 노트:
+// hash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+// 여기서 owner0 = pkX, owner1 = pkY, vk0 = pkX, vk1 = pkY
+
+import { computeCircuitHash } from '@/lib/circuitInputs'
+
+const noteHash = await computeCircuitHash({
+  pkX: '0x...',
+  pkY: '0x...',
+  value: '1000000000000000000',
+  token: '0x0',
+  salt: '0x...'
+})
+
+// 스마트 노트 (DEX 주문):
+// owner0 = parentHash >> 128, owner1 = parentHash & MASK_128
+// vk0 = owner0, vk1 = owner1
+
+import { computeSmartNoteHash } from '@/lib/circuitInputs'
+
+const smartHash = await computeSmartNoteHash({
+  parentHash: '0x...',
+  value: '500000000000000000',
+  token: '0x1',
+  salt: '0x...'
+})
+```
+
+#### 소유권 검증
+
+**이전 (주소 기반):**
+```typescript
+function isOwner(note: NoteData, userAddress: string): boolean {
+  return note.ownerAddress.toLowerCase() === userAddress.toLowerCase()
+}
+```
+
+**이후 (pk 기반):**
+```typescript
+// src/utils/noteEncryption.ts
+export async function isNoteOwner(
+  noteData: EncodedNoteData,
+  accountPublicKey: { x: string; y: string }
+): Promise<boolean> {
+  const notePkX = BigInt(noteData.pkX)
+  const notePkY = BigInt(noteData.pkY)
+  const accountPkX = BigInt(accountPublicKey.x)
+  const accountPkY = BigInt(accountPublicKey.y)
+  return notePkX === accountPkX && notePkY === accountPkY
+}
+```
+
+#### 암호화된 노트 데이터 형식
+
+온체인 노트 데이터는 수신자의 BabyJubJub 공개키로 ECDH 암호화됩니다:
+
+```typescript
+// src/utils/noteEncryption.ts
+export interface EncodedNoteData {
+  pkX: string    // BabyJubJub 공개키 X 좌표
+  pkY: string    // BabyJubJub 공개키 Y 좌표
+  value: string
+  token: string
+  salt: string
+}
+
+// RLP 인코딩: 5개 필드 [pkX, pkY, value, token, salt]
+// 온체인 형식: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+
+// 온체인 저장용 인코딩
+const encryptedData = await encodeNoteData(noteData, recipientPk)
+
+// 온체인에서 디코딩 (ECDH 복호화에 비밀키 필요)
+const decodedNote = await decodeNoteData(encryptedHex, secretKey)
+```
+
+**레거시 형식 지원**: 시스템은 `0x01` 접두사로 ECDH 암호화를 감지합니다. 레거시 6-필드 RLP 형식 `[owner0, owner1, value, token, viewingKey, salt]`는 자동으로 새 형식으로 변환됩니다.
+
 ## 알려진 이슈 및 참고 사항
 
 1. **청크 크기 경고**: 프로덕션 빌드에서 청크 크기(>500 kB) 경고가 표시됩니다. 프로덕션 최적화를 위해 코드 분할 구현을 고려하세요.

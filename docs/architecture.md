@@ -169,27 +169,52 @@ Circuits are written in Circom 2.1 and compiled to Groth16 proving systems.
 
 ```
 Note = {
-  ownerAddress,  // 160-bit address derived from Poseidon(pk.x, pk.y) & MASK_160
+  owner0,        // pkX (BabyJubJub public key X coordinate, ~254-bit field element)
+  owner1,        // pkY (BabyJubJub public key Y coordinate, ~254-bit field element)
   value,         // Token amount (256-bit)
-  type,          // 0=ETH, 1=DAI (256-bit)
-  viewingKey,    // Poseidon(pk.x, pk.y) full 254-bit field element, split into vk0(128-bit) + vk1(128-bit)
+  tokenType,     // 0=ETH, 1=DAI (256-bit)
+  vk0,           // pkX (viewing key part 0, same as owner0 for regular notes)
+  vk1,           // pkY (viewing key part 1, same as owner1 for regular notes)
   salt           // Random value (254-bit, BN128 field compatible)
 }
 ```
 
-### Address Derivation
+### Note Hash Computation
 
-Owner address is derived from BabyJubJub public key using Poseidon:
+Note hash is computed using 7-input Poseidon:
 
 ```
-address = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Lower 160 bits of Poseidon hash
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+```
+
+For **regular notes**:
+- `owner0 = pkX` (public key X coordinate)
+- `owner1 = pkY` (public key Y coordinate)
+- `vk0 = pkX`, `vk1 = pkY` (viewing key equals owner public key)
+
+For **smart notes** (used in trading):
+- `owner0 = parentHash_lo` (lower 128 bits of parent note hash)
+- `owner1 = parentHash_hi` (upper 128 bits of parent note hash)
+- `vk0`, `vk1` remain the actual owner's public key for viewing
+
+### Ownership Model
+
+Ownership is verified directly using BabyJubJub public keys:
+
+```
+// Regular note ownership
+owner0 == pk.x && owner1 == pk.y
+
+// Smart note ownership (for atomic swaps)
+owner0 == parentHash & ((1n << 128n) - 1n)  // Lower 128 bits
+owner1 == parentHash >> 128n                 // Upper 128 bits
 ```
 
 This provides:
-- Compact representation (160-bit vs 512-bit public key)
-- Collision resistance (~2^80 security level)
-- Compatible with Ethereum address format
-- SNARK-friendly (Poseidon is native to BN128 field arithmetic)
+- Direct public key verification (no address derivation)
+- Full 254-bit security (vs 160-bit address truncation)
+- Native BN128 field compatibility
+- Simpler circuit logic (no truncation operations)
 
 ### Circuit Descriptions
 
@@ -201,12 +226,15 @@ This provides:
 
 **Public Signals (snarkjs order):**
 ```
-[output, nh0, nh1, value, tokenType]
+[output, noteHash, value, tokenType]
 ```
 
 **Operations:**
-1. Verify ownership via address derivation (sk → pk → Poseidon → address)
-2. Compute and verify Poseidon hash of note (6 field element inputs)
+1. Verify ownership via BabyJubJub keypair (sk → pk, then pk == owner0/owner1)
+2. Compute and verify 7-input Poseidon hash of note:
+   ```
+   noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+   ```
 
 #### 2. transfer_note (Spend & Split)
 
@@ -215,9 +243,9 @@ This provides:
 **Constraints:** ~516,000
 
 **Verification:**
-- Ownership of input notes
+- Ownership of input notes via pk verification (sk → pk == owner0/owner1)
 - Value conservation: `sum(inputs) == sum(outputs)`
-- Correct hash computation for all notes
+- Correct 7-input Poseidon hash computation for all notes
 
 #### 3. convert_note (Smart Note Conversion)
 
@@ -244,9 +272,11 @@ This provides:
 **Constraints:** ~258,000
 
 **Verification:**
-- Taker owns parent note
+- Taker owns parent note (pk verification)
 - Stake note value equals parent note value
-- Stake note owner is maker note hash (smart note)
+- Stake note owner is maker note hash split into 128-bit halves:
+  - `owner0 = makerNoteHash & ((1n << 128n) - 1n)` (lower 128 bits)
+  - `owner1 = makerNoteHash >> 128n` (upper 128 bits)
 
 #### 6. settle_order (Order Settlement)
 
@@ -261,9 +291,14 @@ takerValue == q1 * price + r1
 ```
 
 **Output Notes (all smart notes):**
-1. **Reward note** - Maker's source token to taker (owner = taker parent hash)
-2. **Payment note** - Taker's target token to maker (owner = maker note hash)
-3. **Change note** - Remainder to taker (owner = taker parent hash)
+1. **Reward note** - Maker's source token to taker
+   - `owner0 = takerParentHash_lo`, `owner1 = takerParentHash_hi`
+2. **Payment note** - Taker's target token to maker
+   - `owner0 = makerNoteHash_lo`, `owner1 = makerNoteHash_hi`
+3. **Change note** - Remainder to taker
+   - `owner0 = takerParentHash_lo`, `owner1 = takerParentHash_hi`
+
+Where `_lo` = lower 128 bits, `_hi` = upper 128 bits of the parent hash.
 
 ### Circuit Complexity Summary
 
@@ -293,15 +328,18 @@ Main entry point for proof generation.
 await noteProofHelper.init();
 
 // Key generation - returns { sk, pk } (BabyJubJub keypair)
-// Address derived via Poseidon(pk.x, pk.y) & MASK_160
+// pk.x and pk.y are used directly as owner0/owner1 in notes
 const { sk, pk } = await noteProofHelper.generateKeypair();
 
-// Note creation with Poseidon-derived address
+// Note creation with pk-based ownership
+// owner0 = pk.x, owner1 = pk.y, vk0 = pk.x, vk1 = pk.y
 const note = await noteProofHelper.createNote(sk, value, tokenType);
 
 // Smart note creation (for trading)
-// owner = Poseidon(parentNoteHash) lower 160 bits
-const smartNote = await noteProofHelper.createSmartNote(ownerNote, value, tokenType, viewingKey, salt);
+// owner0 = parentHash_lo (lower 128 bits)
+// owner1 = parentHash_hi (upper 128 bits)
+// vk0/vk1 = viewing key (actual owner's pk)
+const smartNote = await noteProofHelper.createSmartNote(parentNote, value, tokenType, viewingKey, salt);
 
 // Proof generation
 const proof = await noteProofHelper.generateMintProof(note, sk);
@@ -336,19 +374,24 @@ Core Note class for managing privacy notes.
 
 ```javascript
 class Note {
-  constructor(ownerAddress, value, type, viewingKey, salt)
-  // ownerAddress: 160-bit address (hex string)
-  // viewingKey: { vk0, vk1 } - two 128-bit values (from Poseidon(pk.x, pk.y))
+  constructor(owner0, owner1, value, tokenType, vk0, vk1, salt)
+  // owner0: pkX or parentHash_lo (field element)
+  // owner1: pkY or parentHash_hi (field element)
+  // vk0: viewing key part 0 (pkX for regular notes)
+  // vk1: viewing key part 1 (pkY for regular notes)
 
-  hash()              // Poseidon hash of note (single field element output)
+  hash()              // 7-input Poseidon hash of note (single field element output)
   toCircuitInput()    // Format for circuit
 }
 
-// Note hash computation:
-// Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) — 6 field element inputs, single field element output
+// Note hash computation (7 inputs):
+// Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+
+// Regular note: owner0=pkX, owner1=pkY, vk0=pkX, vk1=pkY
+// Smart note: owner0=parentHash_lo, owner1=parentHash_hi, vk0=ownerPkX, vk1=ownerPkY
 
 // Constants
-EMPTY_NOTE_HASH = '0x...'  // Computed with zero ownerAddress
+EMPTY_NOTE_HASH = '0x...'  // Computed with zero owner0/owner1
 ETH_TOKEN_TYPE = 0
 DAI_TOKEN_TYPE = 1
 ```
@@ -459,32 +502,36 @@ DAI_TOKEN_TYPE = 1
 - **Note-based UTXO:** Similar to Zcash, balances are represented as notes
 - **ECDH Encryption:** Note data encrypted with BabyJubJub ECDH + AES-256-GCM before on-chain storage
 - **ZK Proofs:** Ownership and validity proven without revealing data
-- **Address-based Ownership:** Owner = Poseidon(pk.x, pk.y) & MASK_160 (lower 160 bits of Poseidon hash)
-- **Smart Notes:** Owner = Poseidon(parentNoteHash) lower 160 bits (enables atomic swaps)
+- **PK-based Ownership:** Owner = (pk.x, pk.y) stored directly as owner0/owner1 in notes
+- **Smart Notes:** Owner = parentHash split into 128-bit halves (owner0=lo, owner1=hi) for atomic swaps
 
 ### Cryptographic Primitives
 
 | Primitive | Usage |
 |-----------|-------|
-| **BabyJubJub** | Ownership keys (efficient in SNARKs) |
-| **Poseidon** | Address derivation (pk → 160-bit), note hashing (6 inputs → single field element) |
+| **BabyJubJub** | Ownership keys (efficient in SNARKs), stored directly as owner0/owner1 |
+| **Poseidon** | Note hashing (7 inputs → single field element) |
 | **ECDH (BabyJubJub) + AES-256-GCM** | Note encryption for on-chain storage |
 | **Groth16** | SNARK proof system |
 | **BN128** | Elliptic curve for pairings |
 
-### Hash Splitting (Legacy)
+### Hash Splitting
 
-With the migration from SHA-256 to Poseidon, hash splitting is no longer needed for note hashes. Poseidon outputs a single BN128 field element (~254 bits), which fits directly into a circuit signal without splitting.
+With 7-input Poseidon hashing, note hashes are single BN128 field elements (~254 bits) that fit directly into circuit signals without splitting.
 
-Previously, SHA-256 produced 256-bit outputs that exceeded the ~254-bit BN128 field limit, requiring a split into two 128-bit halves (nh0, nh1). This added complexity to both circuits and smart contracts.
+However, for **smart notes**, the parent note hash must be split into two 128-bit halves to fit into the owner0/owner1 fields:
 
 ```javascript
-// Legacy (SHA-256): required splitting
-// note.hashArr() → [nh0, nh1]  // two 128-bit values
+// Smart note owner derivation from parent hash:
+const parentHash = parentNote.hash();  // Single ~254-bit field element
+const owner0 = parentHash & ((1n << 128n) - 1n);  // Lower 128 bits
+const owner1 = parentHash >> 128n;                 // Upper 128 bits
 
-// Current (Poseidon): single field element output
-// note.hash() → noteHash        // single ~254-bit field element
+// Note hash computation (7-input Poseidon):
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
+
+This approach enables atomic swaps where smart note ownership is tied to the hash of another note, allowing conditional ownership transfer.
 
 ### Public Signal Order (snarkjs)
 
@@ -495,7 +542,9 @@ Circuit: signal output out; signal input public noteHash;
 snarkjs: [out, noteHash, ...]  // output comes first!
 ```
 
-With Poseidon, note hashes are single field elements (no split h0/h1), simplifying the public signal layout. All contracts have been updated to use this order.
+With 7-input Poseidon, note hashes are single field elements, simplifying the public signal layout. All contracts have been updated to use this order.
+
+**Note on ownership verification:** Circuits verify ownership by checking that the prover knows the secret key corresponding to the public key stored in owner0/owner1. This is done via BabyJubJub scalar multiplication: `pk = sk * G`, then `pk.x == owner0 && pk.y == owner1`.
 
 ---
 

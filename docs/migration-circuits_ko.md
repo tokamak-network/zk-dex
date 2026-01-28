@@ -635,47 +635,67 @@ docker: {
 }
 ```
 
-## 주소 기반 소유권 마이그레이션 (Phase 2)
+## 노트 소유권 진화 (Phase 2 → Phase 4)
 
 ### 개요
 
-노트 소유권을 BabyJubJub 공개키 좌표(owner0, owner1)에서 160비트 주소로 마이그레이션했습니다. 원래 SHA256에서 유도(Phase 2)했으나 현재는 Poseidon(Phase 3)을 사용합니다.
+이 섹션은 노트 소유권 표현의 진화를 문서화합니다:
+- **Phase 1:** 원래 owner0/owner1 (512비트, BabyJubJub 좌표)
+- **Phase 2:** ownerAddress (160비트, SHA256 잘림)
+- **Phase 3:** ownerAddress (160비트, Poseidon 잘림)
+- **Phase 4 (현재):** owner0/owner1 (pkX/pkY, 전체 BabyJubJub 좌표)
 
-**마이그레이션 일자:** 2026-01-25
-**상태:** ✅ 완료 (모든 테스트 통과)
+**마이그레이션 일자:** 2026-01-25 (Phase 2-3), 2026-01-29 (Phase 4)
+**상태:** Phase 4 진행 중
 
 ### 주요 변경 사항
 
 #### 노트 구조
 
-| 필드 | 이전 | 이후 |
-|------|------|------|
-| 소유자 | owner0 (256비트) + owner1 (256비트) = 512비트 | ownerAddress (160비트) |
-| 노트 해시 입력 | 1536비트 | 1184비트 |
+| 필드 | Phase 1 | Phase 2-3 | Phase 4 (현재) |
+|------|---------|-----------|----------------|
+| 소유자 | owner0 + owner1 (512비트) | ownerAddress (160비트) | owner0 (pkX) + owner1 (pkY) |
+| 뷰잉 키 | vk0 + vk1 (256비트) | vk0 + vk1 (256비트) | vk0 (pkX) + vk1 (pkY) |
+| 노트 해시 입력 수 | 6 (SHA256) | 6 (Poseidon) | 7 (Poseidon) |
 
-#### 주소 유도
+#### 소유자 표현 (pk 기반)
 
-~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, Phase 3에서 대체됨)*
+~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, 대체됨)*
+~~`ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)`~~ *(Phase 3, 대체됨)*
 
+**Phase 4 (pk 기반):**
 ```
-ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Poseidon 해시의 하위 160비트
-```
-
-- pk.x와 pk.y는 256비트 BabyJubJub 공개키 좌표
-- 주소 = Poseidon 해시의 하위 160비트
-- ~2^80 충돌 저항성 제공 (실용적인 보안에 충분)
-
-#### 노트 해시 형식 (Poseidon, 단일 필드 원소)
-
-~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, Phase 3에서 대체됨)*
-
-```
-Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → 단일 254비트 필드 원소
+owner0 = pk.x  // BabyJubJub 공개키 X 좌표 (254비트 필드 원소)
+owner1 = pk.y  // BabyJubJub 공개키 Y 좌표 (254비트 필드 원소)
 ```
 
-- 모든 6개 입력은 필드 원소 (비트 연결 아님)
-- 출력은 단일 BN254 필드 원소 (h0/h1 분할 없음)
-- ~300 제약 vs SHA256의 ~30,000 제약
+- 전체 공개키 좌표를 직접 사용 (잘림이나 해싱 없음)
+- 완전한 암호학적 보안 제공 (잘림으로 인한 충돌 우려 없음)
+- 회로에서 BabyJubJub 스칼라 곱으로 소유권 검증: `pk = sk * G`
+
+#### 노트 해시 형식 (Poseidon, 7-입력 pk 기반)
+
+~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, 대체됨)*
+~~`Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`~~ *(Phase 3, 대체됨)*
+
+```
+Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt) → 단일 254비트 필드 원소
+```
+
+**Phase 4 (pk 기반) 노트 구조:**
+- **owner0** = pkX (BabyJubJub 공개키 X 좌표, 254비트 필드 원소)
+- **owner1** = pkY (BabyJubJub 공개키 Y 좌표, 254비트 필드 원소)
+- **value** = wei 단위 노트 값
+- **tokenType** = 토큰 식별자 (0=ETH, 1=DAI 등)
+- **vk0** = pkX (뷰잉 키, 일반 노트의 경우 owner와 동일)
+- **vk1** = pkY (뷰잉 키, 일반 노트의 경우 owner와 동일)
+- **salt** = 랜덤 254비트 필드 원소
+
+**Phase 3 대비 주요 변경:**
+- 160비트 ownerAddress 잘림 없음 (전체 pk 좌표 사용)
+- vk0/vk1 = pkX/pkY (일반 노트의 경우, 뷰잉 키 유도 가능)
+- 6개 대신 7개 입력 (owner가 두 좌표로 분할)
+- ~300 제약 (Phase 3 Poseidon과 동일)
 
 ### 회로 변경
 
@@ -689,13 +709,13 @@ Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → 단일 254비트 �
 
 #### 수정된 메인 회로
 
-6개 메인 회로 모두 owner0/owner1 대신 ownerAddress 사용하도록 업데이트:
-- `mint_burn_note.circom` - VerifyOwnershipByAddressStrict 사용
-- `transfer_note.circom` - 모든 노트에 ownerAddress 사용
-- `make_order.circom` - VerifyOwnershipByAddressStrict 사용
-- `take_order.circom` - ownerAddress 사용
-- `settle_order.circom` - ownerAddress 사용
-- `convert_note.circom` - ownerAddress 사용
+6개 메인 회로 모두 pk 기반 소유권 사용하도록 업데이트 (Phase 4):
+- `mint_burn_note.circom` - owner0/owner1 (pkX/pkY) 사용, 7-입력 Poseidon 해시
+- `transfer_note.circom` - 모든 노트에 owner0/owner1 사용
+- `make_order.circom` - owner0/owner1 (pkX/pkY) 사용, 7-입력 Poseidon 해시
+- `take_order.circom` - owner0/owner1 사용
+- `settle_order.circom` - owner0/owner1 사용
+- `convert_note.circom` - owner0/owner1 사용
 
 ### 제약 조건 수 변화
 
@@ -716,41 +736,63 @@ Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → 단일 254비트 �
 
 ```javascript
 class Note {
-  // 이전
+  // Phase 1
   constructor(owner0, owner1, value, type, viewingKey, salt)
+  // owner0, owner1: 256비트 값
 
-  // 이후
+  // Phase 2-3
   constructor(ownerAddress, value, type, viewingKey, salt)
   // ownerAddress: 160비트 hex 문자열 (40자)
   // viewingKey: { vk0, vk1 } 128비트 값 두 개
+
+  // Phase 4 (현재 - pk 기반)
+  constructor(owner0, owner1, value, type, vk0, vk1, salt)
+  // owner0: pkX (BabyJubJub 공개키 X 좌표)
+  // owner1: pkY (BabyJubJub 공개키 Y 좌표)
+  // vk0: pkX (일반 노트의 경우 뷰잉 키 = 공개키)
+  // vk1: pkY
+  // 스마트 노트의 경우: owner0/owner1 = 분할된 부모 해시, vk0/vk1 = 동일
 }
 ```
 
 #### noteProofHelper.js
 
 ```javascript
-// 이전
+// Phase 1
 const { secretKey, owner0, owner1 } = await generateKeypair();
 
-// 이후
+// Phase 2-3
 const { secretKey, ownerAddress } = await generateKeypair();
+
+// Phase 4 (현재 - pk 기반)
+const { secretKey, pk } = await generateKeypair();
+// pk.x = owner0 (pkX)
+// pk.y = owner1 (pkY)
+// 일반 노트의 경우: vk0 = pk.x, vk1 = pk.y
 ```
 
-#### 스마트 노트 소유자
+#### 스마트 노트 소유자 (pk 기반)
 
-스마트 노트의 경우, 소유자는 부모 노트 해시에서 유도됩니다:
+스마트 노트의 경우, 소유자는 부모 노트 해시를 128비트 반으로 분할하여 유도됩니다:
 
 ```javascript
 // Phase 1: owner = parentNote.hashArr() → [nh0, nh1] (256비트를 128비트 두 개로 분할)
 // Phase 2: owner = SHA256(parentNoteHash)[96:256] (160비트 자르기)
-// Phase 3 (현재): owner = Poseidon 노트 해시의 하위 160비트
+// Phase 3: owner = Poseidon 노트 해시의 하위 160비트
+// Phase 4 (현재): owner0/owner1 = parentHash를 128비트 반으로 분할
 function getSmartNoteOwner(noteHash) {
     const hashBigInt = BigInt(noteHash);
-    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
-    const address = hashBigInt & mask160;
-    return '0x' + address.toString(16).padStart(40, '0');
+    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
+    const owner1 = hashBigInt & mask128;           // 하위 128비트
+    const owner0 = (hashBigInt >> BigInt(128)) & mask128;  // 상위 128비트
+    return { owner0, owner1 };
 }
 ```
+
+**회로 신호 이름:**
+- `owner0` = 부모 노트 해시의 상위 128비트
+- `owner1` = 부모 노트 해시의 하위 128비트
+- 스마트 노트 소유권은 부모 노트의 해시가 분할된 owner 값과 일치하는지 확인하여 검증됨
 
 ### 테스트 결과
 
@@ -759,47 +801,55 @@ function getSmartNoteOwner(noteHash) {
 - ✅ make_order 증명 생성
 - ✅ (다른 회로들은 전체 통합 테스트 진행 중)
 
-### 마이그레이션 이점
+### 마이그레이션 이점 (Phase 4)
 
-1. **노트 크기 감소:** 512비트 → 160비트 소유자 표현
-2. **해시 입력 감소:** 1536비트 → 1184비트 노트 해시
-3. **이더리움 호환성:** 160비트 주소가 이더리움 형식과 일치
-4. **통일된 구조:** 일반 노트와 스마트 노트가 동일한 소유자 형식 사용
+1. **완전한 보안:** 잘림 없음으로 충돌 취약점 제거
+2. **단순한 코드:** 직접적인 pk 사용, 주소 유도 불필요
+3. **명시적 vk 관계:** vk = pk가 명확하고 검증 가능
+4. **통일된 구조:** 모든 노트가 동일한 owner0/owner1 형식 사용
 
 ---
 
-## Viewing Key ↔ OwnerAddress 관계 (Phase 2.1)
+## Viewing Key ↔ Owner 관계 (Phase 2.1 → Phase 4)
 
 ### 개요
 
-일반 노트와 스마트 노트 모두에 대해 viewing key와 owner address 간의 명확한 유도 관계를 설정했습니다.
+일반 노트와 스마트 노트 모두에 대해 viewing key와 owner 간의 명확한 관계를 설정했습니다. Phase 4에서는 viewing key가 공개키와 동일합니다 (vk0 = pkX, vk1 = pkY).
 
-**일자:** 2026-01-26
-**상태:** ✅ 완료
+**일자:** 2026-01-26 (Phase 2.1), 2026-01-29 (Phase 4)
+**상태:** Phase 4 진행 중
 
-### 일반 노트
+### 일반 노트 (Phase 4 pk 기반)
 
-~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, Phase 3에서 대체됨)*
+~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, 대체됨)*
+~~`viewingKey = Poseidon(pk.x, pk.y)`~~ *(Phase 3, 대체됨)*
 
+**Phase 4 (pk 기반):**
 ```
-viewingKey = Poseidon(pk.x, pk.y) = 254비트 필드 원소
-ownerAddress = viewingKey & ((1 << 160) - 1) = 하위 160비트
-```
-
-- pk.x와 pk.y는 BabyJubJub 공개키 좌표 (각 256비트)
-- viewingKey는 Poseidon 해시 (단일 필드 원소)
-- ownerAddress는 viewingKey에서 유도됨 (하위 160비트)
-
-### 스마트 노트
-
-```
-viewingKey = parentNoteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
-ownerAddress = parentNoteHash & ((1 << 160) - 1) = 하위 160비트
+owner0 = pkX     // BabyJubJub 공개키 X 좌표
+owner1 = pkY     // BabyJubJub 공개키 Y 좌표
+vk0 = pkX        // 뷰잉 키 = 공개키 (일반 노트의 경우)
+vk1 = pkY
 ```
 
-- parentNoteHash는 단일 Poseidon 필드 원소 (h0/h1 분할 없음)
-- ownerAddress = parentNoteHash의 하위 160비트 (단순 비트마스크)
-- 이 관계 유지: ownerAddress가 viewingKey 내에 포함됨
+- 일반 노트의 경우, vk0/vk1은 owner0/owner1과 동일 (둘 다 공개키)
+- 이를 통해 수신자가 자신의 키 쌍에서 뷰잉 키를 유도할 수 있음
+- 전체 공개키 좌표 사용 (잘림 없음)
+
+### 스마트 노트 (Phase 4 pk 기반)
+
+```
+parentHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+owner0 = parentHash[0:128]   // 부모 노트 해시의 상위 128비트
+owner1 = parentHash[128:256] // 부모 노트 해시의 하위 128비트
+vk0 = parentHash[0:128]      // 뷰잉 키도 동일하게 분할
+vk1 = parentHash[128:256]
+```
+
+- parentNoteHash가 owner0/owner1을 위해 두 개의 128비트 반으로 분할됨
+- 스마트 노트의 "소유자"는 부모 노트의 분할된 해시 (실제 공개키가 아님)
+- vk0/vk1도 분할된 부모 해시를 보유 (일관성을 위해)
+- 부모 노트에 대한 지식을 증명하여 스마트 노트를 청구할 수 있음
 
 ---
 
@@ -943,23 +993,37 @@ o0ValuePrice <== q0 * DECIMALS;  // q0 * 10^18 = 50×10^18
 
 #### 1. 회로 해시 함수
 
-6개 회로 모두 `SHA256NoteWithAddress()` 대신 `PoseidonNoteWithAddress()` 사용:
+6개 회로 모두 pk 기반 소유권과 7-입력 Poseidon 사용:
 
 ```circom
-// 이전 (SHA256)
+// Phase 2 (SHA256)
 component hashNote = SHA256NoteWithAddress();
 // 1184비트 입력, 256비트 출력을 h0/h1로 분할
 
-// 이후 (Poseidon)
+// Phase 3 (ownerAddress를 사용한 6-입력 Poseidon)
 component hashNote = PoseidonNoteWithAddress();
-// 6개 필드 원소 입력, 1개 필드 원소 출력
-hashNote.ownerAddress <== ownerAddress;
+hashNote.ownerAddress <== ownerAddress;  // 160비트 잘림
 hashNote.value <== value;
 hashNote.tokenType <== tokenType;
 hashNote.vk0 <== vk0;
 hashNote.vk1 <== vk1;
 hashNote.salt <== salt;
+
+// Phase 4 (pk 기반 소유권과 7-입력 Poseidon) - 현재
+component hashNote = Poseidon(7);
+hashNote.inputs[0] <== owner0;     // pkX (또는 스마트 노트의 경우 parentHash 상위 128비트)
+hashNote.inputs[1] <== owner1;     // pkY (또는 스마트 노트의 경우 parentHash 하위 128비트)
+hashNote.inputs[2] <== value;
+hashNote.inputs[3] <== tokenType;
+hashNote.inputs[4] <== vk0;        // 일반 노트의 경우 pkX
+hashNote.inputs[5] <== vk1;        // 일반 노트의 경우 pkY
+hashNote.inputs[6] <== salt;
 ```
+
+**회로 신호 이름 (Phase 4):**
+- `owner0`, `owner1` - 소유자 공개키 좌표 (또는 분할된 부모 해시)
+- `vk0`, `vk1` - 뷰잉 키 (일반 노트의 경우 pk와 동일, 스마트 노트의 경우 분할된 부모 해시와 동일)
+- `value`, `tokenType`, `salt` - 노트 속성
 
 #### 2. Note.js (비동기 초기화 패턴)
 
@@ -969,44 +1033,68 @@ const { Note, init: initNote, getSmartNoteOwner } = require('./Note');
 // Note.hash() 사용 전 init()을 1회 호출해야 함
 await initNote();  // circomlibjs Poseidon 로드
 
-// 이후 hash()는 동기
-const note = new Note(ownerAddress, value, tokenType, viewingKey, salt);
-const hash = note.hash();  // Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+// Phase 4: pk 기반 소유권을 사용한 Note 생성자
+const note = new Note(owner0, owner1, value, tokenType, vk0, vk1, salt);
+// owner0 = pkX, owner1 = pkY (일반 노트의 경우)
+// vk0 = pkX, vk1 = pkY (일반 노트의 경우, 뷰잉 키 = 공개키)
+
+const hash = note.hash();  // Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
+
+**Note 생성자 매개변수 (Phase 4):**
+- `owner0` - BabyJubJub 공개키 X 좌표 (또는 스마트 노트의 경우 부모 해시 상위 128비트)
+- `owner1` - BabyJubJub 공개키 Y 좌표 (또는 스마트 노트의 경우 부모 해시 하위 128비트)
+- `value` - wei 단위 노트 값
+- `tokenType` - 토큰 식별자
+- `vk0` - 뷰잉 키 파트 0 (일반 노트의 경우 = pkX)
+- `vk1` - 뷰잉 키 파트 1 (일반 노트의 경우 = pkY)
+- `salt` - 랜덤 필드 원소
 
 #### 3. EMPTY_NOTE_HASH
 
 ```
-Poseidon(0, 0, 0, 0, 0, 0) = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+// Phase 3 (6-입력): Poseidon(0, 0, 0, 0, 0, 0)
+// Phase 4 (7-입력): Poseidon(0, 0, 0, 0, 0, 0, 0)
 ```
 
-`ZkDaiBase.sol`에서 업데이트:
+7-입력 Poseidon을 위해 `ZkDaiBase.sol`에서 업데이트:
 ```solidity
-bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
+// 참고: EMPTY_NOTE_HASH 값이 7-입력 Poseidon으로 변경됨
+bytes32 public constant EMPTY_NOTE_HASH = 0x...; // Poseidon(0,0,0,0,0,0,0)
 ```
 
-#### 4. 스마트 노트 소유자 유도
+#### 4. 스마트 노트 소유자 유도 (pk 기반)
 
 ```javascript
-// 이전 (SHA256): SHA256(noteHash) → 마지막 160비트
-// 이후 (Poseidon): noteHash & ((1 << 160) - 1) → 하위 160비트
+// Phase 2 (SHA256): SHA256(noteHash) → 마지막 160비트
+// Phase 3 (Poseidon): noteHash & ((1 << 160) - 1) → 하위 160비트
+// Phase 4 (pk 기반): noteHash를 128비트 반으로 분할
 function getSmartNoteOwner(noteHash) {
     const hashBigInt = BigInt(noteHash);
-    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
-    return '0x' + (hashBigInt & mask160).toString(16).padStart(40, '0');
+    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
+    const owner1 = hashBigInt & mask128;                    // 하위 128비트
+    const owner0 = (hashBigInt >> BigInt(128)) & mask128;   // 상위 128비트
+    return { owner0, owner1 };
 }
 ```
 
-#### 5. 공개 입력 수 감소
+**왜 128비트 분할인가?**
+- 회로의 필드 원소 크기 제약과 일치
+- owner0/owner1이 회로 신호로 자연스럽게 맞음
+- 잘림 손실 없음 (전체 해시가 두 부분에 보존됨)
 
-| 회로 | SHA256 입력 수 | Poseidon 입력 수 | 감소 |
-|------|---------------|-----------------|------|
-| mint_burn_note | 5 | 4 | -1 |
-| transfer_note | 9 | 5 | -4 |
-| convert_note | 7 | 4 | -3 |
-| make_order | 4 | 3 | -1 |
-| take_order | 9 | 6 | -3 |
-| settle_order | 21 | 14 | -7 |
+#### 5. 공개 입력 수 변화
+
+| 회로 | SHA256 (Phase 2) | Poseidon 6-입력 (Phase 3) | Poseidon 7-입력 (Phase 4) |
+|------|------------------|--------------------------|--------------------------|
+| mint_burn_note | 5 | 4 | 4 |
+| transfer_note | 9 | 5 | 5 |
+| convert_note | 7 | 4 | 4 |
+| make_order | 4 | 3 | 3 |
+| take_order | 9 | 6 | 6 |
+| settle_order | 21 | 14 | 14 |
+
+*참고: Phase 4에서도 노트 해시가 여전히 단일 필드 원소이므로 공개 입력 수는 비슷하게 유지됨. 7-입력 Poseidon으로의 변경은 내부 해시 계산에 영향을 미치며, 공개 인터페이스는 변경되지 않음.*
 
 ### 수정된 파일
 
@@ -1026,6 +1114,96 @@ function getSmartNoteOwner(noteHash) {
 Poseidon 마이그레이션 후 전체 19개 Truffle 테스트 통과:
 - ✅ 개발 모드 (8/8)
 - ✅ 프로덕션 모드 (11/11) E2E 플로우 포함 (Make → Take → Settle → Convert)
+
+---
+
+## PK 기반 노트 해시 아키텍처 (Phase 4)
+
+### 개요
+
+노트 소유권을 160비트 ownerAddress에서 전체 BabyJubJub 공개키 좌표(pkX, pkY)로 마이그레이션했습니다. 이를 통해 잘림 없이 완전한 암호학적 보안을 제공하고 뷰잉 키 관계를 단순화합니다.
+
+**마이그레이션 일자:** 2026-01-29
+**상태:** 진행 중
+
+### 주요 변경 사항
+
+#### 1. 노트 해시: 7-입력 Poseidon
+
+```
+Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt) → 254비트 필드 원소
+```
+
+| 입력 | 일반 노트 | 스마트 노트 |
+|------|----------|------------|
+| owner0 | pkX | parentHash 상위 128비트 |
+| owner1 | pkY | parentHash 하위 128비트 |
+| value | 노트 값 | 노트 값 |
+| tokenType | 토큰 ID | 토큰 ID |
+| vk0 | pkX | parentHash 상위 128비트 |
+| vk1 | pkY | parentHash 하위 128비트 |
+| salt | 랜덤 | 랜덤 |
+
+#### 2. ownerAddress 잘림 제거
+
+- **이전 (Phase 2-3):** `ownerAddress = Poseidon(pkX, pkY) & mask160` (160비트 잘림)
+- **이후 (Phase 4):** `owner0 = pkX, owner1 = pkY` (전체 좌표, 잘림 없음)
+
+이점:
+- 완전한 암호학적 보안 (충돌 우려 없음)
+- 직접적인 공개키 사용으로 소유권 검증 단순화
+- vk = pk 관계가 명시적
+
+#### 3. 분할 해시로서의 스마트 노트 소유자
+
+스마트 노트의 경우, "소유자"는 부모 노트 해시를 128비트 반으로 분할한 것입니다:
+
+```javascript
+function getSmartNoteOwner(parentNoteHash) {
+    const hash = BigInt(parentNoteHash);
+    const mask128 = (1n << 128n) - 1n;
+    return {
+        owner0: (hash >> 128n) & mask128,  // 상위 128비트
+        owner1: hash & mask128              // 하위 128비트
+    };
+}
+```
+
+#### 4. 회로 신호 이름
+
+모든 회로에서 다음 신호 이름 사용:
+- `owner0`, `owner1` - 소유자 식별 (pk 좌표 또는 분할 해시)
+- `vk0`, `vk1` - 뷰잉 키 (일반 노트의 경우 owner와 동일)
+- `value`, `tokenType`, `salt` - 노트 속성
+- `sk` - 비밀키 (비공개 입력)
+- `noteHash` - 계산된 해시 출력
+
+#### 5. 회로에서의 소유권 검증
+
+```circom
+// pk = sk * G 검증 (BabyJubJub 스칼라 곱)
+component verifyOwnership = BabyPbk();
+verifyOwnership.in <== sk;
+owner0 === verifyOwnership.Ax;
+owner1 === verifyOwnership.Ay;
+
+// 노트 해시 계산
+component noteHash = Poseidon(7);
+noteHash.inputs[0] <== owner0;
+noteHash.inputs[1] <== owner1;
+noteHash.inputs[2] <== value;
+noteHash.inputs[3] <== tokenType;
+noteHash.inputs[4] <== vk0;
+noteHash.inputs[5] <== vk1;
+noteHash.inputs[6] <== salt;
+```
+
+### 마이그레이션 이점
+
+1. **완전한 보안:** 잘림이 없어 충돌 취약점 없음
+2. **단순한 코드:** 직접적인 pk 사용, 주소 유도 불필요
+3. **명시적 vk 관계:** vk = pk가 명확하고 검증 가능
+4. **일관된 구조:** 모든 노트가 동일한 owner0/owner1 형식 사용
 
 ---
 

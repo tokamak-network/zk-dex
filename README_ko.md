@@ -275,7 +275,7 @@ npm run server
 - **곡선**: BN128
 - **해시 함수**: Poseidon (노트 해싱, 주소 도출)
 - **키 체계**: BabyJubJub (EdDSA 호환)
-- **소유권**: 주소 기반 (160비트, Poseidon(pk.x, pk.y)에서 도출)
+- **소유권**: 공개키 기반 (BabyJubJub pk 좌표를 직접 사용)
 
 ### Solidity 컨트랙트
 
@@ -294,24 +294,27 @@ ZK 증명은 전적으로 브라우저에서 생성됩니다:
 
 - **ZoKrates → Circom/snarkjs**: [migration-circuits.md](docs/migration-circuits.md) 참조
 - **SHA256 → Poseidon 해시**: [migration-circuits.md](docs/migration-circuits.md) 참조
-- **공개키 소유권 → 주소 기반 소유권**: BabyJubJub 공개키에서 도출된 160비트 주소
+- **주소 기반 소유권 → 공개키 기반 소유권**: BabyJubJub 공개키 좌표(pkX, pkY) 직접 사용
 
 ## FAQ
 
 ### Viewing Key와 Salt란?
 
-노트 해시는 6개 필드의 Poseidon 해시로 계산됩니다:
+노트 해시는 7개 필드의 Poseidon 해시로 계산됩니다:
 
 ```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
+
+여기서:
+- `owner0` = pkX (BabyJubJub 공개키 X 좌표)
+- `owner1` = pkY (BabyJubJub 공개키 Y 좌표)
+- `vk0` = pkX, `vk1` = pkY (viewing key는 공개키와 동일)
 
 **Viewing Key** (`viewingKey`):
-- BabyJubJub 공개키에서 도출: `viewingKey = Poseidon(pk.x, pk.y)` (254비트)
-- 소유자 주소는 viewing key의 하위 160비트: `ownerAddress = truncate160(viewingKey)`
-- 노트 해시 회로 입력을 위해 두 개의 128비트 반으로 분할 (`vk0`, `vk1`)
-- 목적: 공개키를 직접 노출하지 않고 노트 소유권을 공개키에 연결
-- 스마트 노트의 경우: `viewingKey = parentNoteHash` (부모 노트의 해시)
+- 일반 노트의 경우: viewing key 좌표는 소유자 공개키와 동일 (`vk0 = owner0 = pkX`, `vk1 = owner1 = pkY`)
+- 스마트 노트의 경우: `vk0`과 `vk1`은 `parentNoteHash`에서 도출 (두 개의 128비트 반으로 분할)
+- 목적: 노트 소유권을 공개키에 연결; 지출 키를 노출하지 않고 선택적 공개 가능
 
 **Salt**:
 - `crypto.randomBytes(32)`로 생성된 랜덤 값, 254비트로 마스킹 (BN128 필드 호환)
@@ -353,7 +356,7 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 온체인 형식: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
 ```
 
-해당 BabyJubJub 비밀키를 보유한 노트 소유자만 복호화할 수 있습니다. 제3자는 공개 매핑에서 암호화된 바이트를 읽을 수 있지만 평문 `{ownerAddress, value, token, viewingKey, salt}`를 복구할 수 없습니다.
+해당 BabyJubJub 비밀키를 보유한 노트 소유자만 복호화할 수 있습니다. 제3자는 공개 매핑에서 암호화된 바이트를 읽을 수 있지만 평문 `{pkX, pkY, value, token, salt}`를 복구할 수 없습니다.
 
 > **참고**: 레거시 노트(ECDH 마이그레이션 이전)는 평문 RLP로 저장되어 공개적으로 읽을 수 있습니다. 새로 생성된 노트만 ECDH 암호화를 사용합니다.
 
@@ -371,7 +374,7 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 현재 ECDH 암호화된 온체인 저장과 함께 세 가지 접근 방식이 가능합니다:
 
 **1. 노트 수준 공개** (추가 회로 불필요):
-   - 노트 프리이미지 `{ownerAddress, value, tokenType, viewingKey, salt}`를 직접 공유
+   - 노트 프리이미지 `{pkX, pkY, value, tokenType, salt}`를 직접 공유
    - 수신자가 Poseidon 해시를 재계산하여 온체인 노트 해시와 일치하는지 검증
    - 단점: 노트의 모든 필드가 공개됨
 
@@ -394,15 +397,14 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 | 컴포넌트 | 연산 | 제약 조건 수 | 비율 |
 |----------|------|-------------|------|
 | `EscalarMulFix(254)` | sk × G (BabyJubJub 스칼라 곱) | ~128K | 97.7% |
-| `Poseidon(6)` | 노트 해시 | ~1,500 | 1.1% |
-| `Poseidon(2)` + 절삭 | pk → 주소 | ~350 | 0.3% |
+| `Poseidon(7)` | 노트 해시 | ~1,700 | 1.3% |
 | `Num2Bits(254)` + 기타 | 비트 분해, 동등성 검사 | ~300 | 0.2% |
 
 선택적 공개 회로 비용은 증명 대상에 따라 다릅니다:
 
 | 시나리오 | 필요 연산 | 제약 조건 수 | 브라우저 증명 시간 |
 |----------|----------|-------------|-------------------|
-| 프리이미지 검증만 (소유권 증명 없음) | Poseidon(6) + 값 비교 | ~2K | < 1초 |
+| 프리이미지 검증만 (소유권 증명 없음) | Poseidon(7) + 값 비교 | ~2K | < 1초 |
 | 소유권 + 속성 증명 (노트 1개) | EscalarMulFix + Poseidon 해시 + 비교 | ~131K | 3–10초 |
 | N개 노트 잔액 합산 증명 | N × (EscalarMulFix + Poseidon) | ~N × 131K | N × 3–10초 |
 

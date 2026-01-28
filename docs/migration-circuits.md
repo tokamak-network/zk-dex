@@ -633,47 +633,67 @@ docker: {
 }
 ```
 
-## Address-Based Ownership Migration (Phase 2)
+## Note Ownership Evolution (Phase 2 → Phase 4)
 
 ### Overview
 
-Migrated note ownership from BabyJubJub public key coordinates (owner0, owner1) to a 160-bit address. Originally derived from SHA256 (Phase 2), now from Poseidon (Phase 3).
+This section documents the evolution of note ownership representation:
+- **Phase 1:** Original owner0/owner1 (512-bit, BabyJubJub coordinates)
+- **Phase 2:** ownerAddress (160-bit, SHA256 truncation)
+- **Phase 3:** ownerAddress (160-bit, Poseidon truncation)
+- **Phase 4 (Current):** owner0/owner1 (pkX/pkY, full BabyJubJub coordinates)
 
-**Migration Date:** 2026-01-25
-**Status:** ✅ Complete (All tests passing)
+**Migration Date:** 2026-01-25 (Phase 2-3), 2026-01-29 (Phase 4)
+**Status:** Phase 4 in progress
 
 ### Key Changes
 
 #### Note Structure
 
-| Field | Before | After |
-|-------|--------|-------|
-| Owner | owner0 (256-bit) + owner1 (256-bit) = 512-bit | ownerAddress (160-bit) |
-| Note Hash Input | 1536 bits | 1184 bits |
+| Field | Phase 1 | Phase 2-3 | Phase 4 (Current) |
+|-------|---------|-----------|-------------------|
+| Owner | owner0 + owner1 (512-bit) | ownerAddress (160-bit) | owner0 (pkX) + owner1 (pkY) |
+| Viewing Key | vk0 + vk1 (256-bit) | vk0 + vk1 (256-bit) | vk0 (pkX) + vk1 (pkY) |
+| Note Hash Inputs | 6 (SHA256) | 6 (Poseidon) | 7 (Poseidon) |
 
-#### Address Derivation
+#### Owner Representation (pk-based)
 
-~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, superseded by Phase 3)*
+~~`ownerAddress = SHA256(pk.x || pk.y)[96:256]`~~ *(Phase 2, superseded)*
+~~`ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)`~~ *(Phase 3, superseded)*
 
+**Phase 4 (pk-based):**
 ```
-ownerAddress = Poseidon(pk.x, pk.y) & ((1 << 160) - 1)  // Lower 160 bits of Poseidon hash
-```
-
-- pk.x and pk.y are 256-bit BabyJubJub public key coordinates
-- Address = lower 160 bits of Poseidon hash
-- Provides ~2^80 collision resistance (sufficient for practical security)
-
-#### Note Hash Format (Poseidon, single field element)
-
-~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, superseded by Phase 3)*
-
-```
-Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → single 254-bit field element
+owner0 = pk.x  // BabyJubJub public key X coordinate (254-bit field element)
+owner1 = pk.y  // BabyJubJub public key Y coordinate (254-bit field element)
 ```
 
-- All 6 inputs are field elements (not bit-concatenated)
-- Output is a single BN254 field element (no split into h0/h1)
-- ~300 constraints vs ~30,000 for SHA256
+- Full public key coordinates used directly (no truncation or hashing)
+- Provides full cryptographic security (no collision concerns from truncation)
+- Circuits verify ownership via BabyJubJub scalar multiplication: `pk = sk * G`
+
+#### Note Hash Format (Poseidon, 7-input pk-based)
+
+~~`SHA256(ownerAddress || value || tokenType || vk0 || vk1 || salt)`~~ *(Phase 2, superseded)*
+~~`Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`~~ *(Phase 3, superseded)*
+
+```
+Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt) → single 254-bit field element
+```
+
+**Phase 4 (pk-based) Note Structure:**
+- **owner0** = pkX (BabyJubJub public key X coordinate, 254-bit field element)
+- **owner1** = pkY (BabyJubJub public key Y coordinate, 254-bit field element)
+- **value** = note value in wei
+- **tokenType** = token identifier (0=ETH, 1=DAI, etc.)
+- **vk0** = pkX (viewing key, same as owner for regular notes)
+- **vk1** = pkY (viewing key, same as owner for regular notes)
+- **salt** = random 254-bit field element
+
+**Key Changes from Phase 3:**
+- No more 160-bit ownerAddress truncation (full pk coordinates used)
+- vk0/vk1 = pkX/pkY for regular notes (enables viewing key derivation)
+- 7 inputs instead of 6 (owner split into two coordinates)
+- ~300 constraints (same as Phase 3 Poseidon)
 
 ### Circuit Changes
 
@@ -687,13 +707,13 @@ Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt) → single 254-bit fiel
 
 #### Modified Main Circuits
 
-All 6 main circuits updated to use ownerAddress instead of owner0/owner1:
-- `mint_burn_note.circom` - Uses VerifyOwnershipByAddressStrict
-- `transfer_note.circom` - Uses ownerAddress for all notes
-- `make_order.circom` - Uses VerifyOwnershipByAddressStrict
-- `take_order.circom` - Uses ownerAddress
-- `settle_order.circom` - Uses ownerAddress
-- `convert_note.circom` - Uses ownerAddress
+All 6 main circuits updated to use pk-based ownership (Phase 4):
+- `mint_burn_note.circom` - Uses owner0/owner1 (pkX/pkY), 7-input Poseidon hash
+- `transfer_note.circom` - Uses owner0/owner1 for all notes
+- `make_order.circom` - Uses owner0/owner1 (pkX/pkY), 7-input Poseidon hash
+- `take_order.circom` - Uses owner0/owner1
+- `settle_order.circom` - Uses owner0/owner1
+- `convert_note.circom` - Uses owner0/owner1
 
 ### Constraint Count Changes
 
@@ -714,41 +734,63 @@ All 6 main circuits updated to use ownerAddress instead of owner0/owner1:
 
 ```javascript
 class Note {
-  // Before
+  // Phase 1
   constructor(owner0, owner1, value, type, viewingKey, salt)
+  // owner0, owner1: 256-bit values
 
-  // After
+  // Phase 2-3
   constructor(ownerAddress, value, type, viewingKey, salt)
   // ownerAddress: 160-bit hex string (40 characters)
   // viewingKey: { vk0, vk1 } two 128-bit values
+
+  // Phase 4 (Current - pk-based)
+  constructor(owner0, owner1, value, type, vk0, vk1, salt)
+  // owner0: pkX (BabyJubJub public key X coordinate)
+  // owner1: pkY (BabyJubJub public key Y coordinate)
+  // vk0: pkX (viewing key = public key for regular notes)
+  // vk1: pkY
+  // For smart notes: owner0/owner1 = split parent hash, vk0/vk1 = same
 }
 ```
 
 #### noteProofHelper.js
 
 ```javascript
-// Before
+// Phase 1
 const { secretKey, owner0, owner1 } = await generateKeypair();
 
-// After
+// Phase 2-3
 const { secretKey, ownerAddress } = await generateKeypair();
+
+// Phase 4 (Current - pk-based)
+const { secretKey, pk } = await generateKeypair();
+// pk.x = owner0 (pkX)
+// pk.y = owner1 (pkY)
+// For regular notes: vk0 = pk.x, vk1 = pk.y
 ```
 
-#### Smart Note Owner
+#### Smart Note Owner (pk-based)
 
-For smart notes, the owner is derived from the parent note hash:
+For smart notes, the owner is derived from the parent note hash by splitting into 128-bit halves:
 
 ```javascript
 // Phase 1: owner = parentNote.hashArr() → [nh0, nh1] (256-bit split to two 128-bit)
 // Phase 2: owner = SHA256(parentNoteHash)[96:256] (160-bit truncation)
-// Phase 3 (current): owner = lower 160 bits of Poseidon note hash
+// Phase 3: owner = lower 160 bits of Poseidon note hash
+// Phase 4 (current): owner0/owner1 = parentHash split into 128-bit halves
 function getSmartNoteOwner(noteHash) {
     const hashBigInt = BigInt(noteHash);
-    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
-    const address = hashBigInt & mask160;
-    return '0x' + address.toString(16).padStart(40, '0');
+    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
+    const owner1 = hashBigInt & mask128;           // Lower 128 bits
+    const owner0 = (hashBigInt >> BigInt(128)) & mask128;  // Upper 128 bits
+    return { owner0, owner1 };
 }
 ```
+
+**Circuit signal names:**
+- `owner0` = upper 128 bits of parent note hash
+- `owner1` = lower 128 bits of parent note hash
+- Smart note ownership is verified by checking that the hash of the parent note matches the split owner values
 
 ### Test Results
 
@@ -757,73 +799,93 @@ All circuit tests passing:
 - ✅ make_order proof generation
 - ✅ (Other circuits pending full integration)
 
-### Migration Benefits
+### Migration Benefits (Phase 4)
 
-1. **Reduced Note Size:** 512-bit → 160-bit owner representation
-2. **Smaller Hash Input:** 1536-bit → 1184-bit note hash
-3. **Ethereum Compatibility:** 160-bit address matches Ethereum format
-4. **Unified Structure:** Normal and smart notes use same owner format
+1. **Full Security:** No truncation means no collision vulnerabilities
+2. **Simpler Code:** Direct pk usage, no address derivation
+3. **Explicit vk Relationship:** vk = pk is clear and verifiable
+4. **Unified Structure:** All notes use same owner0/owner1 format
 
 ---
 
-## Viewing Key ↔ OwnerAddress Relationship (Phase 2.1)
+## Viewing Key ↔ Owner Relationship (Phase 2.1 → Phase 4)
 
 ### Overview
 
-Established a clear derivation relationship between viewing key and owner address for both normal and smart notes.
+Established a clear relationship between viewing key and owner for both normal and smart notes. In Phase 4, the viewing key equals the public key (vk0 = pkX, vk1 = pkY).
 
-**Date:** 2026-01-26
-**Status:** ✅ Complete
+**Date:** 2026-01-26 (Phase 2.1), 2026-01-29 (Phase 4)
+**Status:** Phase 4 in progress
 
-### Normal Notes
+### Normal Notes (Phase 4 pk-based)
 
-~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, superseded by Phase 3)*
+~~`viewingKey = SHA256(pk.x || pk.y)`~~ *(Phase 2, superseded)*
+~~`viewingKey = Poseidon(pk.x, pk.y)`~~ *(Phase 3, superseded)*
 
+**Phase 4 (pk-based):**
 ```
-viewingKey = Poseidon(pk.x, pk.y) = 254-bit field element
-ownerAddress = viewingKey & ((1 << 160) - 1) = lower 160 bits
-```
-
-- pk.x and pk.y are BabyJubJub public key coordinates (256 bits each)
-- viewingKey is the Poseidon hash (single field element)
-- ownerAddress is derived from viewingKey (lower 160 bits)
-
-### Smart Notes
-
-```
-viewingKey = parentNoteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
-ownerAddress = parentNoteHash & ((1 << 160) - 1) = lower 160 bits
+owner0 = pkX     // BabyJubJub public key X coordinate
+owner1 = pkY     // BabyJubJub public key Y coordinate
+vk0 = pkX        // Viewing key = public key (for regular notes)
+vk1 = pkY
 ```
 
-- parentNoteHash is a single Poseidon field element (no split into h0/h1)
-- ownerAddress = lower 160 bits of parentNoteHash (simple bitmask)
-- This maintains the relationship: ownerAddress is embedded within viewingKey
+- For regular notes, vk0/vk1 equals owner0/owner1 (both are the public key)
+- This allows the recipient to derive the viewing key from their keypair
+- Full public key coordinates used (no truncation)
 
-### Backend Implementation
+### Smart Notes (Phase 4 pk-based)
+
+```
+parentHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+owner0 = parentHash[0:128]   // Upper 128 bits of parent note hash
+owner1 = parentHash[128:256] // Lower 128 bits of parent note hash
+vk0 = parentHash[0:128]      // Same split for viewing key
+vk1 = parentHash[128:256]
+```
+
+- parentNoteHash is split into two 128-bit halves for owner0/owner1
+- Smart note "owner" is the split hash of the parent note (not a real public key)
+- vk0/vk1 also hold the split parent hash (for consistency)
+- This allows claiming the smart note by proving knowledge of the parent note
+
+### Backend Implementation (Phase 4 pk-based)
 
 **noteProofHelper.js:**
 ```javascript
-// Normal note creation
-async function createNote(sk, value, tokenType, viewingKey = null, salt = null) {
+// Normal note creation (Phase 4 - pk-based)
+async function createNote(sk, value, tokenType, salt = null) {
     const pk = await derivePublicKey(sk);
-    const ownerAddress = deriveAddressFromPK(pk);  // Poseidon(pk.x, pk.y) lower 160 bits
+    const owner0 = pk.x;  // pkX
+    const owner1 = pk.y;  // pkY
+    const vk0 = pk.x;     // viewing key = public key
+    const vk1 = pk.y;
 
-    if (!viewingKey) {
-        const vkData = snarkjsUtils.getViewingKeyFromPublicKey(pk);
-        viewingKey = vkData.fullHash;  // Poseidon(pk.x, pk.y) = 254-bit field element
-    }
-    // ...
+    if (!salt) salt = randomFieldElement();
+
+    return new Note(owner0, owner1, value, tokenType, vk0, vk1, salt);
 }
 
-// Smart note creation
-function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = null) {
-    const ownerHash = ownerNote.hash();  // Poseidon hash (sync after init)
-    const ownerAddress = getSmartNoteOwner(ownerHash);  // lower 160 bits
+// Smart note creation (Phase 4 - pk-based)
+function createSmartNote(ownerNote, value, tokenType, salt = null) {
+    const parentHash = ownerNote.hash();  // Poseidon hash
+    const { owner0, owner1 } = getSmartNoteOwner(parentHash);  // 128-bit split
+    const vk0 = owner0;  // viewing key = split parent hash
+    const vk1 = owner1;
 
-    if (!viewingKey) {
-        viewingKey = ownerHash;  // parentNoteHash = Poseidon field element
-    }
-    // ...
+    if (!salt) salt = randomFieldElement();
+
+    return new Note(owner0, owner1, value, tokenType, vk0, vk1, salt);
+}
+
+// Smart note owner derivation (128-bit split)
+function getSmartNoteOwner(noteHash) {
+    const hash = BigInt(noteHash);
+    const mask128 = (1n << 128n) - 1n;
+    return {
+        owner0: (hash >> 128n) & mask128,  // Upper 128 bits
+        owner1: hash & mask128              // Lower 128 bits
+    };
 }
 ```
 
@@ -969,23 +1031,37 @@ Migrated all hash computations from SHA256 to Poseidon, a ZK-friendly hash funct
 
 #### 1. Circuit Hash Function
 
-All 6 circuits now use `PoseidonNoteWithAddress()` instead of `SHA256NoteWithAddress()`:
+All 6 circuits now use 7-input Poseidon with pk-based ownership:
 
 ```circom
-// Before (SHA256)
+// Phase 2 (SHA256)
 component hashNote = SHA256NoteWithAddress();
 // 1184-bit input, 256-bit output split into h0/h1
 
-// After (Poseidon)
+// Phase 3 (6-input Poseidon with ownerAddress)
 component hashNote = PoseidonNoteWithAddress();
-// 6 field element inputs, 1 field element output
-hashNote.ownerAddress <== ownerAddress;
+hashNote.ownerAddress <== ownerAddress;  // 160-bit truncated
 hashNote.value <== value;
 hashNote.tokenType <== tokenType;
 hashNote.vk0 <== vk0;
 hashNote.vk1 <== vk1;
 hashNote.salt <== salt;
+
+// Phase 4 (7-input Poseidon with pk-based ownership) - CURRENT
+component hashNote = Poseidon(7);
+hashNote.inputs[0] <== owner0;     // pkX (or upper 128-bit of parentHash for smart notes)
+hashNote.inputs[1] <== owner1;     // pkY (or lower 128-bit of parentHash for smart notes)
+hashNote.inputs[2] <== value;
+hashNote.inputs[3] <== tokenType;
+hashNote.inputs[4] <== vk0;        // pkX for regular notes
+hashNote.inputs[5] <== vk1;        // pkY for regular notes
+hashNote.inputs[6] <== salt;
 ```
+
+**Circuit Signal Names (Phase 4):**
+- `owner0`, `owner1` - owner public key coordinates (or split parent hash)
+- `vk0`, `vk1` - viewing key (equals pk for regular notes, equals split parent hash for smart notes)
+- `value`, `tokenType`, `salt` - note attributes
 
 #### 2. Note.js (Async Init Pattern)
 
@@ -995,44 +1071,68 @@ const { Note, init: initNote, getSmartNoteOwner } = require('./Note');
 // Must call init() once before using Note.hash()
 await initNote();  // Loads circomlibjs Poseidon
 
-// Then hash() is synchronous
-const note = new Note(ownerAddress, value, tokenType, viewingKey, salt);
-const hash = note.hash();  // Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+// Phase 4: Note constructor with pk-based ownership
+const note = new Note(owner0, owner1, value, tokenType, vk0, vk1, salt);
+// owner0 = pkX, owner1 = pkY for regular notes
+// vk0 = pkX, vk1 = pkY for regular notes (viewing key = public key)
+
+const hash = note.hash();  // Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
+
+**Note Constructor Parameters (Phase 4):**
+- `owner0` - BabyJubJub public key X coordinate (or upper 128-bit of parent hash for smart notes)
+- `owner1` - BabyJubJub public key Y coordinate (or lower 128-bit of parent hash for smart notes)
+- `value` - note value in wei
+- `tokenType` - token identifier
+- `vk0` - viewing key part 0 (= pkX for regular notes)
+- `vk1` - viewing key part 1 (= pkY for regular notes)
+- `salt` - random field element
 
 #### 3. EMPTY_NOTE_HASH
 
 ```
-Poseidon(0, 0, 0, 0, 0, 0) = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+// Phase 3 (6-input): Poseidon(0, 0, 0, 0, 0, 0)
+// Phase 4 (7-input): Poseidon(0, 0, 0, 0, 0, 0, 0)
 ```
 
-Updated in `ZkDaiBase.sol`:
+Updated in `ZkDaiBase.sol` for 7-input Poseidon:
 ```solidity
-bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
+// Note: EMPTY_NOTE_HASH value changes with 7-input Poseidon
+bytes32 public constant EMPTY_NOTE_HASH = 0x...; // Poseidon(0,0,0,0,0,0,0)
 ```
 
-#### 4. Smart Note Owner Derivation
+#### 4. Smart Note Owner Derivation (pk-based)
 
 ```javascript
-// Before (SHA256): SHA256(noteHash) → last 160 bits
-// After (Poseidon): noteHash & ((1 << 160) - 1) → lower 160 bits
+// Phase 2 (SHA256): SHA256(noteHash) → last 160 bits
+// Phase 3 (Poseidon): noteHash & ((1 << 160) - 1) → lower 160 bits
+// Phase 4 (pk-based): noteHash split into 128-bit halves
 function getSmartNoteOwner(noteHash) {
     const hashBigInt = BigInt(noteHash);
-    const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
-    return '0x' + (hashBigInt & mask160).toString(16).padStart(40, '0');
+    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1);
+    const owner1 = hashBigInt & mask128;                    // Lower 128 bits
+    const owner0 = (hashBigInt >> BigInt(128)) & mask128;   // Upper 128 bits
+    return { owner0, owner1 };
 }
 ```
 
-#### 5. Public Input Count Reduction
+**Why 128-bit split?**
+- Matches the field element size constraints in circuits
+- owner0/owner1 fit naturally as circuit signals
+- No truncation loss (full hash preserved in two parts)
 
-| Circuit | SHA256 Inputs | Poseidon Inputs | Reduction |
-|---------|---------------|-----------------|-----------|
-| mint_burn_note | 5 | 4 | -1 |
-| transfer_note | 9 | 5 | -4 |
-| convert_note | 7 | 4 | -3 |
-| make_order | 4 | 3 | -1 |
-| take_order | 9 | 6 | -3 |
-| settle_order | 21 | 14 | -7 |
+#### 5. Public Input Count Changes
+
+| Circuit | SHA256 (Phase 2) | Poseidon 6-input (Phase 3) | Poseidon 7-input (Phase 4) |
+|---------|------------------|----------------------------|----------------------------|
+| mint_burn_note | 5 | 4 | 4 |
+| transfer_note | 9 | 5 | 5 |
+| convert_note | 7 | 4 | 4 |
+| make_order | 4 | 3 | 3 |
+| take_order | 9 | 6 | 6 |
+| settle_order | 21 | 14 | 14 |
+
+*Note: Public input counts remain similar in Phase 4 as note hashes are still single field elements. The change to 7-input Poseidon affects internal hash computation, not public interface.*
 
 ### Files Modified
 
@@ -1052,6 +1152,96 @@ function getSmartNoteOwner(noteHash) {
 All 19 Truffle tests passing after Poseidon migration:
 - ✅ Development mode (8/8)
 - ✅ Production mode (11/11) including E2E flow (Make → Take → Settle → Convert)
+
+---
+
+## PK-Based Note Hash Architecture (Phase 4)
+
+### Overview
+
+Migrated from 160-bit ownerAddress to full BabyJubJub public key coordinates (pkX, pkY) for note ownership. This provides full cryptographic security without truncation and simplifies the viewing key relationship.
+
+**Migration Date:** 2026-01-29
+**Status:** In Progress
+
+### Key Changes
+
+#### 1. Note Hash: 7-Input Poseidon
+
+```
+Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt) → 254-bit field element
+```
+
+| Input | Regular Note | Smart Note |
+|-------|--------------|------------|
+| owner0 | pkX | parentHash upper 128 bits |
+| owner1 | pkY | parentHash lower 128 bits |
+| value | note value | note value |
+| tokenType | token ID | token ID |
+| vk0 | pkX | parentHash upper 128 bits |
+| vk1 | pkY | parentHash lower 128 bits |
+| salt | random | random |
+
+#### 2. No More ownerAddress Truncation
+
+- **Before (Phase 2-3):** `ownerAddress = Poseidon(pkX, pkY) & mask160` (160-bit truncation)
+- **After (Phase 4):** `owner0 = pkX, owner1 = pkY` (full coordinates, no truncation)
+
+Benefits:
+- Full cryptographic security (no collision concerns)
+- Direct public key usage simplifies ownership verification
+- vk = pk relationship is explicit
+
+#### 3. Smart Note Owner as Split Hash
+
+For smart notes, the "owner" is the parent note hash split into 128-bit halves:
+
+```javascript
+function getSmartNoteOwner(parentNoteHash) {
+    const hash = BigInt(parentNoteHash);
+    const mask128 = (1n << 128n) - 1n;
+    return {
+        owner0: (hash >> 128n) & mask128,  // Upper 128 bits
+        owner1: hash & mask128              // Lower 128 bits
+    };
+}
+```
+
+#### 4. Circuit Signal Names
+
+All circuits use these signal names:
+- `owner0`, `owner1` - owner identification (pk coordinates or split hash)
+- `vk0`, `vk1` - viewing key (equals owner for regular notes)
+- `value`, `tokenType`, `salt` - note attributes
+- `sk` - secret key (private input)
+- `noteHash` - computed hash output
+
+#### 5. Ownership Verification in Circuits
+
+```circom
+// Verify pk = sk * G (BabyJubJub scalar multiplication)
+component verifyOwnership = BabyPbk();
+verifyOwnership.in <== sk;
+owner0 === verifyOwnership.Ax;
+owner1 === verifyOwnership.Ay;
+
+// Compute note hash
+component noteHash = Poseidon(7);
+noteHash.inputs[0] <== owner0;
+noteHash.inputs[1] <== owner1;
+noteHash.inputs[2] <== value;
+noteHash.inputs[3] <== tokenType;
+noteHash.inputs[4] <== vk0;
+noteHash.inputs[5] <== vk1;
+noteHash.inputs[6] <== salt;
+```
+
+### Migration Benefits
+
+1. **Full Security:** No truncation means no collision vulnerabilities
+2. **Simpler Code:** Direct pk usage, no address derivation
+3. **Explicit vk Relationship:** vk = pk is clear and verifiable
+4. **Consistent Structure:** All notes use same owner0/owner1 format
 
 ---
 

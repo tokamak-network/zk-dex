@@ -385,6 +385,150 @@ Test files cover: stores (account, note, order, web3, contract), lib (accountCry
 | `noteTree.ts` | NoteTreeNode, CreatorGroup for tree visualization |
 | `circuit.ts` | CircuitName, CircuitInput types |
 
+### PK-Based Note Hash Architecture
+
+The note hash system has been migrated from address-based ownership to BabyJubJub public key (pk) based ownership.
+
+#### NoteData Interface
+
+**Before (address-based):**
+```typescript
+interface NoteData {
+  ownerAddress: string    // Ethereum address
+  value: string | bigint
+  token: string | bigint
+  viewingKey: string
+  salt: string | bigint
+}
+```
+
+**After (pk-based):**
+```typescript
+// src/lib/circuitInputs.ts
+export interface NoteData {
+  pkX: string             // BabyJubJub public key X coordinate
+  pkY: string             // BabyJubJub public key Y coordinate
+  value: string | bigint
+  token: string | bigint
+  salt: string | bigint
+  noteHash?: string
+}
+
+// For DEX smart notes
+export interface SmartNoteData {
+  parentHash: string      // Parent note hash (split into owner0/owner1)
+  value: string | bigint
+  token: string | bigint
+  salt: string | bigint
+  noteHash?: string
+}
+```
+
+#### Note Store Interface
+
+```typescript
+// src/stores/note.ts
+export interface Note {
+  hash: string
+  owner: string           // Account address (for display/lookup only)
+  pkX: string             // BabyJubJub public key X coordinate
+  pkY: string             // BabyJubJub public key Y coordinate
+  value: string
+  token: string           // '0x0' = ETH, '0x1' = DAI
+  state: string           // '0x0' = INVALID, '0x1' = VALID, '0x2' = TRADING, '0x3' = SPENT
+  isSmart: string         // '0x0' = false, '0x1' = true
+  salt?: string
+  secretKey?: string      // For proving ownership in transfers
+  createdAt?: number
+  createdInTx?: string
+  createdBy?: string
+  spentInTx?: string
+}
+```
+
+#### 7-Input Poseidon Note Hash
+
+Note hashes are now computed using Poseidon with 7 inputs:
+
+```typescript
+// Regular notes:
+// hash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+// where owner0 = pkX, owner1 = pkY, vk0 = pkX, vk1 = pkY
+
+import { computeCircuitHash } from '@/lib/circuitInputs'
+
+const noteHash = await computeCircuitHash({
+  pkX: '0x...',
+  pkY: '0x...',
+  value: '1000000000000000000',
+  token: '0x0',
+  salt: '0x...'
+})
+
+// Smart notes (DEX orders):
+// owner0 = parentHash >> 128, owner1 = parentHash & MASK_128
+// vk0 = owner0, vk1 = owner1
+
+import { computeSmartNoteHash } from '@/lib/circuitInputs'
+
+const smartHash = await computeSmartNoteHash({
+  parentHash: '0x...',
+  value: '500000000000000000',
+  token: '0x1',
+  salt: '0x...'
+})
+```
+
+#### Ownership Verification
+
+**Before (address-based):**
+```typescript
+function isOwner(note: NoteData, userAddress: string): boolean {
+  return note.ownerAddress.toLowerCase() === userAddress.toLowerCase()
+}
+```
+
+**After (pk-based):**
+```typescript
+// src/utils/noteEncryption.ts
+export async function isNoteOwner(
+  noteData: EncodedNoteData,
+  accountPublicKey: { x: string; y: string }
+): Promise<boolean> {
+  const notePkX = BigInt(noteData.pkX)
+  const notePkY = BigInt(noteData.pkY)
+  const accountPkX = BigInt(accountPublicKey.x)
+  const accountPkY = BigInt(accountPublicKey.y)
+  return notePkX === accountPkX && notePkY === accountPkY
+}
+```
+
+#### Encrypted Note Data Format
+
+On-chain note data is ECDH-encrypted with the recipient's BabyJubJub public key:
+
+```typescript
+// src/utils/noteEncryption.ts
+export interface EncodedNoteData {
+  pkX: string    // BabyJubJub public key X coordinate
+  pkY: string    // BabyJubJub public key Y coordinate
+  value: string
+  token: string
+  salt: string
+}
+
+// RLP encoding: 5 fields [pkX, pkY, value, token, salt]
+// On-chain format: 0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
+
+// Encode for on-chain storage
+const encryptedData = await encodeNoteData(noteData, recipientPk)
+
+// Decode from on-chain (requires secret key for ECDH decryption)
+const decodedNote = await decodeNoteData(encryptedHex, secretKey)
+```
+
+**Legacy format support**: The system detects `0x01` prefix for ECDH encryption. Legacy 6-field RLP format `[owner0, owner1, value, token, viewingKey, salt]` is automatically converted to the new format.
+
 ## Known Issues and Notes
 
 1. **Chunk Size Warning**: The production build shows a warning about chunk size (>500 kB). Consider implementing code splitting for production optimization.

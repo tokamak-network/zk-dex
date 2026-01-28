@@ -32,42 +32,45 @@ ZK-DEX 구현에 사용된 모든 개념적 요소를 정리한 문서.
 
 **노트**는 ZK-DEX의 기본 가치 단위로, Bitcoin의 UTXO와 유사한 개념이다. 각 노트는 특정 토큰의 특정 금액에 대한 소유권을 나타내는 암호학적 커밋먼트(commitment)다.
 
-### 노트 구조 (5개 필드)
+### 노트 구조 (7개 필드)
 
 | 필드 | 크기 | 설명 |
 |------|------|------|
-| `ownerAddress` | 160비트 | 소유자의 BabyJubJub 공개키에서 Poseidon 해시로 파생된 주소 |
+| `owner0` | 254비트 | 소유자의 BabyJubJub 공개키 x 좌표 (pkX) |
+| `owner1` | 254비트 | 소유자의 BabyJubJub 공개키 y 좌표 (pkY) |
 | `value` | 254비트 | 토큰 보유량 (wei 단위) |
 | `tokenType` | 256비트 | 토큰 종류 (0 = ETH, 1 = DAI) |
-| `viewingKey` | 256비트 | 소유자의 공개키에서 파생, 두 개의 128비트로 분할하여 회로에 입력 |
+| `vk0` | 254비트 | Viewing key의 첫 번째 좌표 (= pkX) |
+| `vk1` | 254비트 | Viewing key의 두 번째 좌표 (= pkY) |
 | `salt` | 254비트 | 무작위 값, 동일 조건의 노트가 같은 해시를 갖는 것을 방지 |
+
+**참고**: 현재 구현에서 viewing key는 공개키 자체이므로 `vk0 = owner0 = pkX`, `vk1 = owner1 = pkY`다.
 
 ### 빈 노트 (Empty Note)
 
 모든 필드가 0인 특수 노트. 전송 회로에서 입력 노트가 1개일 때 두 번째 슬롯을 채우는 데 사용한다.
 
 ```
-EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
-                = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5
+EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0, 0)
 ```
 
 ---
 
 ## 2. 노트 해시 (Note Hash)
 
-노트의 5개 필드를 Poseidon 해시 함수에 입력하여 하나의 필드 원소(254비트)로 압축한 값. 온체인에서는 이 해시만 저장되므로, 원본 필드를 알지 못하면 노트의 내용을 알 수 없다.
+노트의 7개 필드를 Poseidon 해시 함수에 입력하여 하나의 필드 원소(254비트)로 압축한 값. 온체인에서는 이 해시만 저장되므로, 원본 필드를 알지 못하면 노트의 내용을 알 수 없다.
 
 ```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
 
-여기서 `vk0`, `vk1`은 `viewingKey`를 128비트씩 분할한 값이다:
-```
-vk0 = viewingKey >> 128      (상위 128비트)
-vk1 = viewingKey & (2^128-1) (하위 128비트)
-```
+여기서:
+- `owner0` = pkX (BabyJubJub 공개키 x 좌표)
+- `owner1` = pkY (BabyJubJub 공개키 y 좌표)
+- `vk0` = pkX (viewing key = 공개키 자체)
+- `vk1` = pkY
 
-분할 이유: Circom 회로의 필드 크기가 254비트이므로 256비트 값을 직접 다룰 수 없어 두 조각으로 나눈다.
+**참고**: 현재 아키텍처에서 viewing key는 공개키 자체이므로 `owner0 == vk0`, `owner1 == vk1`이다. 이 구조는 향후 viewing key를 별도로 분리할 필요가 생길 때 확장성을 제공한다.
 
 ---
 
@@ -127,62 +130,43 @@ ZK 계정은 BabyJubJub 타원곡선에 기반한 키 체계다. 주요 구성 �
 - 노트 소유권을 증명하는 유일한 수단
 
 ### 공개키 (Public Key, pk)
-- BabyJubJub 곡선 위의 점 `(x, y)`
+- BabyJubJub 곡선 위의 점 `(pkX, pkY)`
 - 비밀키에서 파생: `pk = sk × G` (G는 생성자 점 BASE8)
-- 직접 공개되지 않음 — 주소 파생에만 사용
-
-### 소유자 주소 (Owner Address)
-- 공개키에서 Poseidon 해시로 파생한 160비트 값
-- `ownerAddress = Poseidon(pk.x, pk.y) & MASK_160`
-- Ethereum 주소(160비트)와 동일한 크기
+- **노트 소유권의 직접적인 기반** — owner0, owner1 필드에 직접 저장됨
 
 ### 뷰잉 키 (Viewing Key)
 
-공개키에서 Poseidon 해시로 파생한 전체 254비트 값.
+**현재 아키텍처에서 viewing key는 공개키 자체다:**
 
 ```
-viewingKey = Poseidon(pk.x, pk.y)
+vk0 = pkX (BabyJubJub 공개키 x 좌표)
+vk1 = pkY (BabyJubJub 공개키 y 좌표)
 ```
+
+**참고**: 더 이상 Poseidon 해시로 파생하지 않고, 160비트 truncation도 없다.
 
 #### 왜 뷰잉 키가 필요한가?
 
-ZK-DEX의 노트 해시는 6개 필드의 Poseidon 해시다:
+ZK-DEX의 노트 해시는 7개 필드의 Poseidon 해시다:
 ```
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
 ```
 
-이때 `ownerAddress`(160비트)만으로는 노트를 고유하게 식별하기에 불충분하다. 같은 주소, 같은 금액, 같은 토큰의 노트가 여러 개 존재할 수 있기 때문이다. `salt`가 고유성을 보장하지만, 그것만으로는 소유자의 공개키 정보가 해시에 커밋(commit)되지 않는다.
+**뷰잉 키는 공개키를 노트 해시에 바인딩하는 역할을 한다.** 현재 구현에서 viewing key = public key이므로 `owner0 == vk0`, `owner1 == vk1`이지만, 이 구조는 향후 viewing key를 별도로 분리할 필요가 생길 때 확장성을 제공한다.
 
-**뷰잉 키는 공개키 전체(254비트)를 노트 해시에 바인딩하는 역할을 한다.** 160비트 주소만 포함하면 94비트의 공개키 정보가 손실되는데, 뷰잉 키를 통해 이 정보를 해시에 포함시킨다.
-
-#### 뷰잉 키의 7가지 역할
+#### 뷰잉 키의 주요 역할
 
 **역할 1: 노트 해시 커밋먼트 (Note Hash Commitment)**
 
-뷰잉 키는 128비트씩 분할(vk0, vk1)되어 노트 해시의 4번째·5번째 입력으로 들어간다. 이를 통해 노트 해시가 소유자의 공개키에 암호학적으로 바인딩된다.
+뷰잉 키(vk0, vk1)는 노트 해시의 5번째·6번째 입력으로 들어간다:
 
 ```
-vk0 = viewingKey >> 128      (상위 128비트)
-vk1 = viewingKey & (2^128-1) (하위 128비트)
-
-noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
-                                                    ^^^  ^^^
-                                        공개키 정보가 여기에 커밋됨
+noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+                                                      ^^^  ^^^
+                                          공개키 정보가 여기에 커밋됨
 ```
 
-만약 뷰잉 키 없이 `Poseidon(ownerAddress, value, tokenType, salt)`만 사용한다면, 동일한 주소를 가진 다른 공개키로도 같은 해시를 생성할 수 있어 소유권 위조가 가능해진다.
-
-**역할 2: 소유자 주소 내포 (Address Embedding)**
-
-소유자 주소는 뷰잉 키의 하위 160비트와 정확히 일치한다:
-
-```
-ownerAddress = viewingKey & MASK_160
-```
-
-따라서 뷰잉 키를 알면 소유자 주소를 복원할 수 있고, 역으로 소유자 주소는 뷰잉 키의 일부분이다. 이 관계는 회로 안에서 자동으로 보장된다.
-
-**역할 3: 노트 탐색 (Note Discovery)**
+**역할 2: 노트 탐색 (Note Discovery)**
 
 뷰잉 키를 아는 사람은 온체인에 저장된 암호화된 노트 중 자신에게 속한 것을 식별할 수 있다:
 
@@ -190,13 +174,13 @@ ownerAddress = viewingKey & MASK_160
 1. 온체인 NoteStateChange 이벤트 수신
 2. encryptedNotes[noteHash]에서 암호화된 데이터 조회
 3. ECDH 복호화 시도 (자신의 비밀키 사용)
-4. 복호화 성공 → 노트 필드 복원 (ownerAddress, value, token, vk, salt)
-5. 복원된 vk가 자신의 뷰잉 키와 일치하면 자신의 노트
+4. 복호화 성공 → 노트 필드 복원 (owner0, owner1, value, token, vk0, vk1, salt)
+5. 복원된 vk0, vk1이 자신의 공개키와 일치하면 자신의 노트
 ```
 
 지갑(Wallet)은 이 과정을 자동화하여 사용자의 모든 노트를 추적한다.
 
-**역할 4: 선택적 공개 (Selective Disclosure)**
+**역할 3: 선택적 공개 (Selective Disclosure)**
 
 > **주의: 현재 구현의 한계**
 >
@@ -205,11 +189,11 @@ ownerAddress = viewingKey & MASK_160
 > 따라서 선택적 공개는 다음과 같은 **오프체인 방식**으로만 가능하다:
 >
 > 1. 노트 소유자가 비밀키로 온체인 데이터를 복호화
-> 2. 복호화된 노트 데이터 `(ownerAddress, value, tokenType, viewingKey, salt)`를 제3자에게 직접 전달
+> 2. 복호화된 노트 데이터 `(owner0, owner1, value, tokenType, vk0, vk1, salt)`를 제3자에게 직접 전달
 > 3. 제3자가 받은 데이터로 `noteHash = Poseidon(...)`를 재계산하여 온체인 상태와 대조
 > 4. 뷰잉 키를 통해 해당 노트가 특정 계정 소유임을 검증
 
-이 방식에서 뷰잉 키는 복호화 키가 아니라 **소유자 신원 증명 마커** 역할을 한다. 제3자는 전달받은 데이터의 뷰잉 키가 소유자의 공개키에서 파생되었음을 확인하여 노트 소유권을 검증할 수 있다.
+이 방식에서 뷰잉 키는 복호화 키가 아니라 **소유자 신원 증명 마커** 역할을 한다. 제3자는 전달받은 데이터의 뷰잉 키가 소유자의 공개키와 일치함을 확인하여 노트 소유권을 검증할 수 있다.
 
 | 공유 대상 | 할 수 있는 것 | 할 수 없는 것 |
 |-----------|--------------|--------------|
@@ -218,7 +202,7 @@ ownerAddress = viewingKey & MASK_160
 
 예: 감사인에게 뷰잉 키와 복호화된 노트 데이터를 전달하면 자산을 검증할 수 있지만 이동시킬 수 없다.
 
-**역할 5: 주문 메타데이터 (Order Metadata)**
+**역할 4: 주문 메타데이터 (Order Metadata)**
 
 메이커가 주문을 생성할 때 `makerViewingKey`를 온체인에 저장한다:
 
@@ -235,38 +219,30 @@ struct Order {
 - 주문 해시(`hashOrder`)에 뷰잉 키가 포함되어 주문 고유성 보장
 - 메이커의 신원(비밀키)은 노출되지 않으면서 거래 상대방이 주문을 검증 가능
 
-**역할 6: 스마트 노트에서의 부모 연결 (Smart Note Linking)**
+**역할 5: 스마트 노트에서의 부모 연결 (Smart Note Linking)**
 
-스마트 노트의 경우 뷰잉 키가 일반적인 `Poseidon(pk.x, pk.y)`가 아니라 **부모 노트의 해시**로 설정된다:
+스마트 노트의 경우 소유자가 일반적인 공개키가 아니라 **부모 노트의 해시에서 파생**된다:
 
 ```
-일반 노트:   viewingKey = Poseidon(pk.x, pk.y)
-스마트 노트: viewingKey = parentNoteHash
+일반 노트:   owner0 = pkX, owner1 = pkY
+스마트 노트: owner0 = parentHash >> 128
+            owner1 = parentHash & MASK_128
 ```
 
 이 설계를 통해:
-- 스마트 노트의 소유자 주소 = `parentNoteHash & MASK_160`
 - 부모 노트의 소유자만 `convertNote`로 스마트 노트를 일반 노트로 변환 가능
 - 주문 체결(settle) 시 출력 노트가 올바른 당사자에게 귀속되는 것을 보장
 
-**역할 7: 암호화된 노트 데이터에 포함 (Encrypted Note Payload)**
+**역할 6: 암호화된 노트 데이터에 포함 (Encrypted Note Payload)**
 
 노트가 ECDH로 암호화되어 온체인에 저장될 때, 뷰잉 키는 암호화된 페이로드의 일부로 포함된다:
 
 ```
-암호화 전 평문: RLP([ownerAddress, value, tokenType, viewingKey, salt])
+암호화 전 평문: RLP([owner0, owner1, value, tokenType, vk0, vk1, salt])
 암호화 후:     0x01 || epk || nonce || AES-GCM(plaintext) || authTag
 ```
 
 수신자가 복호화하면 뷰잉 키를 복원할 수 있고, 이를 통해 노트의 완전한 해시를 재계산하여 온체인 상태와 대조할 수 있다.
-
-#### 뷰잉 키가 없다면?
-
-뷰잉 키 없이 `ownerAddress`(160비트)만 사용하는 경우 발생하는 문제:
-
-1. **공개키 바인딩 손실**: 160비트 주소 충돌 가능성이 이론적으로 존재. 서로 다른 공개키가 같은 주소를 가질 때, 뷰잉 키가 없으면 노트 해시가 동일해져 소유권 혼동 발생
-2. **노트 탐색 불가**: 노트가 누구의 것인지 식별하려면 공개키 전체 정보가 필요. 160비트 주소만으로는 복호화 후 검증 단계에서 확신도가 낮아짐
-3. **스마트 노트 불가능**: 스마트 노트의 `viewingKey = parentNoteHash` 메커니즘이 작동하지 않아, 주문 체결 시 노트 간 연결을 강제할 수단이 없어짐
 
 ### 키 파생 체인
 
@@ -274,37 +250,35 @@ struct Order {
 sk (254비트 무작위)
   │
   ▼ BabyJubJub 스칼라 곱셈 (sk × G)
-pk (x, y) — BabyJubJub 곡선 위의 점
+pk (pkX, pkY) — BabyJubJub 곡선 위의 점
   │
-  ▼ Poseidon(pk.x, pk.y)
-viewingKey (254비트)
-  │
-  ├── vk0 = viewingKey >> 128     (상위 128비트)
-  ├── vk1 = viewingKey & MASK_128 (하위 128비트)
-  │
-  ▼ 하위 160비트 절단
-ownerAddress (160비트)
+  ├── owner0 = pkX (노트의 소유자 필드 1)
+  ├── owner1 = pkY (노트의 소유자 필드 2)
+  ├── vk0 = pkX    (viewing key = 공개키 자체)
+  └── vk1 = pkY
 ```
+
+**참고**: 더 이상 Poseidon 해시 파생이나 160비트 truncation이 없다. 공개키 좌표가 직접 노트 필드로 사용된다.
 
 ---
 
 ## 6. 소유권 모델 (Ownership Model)
 
-ZK-DEX는 **주소 기반 소유권** 모델을 사용한다. 노트 소유를 증명하려면 다음을 ZK 회로 안에서 검증한다:
+ZK-DEX는 **공개키 기반 소유권** 모델을 사용한다. 노트 소유를 증명하려면 다음을 ZK 회로 안에서 검증한다:
 
 1. 비밀키 `sk`에서 공개키 `pk` 파생: `pk = sk × G`
-2. 공개키에서 주소 파생: `addr = Poseidon(pk.x, pk.y) & MASK_160`
-3. 파생된 주소가 노트의 `ownerAddress`와 일치하는지 확인
+2. 파생된 공개키 좌표가 노트의 `owner0`, `owner1`과 일치하는지 확인
 
-이 과정은 회로 내부에서 수행되므로 `sk`와 `pk`는 외부에 공개되지 않는다. 온체인에서는 ZK 증명이 유효한지만 검증하면 되므로, 소유자의 신원이 보호된다.
+이 과정은 회로 내부에서 수행되므로 `sk`는 외부에 공개되지 않는다. 온체인에서는 ZK 증명이 유효한지만 검증하면 되므로, 소유자의 신원이 보호된다.
 
-### VerifyOwnershipByAddress (회로 컴포넌트)
+**참고**: 이전 아키텍처에서는 주소 기반(160비트 truncation) 소유권 모델을 사용했으나, 현재는 공개키 좌표(pkX, pkY)를 직접 비교하는 방식으로 변경되었다.
+
+### VerifyOwnership (회로 컴포넌트)
 
 ```
-입력: sk, expectedAddress
-내부: pk = sk × G
-      addr = Poseidon(pk.x, pk.y) truncated to 160-bit
-출력: result = (addr == expectedAddress) ? 1 : 0
+입력: sk, expectedOwner0, expectedOwner1
+내부: pk = sk × G → (pkX, pkY)
+출력: result = (pkX == expectedOwner0 && pkY == expectedOwner1) ? 1 : 0
 ```
 
 ---
@@ -323,11 +297,11 @@ ETH 또는 DAI를 컨트랙트에 입금하고, 해당 금액에 대한 새로�
 | 2 | value | 입금 금액 (공개 — `msg.value` 검증 필요) |
 | 3 | tokenType | 토큰 종류 (공개) |
 
-**비공개 입력**: ownerAddress, vk0, vk1, salt, sk
+**비공개 입력**: owner0, owner1, vk0, vk1, salt, sk
 
 **검증 내용**:
-1. `sk`로부터 `ownerAddress` 소유권 증명
-2. 노트 해시가 공개 입력 `noteHash`와 일치하는지 확인
+1. `sk`로부터 공개키 파생 후 `owner0`, `owner1`과 일치 확인 (소유권 증명)
+2. 노트 해시 `Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)`가 공개 입력 `noteHash`와 일치하는지 확인
 3. 노트의 `value`와 `tokenType`이 공개 입력과 일치하는지 확인
 
 ### 온체인 동작
@@ -384,12 +358,12 @@ function liquidate(to, a, b, c, input) external {
 | 4 | changeHash | 거스름돈 노트의 해시 |
 
 **비공개 입력**:
-- 입력 노트 0, 1의 전체 필드 (ownerAddress, value, tokenType, vk0, vk1, salt)
+- 입력 노트 0, 1의 전체 필드 (owner0, owner1, value, tokenType, vk0, vk1, salt)
 - 출력 노트 2개의 전체 필드
 - 비밀키 sk0, sk1
 
 **검증 내용**:
-1. 입력 노트 0의 소유권 증명 (`sk0` → 주소 일치)
+1. 입력 노트 0의 소유권 증명 (`sk0` → 공개키 일치)
 2. 입력 노트 1의 소유권 증명 (빈 노트가 아닌 경우)
 3. 4개 노트의 해시가 각각 공개 입력과 일치
 4. **가치 보존**: `input0.value + input1.value == new.value + change.value`
@@ -398,7 +372,7 @@ function liquidate(to, a, b, c, input) external {
 ### 핵심 속성
 
 - `value`가 공개 입력에 포함되지 않으므로 전송 금액이 비공개
-- `ownerAddress`가 공개 입력에 포함되지 않으므로 수신자가 비공개
+- `owner0`, `owner1`이 공개 입력에 포함되지 않으므로 수신자가 비공개
 - 가치 보존은 회로 내부에서만 검증 — 외부에서는 해시만 보임
 
 ---
@@ -411,14 +385,23 @@ function liquidate(to, a, b, c, input) external {
 
 | 속성 | 일반 노트 | 스마트 노트 |
 |------|-----------|------------|
-| ownerAddress | `Poseidon(pk.x, pk.y) & MASK_160` | `parentNoteHash & MASK_160` |
-| viewingKey | `Poseidon(pk.x, pk.y)` | `parentNoteHash` |
+| owner0 | pkX (공개키 x 좌표) | `parentHash >> 128` (상위 128비트) |
+| owner1 | pkY (공개키 y 좌표) | `parentHash & MASK_128` (하위 128비트) |
+| vk0, vk1 | pkX, pkY (공개키 자체) | 부모 노트 해시에서 파생된 값 |
 | 생성 시점 | mint, transfer | takeOrder, settleOrder |
 | 소유권 증명 | 비밀키로 직접 증명 | 부모 노트 소유자만 convertNote로 변환 가능 |
 
-### 스마트 노트 감지
+### 스마트 노트 소유자 파생
 
-스마트 노트의 소유자 주소는 254비트 해시의 하위 160비트이므로 상위 비트가 비어있을 확률이 높다. 회로에서는 `ownerAddress < 2^128`인지 확인하여 스마트 노트를 구별한다.
+스마트 노트의 소유자는 부모 노트 해시에서 다음과 같이 파생된다:
+
+```
+parentHash = 254비트 노트 해시
+owner0 = parentHash >> 128      (상위 128비트, 우측 시프트)
+owner1 = parentHash & MASK_128  (하위 128비트)
+```
+
+여기서 `MASK_128 = (2^128) - 1`이다.
 
 ### 사용 목적
 
@@ -443,8 +426,10 @@ function liquidate(to, a, b, c, input) external {
 **비공개 입력**: 스마트/원본/새 노트의 전체 필드 + sk
 
 **검증 내용**:
-1. 스마트 노트의 `ownerAddress == originHash & MASK_160` (연결 확인)
-2. 원본 노트의 소유권 증명 (`sk` → 주소 일치)
+1. 스마트 노트의 소유자 연결 확인:
+   - `smartNote.owner0 == originHash >> 128`
+   - `smartNote.owner1 == originHash & MASK_128`
+2. 원본 노트의 소유권 증명 (`sk` → 공개키 일치)
 3. 3개 노트의 해시가 공개 입력과 일치
 4. **가치 보존**: `smartNote.value == newNote.value`
 5. **토큰 보존**: `smartNote.tokenType == newNote.tokenType`
@@ -473,7 +458,7 @@ function convertNote(a, b, c, input, encryptedNote) external {
 | 1 | noteHash | 메이커 노트의 해시 |
 | 2 | tokenType | 메이커가 제공하는 토큰 종류 (공개) |
 
-**비공개 입력**: ownerAddress, value, vk0, vk1, salt, sk
+**비공개 입력**: owner0, owner1, value, vk0, vk1, salt, sk
 
 **검증 내용**:
 1. 메이커 노트의 소유권 증명
@@ -525,25 +510,30 @@ struct Order {
 | 1 | parentNoteHash | 테이커의 부모(원본) 노트 해시 |
 | 2 | parentNoteType | 부모 노트의 토큰 종류 |
 | 3 | stakeNoteHash | 생성되는 스테이크 노트(스마트 노트) 해시 |
-| 4 | stakeNoteOwner | 메이커 노트 해시의 하위 160비트 |
-| 5 | stakeNoteType | 스테이크 노트의 토큰 종류 |
+| 4 | stakeNoteOwner0 | 메이커 노트 해시의 상위 128비트 |
+| 5 | stakeNoteOwner1 | 메이커 노트 해시의 하위 128비트 |
+| 6 | stakeNoteType | 스테이크 노트의 토큰 종류 |
 
-**비공개 입력**: 부모 노트 필드, 스테이크 노트 필드 (ownerAddress 제외), sk
+**비공개 입력**: 부모 노트 필드, 스테이크 노트 필드 (owner0, owner1 제외), sk
 
 **검증 내용**:
-1. 부모 노트의 소유권 증명 (`sk` → 주소 일치)
+1. 부모 노트의 소유권 증명 (`sk` → 공개키 일치)
 2. 부모 노트 해시 일치
 3. 스테이크 노트 해시 일치
 4. **가치 보존**: `parentNote.value == stakeNote.value`
-5. **스마트 노트 연결**: `stakeNote.ownerAddress == makerNoteHash & MASK_160`
+5. **스마트 노트 연결**:
+   - `stakeNote.owner0 == makerNoteHash >> 128`
+   - `stakeNote.owner1 == makerNoteHash & MASK_128`
 
 ### 온체인 동작
 
 ```solidity
 function takeOrder(orderId, a, b, c, input, encryptedStakingNote) external {
     // 주문 상태 확인: Created
-    // 토큰 타입 일치 확인: order.targetToken == input[2] == input[5]
-    // 소유자 연결 확인: makerNote의 하위 160비트 == input[4]
+    // 토큰 타입 일치 확인: order.targetToken == input[2] == input[6]
+    // 소유자 연결 확인:
+    //   - makerNote >> 128 == input[4] (owner0)
+    //   - makerNote & MASK_128 == input[5] (owner1)
     // notes[parentNote] = Trading
     // notes[stakeNote] = Trading
     // order.state = Taken
@@ -567,14 +557,16 @@ function takeOrder(orderId, a, b, c, input, encryptedStakingNote) external {
 | 3 | o1Hash | 테이커 스테이크 노트 해시 |
 | 4 | o1Type | 테이커 스테이크 노트 토큰 종류 |
 | 5 | n0Hash | 보상 노트 해시 (테이커에게) |
-| 6 | n0Owner | 보상 노트 소유자 (parentNote 해시의 하위 160비트) |
-| 7 | n0Type | 보상 노트 토큰 종류 |
-| 8 | n1Hash | 지불 노트 해시 (메이커에게) |
-| 9 | n1Owner | 지불 노트 소유자 (makerNote 해시의 하위 160비트) |
-| 10 | n1Type | 지불 노트 토큰 종류 |
-| 11 | n2Hash | 잔돈 노트 해시 |
-| 12 | n2Type | 잔돈 노트 토큰 종류 |
-| 13 | price | 교환 비율 |
+| 6 | n0Owner0 | 보상 노트 소유자 owner0 (parentNote 해시 >> 128) |
+| 7 | n0Owner1 | 보상 노트 소유자 owner1 (parentNote 해시 & MASK_128) |
+| 8 | n0Type | 보상 노트 토큰 종류 |
+| 9 | n1Hash | 지불 노트 해시 (메이커에게) |
+| 10 | n1Owner0 | 지불 노트 소유자 owner0 (makerNote 해시 >> 128) |
+| 11 | n1Owner1 | 지불 노트 소유자 owner1 (makerNote 해시 & MASK_128) |
+| 12 | n1Type | 지불 노트 토큰 종류 |
+| 13 | n2Hash | 잔돈 노트 해시 |
+| 14 | n2Type | 잔돈 노트 토큰 종류 |
+| 15 | price | 교환 비율 |
 
 ### 가격 계산 로직
 
@@ -609,9 +601,9 @@ bit == 0 (테이커 가치 > 메이커 가치):
 
 | 노트 | 소유자 | 파생 방식 |
 |------|--------|-----------|
-| 보상 (n0) | 테이커 | `parentNote 해시 & MASK_160` (스마트 노트) |
-| 지불 (n1) | 메이커 | `makerNote 해시 & MASK_160` (스마트 노트) |
-| 잔돈 (n2) | 상황에 따라 다름 | bit==1: `makerNote 해시 & MASK_160`, bit==0: `parentNote 해시 & MASK_160` |
+| 보상 (n0) | 테이커 | owner0 = `parentNote 해시 >> 128`, owner1 = `parentNote 해시 & MASK_128` |
+| 지불 (n1) | 메이커 | owner0 = `makerNote 해시 >> 128`, owner1 = `makerNote 해시 & MASK_128` |
+| 잔돈 (n2) | 상황에 따라 다름 | bit==1: 메이커 노트 해시에서 파생, bit==0: 테이커 부모 노트 해시에서 파생 |
 
 ### 온체인 동작
 
@@ -643,14 +635,12 @@ ZK 친화적 해시 함수. SHA256 대비 회로 내 비용이 약 100배 낮다
 
 | 용도 | 입력 | 출력 |
 |------|------|------|
-| 노트 해시 | (ownerAddress, value, tokenType, vk0, vk1, salt) | 254비트 해시 |
-| 주소 파생 | (pk.x, pk.y) | 254비트 해시 → 160비트 절단 |
-| 뷰잉 키 | (pk.x, pk.y) | 254비트 해시 (절단 없음) |
+| 노트 해시 | (owner0, owner1, value, tokenType, vk0, vk1, salt) | 254비트 해시 |
 
 **비용 비교**:
 | 해시 | 회로 제약조건 수 |
 |------|-----------------|
-| Poseidon(6) | ~1,500 |
+| Poseidon(7) | ~1,750 |
 | Poseidon(2) | ~350 |
 | SHA256 | ~30,000 |
 
@@ -702,7 +692,7 @@ ZK 친화적 해시 함수. SHA256 대비 회로 내 비용이 약 100배 낮다
 mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → 암호화된 바이트
 ```
 
-제3자는 암호화된 바이트를 읽을 수 있지만, 비밀키 없이는 원본 `{ownerAddress, value, tokenType, viewingKey, salt}`을 복원할 수 없다.
+제3자는 암호화된 바이트를 읽을 수 있지만, 비밀키 없이는 원본 `{owner0, owner1, value, tokenType, vk0, vk1, salt}`을 복원할 수 없다.
 
 ---
 
@@ -749,9 +739,9 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → 암호화된 �
 
 ### 스마트 노트 연결 무결성
 
-- 스테이크 노트의 소유자 = 메이커 노트 해시의 하위 160비트
-- 지불 노트의 소유자 = 메이커 노트 해시의 하위 160비트
-- 보상 노트의 소유자 = 테이커 부모 노트 해시의 하위 160비트
+- 스테이크 노트의 소유자(owner0, owner1) = 메이커 노트 해시에서 파생 (`>> 128`, `& MASK_128`)
+- 지불 노트의 소유자 = 메이커 노트 해시에서 파생
+- 보상 노트의 소유자 = 테이커 부모 노트 해시에서 파생
 - 이 관계는 회로와 온체인 양쪽에서 모두 검증되므로, 제3자가 노트를 가로챌 수 없다.
 
 ### 주문 원자성
@@ -822,25 +812,27 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → 암호화된 �
 **핵심은 비밀키(sk) 하나다.** ZK 회로 내부에서 다음 과정을 거쳐 소유권을 검증한다:
 
 ```
-sk → pk = sk × G → viewingKey = Poseidon(pk.x, pk.y) → ownerAddress = viewingKey & MASK_160
+sk → pk = sk × G → (pkX, pkY)
+owner0 == pkX && owner1 == pkY 확인
 ```
 
 다만 ZK proof를 생성하려면 노트 해시를 재구성해야 하므로, 회로에는 sk 외에 노트의 나머지 필드도 함께 입력해야 한다:
 
 | 데이터 | 용도 |
 |--------|------|
-| **sk** (비밀키) | 소유권 증명의 핵심 — sk에서 ownerAddress를 유도하여 노트와 매칭 |
-| ownerAddress | 노트에 기록된 소유자 주소 |
+| **sk** (비밀키) | 소유권 증명의 핵심 — sk에서 공개키를 유도하여 노트 owner와 매칭 |
+| owner0 | 노트에 기록된 소유자 공개키 x 좌표 |
+| owner1 | 노트에 기록된 소유자 공개키 y 좌표 |
 | value | 노트 잔액 |
 | tokenType | 토큰 종류 |
-| viewingKey (vk0, vk1) | 공개키 바인딩 |
+| vk0, vk1 | viewing key (= pkX, pkY) |
 | salt | 노트 고유성 보장 |
 
-이 6개 필드로 `noteHash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`를 재계산하고, 온체인에 기록된 noteHash와 일치하는지 회로 내에서 검증한다.
+이 7개 필드로 `noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)`를 재계산하고, 온체인에 기록된 noteHash와 일치하는지 회로 내에서 검증한다.
 
-### Q2. sk를 알아도 나머지 노트 데이터(ownerAddress, value, tokenType, viewingKey, salt)를 잃으면 노트를 사용할 수 없는가?
+### Q2. sk를 알아도 나머지 노트 데이터(owner0, owner1, value, tokenType, vk0, vk1, salt)를 잃으면 노트를 사용할 수 없는가?
 
-**로컬 데이터만 잃은 경우라면 복구 가능하다.** 노트가 생성될 때 5개 필드가 ECDH로 암호화되어 온체인에 저장되기 때문이다:
+**로컬 데이터만 잃은 경우라면 복구 가능하다.** 노트가 생성될 때 7개 필드가 ECDH로 암호화되어 온체인에 저장되기 때문이다:
 
 ```solidity
 mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화된 바이트
@@ -850,7 +842,7 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 
 1. 온체인에서 `encryptedNotes[noteHash]` 데이터를 가져옴
 2. sk로 ECDH 복호화 수행: `shared = sk × epk` → AES 키 파생 → 복호화
-3. RLP 디코딩으로 `[ownerAddress, value, tokenType, viewingKey, salt]` 복원
+3. RLP 디코딩으로 `[owner0, owner1, value, tokenType, vk0, vk1, salt]` 복원
 4. 복원된 데이터로 ZK proof 생성 가능
 
 따라서:
@@ -866,8 +858,8 @@ mapping(bytes32 => bytes) public encryptedNotes;  // noteHash → ECDH 암호화
 mapping(bytes32 => bytes) public encryptedNotes;
 ```
 
-- **Key**: `noteHash` (bytes32) — `Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)`
-- **Value**: ECDH 암호화된 바이트열 — `ECDH_Encrypt(RLP(ownerAddress, value, tokenType, viewingKey, salt))`
+- **Key**: `noteHash` (bytes32) — `Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)`
+- **Value**: ECDH 암호화된 바이트열 — `ECDH_Encrypt(RLP(owner0, owner1, value, tokenType, vk0, vk1, salt))`
 
 Value의 온체인 바이트 포맷:
 
@@ -888,18 +880,20 @@ Value의 온체인 바이트 포맷:
 
 ### Q4. 뷰잉 키(Viewing Key)란 무엇이고 왜 필요한가?
 
-뷰잉 키는 공개키에서 Poseidon 해시로 파생된 254비트 값이다:
+현재 아키텍처에서 뷰잉 키는 공개키 자체다:
 
 ```
-viewingKey = Poseidon(pk.x, pk.y)
-ownerAddress = viewingKey & MASK_160  (하위 160비트)
+vk0 = pkX (BabyJubJub 공개키 x 좌표)
+vk1 = pkY (BabyJubJub 공개키 y 좌표)
 ```
 
-ownerAddress(160비트)만으로 부족한 이유:
+더 이상 Poseidon 해시로 파생하지 않고, 160비트 truncation도 없다.
 
-1. **공개키 바인딩**: 160비트 주소 충돌 가능성 존재. 뷰잉 키로 254비트 전체를 노트 해시에 커밋하여 소유권 위조 방지
-2. **노트 탐색**: 복호화 후 뷰잉 키를 비교하여 내 노트인지 식별
-3. **스마트 노트 연결**: 스마트 노트에서 `viewingKey = parentNoteHash`로 설정하여 부모 노트와의 연결고리 역할
+뷰잉 키가 필요한 이유:
+
+1. **공개키 바인딩**: 노트 해시에 공개키 전체를 커밋하여 소유권 위조 방지
+2. **노트 탐색**: 복호화 후 vk0, vk1을 비교하여 내 노트인지 식별
+3. **스마트 노트 연결**: 스마트 노트에서 owner가 parentHash에서 파생되어 부모 노트와의 연결고리 역할
 
 자세한 내용은 [5장 뷰잉 키 섹션](#뷰잉-키-viewing-key)을 참고한다.
 
@@ -907,8 +901,8 @@ ownerAddress(160비트)만으로 부족한 이유:
 
 **아니다.** 현재 ZK-DEX 구현에서는 불가능하다.
 
-온체인 노트 데이터는 ECDH + AES-256-GCM으로 암호화되어 있으며, 복호화에는 `shared = sk × epk` 계산이 필요하다. 뷰잉 키 `Poseidon(pk.x, pk.y)`는 일방향 해시값이므로 공개키 좌표 `(pk.x, pk.y)`를 역으로 복원할 수 없고, 따라서 ECDH 공유 비밀을 계산할 수 없다.
+온체인 노트 데이터는 ECDH + AES-256-GCM으로 암호화되어 있으며, 복호화에는 `shared = sk × epk` 계산이 필요하다. 뷰잉 키(vk0, vk1)는 공개키 좌표 자체이지만, ECDH 공유 비밀을 계산하려면 비밀키 sk가 필요하다.
 
 Zcash에서는 viewing key로 직접 온체인 데이터를 복호화할 수 있도록 별도의 암호화 계층(in-band secret distribution)을 두고 있지만, ZK-DEX는 ECDH 단일 계층만 사용하므로 이 기능이 지원되지 않는다.
 
-선택적 공개가 필요한 경우, 노트 소유자가 sk로 복호화한 데이터를 오프체인으로 제3자에게 전달하고, 제3자가 noteHash를 재계산하여 온체인 상태와 대조하는 방식으로 검증한다. 자세한 내용은 [5장 역할 4: 선택적 공개](#뷰잉-키의-7가지-역할)를 참고한다.
+선택적 공개가 필요한 경우, 노트 소유자가 sk로 복호화한 데이터를 오프체인으로 제3자에게 전달하고, 제3자가 noteHash를 재계산하여 온체인 상태와 대조하는 방식으로 검증한다. 자세한 내용은 [5장 역할 3: 선택적 공개](#뷰잉-키의-주요-역할)를 참고한다.
