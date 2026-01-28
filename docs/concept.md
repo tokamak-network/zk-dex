@@ -117,13 +117,37 @@ In ZK-DEX, an "account" encompasses two key systems:
 - Used for note ownership proofs and privacy guarantees
 - Stored locally as a scrypt-based keystore (JSON)
 
-A single user holds both accounts: the Ethereum account for submitting transactions, and the ZK account for note ownership and encryption.
+A user can hold both accounts together or separately. The Ethereum account is used for submitting transactions, and the ZK account for note ownership and encryption.
 
 ---
 
 ## 5. ZK Account
 
 A ZK account is a key system based on the BabyJubJub elliptic curve. Key components:
+
+### Independence from Ethereum Accounts
+
+**Critical concept: ZK accounts are completely independent from Ethereum accounts.**
+
+- A ZK account (BabyJubJub key pair) has no cryptographic relationship with an Ethereum account (secp256k1 key pair)
+- Note ownership is determined solely by the ZK secret key (z-sk), not by any Ethereum address
+- **Any Ethereum account can submit transactions on behalf of a ZK account** — what matters is the validity of the ZK proof, not which Ethereum address sent the transaction
+
+This means:
+- If Alice knows the z-sk, she can control the notes from any Ethereum wallet (MetaMask, hardware wallet, or even a third-party relayer)
+- The Ethereum account only pays gas fees and submits the transaction — it has no authority over note ownership
+- Even if Alice's Ethereum private key is compromised, her ZK notes remain secure as long as z-sk is safe
+- Conversely, if z-sk is compromised, the attacker can control the notes from any Ethereum account
+
+| Key Type | Controls | Compromise Impact |
+|----------|----------|-------------------|
+| Ethereum private key | Gas payment, transaction submission | Cannot access ZK notes |
+| ZK secret key (z-sk) | Note ownership, proof generation | Full control of all notes owned by this z-sk |
+
+This design enables use cases like:
+- **Meta-transactions**: A relayer can submit proofs on behalf of users
+- **Account abstraction**: Notes can be controlled through smart contract wallets
+- **Key rotation**: Users can change their Ethereum account without affecting their ZK notes
 
 ### Secret Key (sk)
 - 254-bit random scalar
@@ -145,32 +169,41 @@ There is no longer a truncated 160-bit `ownerAddress`. The full public key is co
 
 ### Viewing Key
 
-The viewing key is now simply the public key itself:
+**Key point: For normal notes, vk0/vk1 can be any arbitrary value — they are not used for ownership verification. The viewing key only has meaningful constraints in smart notes.**
+
+#### Viewing Key in Normal Notes vs Smart Notes
+
+| Note Type | vk0, vk1 Value | Circuit Verification | Purpose |
+|-----------|----------------|---------------------|---------|
+| Normal note | Any value (convention: pkX, pkY) | None | Only included in note hash |
+| Smart note | `parentHash >> 128`, `parentHash & MASK_128` | **Required** | Enforces parent-child linkage |
+
+#### Why Viewing Key Is Unconstrained in Normal Notes
+
+In the ZK circuit, ownership verification uses **only `owner0` and `owner1`**:
 
 ```
-vk0 = pkX (public key x-coordinate)
-vk1 = pkY (public key y-coordinate)
+sk → pk = sk * G → (pkX, pkY)
+owner0 == pkX && owner1 == pkY check  ← This is the entirety of ownership verification
 ```
 
-For normal notes, the viewing key equals the owner: `vk0 = owner0` and `vk1 = owner1`.
-
-#### Purpose of the Viewing Key
-
-The viewing key serves as a **public key commitment** in the note hash. Its primary roles:
-
-**Role 1: Note Hash Commitment**
-
-The viewing key (vk0, vk1) is included in the 7-input Poseidon hash:
+`vk0` and `vk1` are only included in the note hash calculation and are not separately verified in the circuit:
 
 ```
 noteHash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
                                                       ^^^  ^^^
-                                       public key committed here
+                                         Hash input only, not verified
 ```
 
-For normal notes where `vk0 = owner0` and `vk1 = owner1`, the public key appears twice in the hash, providing redundant commitment.
+Therefore, for normal notes, any value can be used for vk0/vk1 and the note remains valid. The current implementation conventionally uses `vk0 = pkX`, `vk1 = pkY`, but this is not a protocol requirement.
 
-**Role 2: Note Discovery**
+#### Why Viewing Key Is Required in Smart Notes
+
+Smart notes are created in the order protocol (takeOrder, settleOrder) and must **cryptographically enforce linkage to a parent note**. In this case, `owner0` and `owner1` are derived from the parent note hash, and this relationship is verified in both the circuit and the on-chain contract.
+
+#### Primary Uses of Viewing Key
+
+**Use 1: Note Discovery**
 
 A party who knows the viewing key (i.e., the public key) can identify their notes:
 
@@ -182,7 +215,7 @@ A party who knows the viewing key (i.e., the public key) can identify their note
 5. If recovered vk0/vk1 matches own public key -> this is their note
 ```
 
-**Role 3: Selective Disclosure**
+**Use 2: Selective Disclosure**
 
 > **Note: Limitation of the Current Implementation**
 >
@@ -200,7 +233,7 @@ A party who knows the viewing key (i.e., the public key) can identify their note
 | Public key + off-chain note data holder | Verify note balances, cross-check on-chain state | Directly decrypt on-chain ciphertext, transfer/spend/create orders |
 | Secret key holder | Decrypt on-chain data + transfer/spend/create orders | — |
 
-**Role 4: Order Metadata**
+**Use 3: Order Metadata**
 
 When a maker creates an order, the maker's public key (as viewing key) is stored on-chain:
 
@@ -213,7 +246,7 @@ struct Order {
 }
 ```
 
-**Role 5: Smart Note Linking**
+**Use 4: Smart Note Linking (Required)**
 
 For smart notes, the viewing key is derived from the **parent note's hash**:
 
@@ -225,7 +258,7 @@ Smart note:   vk0 = parentNoteHash >> 128     (upper 128 bits)
 
 This establishes cryptographic linkage between smart notes and their parent notes.
 
-**Role 6: Encrypted Note Payload**
+**Use 5: Encrypted Note Payload**
 
 When a note is ECDH-encrypted and stored on-chain, the viewing key is included:
 
