@@ -4,9 +4,7 @@
  * 테스트 항목:
  * - hexToBigInt 다양한 입력
  * - maskTo254Bits 동작
- * - split256To128 분할
  * - generateSalt 형식
- * - getSmartNoteOwnerAddress
  * - computeCircuitHash 결정성
  * - getNoteHash null/undefined → 빈 노트 해시
  * - prepareMintInputs 필드 완전성
@@ -16,9 +14,7 @@ import { describe, it, expect } from 'vitest'
 import {
   hexToBigInt,
   maskTo254Bits,
-  split256To128,
   generateSalt,
-  getSmartNoteOwnerAddress,
   computeCircuitHash,
   getNoteHash,
   getEmptyNoteHash,
@@ -30,10 +26,10 @@ import {
 
 function createTestNote(overrides?: Partial<NoteData>): NoteData {
   return {
-    ownerAddress: '0xd8a3f85aa09feebc667f6f612ed6b434322f9ffe',
+    pkX: '0x2b52e1908bed7b1f474026b72e1c887e2c2462cf33b20b5b562e8bc096ee7083',
+    pkY: '0x14f9761fff9429e5e33dc8b4b43627276fab15d753d758a24b51f1e75ec10a95',
     value: '0x0de0b6b3a7640000', // 1 ETH
     token: '0x00',
-    viewingKey: '0x00',
     salt: '0x' + 'abcdef01'.padStart(64, '0'),
     ...overrides
   }
@@ -84,38 +80,6 @@ describe('circuitInputs', () => {
     })
   })
 
-  describe('split256To128', () => {
-    it('0 → [0, 0]', () => {
-      const [high, low] = split256To128('0x00')
-      expect(high).toBe('0')
-      expect(low).toBe('0')
-    })
-
-    it('128비트 이하 값 → high=0, low=값', () => {
-      const [high, low] = split256To128('0xff')
-      expect(high).toBe('0')
-      expect(low).toBe('255')
-    })
-
-    it('256비트 값 분할', () => {
-      // value = (0x1 << 128) | 0x2
-      const value = ((1n << 128n) | 2n)
-      const hex = '0x' + value.toString(16)
-      const [high, low] = split256To128(hex)
-      expect(high).toBe('1')
-      expect(low).toBe('2')
-    })
-
-    it('최대값 분할', () => {
-      const max128 = (1n << 128n) - 1n
-      const value = (max128 << 128n) | max128
-      const hex = '0x' + value.toString(16)
-      const [high, low] = split256To128(hex)
-      expect(BigInt(high)).toBe(max128)
-      expect(BigInt(low)).toBe(max128)
-    })
-  })
-
   describe('generateSalt', () => {
     it('0x 접두사 + 64 hex 문자 (32바이트)', () => {
       const salt = generateSalt()
@@ -133,24 +97,6 @@ describe('circuitInputs', () => {
       const salt1 = generateSalt()
       const salt2 = generateSalt()
       expect(salt1).not.toBe(salt2)
-    })
-  })
-
-  describe('getSmartNoteOwnerAddress', () => {
-    it('해시의 하위 160비트를 주소로 변환', () => {
-      // noteHash = 0x1 << 200 | 0xdeadbeef
-      const noteHash = ((1n << 200n) | 0xdeadbeefn).toString()
-      const addr = getSmartNoteOwnerAddress(noteHash)
-      expect(addr.startsWith('0x')).toBe(true)
-      expect(addr.length).toBe(42)
-      // 하위 160비트만 남아야 하므로 0xdeadbeef가 포함되어야 함
-      expect(BigInt(addr) & 0xffffffffn).toBe(0xdeadbeefn)
-    })
-
-    it('160비트 이하 값은 그대로 주소', () => {
-      const noteHash = '12345'
-      const addr = getSmartNoteOwnerAddress(noteHash)
-      expect(BigInt(addr)).toBe(12345n)
     })
   })
 
@@ -226,9 +172,10 @@ describe('circuitInputs', () => {
       expect(inputs.noteHash).toBeTruthy()
       expect(inputs.value).toBeTruthy()
       expect(inputs.tokenType).toBeDefined()
-      expect(inputs.ownerAddress).toBeTruthy()
-      expect(inputs.vk0).toBeDefined()
-      expect(inputs.vk1).toBeDefined()
+      expect(inputs.owner0).toBeTruthy()
+      expect(inputs.owner1).toBeTruthy()
+      expect(inputs.vk0).toBeTruthy()
+      expect(inputs.vk1).toBeTruthy()
       expect(inputs.salt).toBeTruthy()
       expect(inputs.sk).toBeTruthy()
     })
@@ -268,9 +215,12 @@ describe('circuitInputs', () => {
 
       const inputs = await prepareTransferInputs(note0, null, newNote, changeNote, '0xcafe', null)
 
-      expect(inputs.o1OwnerAddress).toBe('0')
+      expect(inputs.o1Owner0).toBe('0')
+      expect(inputs.o1Owner1).toBe('0')
       expect(inputs.o1Value).toBe('0')
       expect(inputs.o1Type).toBe('0')
+      expect(inputs.o1Vk0).toBe('0')
+      expect(inputs.o1Vk1).toBe('0')
       expect(inputs.o1Salt).toBe('0')
     })
   })
@@ -283,10 +233,11 @@ describe('circuitInputs', () => {
 
       expect(inputs.noteHash).toBeTruthy()
       expect(inputs.tokenType).toBeDefined()
-      expect(inputs.ownerAddress).toBeTruthy()
+      expect(inputs.owner0).toBeTruthy()
+      expect(inputs.owner1).toBeTruthy()
       expect(inputs.value).toBeTruthy()
-      expect(inputs.vk0).toBeDefined()
-      expect(inputs.vk1).toBeDefined()
+      expect(inputs.vk0).toBeTruthy()
+      expect(inputs.vk1).toBeTruthy()
       expect(inputs.salt).toBeTruthy()
       expect(inputs.sk).toBeTruthy()
     })

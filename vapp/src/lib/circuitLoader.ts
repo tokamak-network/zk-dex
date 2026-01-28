@@ -167,7 +167,7 @@ class CircuitLoaderService {
    */
   private getDefaultManifest(): CircuitManifest {
     return {
-      version: '1.0.0',
+      version: '2.0.0',
       circuits: {
         mint_burn_note: {
           wasm: '/circuits/mint_burn_note/mint_burn_note.wasm',

@@ -8,7 +8,7 @@
           <a class="button is-static" style="width: 140px">Account</a>
         </p>
         <p class="control is-expanded">
-          <a class="button is-static" style="width: 100%;">{{ fmt.formatZkAddress(addressToExport) }}</a>
+          <a class="button is-static" style="width: 100%;">{{ fmt.formatZkPk(accountToExport?.publicKey) }}</a>
         </p>
       </div>
       <div class="field has-addons" style="margin-top: 20px;">

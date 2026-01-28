@@ -4,10 +4,10 @@ import { encryptForRecipient, decryptWithSecretKey, isECDHEncrypted } from '@/li
 import { hexToBytes } from '@/lib/accountCrypto'
 
 export interface EncodedNoteData {
-  ownerAddress: string  // 160-bit address (40 hex chars)
+  pkX: string    // BabyJubJub public key X coordinate
+  pkY: string    // BabyJubJub public key Y coordinate
   value: string
   token: string
-  viewingKey: string
   salt: string
 }
 
@@ -55,17 +55,18 @@ function toHexString(value: string | bigint | number | undefined | null): string
 
 /**
  * RLP-encode note fields (internal helper, produces plaintext bytes).
+ * Encodes 5 fields: [pkX, pkY, value, token, salt]
  *
- * @param noteData - The note data containing ownerAddress, value, token,
- *   viewingKey, and salt fields to encode
+ * @param noteData - The note data containing pkX, pkY, value, token,
+ *   and salt fields to encode
  * @returns An RLP-encoded hex string representing the serialized note fields
  */
 function rlpEncodeNoteFields(noteData: EncodedNoteData): string {
   const fields = [
-    toHexString(noteData.ownerAddress),
+    toHexString(noteData.pkX),
+    toHexString(noteData.pkY),
     toHexString(noteData.value),
     toHexString(noteData.token),
-    toHexString(noteData.viewingKey),
     toHexString(noteData.salt)
   ]
   return encodeRlp(fields)
@@ -132,15 +133,15 @@ export async function decodeNoteData(
 }
 
 /**
- * Decode RLP-encoded note data (legacy plaintext or decrypted ECDH payload).
- * Supports both the current 5-field format and the legacy 6-field format
- * which included separate owner public key components.
+ * Decode RLP-encoded note data.
+ * Supports both the current 5-field format [pkX, pkY, value, token, salt]
+ * and the legacy 6-field format [owner0, owner1, value, token, viewingKey, salt].
  *
  * @param rlpHex - A 0x-prefixed hex string containing RLP-encoded note data
  * @returns The decoded note data as an EncodedNoteData object, or null if
  *   decoding fails or the field count is unrecognized
  */
-async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null> {
+function decodeRlpNoteData(rlpHex: string): EncodedNoteData | null {
   try {
     const decoded = decodeRlp(rlpHex) as string[]
 
@@ -148,19 +149,19 @@ async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null
       return null
     }
 
-    // New format: 5 fields [ownerAddress, value, token, viewingKey, salt]
+    // New format: 5 fields [pkX, pkY, value, token, salt]
     if (decoded.length === 5) {
       return {
-        ownerAddress: decoded[0],
-        value: decoded[1],
-        token: decoded[2],
-        viewingKey: decoded[3],
+        pkX: decoded[0],
+        pkY: decoded[1],
+        value: decoded[2],
+        token: decoded[3],
         salt: decoded[4]
       }
     }
 
     // Legacy format: 6 fields [owner0, owner1, value, token, viewingKey, salt]
-    // Convert to new format by deriving address from public key
+    // owner0 = pk.x, owner1 = pk.y — map directly to pkX/pkY
     if (decoded.length === 6) {
       const legacyData: LegacyEncodedNoteData = {
         owner0: decoded[0],
@@ -170,13 +171,11 @@ async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null
         viewingKey: decoded[4],
         salt: decoded[5]
       }
-      // Derive address from public key: Poseidon(pk.x, pk.y) truncated to 160 bits
-      const address = await deriveAddressFromPublicKey(legacyData.owner0, legacyData.owner1)
       return {
-        ownerAddress: address,
+        pkX: legacyData.owner0,
+        pkY: legacyData.owner1,
         value: legacyData.value,
         token: legacyData.token,
-        viewingKey: legacyData.viewingKey,
         salt: legacyData.salt
       }
     }
@@ -188,8 +187,9 @@ async function decodeRlpNoteData(rlpHex: string): Promise<EncodedNoteData | null
 }
 
 /**
- * Derive 160-bit address from BabyJubJub public key using Poseidon
- * address = Poseidon(pk.x, pk.y) truncated to 160 bits
+ * Derive 160-bit address from BabyJubJub public key using Poseidon.
+ * address = Poseidon(pk.x, pk.y) truncated to 160 bits.
+ * Kept for potential account display uses.
  */
 export async function deriveAddressFromPublicKey(pkX: string, pkY: string): Promise<string> {
   const hash = await poseidonHash([BigInt(pkX), BigInt(pkY)])
@@ -198,34 +198,28 @@ export async function deriveAddressFromPublicKey(pkX: string, pkY: string): Prom
 }
 
 /**
- * Check if note belongs to account by comparing addresses
- * (Used for legacy RLP plaintext notes where decryption is not needed)
+ * Check if note belongs to account by comparing BabyJubJub public keys directly.
+ * Kept as async for API compatibility, but the comparison is synchronous.
  */
 export async function isNoteOwner(
   noteData: EncodedNoteData,
   accountPublicKey: { x: string; y: string }
 ): Promise<boolean> {
-  // Derive address from account's public key using Poseidon
-  const accountAddress = await deriveAddressFromPublicKey(accountPublicKey.x, accountPublicKey.y)
-
-  // Normalize both to BigInt for comparison
-  const noteOwnerAddress = BigInt(noteData.ownerAddress)
-  const accountAddr = BigInt(accountAddress)
-
-  return noteOwnerAddress === accountAddr
+  const notePkX = BigInt(noteData.pkX)
+  const notePkY = BigInt(noteData.pkY)
+  const accountPkX = BigInt(accountPublicKey.x)
+  const accountPkY = BigInt(accountPublicKey.y)
+  return notePkX === accountPkX && notePkY === accountPkY
 }
 
 /**
- * Check if note is a smart note by comparing owner with a note hash
- * Smart notes have ownerAddress = truncated hash of another note
+ * Check if note is a smart note by comparing pkX with a parent note hash.
+ * Smart notes don't use pk-based EncodedNoteData — they're a different format.
+ * This function is kept for backwards compatibility but may need rethinking.
+ * For now, just compare the first field (which would be parentHash in smart notes).
  */
 export function isSmartNoteOwner(noteData: EncodedNoteData, parentNoteHash: string): boolean {
-  // Get last 160 bits of parent note hash
-  const cleanHash = parentNoteHash.startsWith('0x') ? parentNoteHash.slice(2) : parentNoteHash
-  const truncatedHash = '0x' + cleanHash.padStart(64, '0').slice(-40)
-
-  const noteOwner = BigInt(noteData.ownerAddress)
-  const expectedOwner = BigInt(truncatedHash)
-
-  return noteOwner === expectedOwner
+  const notePkX = BigInt(noteData.pkX)
+  const expectedHash = BigInt(parentNoteHash)
+  return notePkX === expectedHash
 }

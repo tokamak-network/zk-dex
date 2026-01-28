@@ -27,13 +27,6 @@ async function main() {
     return value & MASK_160
   }
 
-  function split256To128(value: bigint): [bigint, bigint] {
-    const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1)
-    const low = value & mask128
-    const high = value >> BigInt(128)
-    return [high, low]
-  }
-
   function hexPad64(n: bigint): string {
     return '0x' + n.toString(16).padStart(64, '0')
   }
@@ -91,7 +84,8 @@ async function main() {
   interface NoteFixture {
     label: string
     ownerName: string
-    ownerAddress: bigint
+    pkX: bigint
+    pkY: bigint
     value: bigint
     valueHex: string
     token: bigint
@@ -100,8 +94,6 @@ async function main() {
     isSmart: string
     salt: bigint
     saltHex: string
-    viewingKey: bigint
-    vkHex: string
     hash: bigint
     hashStr: string // decimal string (computeCircuitHash output)
     hashHex: string
@@ -120,9 +112,9 @@ async function main() {
   const saltBase = BigInt('0xe2e0')
   const salts = Array.from({ length: 8 }, (_, i) => saltBase + BigInt(i + 1))
 
-  async function computeNoteHash(ownerAddr: bigint, value: bigint, token: bigint, vk: bigint, salt: bigint): Promise<bigint> {
-    const [vk0, vk1] = split256To128(vk)
-    return poseidonHash([ownerAddr, value, token, vk0, vk1, salt])
+  async function computeNoteHash(pkX: bigint, pkY: bigint, value: bigint, token: bigint, salt: bigint): Promise<bigint> {
+    // 7-input hash: Poseidon(owner0=pkX, owner1=pkY, value, tokenType, vk0=pkX, vk1=pkY, salt)
+    return poseidonHash([pkX, pkY, value, token, pkX, pkY, salt])
   }
 
   const noteSpecs = [
@@ -140,11 +132,12 @@ async function main() {
 
   for (const spec of noteSpecs) {
     const salt = salts[spec.saltIdx]
-    const hash = await computeNoteHash(spec.owner.address, spec.value, spec.token, spec.owner.vk, salt)
+    const hash = await computeNoteHash(spec.owner.pk.x, spec.owner.pk.y, spec.value, spec.token, salt)
     notes.push({
       label: spec.label,
       ownerName: spec.owner.name,
-      ownerAddress: spec.owner.address,
+      pkX: spec.owner.pk.x,
+      pkY: spec.owner.pk.y,
       value: spec.value,
       valueHex: hexPad64(spec.value),
       token: spec.token,
@@ -153,8 +146,6 @@ async function main() {
       isSmart: spec.isSmart,
       salt,
       saltHex: hexPad64(salt),
-      viewingKey: spec.owner.vk,
-      vkHex: spec.owner.vkHex,
       hash,
       hashStr: hash.toString(),
       hashHex: hexPad64(hash),
@@ -191,7 +182,8 @@ async function main() {
     console.log(`  hash: '${n.hashStr}',`)
     console.log(`  hashHex: '${n.hashHex}',`)
     console.log(`  owner: ${n.ownerName}_ADDRESS,`)
-    console.log(`  ownerAddress: ${n.ownerName}_ADDRESS_0X,`)
+    console.log(`  pkX: ${n.ownerName}_PK.x,`)
+    console.log(`  pkY: ${n.ownerName}_PK.y,`)
     console.log(`  value: '${n.valueHex}',`)
     console.log(`  token: '${n.tokenStr}',`)
     console.log(`  state: '${n.state}',`)
@@ -204,7 +196,6 @@ async function main() {
       n.label.includes('BOB_DAI') ? '6' :
       n.label.includes('INVALID') ? '7' :
       n.label.includes('SMART') ? '8' : '?'},`)
-    console.log(`  viewingKey: ${n.ownerName}_VK,`)
     console.log(`}`)
     console.log()
   }

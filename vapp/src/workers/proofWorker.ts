@@ -220,8 +220,11 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         }
 
         const baseUrl = '/circuits'
-        const wasmUrl = data.wasmUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.wasm`
-        const zkeyUrl = data.zkeyUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.zkey`
+        const cacheBuster = `?v=${Date.now()}`
+        // Clear cache to force fresh load
+        circuitCache.delete(data.circuitName)
+        const wasmUrl = data.wasmUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.wasm${cacheBuster}`
+        const zkeyUrl = data.zkeyUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.zkey${cacheBuster}`
 
         const result = await generateProof(
           data.circuitName,
@@ -259,8 +262,10 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         }
 
         const baseUrl = '/circuits'
-        const wasmUrl = data.wasmUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.wasm`
-        const zkeyUrl = data.zkeyUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.zkey`
+        const cacheBuster = `?v=${Date.now()}`
+        circuitCache.delete(data.circuitName)
+        const wasmUrl = data.wasmUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.wasm${cacheBuster}`
+        const zkeyUrl = data.zkeyUrl || `${baseUrl}/${data.circuitName}/${data.circuitName}.zkey${cacheBuster}`
 
         await loadCircuit(
           data.circuitName,

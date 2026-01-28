@@ -16,9 +16,9 @@
       <tbody>
         <tr v-for="note in selectedNotes" :key="note.hash" @click="unselectNote(note)">
           <td>{{ fmt.abbreviate(note.hash) }}</td>
-          <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+          <td>{{ fmt.formatZkPk(ownerAccount?.publicKey) }}</td>
           <td>{{ fmt.tokenType(fmt.hexToNumberString(note.token)) }}</td>
-          <td>{{ fmt.hexToNumberString(note.value) }}</td>
+          <td>{{ fmt.formatNoteValue(note.value) }}</td>
           <td>{{ fmt.noteState(note.state) }}</td>
         </tr>
       </tbody>
@@ -36,7 +36,7 @@
         <a class="button is-static" style="width: 140px">To</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(account) }}</a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.formatZkPk(ownerAccount?.publicKey) }}</a>
       </p>
     </div>
     <div v-if="proofProgress" class="field" style="margin-top: 10px;">
@@ -56,7 +56,7 @@ import { useContractStore } from '@/stores/contract'
 import { useAccountStore } from '@/stores/account'
 import { useNoteStore, type Note } from '@/stores/note'
 import * as api from '@/api'
-import { toBigInt } from 'ethers'
+import { toBigInt, formatEther } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
@@ -80,7 +80,8 @@ const totalAmount = computed(() => {
   for (const note of selectedNotes.value) {
     total += toBigInt(note.value)
   }
-  return total.toString()
+  if (total === BigInt(0)) return '0'
+  return formatEther(total)
 })
 
 // Get the account for the combined note
@@ -101,8 +102,8 @@ function selectNote(note: Note) {
       return
     }
     // Validate notes have secretKey
-    if (!note.secretKey || !note.ownerAddress) {
-      alert('Note is missing required data (secretKey/ownerAddress). Cannot combine.')
+    if (!note.secretKey || !note.pkX) {
+      alert('Note is missing required data (secretKey/publicKey). Cannot combine.')
       return
     }
     selectedNotes.value.push(note)
@@ -123,7 +124,7 @@ function unselectNote(note: Note) {
 async function generateCombineProof(
   note0: Note,
   note1: Note,
-  ownerAddress: string
+  ownerPk: { x: string; y: string }
 ): Promise<{ proof: FormattedProof; combinedNote: NoteData & { noteHash: string } }> {
   if (!note0.secretKey || !note1.secretKey) {
     throw new Error('Notes are missing secret keys. Cannot combine.')
@@ -131,18 +132,18 @@ async function generateCombineProof(
 
   // Create note data for both input notes
   const noteData0: NoteData = {
-    ownerAddress: note0.ownerAddress!,
+    pkX: note0.pkX!,
+    pkY: note0.pkY!,
     value: note0.value,
     token: note0.token,
-    viewingKey: note0.viewingKey || '0x0',
     salt: note0.salt || '0x0'
   }
 
   const noteData1: NoteData = {
-    ownerAddress: note1.ownerAddress!,
+    pkX: note1.pkX!,
+    pkY: note1.pkY!,
     value: note1.value,
     token: note1.token,
-    viewingKey: note1.viewingKey || '0x0',
     salt: note1.salt || '0x0'
   }
 
@@ -150,10 +151,10 @@ async function generateCombineProof(
   const combinedValue = (toBigInt(note0.value) + toBigInt(note1.value)).toString()
 
   const combinedNote: NoteData & { noteHash: string } = {
-    ownerAddress,
+    pkX: ownerPk.x,
+    pkY: ownerPk.y,
     value: combinedValue,
     token: note0.token,
-    viewingKey: ownerAddress,
     salt: generateSalt(),
     noteHash: ''
   }
@@ -161,10 +162,10 @@ async function generateCombineProof(
 
   // Create zero change note (no change in combine operation)
   const zeroNote: NoteData = {
-    ownerAddress: ownerAddress,
+    pkX: ownerPk.x,
+    pkY: ownerPk.y,
     value: '0',
     token: note0.token,
-    viewingKey: ownerAddress,
     salt: generateSalt()
   }
 
@@ -221,7 +222,7 @@ async function combineNote() {
     const { proof, combinedNote } = await generateCombineProof(
       note0,
       note1,
-      ownerAccount.value.address
+      ownerAccount.value.publicKey
     )
     console.log('Combine proof generated:', proof)
     console.log('Combined note:', combinedNote)
@@ -237,18 +238,18 @@ async function combineNote() {
 
     // Encrypt combined note for on-chain storage (ECDH with owner's public key)
     const encryptedCombinedNote = await encodeNoteData({
-      ownerAddress: combinedNote.ownerAddress,
+      pkX: combinedNote.pkX,
+      pkY: combinedNote.pkY,
       value: combinedNote.value.toString(),
       token: combinedNote.token.toString(),
-      viewingKey: combinedNote.viewingKey,
       salt: combinedNote.salt.toString()
     }, ownerAccount.value!.publicKey)
     // Zero note (empty change note) - encrypt with owner's pk for consistency
     const encryptedZeroNote = await encodeNoteData({
-      ownerAddress: '0x0',
+      pkX: '0x0',
+      pkY: '0x0',
       value: '0x0',
       token: combinedNote.token.toString(),
-      viewingKey: '0x0',
       salt: '0x0'
     }, ownerAccount.value!.publicKey)
 

@@ -15,6 +15,7 @@ import {
   saveKeystore,
   getKeystore,
   deleteKeystore as deleteKeystoreStorage,
+  clearAllAccounts,
   exportAccount as exportAccountStorage,
   importAccount as importAccountStorage,
   type StoredAccount
@@ -154,9 +155,13 @@ export const useAccountStore = defineStore('account', () => {
     setSecretKey(result.secretKey)
 
     // Update account in accounts array (needed for note scanning)
-    const accountInArray = accounts.value.find(a => a.address === address)
-    if (accountInArray) {
-      accountInArray.secretKey = result.secretKey
+    // Use array index replacement to ensure Vue reactivity triggers watchers
+    const index = accounts.value.findIndex(a => a.address === address)
+    console.log('[unlockAccountLocal] Updating account at index:', index, 'address:', address)
+    if (index !== -1) {
+      accounts.value[index] = { ...accounts.value[index], secretKey: result.secretKey }
+      console.log('[unlockAccountLocal] Account updated, accounts with sk:',
+        accounts.value.filter(a => a.secretKey).map(a => a.address))
     }
 
     // Update current account with secret key
@@ -243,36 +248,12 @@ export const useAccountStore = defineStore('account', () => {
     path.value = '/'
   }
 
-  /**
-   * Lock current account (clear secret key from memory)
-   */
-  function lockAccount() {
-    secretKey.value = null
-    if (currentAccount.value) {
-      currentAccount.value = {
-        ...currentAccount.value,
-        secretKey: undefined
-      }
-    }
+  /** Clears all data including localStorage keystores. */
+  function clearAll() {
+    reset()
+    clearAllAccounts()
   }
 
-  /**
-   * Lock a specific account by address (clear secret key from memory)
-   */
-  function lockAccountByAddress(address: string) {
-    const account = accounts.value.find(a => a.address === address)
-    if (account) {
-      account.secretKey = undefined
-    }
-    // Also clear store-level secretKey if it belongs to this account
-    if (currentAccount.value?.address === address) {
-      secretKey.value = null
-      currentAccount.value = {
-        ...currentAccount.value,
-        secretKey: undefined
-      }
-    }
-  }
 
   return {
     // State
@@ -302,8 +283,6 @@ export const useAccountStore = defineStore('account', () => {
     initializeCrypto,
     createAccountLocal,
     unlockAccountLocal,
-    lockAccount,
-    lockAccountByAddress,
     exportAccountJson,
     importAccountJson,
     hasKeystore,
@@ -313,6 +292,7 @@ export const useAccountStore = defineStore('account', () => {
     loadViewingKey,
 
     // Reset
-    reset
+    reset,
+    clearAll
   }
 })

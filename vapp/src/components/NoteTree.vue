@@ -13,7 +13,7 @@
       <svg :viewBox="`0 0 ${totalWidth} ${totalHeight}`" preserveAspectRatio="xMinYMin meet" :style="{ maxWidth: totalWidth + 'px' }" class="tree-svg">
         <g v-for="(group, gi) in layoutGroups" :key="group.createdBy || `g${gi}`"
            :transform="`translate(${group.offsetX}, ${group.offsetY})`">
-          <!-- Creator label -->
+          <!-- Creator label (Ethereum address that minted the note) -->
           <foreignObject
             v-if="group.createdBy"
             :x="group.labelX"
@@ -188,7 +188,7 @@ const treeData = computed(() => {
     }
   }
 
-  // Group roots by createdBy for branching display
+  // Group roots by createdBy (Ethereum address) for branching display
   const groups: CreatorGroup[] = []
   for (const root of roots) {
     if (root.createdBy) {

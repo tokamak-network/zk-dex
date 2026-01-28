@@ -11,7 +11,7 @@
         <div class="select is-fullwidth">
           <select v-model="selectedAccountAddress">
             <option value="">Select account...</option>
-            <option v-for="acc in accounts" :key="acc.address" :value="acc.address">{{ fmt.abbreviateZk(acc.address) }}</option>
+            <option v-for="acc in accounts" :key="acc.address" :value="acc.address">{{ fmt.formatZkPk(acc.publicKey) }}</option>
           </select>
         </div>
       </p>
@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Contract } from 'ethers'
+import { Contract, parseEther } from 'ethers'
 import { useWeb3Store } from '@/stores/web3'
 import { useContractStore } from '@/stores/contract'
 import { useAccountStore, type Account } from '@/stores/account'
@@ -67,7 +67,6 @@ import { useFormatters } from '@/composables/useFormatters'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareMintInputs, computeCircuitHash, generateSalt } from '@/lib/circuitInputs'
-import { deriveAddress } from '@/lib/accountCrypto'
 
 const fmt = useFormatters()
 
@@ -104,7 +103,16 @@ const canCreate = computed(() => {
 })
 
 function onlyNumber(event: KeyboardEvent) {
-  if (event.keyCode < 48 || event.keyCode > 57) {
+  const char = event.key
+  // Allow digits and decimal point
+  if (char === '.') {
+    // Prevent multiple dots
+    if (amount.value.includes('.')) {
+      event.preventDefault()
+    }
+    return
+  }
+  if (char < '0' || char > '9') {
     event.preventDefault()
   }
 }
@@ -135,10 +143,10 @@ async function confirmPassphrase() {
 }
 
 interface MintNoteData {
-  ownerAddress: string
+  pkX: string
+  pkY: string
   value: string
   token: string
-  viewingKey: string
   salt: string
   noteHash: string
 }
@@ -156,19 +164,17 @@ async function generateMintProof(
 
   const sk = unlockedSecretKey.value
 
-  // Derive public key and address from secret key
+  // Derive public key from secret key
   const { derivePublicKey } = await import('@/lib/accountCrypto')
   const pk = await derivePublicKey(sk)
-  const ownerAddress = await deriveAddress(pk)
-  const viewingKey = ownerAddress
   const salt = generateSalt()
 
   // Create note data
   const note: MintNoteData = {
-    ownerAddress,
+    pkX: pk.x,
+    pkY: pk.y,
     value,
     token: tokenType,
-    viewingKey,
     salt,
     noteHash: '' // Will be computed
   }
@@ -209,7 +215,10 @@ async function doCreateNote() {
   try {
     const tokenType = props.token === 'DAI' ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
 
-    const { proof, note } = await generateMintProof(amount.value, tokenType)
+    // Convert ETH/DAI amount to wei
+    const amountInWei = parseEther(amount.value).toString()
+
+    const { proof, note } = await generateMintProof(amountInWei, tokenType)
 
     // Extract proof components
     const { a, b, c, input } = proof
@@ -222,10 +231,10 @@ async function doCreateNote() {
 
     // Encrypt note data for on-chain storage (ECDH with owner's public key)
     const encryptedNote = await encodeNoteData({
-      ownerAddress: note.ownerAddress,
+      pkX: note.pkX,
+      pkY: note.pkY,
       value: note.value,
       token: note.token,
-      viewingKey: note.viewingKey,
       salt: note.salt
     }, selectedAccount.value!.publicKey)
     // Use inline ABI to avoid stale build artifact cache issues
@@ -237,7 +246,7 @@ async function doCreateNote() {
     if (props.token === 'DAI') {
       const approveTx = await contractStore.daiContract!.approve(
         contractStore.dexAddress,
-        BigInt(amount.value)
+        parseEther(amount.value)
       )
       await approveTx.wait()
 
@@ -249,7 +258,7 @@ async function doCreateNote() {
       tx = await mintContract.mint(
         aBigInt, bBigInt, cBigInt, inputBigInt,
         encryptedNote,
-        { value: BigInt(amount.value) }
+        { value: parseEther(amount.value) }
       )
     }
 

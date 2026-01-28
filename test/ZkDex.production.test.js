@@ -226,12 +226,10 @@ contract('ZkDex Production Mode', function(accounts) {
             const makeOrderProof = await snarkjsUtils.getMakeOrderProof(makerNote, sk);
 
             // 5. Make the order
-            const makerViewingKey = makerNote.viewingKey;
             const targetToken = constants.DAI_TOKEN_TYPE;
             const price = (SCALING_FACTOR / 10n).toString();  // 0.1 ETH/DAI
 
             const tx = await zkdex.makeOrder(
-                makerViewingKey,
                 targetToken,
                 price,
                 makeOrderProof.a,
@@ -411,9 +409,11 @@ contract('ZkDex Production Mode', function(accounts) {
         // Output notes from SettleOrder (for ConvertNote test)
         let rewardNote, paymentNote, changeNote;
 
-        // Price: 10 DAI per ETH (unscaled for circuit)
-        // This means "for 1 ETH, you get 10 DAI" or "0.1 ETH per DAI"
-        const PRICE = 10n;
+        // Price: 10 DAI per ETH (scaled by 10^18)
+        // Circuit math: o0Value * price = q0 * 10^18 + r0
+        //               o1Value = q1 * price + r1
+        // Price must be scaled by DECIMALS for correct unit conversion.
+        const PRICE = 10n * SCALING_FACTOR;
 
         before(async () => {
             // Generate keypairs for maker and taker
@@ -455,7 +455,6 @@ contract('ZkDex Production Mode', function(accounts) {
             const makeOrderProof = await snarkjsUtils.getMakeOrderProof(makerNote, makerSk);
 
             const tx = await zkdex.makeOrder(
-                makerNote.viewingKey,
                 constants.DAI_TOKEN_TYPE,
                 PRICE.toString(),
                 makeOrderProof.a,
@@ -548,31 +547,35 @@ contract('ZkDex Production Mode', function(accounts) {
 
         it('Step 3: Settle the order', async () => {
             // Calculate exchange amounts based on circuit logic
-            // Price = 10 (unscaled) means "10 DAI per ETH"
+            // Price = 10 * 10^18 means "10 DAI per ETH"
             //
-            // Circuit calculations with price = 10:
-            // - o1ValueOverPrice = q1 = o1Value / price = (10 * 10^18) / 10 = 10^18 (1 ETH for taker)
-            // - o0ValuePrice = q0 = (o0Value * price) / 10^18 = (2 * 10^18 * 10) / 10^18 = 20 (DAI equivalent)
+            // Circuit calculations:
+            //   q0 = (o0Value * price) / 10^18 = (2*10^18 * 10*10^18) / 10^18 = 20*10^18
+            //   q1 = o1Value / price = (10*10^18) / (10*10^18) = 1
+            //   o0ValuePrice = q0 = 20*10^18 (value of maker's ETH in DAI, in wei)
+            //   o1ValueOverPrice = q1 * 10^18 = 10^18 (value of taker's DAI in ETH, in wei)
             //
             // Comparison: o0Value >= o1ValueOverPrice? 2*10^18 >= 10^18? YES! bit = 1
             //
             // With bit = 1:
             // - reward = o1ValueOverPrice = 10^18 (1 ETH for taker)
             // - payment = o1Value = 10 * 10^18 (10 DAI for maker)
-            // - change = o0Value - o1ValueOverPrice = 2 * 10^18 - 10^18 = 10^18 (1 ETH change)
+            // - change = o0Value - o1ValueOverPrice = 2*10^18 - 10^18 = 10^18 (1 ETH change)
 
             const makerValue = 2n * SCALING_FACTOR; // 2 ETH
             const takerStakeValue = 10n * SCALING_FACTOR; // 10 DAI
 
-            // Circuit-based calculations:
-            // o1ValueOverPrice = q1 = takerStakeValue / PRICE
-            const o1ValueOverPrice = takerStakeValue / PRICE;  // 10^18 (1 ETH)
+            // Circuit-based calculations (matching settle_order.circom):
+            // q1 = o1Value / price (integer division)
+            // o1ValueOverPrice = q1 * DECIMALS
+            const q1ForCalc = takerStakeValue / PRICE;
+            const o1ValueOverPrice = q1ForCalc * SCALING_FACTOR;  // 10^18 (1 ETH)
 
             // rewardValue = o1ValueOverPrice (ETH taker receives)
             const rewardValue = o1ValueOverPrice;
             // paymentValue = takerStakeValue (all DAI goes to maker)
             const paymentValue = takerStakeValue;
-            // changeValue = makerValue - rewardValue (ETH change for taker)
+            // changeValue = makerValue - rewardValue (ETH change for maker)
             const changeValue = makerValue - rewardValue;
 
             // 1. Create reward note (ETH for taker, owner = taker's parent note)

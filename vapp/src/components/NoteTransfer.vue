@@ -11,7 +11,7 @@
         <a class="button is-static" style="width: 140px">From</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(noteOwner) }}</a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.formatZkPk(senderAccount?.publicKey) }}</a>
       </p>
     </div>
     <div class="field has-addons">
@@ -43,7 +43,7 @@
                 v-for="acc in accountStore.accounts"
                 :key="acc.address"
                 :value="acc.address"
-              >{{ fmt.abbreviateZk(acc.address) }}</option>
+              >{{ fmt.formatZkPk(acc.publicKey) }}</option>
             </select>
           </div>
         </template>
@@ -52,13 +52,13 @@
             style="width: 100%;"
             class="input"
             type="text"
-            placeholder="Recipient address (0x...)"
+            placeholder="Recipient z-pk JSON ({&quot;x&quot;:&quot;0x...&quot;,&quot;y&quot;:&quot;0x...&quot;})"
             v-model="toAccountAddress"
           >
         </template>
       </p>
     </div>
-    <!-- No public key needed - address is sufficient for creating notes -->
+    <!-- Public key is resolved internally from local account lookup -->
     <div class="field has-addons">
       <p class="control">
         <a class="button is-static" style="width: 140px">Amount</a>
@@ -98,12 +98,12 @@
         <table class="table">
           <thead>
             <tr>
-              <th>address</th>
+              <th>z-pk</th>
             </tr>
           </thead>
           <tbody>
             <tr class="hoverable" v-for="acc in accountStore.accounts" :key="acc.address" @click="selectAccountFromModal(acc)">
-              <td>{{ fmt.abbreviateZk(acc.address) }}</td>
+              <td>{{ fmt.formatZkPk(acc.publicKey) }}</td>
             </tr>
           </tbody>
         </table>
@@ -123,10 +123,10 @@ import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore, type Note } from '@/stores/note'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
-import { toBigInt } from 'ethers'
+import { toBigInt, parseEther } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
-import { prepareTransferInputs, computeCircuitHash, generateSalt, hexToBigInt, type NoteData } from '@/lib/circuitInputs'
+import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
 
 const router = useRouter()
 const contractStore = useContractStore()
@@ -253,46 +253,46 @@ interface GeneratedNotes {
 
 /**
  * Generate transfer proof entirely in browser
- * Only requires recipient address — no public key needed
+ * Uses pk-based note hashes (pkX, pkY)
  */
 async function generateTransferProof(
   oldNote: Note,
   newNoteValue: string,
   changeNoteValue: string,
   secretKey: string,
-  recipientAddress: string,
-  senderAddress: string
+  recipientPk: { x: string; y: string },
+  senderPk: { x: string; y: string }
 ): Promise<{ proof: FormattedProof; notes: GeneratedNotes }> {
-  if (!oldNote.ownerAddress) {
-    throw new Error('Note does not have ownerAddress. Cannot generate transfer proof.')
+  if (!oldNote.pkX || !oldNote.pkY) {
+    throw new Error('Note does not have public key. Cannot generate transfer proof.')
   }
 
   // Create old note data
   const oldNoteData: NoteData = {
-    ownerAddress: oldNote.ownerAddress,
+    pkX: oldNote.pkX,
+    pkY: oldNote.pkY,
     value: oldNote.value,
     token: oldNote.token,
-    viewingKey: oldNote.viewingKey || '0x0',
     salt: oldNote.salt || '0x0'
   }
 
-  // Create new note for recipient (viewingKey = address)
+  // Create new note for recipient (pk-based)
   const newNote: NoteData & { noteHash: string } = {
-    ownerAddress: recipientAddress,
+    pkX: recipientPk.x,
+    pkY: recipientPk.y,
     value: newNoteValue,
     token: oldNote.token,
-    viewingKey: recipientAddress,
     salt: generateSalt(),
     noteHash: ''
   }
   newNote.noteHash = await computeCircuitHash(newNote)
 
-  // Create change note for sender (viewingKey = address)
+  // Create change note for sender (pk-based)
   const changeNote: NoteData & { noteHash: string } = {
-    ownerAddress: senderAddress,
+    pkX: senderPk.x,
+    pkY: senderPk.y,
     value: changeNoteValue,
     token: oldNote.token,
-    viewingKey: senderAddress,
     salt: generateSalt(),
     noteHash: ''
   }
@@ -348,19 +348,33 @@ async function doTransfer() {
   loading.value = true
 
   try {
-    const change = calculateChange(selectedNote.value.value, amount.value)
+    // Convert user input (ETH) to wei for consistency with minted notes
+    const amountInWei = parseEther(amount.value).toString()
+    const change = calculateChange(selectedNote.value.value, amountInWei)
 
-    console.log('Generating transfer proof with addresses...')
-    console.log('Recipient:', toAccountAddress.value)
-    console.log('Sender:', noteOwner.value)
+    // Get recipient pk
+    let recipientPk: { x: string; y: string }
+    const recipientAccount = accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
+    if (recipientAccount?.publicKey) {
+      recipientPk = recipientAccount.publicKey
+    } else {
+      // For external transfers, we need the pk - for now require it to be a known account
+      alert('Recipient account not found locally. External transfers require recipient public key.')
+      loading.value = false
+      return
+    }
+
+    console.log('Generating transfer proof with public keys...')
+    console.log('Recipient pk:', recipientPk)
+    console.log('Sender pk:', senderAccount.value!.publicKey)
 
     const { proof, notes } = await generateTransferProof(
       selectedNote.value,
-      amount.value,
+      amountInWei,
       change.toString(),
       effectiveSecretKey.value,
-      toAccountAddress.value,
-      noteOwner.value
+      recipientPk,
+      senderAccount.value!.publicKey
     )
     console.log('Transfer proof generated:', proof)
     console.log('Generated notes:', notes)
@@ -375,22 +389,21 @@ async function doTransfer() {
     const inputBigInt = input.map(v => BigInt(v))
 
     // Encrypt notes for on-chain storage (ECDH)
-    // Recipient note: encrypt with recipient's pk (local account lookup, or sender's pk as fallback)
-    const recipientAccount = accountStore.accounts.find(acc => acc.address === toAccountAddress.value)
-    const recipientPk = recipientAccount?.publicKey || senderAccount.value!.publicKey
+    // Recipient note: encrypt with recipient's pk
     const encryptedNewNote = await encodeNoteData({
-      ownerAddress: notes.newNote.ownerAddress,
+      pkX: notes.newNote.pkX,
+      pkY: notes.newNote.pkY,
       value: notes.newNote.value.toString(),
       token: notes.newNote.token.toString(),
-      viewingKey: notes.newNote.viewingKey,
       salt: notes.newNote.salt.toString()
     }, recipientPk)
+
     // Change note: encrypt with sender's pk (always known)
     const encryptedChangeNote = await encodeNoteData({
-      ownerAddress: notes.changeNote.ownerAddress,
+      pkX: notes.changeNote.pkX,
+      pkY: notes.changeNote.pkY,
       value: notes.changeNote.value.toString(),
       token: notes.changeNote.token.toString(),
-      viewingKey: notes.changeNote.viewingKey,
       salt: notes.changeNote.salt.toString()
     }, senderAccount.value!.publicKey)
 
@@ -416,7 +429,7 @@ async function doTransfer() {
         type: '0x0',
         from: noteOwner.value,
         to: toAccountAddress.value,
-        value: amount.value,
+        value: amountInWei,
         token: selectedNote.value.token,
         change: change.toString(),
         transactionHash: receipt.hash
@@ -428,7 +441,7 @@ async function doTransfer() {
         type: '0x1',
         from: noteOwner.value,
         to: toAccountAddress.value,
-        value: amount.value,
+        value: amountInWei,
         token: selectedNote.value.token,
         transactionHash: receipt.hash
       })

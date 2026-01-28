@@ -6,12 +6,16 @@
  * - Note creation with circomlib-compatible public keys
  * - Proof generation from Note objects
  * - Hash format conversion utilities
+ *
+ * 7-input Poseidon note hash:
+ * - Regular notes: Note(pkX, pkY, value, token, pkX, pkY, salt)
+ * - Smart notes: Note(parentHash_hi, parentHash_lo, value, token, parentHash_hi, parentHash_lo, salt)
  */
 
 const Web3Utils = require('web3-utils');
 const crypto = require('crypto');
 const RLP = require('rlp');
-const { Note, constants, init: initNote, getSmartNoteOwner } = require('./Note');
+const { Note, constants, init: initNote, createSmartNote: noteCreateSmartNote } = require('./Note');
 const snarkjsUtils = require('./snarkjsUtils');
 const circomlibBabyJub = require('./circomlibBabyJub');
 const ecdhCrypto = require('./ecdhCrypto');
@@ -76,50 +80,23 @@ function toHexString(value) {
 }
 
 /**
- * Derive 160-bit address from BabyJubJub public key using Poseidon
- * address = Poseidon(pk.x, pk.y) truncated to 160 bits
- * @param {{x: string, y: string}} pk - Public key
- * @returns {Promise<string>} 160-bit address (40 hex chars with 0x prefix)
- */
-async function deriveAddressFromPK(pk) {
-    return await snarkjsUtils.getAddressFromPublicKey(pk);
-}
-
-/**
- * Create a new note with a circomlib-compatible owner public key
+ * Create a new note with a circomlib-compatible owner public key.
  *
- * Viewing key derivation:
- * - viewingKey = SHA256(pk.x || pk.y) = 256 bits
- * - ownerAddress = viewingKey[96:256] = last 160 bits
- *
- * This relationship allows:
- * - Anyone with the viewing key can derive the owner address
- * - Only the secret key holder can prove ownership and spend
+ * Regular note: owner0=pkX, owner1=pkY, vk0=pkX, vk1=pkY
+ * hash = Poseidon(pkX, pkY, value, tokenType, pkX, pkY, salt)
  *
  * @param {string} sk - Secret key of the owner
  * @param {string|number|bigint} value - Note value
  * @param {string} tokenType - Token type (ETH or DAI)
- * @param {string} viewingKey - Optional viewing key (if null, derived from pk)
+ * @param {string} _unused - Unused parameter (kept for API compatibility)
  * @param {string} salt - Optional salt (random if not provided)
  * @returns {Promise<{note: Note, sk: string}>}
  */
-async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewingKey = null, salt = null) {
+async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, _unused = null, salt = null) {
     const pk = await derivePublicKey(sk);
-
-    // Derive 160-bit address from public key using Poseidon
-    const ownerAddress = await deriveAddressFromPK(pk);
-
-    // Derive viewing key from public key if not provided
-    // viewingKey = Poseidon(pk.x, pk.y) = 254-bit field element
-    // Relationship: ownerAddress = truncate160(viewingKey)
-    if (!viewingKey) {
-        const vkData = await snarkjsUtils.getViewingKeyFromPublicKey(pk);
-        viewingKey = vkData.vk;  // Use 'vk' which contains the full Poseidon hash
-    }
 
     // Generate random salt if not provided (masked to 254 bits for circuit compatibility)
     if (!salt) {
-        // Generate 32 bytes but mask to 254 bits to fit in BN128 field
         const saltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
         const mask254 = (BigInt(1) << BigInt(254)) - BigInt(1);
         salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
@@ -128,12 +105,14 @@ async function createNote(sk, value, tokenType = constants.ETH_TOKEN_TYPE, viewi
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
-    // Note constructor already calls padLeft, no need to double-pad
+    // Regular note: owner = pk, vk = pk
     const note = new Note(
-        ownerAddress,
+        pk.x,       // owner0 = pkX
+        pk.y,       // owner1 = pkY
         valueHex,
         tokenType,
-        viewingKey,
+        pk.x,       // vk0 = pkX
+        pk.y,       // vk1 = pkY
         salt
     );
 
@@ -149,24 +128,17 @@ function createEmptyNote() {
 }
 
 /**
- * Create a smart note (stake note) for TakeOrder
- * Smart notes have ownerAddress = truncated 160-bit hash of another note
+ * Create a smart note (stake note) for TakeOrder.
+ * Smart note: owner0=parentHash_hi, owner1=parentHash_lo, vk0=owner0, vk1=owner1
  *
- * Viewing key derivation for smart notes:
- * - viewingKey = parentNoteHash = 256 bits
- * - ownerAddress = truncated(parentNoteHash) = h0[96:128] + h1 = 160 bits
- *
- * This maintains the same relationship as normal notes:
- * - ownerAddress is embedded within the viewing key
- *
- * @param {Note} ownerNote - The note whose hash will be the owner (e.g., maker note)
+ * @param {Note} ownerNote - The note whose hash will be the parent (e.g., maker note)
  * @param {string|number|bigint} value - Note value
  * @param {string} tokenType - Token type
- * @param {string} viewingKey - Optional viewing key (if null, derived from owner note hash)
+ * @param {string} _unused - Unused parameter (kept for API compatibility)
  * @param {string} salt - Optional salt (random if not provided)
  * @returns {Note}
  */
-function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = null) {
+function createSmartNote(ownerNote, value, tokenType, _unused = null, salt = null) {
     // Generate random salt if not provided
     if (!salt) {
         const saltBigInt = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
@@ -174,29 +146,11 @@ function createSmartNote(ownerNote, value, tokenType, viewingKey = null, salt = 
         salt = '0x' + (saltBigInt & mask254).toString(16).padStart(64, '0');
     }
 
-    // Get owner note hash (Poseidon, sync after init)
-    const ownerHash = ownerNote.hash();
-
-    // Derive ownerAddress as truncated hash (lower 160 bits)
-    const ownerAddress = getSmartNoteOwner(ownerHash);
-
-    // Derive viewing key from owner note hash if not provided
-    if (!viewingKey) {
-        viewingKey = ownerHash;
-    }
-
     // Convert value to hex string (handles BigInt)
     const valueHex = toHexString(value);
 
-    const note = new Note(
-        ownerAddress,
-        valueHex,
-        tokenType,
-        viewingKey,
-        salt
-    );
-
-    return note;
+    // Delegate to Note.js createSmartNote which splits parentHash into owner0/owner1
+    return noteCreateSmartNote(ownerNote, valueHex, tokenType, salt);
 }
 
 /**
@@ -319,8 +273,7 @@ async function verifyProof(circuitName, proof, publicSignals) {
  * @returns {Promise<string>} ECDH-encrypted hex string
  */
 async function encryptNoteForRecipient(note, recipientPk) {
-    // RLP-encode note fields: [ownerAddress, value, token, viewingKey, salt]
-    // Note class stores fields as 0x-prefixed padded hex strings
+    // RLP-encode note fields: [owner0, owner1, value, token, vk0, vk1, salt]
     function hexToBuffer(hexStr) {
         const clean = hexStr.replace('0x', '');
         // Remove leading zeros but keep at least 2 chars
@@ -330,10 +283,12 @@ async function encryptNoteForRecipient(note, recipientPk) {
     }
 
     const fields = [
-        hexToBuffer(note.ownerAddress),
+        hexToBuffer(note.owner0),
+        hexToBuffer(note.owner1),
         hexToBuffer(note.value),
         hexToBuffer(note.token),
-        hexToBuffer(note.viewingKey),
+        hexToBuffer(note.vk0),
+        hexToBuffer(note.vk1),
         hexToBuffer(note.salt)
     ];
     const rlpEncoded = RLP.encode(fields);
@@ -385,7 +340,6 @@ module.exports = {
     // Key management
     generateKeypair,
     derivePublicKey,
-    deriveAddressFromPK,
 
     // Note creation
     createNote,

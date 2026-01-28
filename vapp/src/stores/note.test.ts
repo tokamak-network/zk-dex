@@ -17,7 +17,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useNoteStore, type Note } from './note'
 import {
-  ALICE_ADDRESS, ALICE_ADDRESS_0X, BOB_ADDRESS, CAROL_ADDRESS,
+  ALICE_ADDRESS, ALICE_PK, BOB_ADDRESS, CAROL_ADDRESS,
   NOTE_ALICE_ETH_VALID, NOTE_ALICE_DAI_VALID, NOTE_ALICE_ETH_SPENT,
   NOTE_ALICE_DAI_VALID_2, NOTE_ALICE_INVALID, NOTE_ALICE_SMART,
   NOTE_BOB_ETH_VALID,
@@ -59,7 +59,8 @@ function createNote(overrides?: Partial<Note>): Note {
   return {
     hash: NOTE_ALICE_ETH_VALID.hashHex,
     owner: ALICE_ADDRESS,
-    ownerAddress: ALICE_ADDRESS_0X,
+    pkX: ALICE_PK.x,
+    pkY: ALICE_PK.y,
     value: NOTE_ALICE_ETH_VALID.value,
     token: '0x0',
     state: '0x1', // VALID

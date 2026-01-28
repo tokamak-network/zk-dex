@@ -2,7 +2,7 @@
   <div>
     <AccountList :accounts="accountStore.accounts" @selectAccount="selectAccount" />
     <div class="box">
-      Delete account: {{ fmt.formatZkAddress(addressToDelete) }}
+      Delete account: {{ fmt.formatZkPk(accountToDelete?.publicKey) }}
       <button class="button" style="width: 100%; margin-top: 15px;" @click="deleteAccountHandler" :class="{'is-static': accountToDelete == null}">Delete</button>
     </div>
   </div>

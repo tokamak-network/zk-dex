@@ -28,7 +28,7 @@
       <section>
         <o-select placeholder="Select Account" v-model="selectedAccount">
           <option v-for="account in accounts" :key="account.address" :value="account">
-            {{ fmt.abbreviateZk(account.address) }}
+            {{ fmt.formatZkPk(account.publicKey) }}
           </option>
         </o-select>
       </section>
@@ -47,8 +47,8 @@
         <tr v-for="token in tokens" :key="token.type">
           <td>{{ token.name }}</td>
           <td>{{ token.symbol }}</td>
-          <td>{{ totalNotes(token.type) }}</td>
-          <td>{{ totalValue(token.type) }}</td>
+          <td>{{ hasUnlockedAccount ? totalNotes(token.type) : '**' }}</td>
+          <td>{{ hasUnlockedAccount ? totalValue(token.type) : '**' }}</td>
           <td v-if="route.path === '/' || route.path === ''">
             <router-link :to="{ path: '/notes', query: { action: 'mint', token: token.symbol } }" class="button is-small is-primary">Issue</router-link>
             <router-link :to="{ path: '/notes', query: { action: 'liquidate', token: token.symbol } }" class="button is-small is-warning" style="margin-left: 5px;">Redeem</router-link>
@@ -93,8 +93,18 @@ const noteStore = useNoteStore()
 const accountStore = useAccountStore()
 
 const isRefreshing = computed(() => noteStore.isScanning)
+const hasUnlockedAccount = computed(() => {
+  const result = accountStore.accounts.some(acc => acc.secretKey)
+  console.log('[NoteBalanceList] hasUnlockedAccount:', result, 'accounts with sk:', accountStore.accounts.filter(a => a.secretKey).map(a => a.address))
+  return result
+})
 const daiBalance = ref('0')
 const isMinting = ref(false)
+
+// Debug: watch noteStore.notes changes
+watch(() => noteStore.notes.length, (newLen) => {
+  console.log('[NoteBalanceList] noteStore.notes.length changed:', newLen)
+})
 
 const formatDaiBalance = computed(() => {
   if (daiBalance.value === '0') return '0'
@@ -144,15 +154,11 @@ watch(() => contractStore.isInitialized, (initialized) => {
   if (initialized) loadDaiBalance()
 })
 
-// Re-scan notes when an account is unlocked (secretKey becomes available)
-watch(() => accountStore.secretKey, (newKey, oldKey) => {
-  if (newKey && !oldKey && contractStore.isInitialized) {
-    noteStore.scanBlockchainNotes()
-  }
-})
+// Note: Account unlock watcher is handled in DashboardSummaryPage.vue
 
 async function refreshNotes() {
-  await noteStore.scanBlockchainNotes()
+  // Fetch fresh events from blockchain and decrypt
+  await noteStore.fetchAllNoteEvents()
   await loadDaiBalance()
   await web3Store.updateBalance()
 }
@@ -180,7 +186,8 @@ function totalValue(type: string): string {
       return t === type && n.state === '0x1' // VALID notes only
     })
     .reduce((acc, n) => acc + toBigInt(n.value), BigInt(0))
-  return sum.toString()
+  if (sum === BigInt(0)) return '0'
+  return formatEther(sum)
 }
 
 watch(selectedAccount, (newAccount) => {

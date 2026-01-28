@@ -7,7 +7,7 @@
  * - toNumberString
  * - formatAddress
  * - orderState / noteState / transferNoteType / orderType / tokenType / isSmartNote
- * - abbreviate / formatZkAddress / abbreviateZk
+ * - abbreviate / formatZkAddress / abbreviateZk / formatZkPk
  * - formatTimestamp
  */
 
@@ -28,6 +28,7 @@ const {
   isSmartNote,
   abbreviate,
   abbreviateZk,
+  formatZkPk,
   formatTimestamp
 } = useFormatters()
 
@@ -164,6 +165,29 @@ describe('useFormatters', () => {
 
     it('빈 문자열 → 빈 문자열', () => {
       expect(abbreviateZk('')).toBe('')
+    })
+  })
+
+  describe('formatZkPk', () => {
+    it('짧은 pk → 축약 없이 그대로', () => {
+      const pk = { x: '0xabc', y: '0xdef' }
+      expect(formatZkPk(pk)).toBe('(0xabc, 0xdef)')
+    })
+
+    it('긴 pk → 앞3 뒤3 축약', () => {
+      const pk = {
+        x: '0x1234567890abcdef1234567890abcdef',
+        y: '0xfedcba0987654321fedcba0987654321'
+      }
+      expect(formatZkPk(pk)).toBe('(0x123…def, 0xfed…321)')
+    })
+
+    it('undefined → 빈 문자열', () => {
+      expect(formatZkPk(undefined)).toBe('')
+    })
+
+    it('null → 빈 문자열', () => {
+      expect(formatZkPk(null)).toBe('')
     })
   })
 

@@ -1,20 +1,39 @@
 /**
- * Circuit Input Preparation Module (Poseidon version)
+ * Circuit Input Preparation Module (Poseidon version, 7-input hash)
  *
  * Prepares circuit inputs from note data for proof generation.
- * Uses Poseidon hash (single field element) instead of SHA256 (h0/h1 split).
+ * Uses Poseidon hash with 7 inputs: (owner0, owner1, value, tokenType, vk0, vk1, salt)
+ *
+ * Regular notes:
+ *   owner0 = pkX, owner1 = pkY (BabyJubJub public key)
+ *   vk0 = pkX, vk1 = pkY (viewing key = public key)
+ *
+ * Smart notes:
+ *   owner0 = parentHash >> 128, owner1 = parentHash & MASK_128
+ *   vk0 = owner0, vk1 = owner1 (viewing key = parent hash split)
  */
 
-import { poseidonHash, truncateTo160Bits } from './poseidon'
+import { poseidonHash } from './poseidon'
 
 /**
- * Note data interface
+ * Note data interface (pk-based, regular notes)
  */
 export interface NoteData {
-  ownerAddress: string
+  pkX: string
+  pkY: string
   value: string | bigint
   token: string | bigint
-  viewingKey: string
+  salt: string | bigint
+  noteHash?: string
+}
+
+/**
+ * Smart note data interface (parentHash-based, for DEX orders)
+ */
+export interface SmartNoteData {
+  parentHash: string
+  value: string | bigint
+  token: string | bigint
   salt: string | bigint
   noteHash?: string
 }
@@ -25,20 +44,19 @@ export interface NoteData {
 export type CircuitInputs = Record<string, string>
 
 /**
- * EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
+ * EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0, 0)
  * Computed lazily on first use
  */
 let _emptyNoteHash: string | null = null
 
 /**
- * Compute and cache the empty note hash, defined as Poseidon(0, 0, 0, 0, 0, 0).
- * The result is computed lazily on the first call and then cached for subsequent use.
+ * Compute and cache the empty note hash, defined as Poseidon(0, 0, 0, 0, 0, 0, 0).
  *
  * @returns The empty note hash as a decimal string
  */
 export async function getEmptyNoteHash(): Promise<string> {
   if (_emptyNoteHash === null) {
-    const hash = await poseidonHash([0, 0, 0, 0, 0, 0])
+    const hash = await poseidonHash([0, 0, 0, 0, 0, 0, 0])
     _emptyNoteHash = hash.toString()
   }
   return _emptyNoteHash
@@ -46,7 +64,6 @@ export async function getEmptyNoteHash(): Promise<string> {
 
 /**
  * Convert a hex string, decimal string, number, or bigint to a BigInt.
- * Hex strings may include a 0x prefix; plain numeric strings are parsed as decimal.
  *
  * @param value - The value to convert (hex string, decimal string, number, or bigint)
  * @returns The value as a BigInt
@@ -63,7 +80,6 @@ export function hexToBigInt(value: string | bigint | number): bigint {
 
 /**
  * Mask a value to 254 bits by applying a bitwise AND with (2^254 - 1).
- * This ensures the value fits within the BN128 field constraint used by circuits.
  *
  * @param value - The value to mask, as a hex string or bigint
  * @returns The value truncated to 254 bits as a BigInt
@@ -74,43 +90,64 @@ export function maskTo254Bits(value: string | bigint): bigint {
 }
 
 /**
- * Split a 256-bit value into two 128-bit halves.
- * Used to decompose the viewing key into (vk0, vk1) for circuit inputs.
+ * Split a field element into two 128-bit halves.
+ * Used for encoding parentHash into (owner0, owner1) for smart notes.
  *
- * @param value - The 256-bit value to split, as a hex string or bigint
- * @returns A tuple of [high, low] decimal strings, each representing a 128-bit half
+ * @param hash - The full hash value as bigint
+ * @returns { hi, lo } where hi = hash >> 128 and lo = hash & MASK_128
  */
-export function split256To128(value: string | bigint): [string, string] {
-  const bigValue = hexToBigInt(value)
-  const mask128 = (BigInt(1) << BigInt(128)) - BigInt(1)
-  const low = bigValue & mask128
-  const high = bigValue >> BigInt(128)
-  return [high.toString(), low.toString()]
+export function split128(hash: bigint): { hi: bigint; lo: bigint } {
+  const MASK_128 = (1n << 128n) - 1n
+  return {
+    hi: hash >> 128n,
+    lo: hash & MASK_128
+  }
 }
 
 /**
- * Compute note hash using Poseidon
- * hash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
- * Returns a single field element as decimal string
+ * Compute note hash using Poseidon (regular note, 7 inputs)
+ * hash = Poseidon(pkX, pkY, value, tokenType, pkX, pkY, salt)
+ * For regular notes, vk0=pkX and vk1=pkY.
  */
 export async function computeCircuitHash(note: NoteData): Promise<string> {
-  const [vk0, vk1] = split256To128(note.viewingKey)
-
+  const pkX = hexToBigInt(note.pkX)
+  const pkY = hexToBigInt(note.pkY)
   const hash = await poseidonHash([
-    hexToBigInt(note.ownerAddress),
+    pkX,
+    pkY,
     hexToBigInt(note.value),
     hexToBigInt(note.token),
-    BigInt(vk0),
-    BigInt(vk1),
+    pkX,  // vk0 = pkX
+    pkY,  // vk1 = pkY
     hexToBigInt(note.salt)
   ])
-
   return hash.toString()
 }
 
 /**
- * Get note hash from note object using Poseidon
- * For null/undefined notes, returns the EMPTY_NOTE_HASH
+ * Compute smart note hash using Poseidon (7 inputs)
+ * Splits parentHash into (hi, lo) and uses:
+ * hash = Poseidon(hi, lo, value, tokenType, hi, lo, salt)
+ * For smart notes, owner = vk = parentHash split.
+ */
+export async function computeSmartNoteHash(note: SmartNoteData): Promise<string> {
+  const parentHashBigInt = hexToBigInt(note.parentHash)
+  const { hi, lo } = split128(parentHashBigInt)
+  const hash = await poseidonHash([
+    hi,       // owner0
+    lo,       // owner1
+    hexToBigInt(note.value),
+    hexToBigInt(note.token),
+    hi,       // vk0 = owner0
+    lo,       // vk1 = owner1
+    hexToBigInt(note.salt)
+  ])
+  return hash.toString()
+}
+
+/**
+ * Get note hash from NoteData using Poseidon.
+ * For null/undefined notes, returns the EMPTY_NOTE_HASH.
  */
 export async function getNoteHash(note: NoteData | null | undefined): Promise<string> {
   if (!note) {
@@ -125,28 +162,46 @@ export async function getNoteHash(note: NoteData | null | undefined): Promise<st
 }
 
 /**
- * Prepare inputs for MintNBurnNote circuit (Poseidon version)
- * Circuit signals: noteHash, value, tokenType, ownerAddress, vk0, vk1, salt, sk
+ * Get smart note hash from SmartNoteData using Poseidon.
+ * For null/undefined notes, returns the EMPTY_NOTE_HASH.
+ */
+export async function getSmartNoteHash(note: SmartNoteData | null | undefined): Promise<string> {
+  if (!note) {
+    return await getEmptyNoteHash()
+  }
+
+  if (note.noteHash) {
+    return hexToBigInt(note.noteHash).toString()
+  }
+
+  return await computeSmartNoteHash(note)
+}
+
+/**
+ * Prepare inputs for MintNBurnNote circuit
+ * Circuit signals: noteHash, value, tokenType, owner0, owner1, vk0, vk1, salt, sk
  */
 export async function prepareMintInputs(note: NoteData, secretKey: string): Promise<CircuitInputs> {
   const noteHash = await computeCircuitHash(note)
-  const [vk0, vk1] = split256To128(note.viewingKey)
+  const pkX = hexToBigInt(note.pkX).toString()
+  const pkY = hexToBigInt(note.pkY).toString()
 
   return {
     noteHash,
     value: maskTo254Bits(note.value).toString(),
     tokenType: maskTo254Bits(note.token).toString(),
-    ownerAddress: hexToBigInt(note.ownerAddress).toString(),
-    vk0,
-    vk1,
+    owner0: pkX,
+    owner1: pkY,
+    vk0: pkX,   // vk = pk for regular notes
+    vk1: pkY,
     salt: maskTo254Bits(note.salt).toString(),
     sk: maskTo254Bits(secretKey).toString()
   }
 }
 
 /**
- * Prepare inputs for TransferNote circuit (Poseidon version)
- * Circuit signals: o0Hash, o1Hash, newHash, changeHash, + private inputs
+ * Prepare inputs for TransferNote circuit
+ * All 4 notes use the same 7-input hash format.
  */
 export async function prepareTransferInputs(
   oldNote0: NoteData,
@@ -161,10 +216,12 @@ export async function prepareTransferInputs(
   const newHash = await getNoteHash(newNote)
   const changeHash = await getNoteHash(changeNote)
 
-  const [o0Vk0, o0Vk1] = split256To128(oldNote0.viewingKey)
-  const [o1Vk0, o1Vk1] = oldNote1 ? split256To128(oldNote1.viewingKey) : ['0', '0']
-  const [nVk0, nVk1] = split256To128(newNote.viewingKey)
-  const [cVk0, cVk1] = split256To128(changeNote.viewingKey)
+  const o0PkX = hexToBigInt(oldNote0.pkX).toString()
+  const o0PkY = hexToBigInt(oldNote0.pkY).toString()
+  const nPkX = hexToBigInt(newNote.pkX).toString()
+  const nPkY = hexToBigInt(newNote.pkY).toString()
+  const cPkX = hexToBigInt(changeNote.pkX).toString()
+  const cPkY = hexToBigInt(changeNote.pkY).toString()
 
   return {
     // Public inputs
@@ -173,36 +230,40 @@ export async function prepareTransferInputs(
     newHash,
     changeHash,
 
-    // Old note 0
-    o0OwnerAddress: hexToBigInt(oldNote0.ownerAddress).toString(),
+    // Old note 0 (7 fields)
+    o0Owner0: o0PkX,
+    o0Owner1: o0PkY,
     o0Value: hexToBigInt(oldNote0.value).toString(),
     o0Type: hexToBigInt(oldNote0.token).toString(),
-    o0Vk0,
-    o0Vk1,
+    o0Vk0: o0PkX,
+    o0Vk1: o0PkY,
     o0Salt: hexToBigInt(oldNote0.salt).toString(),
 
-    // Old note 1
-    o1OwnerAddress: oldNote1 ? hexToBigInt(oldNote1.ownerAddress).toString() : '0',
+    // Old note 1 (7 fields, all 0 if null)
+    o1Owner0: oldNote1 ? hexToBigInt(oldNote1.pkX).toString() : '0',
+    o1Owner1: oldNote1 ? hexToBigInt(oldNote1.pkY).toString() : '0',
     o1Value: oldNote1 ? hexToBigInt(oldNote1.value).toString() : '0',
     o1Type: oldNote1 ? hexToBigInt(oldNote1.token).toString() : '0',
-    o1Vk0,
-    o1Vk1,
+    o1Vk0: oldNote1 ? hexToBigInt(oldNote1.pkX).toString() : '0',
+    o1Vk1: oldNote1 ? hexToBigInt(oldNote1.pkY).toString() : '0',
     o1Salt: oldNote1 ? hexToBigInt(oldNote1.salt).toString() : '0',
 
-    // New note
-    nOwnerAddress: hexToBigInt(newNote.ownerAddress).toString(),
+    // New note (7 fields)
+    nOwner0: nPkX,
+    nOwner1: nPkY,
     nValue: hexToBigInt(newNote.value).toString(),
     nType: hexToBigInt(newNote.token).toString(),
-    nVk0,
-    nVk1,
+    nVk0: nPkX,
+    nVk1: nPkY,
     nSalt: hexToBigInt(newNote.salt).toString(),
 
-    // Change note
-    cOwnerAddress: hexToBigInt(changeNote.ownerAddress).toString(),
+    // Change note (7 fields)
+    cOwner0: cPkX,
+    cOwner1: cPkY,
     cValue: hexToBigInt(changeNote.value).toString(),
     cType: hexToBigInt(changeNote.token).toString(),
-    cVk0,
-    cVk1,
+    cVk0: cPkX,
+    cVk1: cPkY,
     cSalt: hexToBigInt(changeNote.salt).toString(),
 
     // Secret keys
@@ -212,61 +273,65 @@ export async function prepareTransferInputs(
 }
 
 /**
- * Prepare inputs for MakeOrder circuit (Poseidon version)
- * Circuit signals: noteHash, tokenType, ownerAddress, value, vk0, vk1, salt, sk
+ * Prepare inputs for MakeOrder circuit
+ * Circuit signals: noteHash, tokenType, owner0, owner1, value, vk0, vk1, salt, sk
  */
 export async function prepareMakeOrderInputs(makerNote: NoteData, secretKey: string): Promise<CircuitInputs> {
   const noteHash = await getNoteHash(makerNote)
-  const [vk0, vk1] = split256To128(makerNote.viewingKey)
+  const pkX = hexToBigInt(makerNote.pkX).toString()
+  const pkY = hexToBigInt(makerNote.pkY).toString()
 
   return {
     noteHash,
     tokenType: hexToBigInt(makerNote.token).toString(),
-    ownerAddress: hexToBigInt(makerNote.ownerAddress).toString(),
+    owner0: pkX,
+    owner1: pkY,
     value: hexToBigInt(makerNote.value).toString(),
-    vk0,
-    vk1,
+    vk0: pkX,
+    vk1: pkY,
     salt: hexToBigInt(makerNote.salt).toString(),
     sk: hexToBigInt(secretKey).toString()
   }
 }
 
 /**
- * Prepare inputs for TakeOrder circuit (Poseidon version)
- * Circuit signals: oldNoteHash, oldType, newNoteHash, newOwnerAddress, newType,
- *   oldOwnerAddress, oldValue, oldVk0, oldVk1, oldSalt,
- *   newValue, newVk0, newVk1, newSalt, sk
+ * Prepare inputs for TakeOrder circuit
+ * - Old note: regular (pk-based)
+ * - New note: smart (parentHash split into owner, vk derived)
  */
 export async function prepareTakeOrderInputs(
   parentNote: NoteData,
-  stakeNote: NoteData,
+  stakeNote: SmartNoteData,
   secretKey: string
 ): Promise<CircuitInputs> {
   const oldNoteHash = await getNoteHash(parentNote)
-  const newNoteHash = await getNoteHash(stakeNote)
+  const newNoteHash = await getSmartNoteHash(stakeNote)
+  const parentHashBigInt = hexToBigInt(stakeNote.parentHash)
+  const { hi, lo } = split128(parentHashBigInt)
 
-  const [oldVk0, oldVk1] = split256To128(parentNote.viewingKey)
-  const [newVk0, newVk1] = split256To128(stakeNote.viewingKey)
+  const oldPkX = hexToBigInt(parentNote.pkX).toString()
+  const oldPkY = hexToBigInt(parentNote.pkY).toString()
 
   return {
     // Public inputs
     oldNoteHash,
     oldType: hexToBigInt(parentNote.token).toString(),
     newNoteHash,
-    newOwnerAddress: hexToBigInt(stakeNote.ownerAddress).toString(),
+    newParentHash: parentHashBigInt.toString(),
     newType: hexToBigInt(stakeNote.token).toString(),
 
-    // Parent note private
-    oldOwnerAddress: hexToBigInt(parentNote.ownerAddress).toString(),
+    // Old note private (7 fields)
+    oldOwner0: oldPkX,
+    oldOwner1: oldPkY,
     oldValue: hexToBigInt(parentNote.value).toString(),
-    oldVk0,
-    oldVk1,
+    oldVk0: oldPkX,
+    oldVk1: oldPkY,
     oldSalt: hexToBigInt(parentNote.salt).toString(),
 
-    // Stake note private
+    // New note private (vk0/vk1 = parentHash split)
     newValue: hexToBigInt(stakeNote.value).toString(),
-    newVk0,
-    newVk1,
+    newVk0: hi.toString(),
+    newVk1: lo.toString(),
     newSalt: hexToBigInt(stakeNote.salt).toString(),
 
     sk: hexToBigInt(secretKey).toString()
@@ -274,16 +339,16 @@ export async function prepareTakeOrderInputs(
 }
 
 /**
- * Prepare inputs for SettleOrder circuit (Poseidon version)
- * Circuit signals: o0Hash, o0Type, o1Hash, o1Type, n0Hash, n0OwnerAddress, n0Type,
- *   n1Hash, n1OwnerAddress, n1Type, n2Hash, n2Type, price, + private inputs
+ * Prepare inputs for SettleOrder circuit
+ * - Maker note (o0): regular note
+ * - All other notes: smart notes (parentHash split)
  */
 export async function prepareSettleOrderInputs(
   makerNote: NoteData,
-  takerStakeNote: NoteData,
-  rewardNote: NoteData,
-  paymentNote: NoteData,
-  changeNote: NoteData,
+  takerStakeNote: SmartNoteData,
+  rewardNote: SmartNoteData,
+  paymentNote: SmartNoteData,
+  changeNote: SmartNoteData,
   price: string | bigint,
   secretKey: string,
   q0: string | bigint,
@@ -292,16 +357,17 @@ export async function prepareSettleOrderInputs(
   r1: string | bigint
 ): Promise<CircuitInputs> {
   const o0Hash = await getNoteHash(makerNote)
-  const o1Hash = await getNoteHash(takerStakeNote)
-  const n0Hash = await getNoteHash(rewardNote)
-  const n1Hash = await getNoteHash(paymentNote)
-  const n2Hash = await getNoteHash(changeNote)
+  const o1Hash = await getSmartNoteHash(takerStakeNote)
+  const n0Hash = await getSmartNoteHash(rewardNote)
+  const n1Hash = await getSmartNoteHash(paymentNote)
+  const n2Hash = await getSmartNoteHash(changeNote)
 
-  const [o0Vk0, o0Vk1] = split256To128(makerNote.viewingKey)
-  const [o1Vk0, o1Vk1] = split256To128(takerStakeNote.viewingKey)
-  const [n0Vk0, n0Vk1] = split256To128(rewardNote.viewingKey)
-  const [n1Vk0, n1Vk1] = split256To128(paymentNote.viewingKey)
-  const [n2Vk0, n2Vk1] = split256To128(changeNote.viewingKey)
+  // Split parentHashes for smart notes
+  const o1Split = split128(hexToBigInt(takerStakeNote.parentHash))
+  const n2Split = split128(hexToBigInt(changeNote.parentHash))
+
+  const o0PkX = hexToBigInt(makerNote.pkX).toString()
+  const o0PkY = hexToBigInt(makerNote.pkY).toString()
 
   return {
     // Public inputs
@@ -310,46 +376,49 @@ export async function prepareSettleOrderInputs(
     o1Hash,
     o1Type: hexToBigInt(takerStakeNote.token).toString(),
     n0Hash,
-    n0OwnerAddress: hexToBigInt(rewardNote.ownerAddress).toString(),
+    n0ParentHash: hexToBigInt(rewardNote.parentHash).toString(),
     n0Type: hexToBigInt(rewardNote.token).toString(),
     n1Hash,
-    n1OwnerAddress: hexToBigInt(paymentNote.ownerAddress).toString(),
+    n1ParentHash: hexToBigInt(paymentNote.parentHash).toString(),
     n1Type: hexToBigInt(paymentNote.token).toString(),
     n2Hash,
     n2Type: hexToBigInt(changeNote.token).toString(),
     price: hexToBigInt(price).toString(),
 
-    // Maker note private
-    o0OwnerAddress: hexToBigInt(makerNote.ownerAddress).toString(),
+    // Maker note private (regular, 7 fields)
+    o0Owner0: o0PkX,
+    o0Owner1: o0PkY,
     o0Value: hexToBigInt(makerNote.value).toString(),
-    o0Vk0,
-    o0Vk1,
+    o0Vk0: o0PkX,
+    o0Vk1: o0PkY,
     o0Salt: hexToBigInt(makerNote.salt).toString(),
 
-    // Taker stake note private
-    o1OwnerAddress: hexToBigInt(takerStakeNote.ownerAddress).toString(),
+    // Taker stake note private (smart, split parentHash)
+    o1Owner0: o1Split.hi.toString(),
+    o1Owner1: o1Split.lo.toString(),
     o1Value: hexToBigInt(takerStakeNote.value).toString(),
-    o1Vk0,
-    o1Vk1,
+    o1Vk0: o1Split.hi.toString(),
+    o1Vk1: o1Split.lo.toString(),
     o1Salt: hexToBigInt(takerStakeNote.salt).toString(),
 
-    // Reward note private
+    // Reward note private (smart, parentHash split done by circuit via n0ParentHash)
     n0Value: hexToBigInt(rewardNote.value).toString(),
-    n0Vk0,
-    n0Vk1,
+    n0Vk0: split128(hexToBigInt(rewardNote.parentHash)).hi.toString(),
+    n0Vk1: split128(hexToBigInt(rewardNote.parentHash)).lo.toString(),
     n0Salt: hexToBigInt(rewardNote.salt).toString(),
 
-    // Payment note private
+    // Payment note private (smart, parentHash split done by circuit via n1ParentHash)
     n1Value: hexToBigInt(paymentNote.value).toString(),
-    n1Vk0,
-    n1Vk1,
+    n1Vk0: split128(hexToBigInt(paymentNote.parentHash)).hi.toString(),
+    n1Vk1: split128(hexToBigInt(paymentNote.parentHash)).lo.toString(),
     n1Salt: hexToBigInt(paymentNote.salt).toString(),
 
-    // Change note private
-    n2OwnerAddress: hexToBigInt(changeNote.ownerAddress).toString(),
+    // Change note private (smart, split parentHash)
+    n2Owner0: n2Split.hi.toString(),
+    n2Owner1: n2Split.lo.toString(),
     n2Value: hexToBigInt(changeNote.value).toString(),
-    n2Vk0,
-    n2Vk1,
+    n2Vk0: n2Split.hi.toString(),
+    n2Vk1: n2Split.lo.toString(),
     n2Salt: hexToBigInt(changeNote.salt).toString(),
 
     // Division witnesses
@@ -363,31 +432,26 @@ export async function prepareSettleOrderInputs(
 }
 
 /**
- * Prepare inputs for the ConvertNote circuit (Poseidon version).
- * Converts a smart note back to a regular note by providing the smart note,
- * its origin note, and the desired new note along with the owner's secret key.
- *
- * Circuit signals: smartHash, originHash, newHash, + private inputs
- *
- * @param smartNote - The smart note to convert
- * @param originNote - The original note that the smart note was derived from
- * @param newNote - The new note to be created from the conversion
- * @param secretKey - The owner's secret key as a hex string
- * @returns A CircuitInputs record with all public and private circuit signal values as strings
+ * Prepare inputs for the ConvertNote circuit.
+ * - Smart note: parentHash split into (owner0, owner1)
+ * - Origin note: regular (pk-based)
+ * - New note: regular (pk-based)
  */
 export async function prepareConvertInputs(
-  smartNote: NoteData,
+  smartNote: SmartNoteData,
   originNote: NoteData,
   newNote: NoteData,
   secretKey: string
 ): Promise<CircuitInputs> {
-  const smartHash = await getNoteHash(smartNote)
+  const smartHash = await getSmartNoteHash(smartNote)
   const originHash = await getNoteHash(originNote)
   const newHash = await getNoteHash(newNote)
 
-  const [smartVk0, smartVk1] = split256To128(smartNote.viewingKey)
-  const [originVk0, originVk1] = split256To128(originNote.viewingKey)
-  const [nVk0, nVk1] = split256To128(newNote.viewingKey)
+  const smartSplit = split128(hexToBigInt(smartNote.parentHash))
+  const originPkX = hexToBigInt(originNote.pkX).toString()
+  const originPkY = hexToBigInt(originNote.pkY).toString()
+  const nPkX = hexToBigInt(newNote.pkX).toString()
+  const nPkY = hexToBigInt(newNote.pkY).toString()
 
   return {
     // Public inputs
@@ -395,28 +459,31 @@ export async function prepareConvertInputs(
     originHash,
     newHash,
 
-    // Smart note
-    smartOwnerAddress: hexToBigInt(smartNote.ownerAddress).toString(),
+    // Smart note (7 fields, owner = parentHash split, vk = owner)
+    smartOwner0: smartSplit.hi.toString(),
+    smartOwner1: smartSplit.lo.toString(),
     smartValue: hexToBigInt(smartNote.value).toString(),
     smartType: hexToBigInt(smartNote.token).toString(),
-    smartVk0,
-    smartVk1,
+    smartVk0: smartSplit.hi.toString(),
+    smartVk1: smartSplit.lo.toString(),
     smartSalt: hexToBigInt(smartNote.salt).toString(),
 
-    // Origin note
-    originOwnerAddress: hexToBigInt(originNote.ownerAddress).toString(),
+    // Origin note (7 fields, regular, vk = pk)
+    originOwner0: originPkX,
+    originOwner1: originPkY,
     originValue: hexToBigInt(originNote.value).toString(),
     originType: hexToBigInt(originNote.token).toString(),
-    originVk0,
-    originVk1,
+    originVk0: originPkX,
+    originVk1: originPkY,
     originSalt: hexToBigInt(originNote.salt).toString(),
 
-    // New note
-    nOwnerAddress: hexToBigInt(newNote.ownerAddress).toString(),
+    // New note (7 fields, regular, vk = pk)
+    nOwner0: nPkX,
+    nOwner1: nPkY,
     nValue: hexToBigInt(newNote.value).toString(),
     nType: hexToBigInt(newNote.token).toString(),
-    nVk0,
-    nVk1,
+    nVk0: nPkX,
+    nVk1: nPkY,
     nSalt: hexToBigInt(newNote.salt).toString(),
 
     sk: hexToBigInt(secretKey).toString()
@@ -424,23 +491,8 @@ export async function prepareConvertInputs(
 }
 
 /**
- * Derive the smart note owner address from a parent note hash.
- * The address is the Poseidon hash truncated to 160 bits, matching the
- * on-chain derivation used for smart note ownership.
- *
- * @param noteHash - The parent note hash as a hex or decimal string
- * @returns The derived 160-bit address as a 0x-prefixed, zero-padded 40-character hex string
- */
-export function getSmartNoteOwnerAddress(noteHash: string): string {
-  const hash = hexToBigInt(noteHash)
-  const address = truncateTo160Bits(hash)
-  return '0x' + address.toString(16).padStart(40, '0')
-}
-
-/**
  * Generate a cryptographically random salt for note creation.
- * Produces 32 random bytes and masks the result to 254 bits to ensure
- * compatibility with the BN128 field used by zk-SNARK circuits.
+ * Produces 32 random bytes and masks the result to 254 bits.
  *
  * @returns A 0x-prefixed, zero-padded 64-character hex string representing the 254-bit salt
  */

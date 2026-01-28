@@ -25,9 +25,9 @@ contract ZkDaiBase is Requestable {
   uint256 public constant ETH_TOKEN_TYPE = 0;
   uint256 public constant DAI_TOKEN_TYPE = 1;
 
-  // EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0)
-  // Computed by circomlibjs Poseidon, must match the circuit
-  bytes32 public constant EMPTY_NOTE_HASH = 0x1fdb1d1757a3a3502bec7084abc047ae86a4f442b8a073d5b3482bb02eb353d5;
+  // EMPTY_NOTE_HASH = Poseidon(0, 0, 0, 0, 0, 0, 0)
+  // Computed by circomlibjs Poseidon with 7 inputs (owner0, owner1, value, tokenType, vk0, vk1, salt)
+  bytes32 public constant EMPTY_NOTE_HASH = 0x0a47ead74da5372e7d2598e4f93c389bf03e8330219f8bf1e49b362f73491a26;
 
   /**
    * @dev Initializes the base contract with development mode flag, DAI token address,

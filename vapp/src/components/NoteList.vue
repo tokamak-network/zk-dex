@@ -18,9 +18,9 @@
         <template v-if="route.path === '/exchange'">
           <tr v-for="note in orderStore.notesFilteredByOrderType" :key="note.hash" @click="selectNote(note)">
             <td>{{ fmt.abbreviate(note.hash) }}</td>
-            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.formatZkPk(ownerPk(note.owner)) }}</td>
             <td>{{ fmt.tokenType(note.token) }}</td>
-            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.formatNoteValue(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
             <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
@@ -28,9 +28,9 @@
         <template v-else-if="route.path === '/transfer' || route.path === '/convert'">
           <tr v-for="note in validNotes" :key="note.hash" @click="selectNote(note)">
             <td>{{ fmt.abbreviate(note.hash) }}</td>
-            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.formatZkPk(ownerPk(note.owner)) }}</td>
             <td>{{ fmt.tokenType(note.token) }}</td>
-            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.formatNoteValue(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
             <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
@@ -38,9 +38,9 @@
         <template v-else>
           <tr v-for="note in notes" :key="note.hash" @click="selectNote(note)">
             <td>{{ fmt.abbreviate(note.hash) }}</td>
-            <td>{{ fmt.abbreviateZk(note.owner) }}</td>
+            <td>{{ fmt.formatZkPk(ownerPk(note.owner)) }}</td>
             <td>{{ fmt.tokenType(note.token) }}</td>
-            <td>{{ fmt.hexToNumberString(note.value) }}</td>
+            <td>{{ fmt.formatNoteValue(note.value) }}</td>
             <td>{{ fmt.noteState(note.state) }}</td>
             <td>{{ fmt.formatTimestamp(note.createdAt) }}</td>
           </tr>
@@ -55,6 +55,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrderStore } from '@/stores/order'
 import { useFormatters } from '@/composables/useFormatters'
+import { useAccountStore } from '@/stores/account'
 import type { Note } from '@/stores/note'
 
 const props = defineProps<{
@@ -67,7 +68,13 @@ const emit = defineEmits<{
 
 const route = useRoute()
 const orderStore = useOrderStore()
+const accountStore = useAccountStore()
 const fmt = useFormatters()
+
+function ownerPk(owner: string) {
+  const acc = accountStore.accounts.find(a => a.address === owner)
+  return acc?.publicKey
+}
 
 const validNotes = computed(() => {
   return props.notes.filter(note => note.state === '0x1')

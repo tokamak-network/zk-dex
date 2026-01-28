@@ -1,4 +1,4 @@
-import { toBeHex, zeroPadValue, toBigInt } from 'ethers'
+import { toBeHex, zeroPadValue, toBigInt, formatEther } from 'ethers'
 
 export function useFormatters() {
   /**
@@ -181,6 +181,37 @@ export function useFormatters() {
   }
 
   /**
+   * Format BabyJubJub public key as compact string.
+   * e.g. (0x123…abc, 0x123…abc)
+   */
+  function formatZkPk(pk: { x: string; y: string } | undefined | null): string {
+    if (!pk) return ''
+    function abbr(hex: string): string {
+      if (hex.length <= 9) return hex
+      const pre = hex.slice(0, 5)  // 0x + 3 chars
+      const suf = hex.slice(-3)
+      return `${pre}…${suf}`
+    }
+    return `(${abbr(pk.x)}, ${abbr(pk.y)})`
+  }
+
+  /**
+   * Formats a note value (hex/BigInt in wei) to ETH/DAI display format.
+   * @param hex - the hex or numeric string value in wei
+   * @returns the formatted value in ETH/DAI units (e.g., "1.5")
+   */
+  function formatNoteValue(hex: string): string {
+    const val = toBigInt(hex)
+    if (val === BigInt(0)) return '0'
+    const full = formatEther(val)
+    // Remove trailing zeros after decimal (keep at least integer part)
+    const dot = full.indexOf('.')
+    if (dot === -1) return full
+    const trimmed = full.replace(/0+$/, '').replace(/\.$/, '')
+    return trimmed || '0'
+  }
+
+  /**
    * Formats a Unix timestamp to a "YYYY-MM-DD HH:MM" string.
    * @param ts - the Unix timestamp in seconds
    * @returns the formatted date string, or "-" if no timestamp provided
@@ -206,6 +237,8 @@ export function useFormatters() {
     isSmartNote,
     abbreviate,
     abbreviateZk,
+    formatZkPk,
+    formatNoteValue,
     formatTimestamp
   }
 }

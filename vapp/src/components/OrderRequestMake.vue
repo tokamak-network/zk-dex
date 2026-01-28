@@ -87,16 +87,16 @@ function selectNote(note: Note) {
  * Generate makeOrder proof entirely in browser
  */
 async function generateMakeOrderProof(note: Note, secretKey: string): Promise<FormattedProof> {
-  if (!note.ownerAddress) {
-    throw new Error('Note does not have ownerAddress. Cannot make order.')
+  if (!note.pkX || !note.pkY) {
+    throw new Error('Note does not have public key. Cannot make order.')
   }
 
   // Create note data for circuit input
   const noteData: NoteData = {
-    ownerAddress: note.ownerAddress,
+    pkX: note.pkX,
+    pkY: note.pkY,
     value: note.value,
     token: note.token,
-    viewingKey: note.viewingKey || '0x0',
     salt: note.salt || '0x0'
   }
 
@@ -124,8 +124,8 @@ async function makeNewOrder() {
     return
   }
 
-  if (!selectedNote.value.ownerAddress) {
-    alert('Note does not have ownerAddress. Cannot make order.')
+  if (!selectedNote.value.pkX || !selectedNote.value.pkY) {
+    alert('Note does not have public key. Cannot make order.')
     return
   }
 

@@ -36,7 +36,7 @@ import * as api from '@/api'
 import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
-import { prepareConvertInputs, generateSalt, computeCircuitHash, type NoteData } from '@/lib/circuitInputs'
+import { prepareConvertInputs, generateSalt, computeCircuitHash, type NoteData, type SmartNoteData } from '@/lib/circuitInputs'
 
 const router = useRouter()
 const accountStore = useAccountStore()
@@ -70,24 +70,25 @@ function selectNote(selectedNote: Note) {
   note.value = selectedNote
   noteHash.value = selectedNote.hash
 
-  // Smart notes have ownerAddress = truncated 160-bit hash of origin note
+  // Smart notes store the parent note hash in pkX
   // We need to find the origin note to convert
   if (selectedNote.isSmart === '0x1') {
-    // The smart note's ownerAddress is the last 160 bits of origin note's hash
-    // We need to find a note whose hash ends with this address
-    const smartOwnerAddress = selectedNote.ownerAddress.toLowerCase().replace('0x', '').padStart(40, '0')
+    // Smart notes store the parent note hash in pkX
+    const parentHash = BigInt(selectedNote.pkX || '0').toString()
 
-    // Find origin note by matching truncated hash
+    // Find origin note by matching its hash with the smart note's parentHash
     const found = noteStore.notes.find(n => {
-      const noteHashLower = n.hash.toLowerCase().replace('0x', '').padStart(64, '0')
-      // Last 40 hex chars (160 bits) of hash should match ownerAddress
-      return noteHashLower.slice(-40) === smartOwnerAddress
+      try {
+        return BigInt(n.hash).toString() === parentHash
+      } catch {
+        return false
+      }
     })
     if (found) {
       originNote.value = found
     } else {
       originNote.value = null
-      console.warn('Origin note not found for smart note with ownerAddress:', smartOwnerAddress)
+      console.warn('Origin note not found for smart note with parentHash:', parentHash)
     }
   }
 }
@@ -101,20 +102,19 @@ async function generateConvertProof(
   newNote: NoteData,
   secretKey: string
 ): Promise<FormattedProof> {
-  // Convert to NoteData format
-  const smartNoteData: NoteData = {
-    ownerAddress: smartNote.ownerAddress!,
+  // Convert to SmartNoteData format for the smart note
+  const smartNoteData: SmartNoteData = {
+    parentHash: smartNote.pkX!, // pkX stores parentHash for smart notes
     value: smartNote.value,
     token: smartNote.token,
-    viewingKey: smartNote.viewingKey || '0x0',
     salt: smartNote.salt || '0x0'
   }
 
   const originNoteDataConverted: NoteData = {
-    ownerAddress: originNoteData.ownerAddress!,
+    pkX: originNoteData.pkX!,
+    pkY: originNoteData.pkY!,
     value: originNoteData.value,
     token: originNoteData.token,
-    viewingKey: originNoteData.viewingKey || '0x0',
     salt: originNoteData.salt || '0x0'
   }
 
@@ -150,13 +150,13 @@ async function convertNote() {
     return
   }
 
-  if (!originNote.value.ownerAddress) {
-    alert('Origin note does not have ownerAddress. Cannot convert.')
+  if (!originNote.value.pkX) {
+    alert('Origin note does not have pkX. Cannot convert.')
     return
   }
 
-  if (!note.value.ownerAddress) {
-    alert('Smart note does not have ownerAddress. Cannot convert.')
+  if (!note.value.pkX) {
+    alert('Smart note does not have pkX. Cannot convert.')
     return
   }
 
@@ -167,10 +167,10 @@ async function convertNote() {
     // Create new regular note with same value/token but owned by user's account
     // The new note uses the same secretKey as the origin note since it comes from the same ownership
     const newNoteData: NoteData = {
-      ownerAddress: originNote.value.ownerAddress,
+      pkX: originNote.value.pkX!,
+      pkY: originNote.value.pkY!,
       value: note.value.value,
       token: note.value.token,
-      viewingKey: originNote.value.ownerAddress,
       salt: generateSalt()
     }
 
@@ -203,10 +203,10 @@ async function convertNote() {
       return
     }
     const encryptedNewNote = await encodeNoteData({
-      ownerAddress: newNoteData.ownerAddress,
+      pkX: newNoteData.pkX,
+      pkY: newNoteData.pkY,
       value: newNoteData.value.toString(),
       token: newNoteData.token.toString(),
-      viewingKey: newNoteData.viewingKey,
       salt: newNoteData.salt.toString()
     }, originOwnerAccount.publicKey)
 
@@ -229,10 +229,10 @@ async function convertNote() {
       // Add new regular note (with same secretKey as origin)
       const newNoteObj: Note = {
         owner: note.value.owner,
-        ownerAddress: newNoteData.ownerAddress,
+        pkX: newNoteData.pkX,
+        pkY: newNoteData.pkY,
         value: newNoteData.value.toString(),
         token: newNoteData.token.toString(),
-        viewingKey: newNoteData.viewingKey,
         salt: newNoteData.salt.toString(),
         isSmart: '0x0',
         hash: newNoteHash,

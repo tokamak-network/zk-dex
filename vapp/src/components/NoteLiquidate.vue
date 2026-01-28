@@ -8,7 +8,7 @@
         <a class="button is-static" style="width: 140px">Account</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">{{ fmt.abbreviateZk(noteOwner) }}</a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.formatZkPk(ownerAccount?.publicKey) }}</a>
       </p>
     </div>
     <div class="field has-addons">
@@ -24,7 +24,7 @@
         <a class="button is-static" style="width: 140px">Note Amount</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
+        <a class="button is-static" style="width: 100%;">{{ fmt.formatNoteValue(noteValue || '0x0') }}</a>
       </p>
     </div>
     <!-- Show unlock UI if note doesn't have secretKey -->
@@ -153,16 +153,16 @@ async function generateBurnProof(): Promise<FormattedProof> {
   if (!effectiveSecretKey.value) {
     throw new Error('No secret key available. Please unlock account.')
   }
-  if (!selectedNote.value?.ownerAddress) {
-    throw new Error('Note does not have ownerAddress. Cannot generate burn proof.')
+  if (!selectedNote.value?.pkX || !selectedNote.value?.pkY) {
+    throw new Error('Note does not have public key. Cannot generate burn proof.')
   }
 
   // Create note data for circuit input
   const noteData: NoteData = {
-    ownerAddress: selectedNote.value.ownerAddress,
+    pkX: selectedNote.value.pkX,
+    pkY: selectedNote.value.pkY,
     value: selectedNote.value.value,
     token: selectedNote.value.token,
-    viewingKey: selectedNote.value.viewingKey || '0x0',
     salt: selectedNote.value.salt || '0x0'
   }
 

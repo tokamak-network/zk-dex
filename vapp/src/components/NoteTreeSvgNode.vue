@@ -41,9 +41,9 @@
         font-family="monospace"
         font-size="11"
         fill="#666"
-      >{{ hashLabel }}</text>
+      >{{ ownerLabel }}</text>
       <text
-        :x="10 + hashWidth + 6"
+        :x="10 + ownerWidth + 6"
         :y="NODE_HEIGHT / 2"
         dy="0.35em"
         font-size="12"
@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFormatters } from '@/composables/useFormatters'
+import { useAccountStore } from '@/stores/account'
 import type { LayoutNode } from '@/types/noteTree'
 import { NODE_WIDTH, NODE_HEIGHT } from '@/composables/useNoteTreeLayout'
 
@@ -72,6 +73,7 @@ const props = defineProps<{
 }>()
 
 const fmt = useFormatters()
+const accountStore = useAccountStore()
 
 const bgColor = computed(() => {
   if (props.node.data.isMergeRef) return '#fff'
@@ -107,13 +109,20 @@ const textColor = computed(() => {
   return '#000'
 })
 
-const hashLabel = computed(() => {
-  return props.masked ? 'zk****' : fmt.abbreviateZk(props.node.data.hash)
+const ownerLabel = computed(() => {
+  if (props.masked) return '****'
+  const owner = props.node.data.owner
+  if (!owner) return ''
+  const acc = accountStore.accounts.find(a => a.address === owner)
+  if (!acc?.publicKey?.x) return ''
+  const x = acc.publicKey.x
+  if (x.length <= 9) return x
+  return `${x.slice(0, 5)}…${x.slice(-3)}`
 })
 
 // Monospace at font-size 11px ≈ 6.6px per char
-const hashWidth = computed(() => {
-  return hashLabel.value.length * 6.6
+const ownerWidth = computed(() => {
+  return ownerLabel.value.length * 6.6
 })
 
 const displayValue = computed(() => {
@@ -121,7 +130,7 @@ const displayValue = computed(() => {
   if (props.masked && !props.node.data.isRoot) {
     return `**** ${tokenStr}`
   }
-  return `${fmt.hexToNumberString(props.node.data.value)} ${tokenStr}`
+  return `${fmt.formatNoteValue(props.node.data.value)} ${tokenStr}`
 })
 </script>
 

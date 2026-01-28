@@ -77,21 +77,19 @@ import * as api from '@/api'
 import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
-import { prepareTakeOrderInputs, computeCircuitHash, generateSalt, getSmartNoteOwnerAddress, hexToBigInt, type NoteData } from '@/lib/circuitInputs'
+import { prepareTakeOrderInputs, computeCircuitHash, computeSmartNoteHash, generateSalt, hexToBigInt, type NoteData, type SmartNoteData } from '@/lib/circuitInputs'
 
 interface TakeableOrder extends Order {
   orderId: string
   makerNote: string
-  makerViewingKey?: string
   orderMaker?: string
   parentNote?: string
   takerNoteToMaker?: string
-  // Full maker note details (for proof generation)
   makerNoteData?: {
-    ownerAddress: string
+    pkX: string
+    pkY: string
     value: string
     token: string
-    viewingKey: string
     salt: string
   }
 }
@@ -149,39 +147,34 @@ async function generateTakeOrderProof(
   takerNote: Note,
   targetToken: string,
   secretKey: string
-): Promise<{ proof: FormattedProof; stakeNote: NoteData & { noteHash: string } }> {
-  if (!takerNote.ownerAddress) {
-    throw new Error('Taker note does not have ownerAddress')
+): Promise<{ proof: FormattedProof; stakeNote: SmartNoteData & { noteHash: string } }> {
+  if (!takerNote.pkX || !takerNote.pkY) {
+    throw new Error('Taker note does not have public key')
   }
 
-  // Create taker note data
   const takerNoteData: NoteData = {
-    ownerAddress: takerNote.ownerAddress,
+    pkX: takerNote.pkX,
+    pkY: takerNote.pkY,
     value: takerNote.value,
     token: takerNote.token,
-    viewingKey: takerNote.viewingKey || '0x0',
     salt: takerNote.salt || '0x0'
   }
 
-  // Compute maker note hash to derive stake note owner address
+  // Compute maker note hash (full field element) for parentHash
   const makerNoteHashStr = await computeCircuitHash(makerNoteData)
-  const stakeOwnerAddress = getSmartNoteOwnerAddress(makerNoteHashStr)
 
-  // Create stake note (smart note with owner = truncated hash of maker's note)
-  const stakeNote: NoteData & { noteHash: string } = {
-    ownerAddress: stakeOwnerAddress,
+  // Create stake note (smart note with parentHash = maker note hash)
+  const stakeNote: SmartNoteData & { noteHash: string } = {
+    parentHash: makerNoteHashStr,
     value: takerNote.value,
     token: targetToken,
-    viewingKey: takerNote.viewingKey || '0x0',
     salt: generateSalt(),
     noteHash: ''
   }
-  stakeNote.noteHash = await computeCircuitHash(stakeNote)
+  stakeNote.noteHash = await computeSmartNoteHash(stakeNote)
 
-  // Prepare circuit inputs
   const inputs = await prepareTakeOrderInputs(takerNoteData, stakeNote, secretKey)
 
-  // Generate proof in browser Web Worker
   proofProgress.value = 'Generating proof...'
   const result = await proofGenerator.generateProof(
     'take_order',
@@ -191,10 +184,7 @@ async function generateTakeOrderProof(
     }
   )
 
-  return {
-    proof: result.proof,
-    stakeNote
-  }
+  return { proof: result.proof, stakeNote }
 }
 
 async function takeOrder() {
@@ -205,8 +195,8 @@ async function takeOrder() {
     return
   }
 
-  if (!selectedNote.value.ownerAddress) {
-    alert('Note does not have ownerAddress. Cannot take order.')
+  if (!selectedNote.value.pkX) {
+    alert('Note does not have public key. Cannot take order.')
     return
   }
 
@@ -239,7 +229,7 @@ async function takeOrder() {
     const inputBigInt = input.map(v => BigInt(v))
 
     // Encrypt stake note for on-chain storage (ECDH with taker's public key)
-    // Stake note is a smart note (owner = truncated maker hash), encrypt with taker's pk
+    // Stake note is a smart note (parentHash = maker note hash), encrypt with taker's pk
     // so the taker can decrypt it later during convertNote
     const takerAccount = accountStore.accounts.find(acc => acc.address === selectedNote.value!.owner)
     if (!takerAccount?.publicKey) {
@@ -247,10 +237,10 @@ async function takeOrder() {
       return
     }
     const encryptedStakeNote = await encodeNoteData({
-      ownerAddress: stakeNote.ownerAddress,  // 160-bit truncated maker hash
+      pkX: stakeNote.parentHash,
+      pkY: '0x0',
       value: stakeNote.value.toString(),
       token: stakeNote.token.toString(),
-      viewingKey: stakeNote.viewingKey,
       salt: stakeNote.salt.toString()
     }, takerAccount.publicKey)
 

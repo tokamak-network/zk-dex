@@ -12,11 +12,10 @@
       <thead>
         <tr>
           <th>Index</th>
-          <th>Address</th>
+          <th>z-pk</th>
           <th>Notes</th>
           <th>ETH</th>
           <th>DAI</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -27,25 +26,37 @@
           :class="{ 'is-selected': selectedAccount?.address === account.address }"
         >
           <td>{{ index }}</td>
-          <td>{{ fmt.formatZkAddress(account.address) }}</td>
-          <td>{{ account.secretKey ? noteCount(account.address) : '***' }}</td>
-          <td>{{ account.secretKey ? accountBalance(account.address, '0') : '***' }}</td>
-          <td>{{ account.secretKey ? accountBalance(account.address, '1') : '***' }}</td>
           <td>
-            <button
-              v-if="!account.secretKey"
-              class="button is-small is-info is-light"
-              @click.stop="openUnlockModal(account)"
-            >Unlock</button>
-            <button
-              v-else
-              class="button is-small is-warning is-light"
-              @click.stop="lockAccount(account)"
-            >Lock</button>
+            <span v-if="!account.secretKey" class="lock-icon" title="Click to unlock">&#x1F512;</span>
+            <span v-else class="lock-icon" title="Unlocked">&#x1F513;</span>
+            {{ fmt.formatZkPk(account.publicKey) }}
           </td>
+          <td>{{ account.secretKey ? noteCount(account.address) : '**' }}</td>
+          <td>{{ account.secretKey ? accountBalance(account.address, '0') : '**' }}</td>
+          <td>{{ account.secretKey ? accountBalance(account.address, '1') : '**' }}</td>
         </tr>
       </tbody>
     </table>
+    <p v-if="accounts.length > 0 && !hasUnlockedAccount" class="help" style="margin: -10px 10px 10px;">
+      Click an account to unlock and view notes
+    </p>
+    <!-- Unlock account modal -->
+    <o-modal v-model:active="unlockModalActive">
+      <div class="box" style="width: 400px;">
+        <p class="title is-5">Unlock Account</p>
+        <p class="subtitle is-6">Enter passphrase to decrypt notes</p>
+        <div class="field">
+          <p class="control">
+            <input class="input" type="password" v-model="unlockPassphrase" placeholder="Passphrase" @keyup.enter="unlockAccount">
+          </p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button class="button" @click="unlockModalActive = false">Cancel</button>
+          <button class="button is-link" :class="{ 'is-loading': unlocking }" @click="unlockAccount" :disabled="!unlockPassphrase">Unlock</button>
+        </div>
+      </div>
+    </o-modal>
+    <!-- Create account modal -->
     <o-modal v-model:active="createAccountModalActive">
       <form @submit.prevent="createNewAccount">
         <div class="modal-card" style="width: auto">
@@ -63,49 +74,25 @@
         </div>
       </form>
     </o-modal>
-    <!-- Unlock account modal -->
-    <o-modal v-model:active="unlockModalActive">
-      <div class="box" style="width: 400px;">
-        <p class="title is-5">Unlock Account</p>
-        <p class="subtitle is-6">Enter passphrase to decrypt notes</p>
-        <div class="field">
-          <p class="control">
-            <input
-              class="input"
-              type="password"
-              v-model="unlockPassphrase"
-              placeholder="Passphrase"
-              @keyup.enter="confirmUnlock"
-            >
-          </p>
-        </div>
-        <div v-if="unlockError" class="help is-danger" style="margin-bottom: 10px;">{{ unlockError }}</div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button class="button" @click="unlockModalActive = false">Cancel</button>
-          <button
-            class="button is-info"
-            :class="{ 'is-loading': isUnlocking }"
-            @click="confirmUnlock"
-            :disabled="!unlockPassphrase"
-          >Unlock</button>
-        </div>
-      </div>
-    </o-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { toBigInt } from 'ethers'
+import { toBigInt, formatEther } from 'ethers'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore } from '@/stores/note'
 import { useFormatters } from '@/composables/useFormatters'
 
-defineProps<{
+const props = defineProps<{
   accounts: Account[]
   selectedAccount?: Account | null
 }>()
+
+const hasUnlockedAccount = computed(() => {
+  return props.accounts.some(acc => acc.secretKey)
+})
 
 const emit = defineEmits<{
   selectAccount: [account: Account]
@@ -121,12 +108,38 @@ const createAccountModalActive = ref(false)
 const passphrase = ref('')
 const unlockModalActive = ref(false)
 const unlockPassphrase = ref('')
-const unlockError = ref('')
-const isUnlocking = ref(false)
+const unlocking = ref(false)
 const accountToUnlock = ref<Account | null>(null)
 
 function selectAccount(account: Account) {
+  // If account is not unlocked, prompt for passphrase
+  if (!account.secretKey) {
+    accountToUnlock.value = account
+    unlockPassphrase.value = ''
+    unlockModalActive.value = true
+    return
+  }
   emit('selectAccount', account)
+}
+
+async function unlockAccount() {
+  if (!accountToUnlock.value || !unlockPassphrase.value) return
+
+  unlocking.value = true
+  try {
+    await accountStore.unlockAccountLocal(
+      accountToUnlock.value.address,
+      unlockPassphrase.value
+    )
+    unlockModalActive.value = false
+    emit('selectAccount', accountToUnlock.value)
+  } catch (err) {
+    console.error('Failed to unlock account:', err)
+    alert('Failed to unlock: Wrong passphrase?')
+  } finally {
+    unlocking.value = false
+    unlockPassphrase.value = ''
+  }
 }
 
 function noteCount(address: string): string {
@@ -140,43 +153,12 @@ function accountBalance(address: string, tokenType: string): string {
   const sum = noteStore.notes
     .filter(n => n.owner === address && n.state === '0x1' && fmt.hexToNumberString(n.token) === tokenType)
     .reduce((acc, n) => acc + toBigInt(n.value), BigInt(0))
-  return sum.toString()
+  if (sum === BigInt(0)) return '0'
+  return formatEther(sum)
 }
 
 function openModal() {
   createAccountModalActive.value = true
-}
-
-function lockAccount(account: Account) {
-  accountStore.lockAccountByAddress(account.address)
-}
-
-function openUnlockModal(account: Account) {
-  accountToUnlock.value = account
-  unlockPassphrase.value = ''
-  unlockError.value = ''
-  unlockModalActive.value = true
-}
-
-async function confirmUnlock() {
-  if (!accountToUnlock.value || !unlockPassphrase.value) return
-
-  isUnlocking.value = true
-  unlockError.value = ''
-  try {
-    await accountStore.unlockAccountLocal(
-      accountToUnlock.value.address,
-      unlockPassphrase.value
-    )
-    unlockModalActive.value = false
-    unlockPassphrase.value = ''
-    accountToUnlock.value = null
-  } catch (err) {
-    console.error('Failed to unlock account:', err)
-    unlockError.value = 'Wrong passphrase'
-  } finally {
-    isUnlocking.value = false
-  }
 }
 
 async function createNewAccount() {
@@ -198,6 +180,18 @@ async function createNewAccount() {
 </script>
 
 <style scoped>
+.table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .table tbody tr {
   cursor: pointer;
 }
@@ -213,5 +207,10 @@ async function createNewAccount() {
 
 .table tbody tr.is-selected:hover {
   background-color: #2366d1;
+}
+
+.lock-icon {
+  font-size: 0.8em;
+  margin-right: 4px;
 }
 </style>

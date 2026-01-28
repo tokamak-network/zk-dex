@@ -56,7 +56,7 @@ import * as api from '@/api'
 import { toBigInt, toBeHex, hexlify, randomBytes, zeroPadValue } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
-import { prepareSettleOrderInputs, generateSalt, computeCircuitHash, getSmartNoteOwnerAddress, hexToBigInt, type NoteData } from '@/lib/circuitInputs'
+import { prepareSettleOrderInputs, generateSalt, computeCircuitHash, computeSmartNoteHash, hexToBigInt, type NoteData, type SmartNoteData } from '@/lib/circuitInputs'
 
 interface OngoingOrder {
   orderId: string
@@ -92,14 +92,13 @@ const loading = ref(false)
 const proofProgress = ref('')
 
 /**
- * Create note data for circuit input
+ * Create smart note data for circuit input (settlement notes are all smart notes)
  */
-function createNoteData(ownerAddress: string, value: string | bigint, tokenType: string): NoteData {
+function createSmartNoteData(parentHash: string, value: string | bigint, tokenType: string): SmartNoteData {
   return {
-    ownerAddress,
+    parentHash,
     value: value.toString(),
     token: tokenType,
-    viewingKey: '0x0',
     salt: generateSalt()
   }
 }
@@ -123,26 +122,27 @@ function computeDivisionWitness(dividend: bigint, divisor: bigint): { q: string;
 async function generateSettleOrderProof(
   makerNote: Note,
   stakeNote: Note,
-  rewardNote: NoteData,
-  paymentNote: NoteData,
-  changeNote: NoteData,
+  rewardNote: SmartNoteData,
+  paymentNote: SmartNoteData,
+  changeNote: SmartNoteData,
   price: bigint,
   secretKey: string
 ): Promise<FormattedProof> {
-  // Convert notes to NoteData format
+  // Convert maker note to NoteData format (pkX/pkY-based)
   const makerNoteData: NoteData = {
-    ownerAddress: makerNote.ownerAddress!,
+    pkX: makerNote.pkX!,
+    pkY: makerNote.pkY!,
     value: makerNote.value,
     token: makerNote.token,
-    viewingKey: makerNote.viewingKey || '0x0',
     salt: makerNote.salt || '0x0'
   }
 
-  const stakeNoteData: NoteData = {
-    ownerAddress: stakeNote.ownerAddress!,
+  // Stake note is a smart note (parentHash-based)
+  // pkX stores the parentHash for smart notes
+  const stakeNoteData: SmartNoteData = {
+    parentHash: stakeNote.pkX!,
     value: stakeNote.value,
     token: stakeNote.token,
-    viewingKey: stakeNote.viewingKey || '0x0',
     salt: stakeNote.salt || '0x0'
   }
 
@@ -199,8 +199,8 @@ async function settleOrder(order: OngoingOrder) {
       return
     }
 
-    if (!myMakerNote.ownerAddress) {
-      alert('Note does not have ownerAddress. Cannot settle order.')
+    if (!myMakerNote.pkX) {
+      alert('Note does not have pkX. Cannot settle order.')
       return
     }
 
@@ -213,36 +213,35 @@ async function settleOrder(order: OngoingOrder) {
     const stakeNoteValue = toBigInt(stakeNote.value)
     const price = toBigInt(order.price)
 
-    // Compute the maker note hash for smart note owner address
+    // Compute the maker note hash (used as parentHash for smart notes)
     const makerFullHash = await computeCircuitHash({
-      ownerAddress: myMakerNote.ownerAddress,
+      pkX: myMakerNote.pkX!,
+      pkY: myMakerNote.pkY!,
       value: myMakerNote.value,
       token: myMakerNote.token,
-      viewingKey: myMakerNote.viewingKey || '0x0',
       salt: myMakerNote.salt || '0x0'
     })
-    const smartOwnerAddress = getSmartNoteOwnerAddress(makerFullHash)
 
-    // Create settlement notes (smart notes)
-    let rewardNote: NoteData, paymentNote: NoteData, changeNote: NoteData
+    // Create settlement notes (smart notes using parentHash)
+    let rewardNote: SmartNoteData, paymentNote: SmartNoteData, changeNote: SmartNoteData
 
     if (makerNoteValue * price >= stakeNoteValue) {
       // Maker has enough: reward gets stake/price, payment gets all stake, change is remainder
-      rewardNote = createNoteData(order.parentNote!, stakeNoteValue / price, order.sourceToken!)
-      paymentNote = createNoteData(smartOwnerAddress, stakeNote.value, order.targetToken!)
-      changeNote = createNoteData(smartOwnerAddress, (makerNoteValue - stakeNoteValue / price).toString(), order.sourceToken!)
+      rewardNote = createSmartNoteData(order.parentNote!, stakeNoteValue / price, order.sourceToken!)
+      paymentNote = createSmartNoteData(makerFullHash, stakeNote.value, order.targetToken!)
+      changeNote = createSmartNoteData(makerFullHash, (makerNoteValue - stakeNoteValue / price).toString(), order.sourceToken!)
     } else {
       // Maker doesn't have enough: reward gets all maker value, payment is maker*price
-      rewardNote = createNoteData(order.parentNote!, makerNoteValue.toString(), order.sourceToken!)
-      paymentNote = createNoteData(smartOwnerAddress, (makerNoteValue * price).toString(), order.targetToken!)
-      changeNote = createNoteData(order.parentNote!, (stakeNoteValue - makerNoteValue * price).toString(), order.targetToken!)
+      rewardNote = createSmartNoteData(order.parentNote!, makerNoteValue.toString(), order.sourceToken!)
+      paymentNote = createSmartNoteData(makerFullHash, (makerNoteValue * price).toString(), order.targetToken!)
+      changeNote = createSmartNoteData(order.parentNote!, (stakeNoteValue - makerNoteValue * price).toString(), order.targetToken!)
     }
 
     // Generate proof entirely in browser (secretKey never leaves browser!)
     console.log('Generating settleOrder proof...')
     const proof = await generateSettleOrderProof(
-      { ...makerNote, ownerAddress: myMakerNote.ownerAddress, secretKey: myMakerNote.secretKey },
-      { ...stakeNote, ownerAddress: stakeNote.ownerAddress || smartOwnerAddress },
+      { ...makerNote, pkX: myMakerNote.pkX!, pkY: myMakerNote.pkY!, secretKey: myMakerNote.secretKey },
+      { ...stakeNote, pkX: stakeNote.pkX || makerFullHash },
       rewardNote,
       paymentNote,
       changeNote,
@@ -269,24 +268,24 @@ async function settleOrder(order: OngoingOrder) {
       return
     }
     const encodedReward = await encodeNoteData({
-      ownerAddress: rewardNote.ownerAddress,
+      pkX: rewardNote.parentHash,
+      pkY: '0x0',
       value: rewardNote.value.toString(),
       token: rewardNote.token.toString(),
-      viewingKey: rewardNote.viewingKey,
       salt: rewardNote.salt.toString()
     }, makerAccount.publicKey)
     const encodedPayment = await encodeNoteData({
-      ownerAddress: paymentNote.ownerAddress,
+      pkX: paymentNote.parentHash,
+      pkY: '0x0',
       value: paymentNote.value.toString(),
       token: paymentNote.token.toString(),
-      viewingKey: paymentNote.viewingKey,
       salt: paymentNote.salt.toString()
     }, makerAccount.publicKey)
     const encodedChange = await encodeNoteData({
-      ownerAddress: changeNote.ownerAddress,
+      pkX: changeNote.parentHash,
+      pkY: '0x0',
       value: changeNote.value.toString(),
       token: changeNote.token.toString(),
-      viewingKey: changeNote.viewingKey,
       salt: changeNote.salt.toString()
     }, makerAccount.publicKey)
 

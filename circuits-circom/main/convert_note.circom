@@ -2,42 +2,53 @@ pragma circom 2.1.0;
 
 include "../utils/poseidon/poseidon_note.circom";
 include "../utils/babyjubjub/proof_of_ownership.circom";
+include "../utils/is_smart.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 
-// ConvertNote Circuit (Poseidon-based, Address-based ownership)
-// Converts a smart note to a normal note
+// ConvertNote Circuit
+// Faithful port of Zokrates convertNote.code
 //
-// Smart notes have ownerAddress = truncated origin note hash (160 bits)
-// This circuit verifies:
-// 1. Smart note's owner links to the origin note (truncated hash match)
-// 2. Origin note ownership
-// 3. Value and type preservation
+// Note = (owner0, owner1, value, type, vk0, vk1, salt)
+//
+// Converts a smart note back to a regular note.
+//
+// Smart note's owner = parentHash split (= origin note hash split)
+// Prover must own the origin note (via sk -> pk -> compare)
+//
+// Constraints:
+// 1. Smart note IS a smart note (isSmart check)
+// 2. Smart note's parentHash == origin note hash
+// 3. Origin note ownership proof
+// 4. Value and type preservation
 //
 // Public inputs: [smartHash, originHash, newHash]
 template ConvertNote() {
     // Public inputs
-    signal input smartHash;       // Smart note hash (single field element)
-    signal input originHash;      // Origin note hash (single field element)
-    signal input newHash;         // New (converted) note hash (single field element)
+    signal input smartHash;
+    signal input originHash;
+    signal input newHash;
 
     // Private inputs - Smart note
-    signal input smartOwnerAddress;  // Should be truncated origin note hash (160 bits)
+    signal input smartOwner0;      // parentHash_hi
+    signal input smartOwner1;      // parentHash_lo
     signal input smartValue;
     signal input smartType;
     signal input smartVk0;
     signal input smartVk1;
     signal input smartSalt;
 
-    // Private inputs - Origin note
-    signal input originOwnerAddress; // 160-bit address
+    // Private inputs - Origin note (regular note)
+    signal input originOwner0;     // pkX
+    signal input originOwner1;     // pkY
     signal input originValue;
     signal input originType;
     signal input originVk0;
     signal input originVk1;
     signal input originSalt;
 
-    // Private inputs - New note
-    signal input nOwnerAddress;      // 160-bit address
+    // Private inputs - New note (regular note)
+    signal input nOwner0;          // pkX
+    signal input nOwner1;          // pkY
     signal input nValue;
     signal input nType;
     signal input nVk0;
@@ -45,72 +56,65 @@ template ConvertNote() {
     signal input nSalt;
 
     // Private inputs
-    signal input sk;                 // Secret key for origin note
+    signal input sk;
 
     // Output
     signal output out;
 
-    // 1. Compute expected smart note owner from origin hash
-    // smartOwnerAddress should be the last 160 bits of originHash
-    // Using TruncateHashToAddress component
-    component truncate = TruncateHashToAddress();
-    truncate.hash <== originHash;
+    // 1. isSmart check: verify smart note IS a smart note
+    component smartCheck = IsSmartStrict();
+    smartCheck.owner0 <== smartOwner0;
 
-    // Verify smart note owner matches expected (truncated origin hash)
-    component ownerMatch = IsEqual();
-    ownerMatch.in[0] <== smartOwnerAddress;
-    ownerMatch.in[1] <== truncate.address;
-    ownerMatch.out === 1;
+    // 2. Verify smart note's parentHash == origin note hash
+    // Reconstruct parentHash from (smartOwner0, smartOwner1)
+    signal smartParentReconstructed;
+    smartParentReconstructed <== smartOwner0 * (2**128) + smartOwner1;
+    smartParentReconstructed === originHash;
 
-    // 2. Verify smart note hash
-    component smartHashComp = PoseidonNoteWithAddress();
-    smartHashComp.ownerAddress <== smartOwnerAddress;
+    // 3. Verify ownership of origin note
+    component ownership = ProofOfOwnershipStrict();
+    ownership.pk[0] <== originOwner0;
+    ownership.pk[1] <== originOwner1;
+    ownership.sk <== sk;
+
+    // 4. Value preservation: smart value == new value
+    smartValue === nValue;
+
+    // 5. Type preservation: smart type == new type
+    smartType === nType;
+
+    // 6. Verify smart note hash
+    component smartHashComp = PoseidonNote();
+    smartHashComp.owner0 <== smartOwner0;
+    smartHashComp.owner1 <== smartOwner1;
     smartHashComp.value <== smartValue;
     smartHashComp.tokenType <== smartType;
     smartHashComp.vk0 <== smartVk0;
     smartHashComp.vk1 <== smartVk1;
     smartHashComp.salt <== smartSalt;
-
     smartHashComp.out === smartHash;
 
-    // 3. Verify origin note hash
-    component originHashComp = PoseidonNoteWithAddress();
-    originHashComp.ownerAddress <== originOwnerAddress;
+    // 7. Verify origin note hash
+    component originHashComp = PoseidonNote();
+    originHashComp.owner0 <== originOwner0;
+    originHashComp.owner1 <== originOwner1;
     originHashComp.value <== originValue;
     originHashComp.tokenType <== originType;
     originHashComp.vk0 <== originVk0;
     originHashComp.vk1 <== originVk1;
     originHashComp.salt <== originSalt;
-
     originHashComp.out === originHash;
 
-    // 4. Verify ownership of origin note (address-based)
-    component ownership = VerifyOwnershipByAddressStrict();
-    ownership.address <== originOwnerAddress;
-    ownership.sk <== sk;
-
-    // 5. Verify new note hash
-    component newHashComp = PoseidonNoteWithAddress();
-    newHashComp.ownerAddress <== nOwnerAddress;
+    // 8. Verify new note hash
+    component newHashComp = PoseidonNote();
+    newHashComp.owner0 <== nOwner0;
+    newHashComp.owner1 <== nOwner1;
     newHashComp.value <== nValue;
     newHashComp.tokenType <== nType;
     newHashComp.vk0 <== nVk0;
     newHashComp.vk1 <== nVk1;
     newHashComp.salt <== nSalt;
-
     newHashComp.out === newHash;
-
-    // 6. Value preservation: smart value == new value
-    component valueEq = IsEqual();
-    valueEq.in[0] <== smartValue;
-    valueEq.in[1] <== nValue;
-    valueEq.out === 1;
-
-    // 7. Type preservation: smart type == new type
-    component typeEq = IsEqual();
-    typeEq.in[0] <== smartType;
-    typeEq.in[1] <== nType;
-    typeEq.out === 1;
 
     out <== 1;
 }

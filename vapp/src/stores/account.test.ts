@@ -10,7 +10,6 @@
  * - addAccount / deleteAccount
  * - createAccountLocal (crypto 모킹)
  * - unlockAccountLocal (keystore + crypto 모킹)
- * - lockAccount
  * - loadAccounts (localStorage → 스토어)
  * - reset
  */
@@ -176,18 +175,6 @@ describe('stores/account', () => {
 
       await expect(store.unlockAccountLocal('unknown', 'pw'))
         .rejects.toThrow('Keystore not found')
-    })
-  })
-
-  describe('lockAccount', () => {
-    it('secretKey 메모리에서 제거', async () => {
-      store.setSecretKey(ALICE_SK)
-      store.setCurrentAccount({ address: ALICE_ADDRESS, publicKey: ALICE_PK, secretKey: ALICE_SK })
-
-      store.lockAccount()
-
-      expect(store.secretKey).toBeNull()
-      expect(store.currentAccount?.secretKey).toBeUndefined()
     })
   })
 

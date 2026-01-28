@@ -7,7 +7,7 @@
  * - pk = sk * Base8 (BabyJubJub)
  * - address = Poseidon(pk.x, pk.y) & MASK_160
  * - viewingKey = Poseidon(pk.x, pk.y)
- * - noteHash = Poseidon(ownerAddress, value, token, vk0, vk1, salt)
+ * - noteHash = Poseidon(pkX, pkY, value, token, pkX, pkY, salt)  (7-input)
  */
 
 // ═══════════════════════════════════════════════════════════
@@ -59,119 +59,119 @@ export const SALT_7 = '0x0000000000000000000000000000000000000000000000000000000
 export const SALT_8 = '0x000000000000000000000000000000000000000000000000000000000000e2e8'
 
 // ═══════════════════════════════════════════════════════════
-// 4. NOTES — Poseidon(ownerAddress, value, token, vk0, vk1, salt)
+// 4. NOTES — Poseidon(pkX, pkY, value, token, pkX, pkY, salt)  (7-input)
 // ═══════════════════════════════════════════════════════════
 
 /** Alice의 ETH 노트 — 1 ETH, VALID */
 export const NOTE_ALICE_ETH_VALID = {
-  hash: '7293563082901588797218579443247026665359568947835886687713698663294306833717',
-  hashHex: '0x102002aa79aa2b97fcf5a86a191984577783a74a858ba629a8a83dacd5a75535',
+  hash: '16184009537927529309008792380990690517432017151752497224111719359760374765868',
+  hashHex: '0x23c7d3253569e1241d83f2f23e4af7aa1a393b08ca8ea06bea5643813835192c',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000',
   token: '0x0',
   state: '0x1',
   isSmart: '0x0',
   salt: SALT_1,
-  viewingKey: ALICE_VK,
 }
 
 /** Alice의 DAI 노트 — 100 DAI, VALID */
 export const NOTE_ALICE_DAI_VALID = {
-  hash: '6259226523859806839277303017969530357253929374574026581765418683373941444633',
-  hashHex: '0x0dd698bf355e0e65eb84c04c53afb9d18db55f890c0b747e3d6896c2f2185019',
+  hash: '17303909591552797504398132633364379184411144242090030152733968285406401836265',
+  hashHex: '0x2641aa6ee117a4ba0eddb352c2e4892c984121d36cbfc56a59572557d01ab4e9',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x0000000000000000000000000000000000000000000000056bc75e2d63100000',
   token: '0x1',
   state: '0x1',
   isSmart: '0x0',
   salt: SALT_2,
-  viewingKey: ALICE_VK,
 }
 
 /** Alice의 ETH 노트 — 1 ETH, SPENT */
 export const NOTE_ALICE_ETH_SPENT = {
-  hash: '18916076875732505935482922378586695204600640897395699326134942282730817620969',
-  hashHex: '0x29d21ebef184b3c605ab4e772ecae727d42f5c8f8755fe61a4d33244a9768be9',
+  hash: '14376447923601927383723423711905046235301763101196191411174220335449278071926',
+  hashHex: '0x1fc8c7faa1f32c30356fd0d74630863f3b28d7d1ef4bf299dd0c422aa97d4476',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000',
   token: '0x0',
   state: '0x3',
   isSmart: '0x0',
   salt: SALT_3,
-  viewingKey: ALICE_VK,
 }
 
 /** Alice의 DAI 노트 — 50 DAI, VALID (2번째) */
 export const NOTE_ALICE_DAI_VALID_2 = {
-  hash: '13323437907261152510436068571451847279364639459072752434597197304073869171470',
-  hashHex: '0x1d74cc7256d28aefc21de1baa791afd18c30b753575eabf2fb9229cc3b299b0e',
+  hash: '3847330385811826305151497065508814855960830865699403721578506681392596303648',
+  hashHex: '0x088183074ecbdf947ee67d57655abb82f20307888a2e33ad8578acc2df68bf20',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x000000000000000000000000000000000000000000000002b5e3af16b1880000',
   token: '0x1',
   state: '0x1',
   isSmart: '0x0',
   salt: SALT_4,
-  viewingKey: ALICE_VK,
 }
 
 /** Bob의 ETH 노트 — 2 ETH, VALID */
 export const NOTE_BOB_ETH_VALID = {
-  hash: '10161504736589975822716328990075381528514424047484064446456359610087091014909',
-  hashHex: '0x16773536b1263198b9c13f19a33419d5e471d7ba7955941b9f1ee574af950cfd',
+  hash: '10721546294160825156647224350062807577422692299298588730045272263234755827375',
+  hashHex: '0x17b42e1e9781082701d8e2b43f727355021b7bad31054ae2a83f80fe0dd916af',
   owner: BOB_ADDRESS,
-  ownerAddress: BOB_ADDRESS_0X,
+  pkX: BOB_PK.x,
+  pkY: BOB_PK.y,
   value: '0x0000000000000000000000000000000000000000000000001bc16d674ec80000',
   token: '0x0',
   state: '0x1',
   isSmart: '0x0',
   salt: SALT_5,
-  viewingKey: BOB_VK,
 }
 
 /** Bob의 DAI 노트 — 100 DAI, VALID */
 export const NOTE_BOB_DAI_VALID = {
-  hash: '1748383707006275182369144551045098118845933193090946346902319820181166847040',
-  hashHex: '0x03dd8cd3ff75f2da3d11adaf508396ebf8b0ff4f42765a01ce97a894130b7440',
+  hash: '16801552358700818184991428771929573868123678176995603606713639793926280995262',
+  hashHex: '0x252557757ff9554ab64efaf0440bb8ceb6c13131f1dd868181ccae9dd0b261be',
   owner: BOB_ADDRESS,
-  ownerAddress: BOB_ADDRESS_0X,
+  pkX: BOB_PK.x,
+  pkY: BOB_PK.y,
   value: '0x0000000000000000000000000000000000000000000000056bc75e2d63100000',
   token: '0x1',
   state: '0x1',
   isSmart: '0x0',
   salt: SALT_6,
-  viewingKey: BOB_VK,
 }
 
 /** Alice의 ETH 노트 — 1 ETH, INVALID */
 export const NOTE_ALICE_INVALID = {
-  hash: '7007212065768990145595633417768965204274157074977955567868799039070629599117',
-  hashHex: '0x0f7df104ef6a37b2eea7b24a685a8efb674bc77aebd32c182e763b1244f9178d',
+  hash: '2540624819923677263543983074851878973373094303942057818134375928325375132320',
+  hashHex: '0x059df1541624e18ed7142b0721c0d553548de43bd23cc0bc620d5ae1399602a0',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000',
   token: '0x0',
   state: '0x0',
   isSmart: '0x0',
   salt: SALT_7,
-  viewingKey: ALICE_VK,
 }
 
 /** Alice의 ETH 스마트 노트 — 1 ETH, VALID, isSmart */
 export const NOTE_ALICE_SMART = {
-  hash: '4416974684468538767221894387148823360278169588159674944980210597211795406250',
-  hashHex: '0x09c3eb48abad513fdbd9992c5cd0e0681e4340c90453daf5c2dafce91290bdaa',
+  hash: '2371687239892058399682172832281888409330305753295708997917917302056226144514',
+  hashHex: '0x053e53d0fa262c347fee6c9a41096d7907b23f0cc7fc1332276da7efa76c4102',
   owner: ALICE_ADDRESS,
-  ownerAddress: ALICE_ADDRESS_0X,
+  pkX: ALICE_PK.x,
+  pkY: ALICE_PK.y,
   value: '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000',
   token: '0x0',
   state: '0x1',
   isSmart: '0x1',
   salt: SALT_8,
-  viewingKey: ALICE_VK,
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -314,11 +314,11 @@ export interface NoteFixture {
   hash: string
   hashHex: string
   owner: string
-  ownerAddress: string
+  pkX: string
+  pkY: string
   value: string
   token: string
   state: string
   isSmart: string
   salt: string
-  viewingKey: string
 }

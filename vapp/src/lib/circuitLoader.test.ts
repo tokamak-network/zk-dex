@@ -146,7 +146,7 @@ describe('CircuitLoaderService', () => {
     it('fetch 실패 → 기본 매니페스트 반환', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
       const manifest = await loader.getManifest()
-      expect(manifest.version).toBe('1.0.0')
+      expect(manifest.version).toBe('2.0.0')
       expect(manifest.circuits.mint_burn_note).toBeDefined()
       expect(manifest.circuits.transfer_note).toBeDefined()
     })

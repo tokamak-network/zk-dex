@@ -103,6 +103,68 @@ export async function addTransferNote(account: string, note: TransferNote): Prom
   return res.data.notes
 }
 
+// ============================================================================
+// Raw Note Events (localStorage - encrypted data from blockchain)
+// ============================================================================
+
+const RAW_NOTE_EVENTS_KEY = 'zkdex_raw_note_events'
+
+/**
+ * Raw note event data from blockchain (encrypted, not yet decrypted)
+ */
+export interface RawNoteEvent {
+  hash: string
+  encryptedData: string
+  state: number           // 0=INVALID, 1=VALID, 2=TRADING, 3=SPENT
+  createdInTx?: string
+  createdAtBlock?: number
+  createdAt?: number      // Unix timestamp
+  createdBy?: string      // Ethereum address that submitted the mint tx
+  spentInTx?: string
+}
+
+/**
+ * Get all raw note events from localStorage
+ */
+export function getRawNoteEvents(): Record<string, RawNoteEvent> {
+  try {
+    const data = localStorage.getItem(RAW_NOTE_EVENTS_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Save a raw note event to localStorage
+ */
+export function saveRawNoteEvent(event: RawNoteEvent): void {
+  const events = getRawNoteEvents()
+  // Merge with existing data (preserve fields not in new event)
+  const existing = events[event.hash] || {}
+  events[event.hash] = { ...existing, ...event }
+  localStorage.setItem(RAW_NOTE_EVENTS_KEY, JSON.stringify(events))
+}
+
+/**
+ * Save multiple raw note events to localStorage
+ */
+export function saveRawNoteEvents(newEvents: RawNoteEvent[]): void {
+  const events = getRawNoteEvents()
+  for (const event of newEvents) {
+    const existing = events[event.hash] || {}
+    events[event.hash] = { ...existing, ...event }
+  }
+  localStorage.setItem(RAW_NOTE_EVENTS_KEY, JSON.stringify(events))
+}
+
+/**
+ * Clear all raw note events from localStorage
+ */
+export function clearRawNoteEvents(): void {
+  localStorage.removeItem(RAW_NOTE_EVENTS_KEY)
+}
+
 /**
  * Updates the state of a note on the server.
  *

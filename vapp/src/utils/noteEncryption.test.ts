@@ -6,7 +6,7 @@
  * - 레거시 RLP 평문 디코딩 (하위 호환)
  * - 잘못된 키로 decodeNoteData 실패
  * - 엣지 케이스 (빈 입력, 짧은 입력, 잘못된 형식)
- * - isNoteOwner 주소 비교
+ * - isNoteOwner pk 비교
  */
 
 import { describe, it, expect } from 'vitest'
@@ -21,10 +21,10 @@ const WRONG_SK = '0x000000000000000000000000000000000000000000000000000000001234
 /** 테스트용 노트 데이터 */
 function createTestNoteData(overrides?: Partial<EncodedNoteData>): EncodedNoteData {
   return {
-    ownerAddress: '0xd8a3f85aa09feebc667f6f612ed6b434322f9ffe',
+    pkX: '0x2b52e1908bed7b1f474026b72e1c887e2c2462cf33b20b5b562e8bc096ee7083',
+    pkY: '0x14f9761fff9429e5e33dc8b4b43627276fab15d753d758a24b51f1e75ec10a95',
     value: '0x0de0b6b3a7640000', // 1 ETH
     token: '0x00',
-    viewingKey: '0x00',
     salt: '0x' + 'abcdef01'.padStart(64, '0'),
     ...overrides
   }
@@ -47,7 +47,8 @@ describe('noteEncryption', () => {
       expect(decoded).not.toBeNull()
 
       // 각 필드의 BigInt 값이 일치하는지 확인 (hex 표현이 다를 수 있으므로)
-      expect(BigInt(decoded!.ownerAddress)).toBe(BigInt(noteData.ownerAddress))
+      expect(BigInt(decoded!.pkX)).toBe(BigInt(noteData.pkX))
+      expect(BigInt(decoded!.pkY)).toBe(BigInt(noteData.pkY))
       expect(BigInt(decoded!.value)).toBe(BigInt(noteData.value))
       expect(BigInt(decoded!.token)).toBe(BigInt(noteData.token))
       expect(BigInt(decoded!.salt)).toBe(BigInt(noteData.salt))
@@ -119,12 +120,12 @@ describe('noteEncryption', () => {
 
   describe('레거시 RLP 평문 하위 호환', () => {
     it('5-필드 RLP 평문 디코딩 (secretKey 없이)', async () => {
-      // 직접 RLP 인코딩한 레거시 데이터 생성
+      // 직접 RLP 인코딩한 데이터 생성 (새 형식: pkX, pkY, value, token, salt)
       const fields = [
-        '0xd8a3f85aa09feebc667f6f612ed6b434322f9ffe', // ownerAddress
+        '0x2b52e1908bed7b1f474026b72e1c887e2c2462cf33b20b5b562e8bc096ee7083', // pkX
+        '0x14f9761fff9429e5e33dc8b4b43627276fab15d753d758a24b51f1e75ec10a95', // pkY
         '0x0de0b6b3a7640000',                          // value (1 ETH)
         '0x00',                                         // token
-        '0x00',                                         // viewingKey
         '0x' + 'ab'.repeat(16)                          // salt
       ]
       const rlpEncoded = encodeRlp(fields)
@@ -135,40 +136,39 @@ describe('noteEncryption', () => {
       // secretKey 없이 디코딩 가능
       const decoded = await decodeNoteData(rlpEncoded)
       expect(decoded).not.toBeNull()
-      expect(BigInt(decoded!.ownerAddress)).toBe(BigInt(fields[0]))
-      expect(BigInt(decoded!.value)).toBe(BigInt(fields[1]))
+      expect(BigInt(decoded!.pkX)).toBe(BigInt(fields[0]))
+      expect(BigInt(decoded!.value)).toBe(BigInt(fields[2]))
     })
 
     it('5-필드 RLP 평문에 secretKey 전달해도 정상 동작', async () => {
       const fields = [
-        '0xd8a3f85aa09feebc667f6f612ed6b434322f9ffe',
-        '0x0de0b6b3a7640000',
-        '0x00',
-        '0x00',
-        '0x' + 'cd'.repeat(16)
+        '0x2b52e1908bed7b1f474026b72e1c887e2c2462cf33b20b5b562e8bc096ee7083', // pkX
+        '0x14f9761fff9429e5e33dc8b4b43627276fab15d753d758a24b51f1e75ec10a95', // pkY
+        '0x0de0b6b3a7640000',                          // value
+        '0x00',                                         // token
+        '0x' + 'cd'.repeat(16)                          // salt
       ]
       const rlpEncoded = encodeRlp(fields)
 
       // secretKey를 줘도 레거시 경로로 정상 디코딩
       const decoded = await decodeNoteData(rlpEncoded, TEST_SK)
       expect(decoded).not.toBeNull()
-      expect(BigInt(decoded!.value)).toBe(BigInt(fields[1]))
+      expect(BigInt(decoded!.value)).toBe(BigInt(fields[2]))
     })
   })
 
   describe('isNoteOwner', () => {
-    it('공개키에서 파생된 주소와 노트 소유자 주소가 일치하면 true', async () => {
+    it('공개키와 노트의 pkX/pkY가 일치하면 true', async () => {
       const pk = await derivePublicKey(TEST_SK)
-      const address = await deriveAddressFromPublicKey(pk.x, pk.y)
 
-      const noteData = createTestNoteData({ ownerAddress: address })
+      const noteData = createTestNoteData({ pkX: pk.x, pkY: pk.y })
       const result = await isNoteOwner(noteData, pk)
       expect(result).toBe(true)
     })
 
-    it('다른 주소이면 false', async () => {
+    it('다른 공개키이면 false', async () => {
       const pk = await derivePublicKey(TEST_SK)
-      const noteData = createTestNoteData({ ownerAddress: '0x0000000000000000000000000000000000000001' })
+      const noteData = createTestNoteData({ pkX: '0x0000000000000000000000000000000000000000000000000000000000000001', pkY: '0x0000000000000000000000000000000000000000000000000000000000000002' })
 
       const result = await isNoteOwner(noteData, pk)
       expect(result).toBe(false)

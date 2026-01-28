@@ -1,6 +1,26 @@
 <template>
   <div>
-    <NoteBalanceList :notes="filteredNotes" :accounts="accountStore.accounts || []" />
+    <div class="fetch-section">
+      <button
+        class="button is-info"
+        :class="{ 'is-loading': noteStore.isScanning }"
+        @click="handleFetchAll"
+        :disabled="noteStore.isScanning || !contractStore.isInitialized"
+      >
+        <span class="icon" v-if="!noteStore.isScanning">
+          <i class="fas fa-sync-alt"></i>
+        </span>
+        <span>Fetch All Notes</span>
+      </button>
+      <span v-if="!contractStore.isInitialized" class="help is-warning">
+        Connect wallet to fetch notes
+      </span>
+      <span v-else-if="rawEventCount > 0" class="help">
+        {{ rawEventCount }} raw events in storage
+      </span>
+    </div>
+
+    <NoteBalanceList :notes="noteStore.notes" :accounts="accountStore.accounts || []" />
     <AccountList :accounts="accountStore.accounts || []" :selectedAccount="selectedAccount" @selectAccount="handleSelectAccount" />
 
     <div class="note-view-tabs">
@@ -28,6 +48,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useContractStore } from '@/stores/contract'
 import { useNoteStore, type Note } from '@/stores/note'
+import { getRawNoteEvents } from '@/api'
 import AccountList from '@/components/AccountList.vue'
 import NoteList from '@/components/NoteList.vue'
 import NoteBalanceList from '@/components/NoteBalanceList.vue'
@@ -40,13 +61,26 @@ const noteStore = useNoteStore()
 
 const selectedAccount = ref<Account | null>(null)
 const noteViewTab = ref<'list' | 'tree'>('list')
+const rawEventCount = ref(0)
+
+// Update raw event count on mount
+function updateRawEventCount() {
+  const events = getRawNoteEvents()
+  rawEventCount.value = Object.keys(events).length
+}
+
+async function handleFetchAll() {
+  await noteStore.fetchAllNoteEvents()
+  updateRawEventCount()
+}
 
 // Filter notes by selected account, or show all if none selected
 const filteredNotes = computed(() => {
+  const allNotes = noteStore.notes || []
   if (!selectedAccount.value) {
-    return noteStore.notes || []
+    return allNotes
   }
-  return (noteStore.notes || []).filter(note => note.owner === selectedAccount.value!.address)
+  return allNotes.filter(note => note.owner === selectedAccount.value!.address)
 })
 
 onMounted(async () => {
@@ -55,25 +89,50 @@ onMounted(async () => {
     if (accountStore.accounts.length === 0) {
       await accountStore.loadAccounts()
     }
-    // Only load notes if contract is initialized
-    if (contractStore.isInitialized && noteStore.notes.length === 0) {
-      await noteStore.loadNotes()
+    // Update raw event count from localStorage
+    updateRawEventCount()
+    // If there are raw events in localStorage, decrypt and display them
+    if (rawEventCount.value > 0) {
+      await noteStore.decryptAndDisplayNotes()
     }
-    // Always load transfer notes if not loaded yet
-    if (noteStore.transferNotes.length === 0) {
-      await noteStore.loadTransferNotes()
+    // Auto-fetch notes if contract is already initialized
+    if (contractStore.isInitialized) {
+      await handleFetchAll()
     }
   } catch (err) {
     console.error('Failed to load data:', err)
   }
 })
 
-// Watch for contract initialization to load notes
-watch(() => contractStore.isInitialized, async (isInitialized) => {
-  if (isInitialized && noteStore.notes.length === 0) {
-    await noteStore.loadNotes()
+// Auto-fetch notes when contract becomes initialized
+watch(() => contractStore.isInitialized, async (initialized) => {
+  if (initialized) {
+    await handleFetchAll()
   }
 })
+
+// Watch for account unlocks to re-decrypt notes
+watch(
+  () => accountStore.accounts.map(a => a.secretKey).filter(Boolean).length,
+  async (unlockedCount, prevCount) => {
+    console.log('[watcher] unlocked count changed:', prevCount, '->', unlockedCount, 'rawEvents:', rawEventCount.value)
+    if (unlockedCount > prevCount && rawEventCount.value > 0) {
+      console.log('Account unlocked, re-decrypting notes...')
+      await noteStore.decryptAndDisplayNotes()
+    }
+  }
+)
+
+// Also watch the store-level secretKey
+watch(
+  () => accountStore.secretKey,
+  async (newSk, oldSk) => {
+    if (newSk && !oldSk && rawEventCount.value > 0) {
+      console.log('Account unlocked (store level), re-decrypting notes...')
+      await noteStore.decryptAndDisplayNotes()
+    }
+  }
+)
 
 function handleSelectAccount(account: Account) {
   // Toggle selection - clicking same account deselects it
@@ -91,6 +150,27 @@ function handleSelectNote(note: Note) {
 </script>
 
 <style scoped>
+.fetch-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.fetch-section .button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fetch-section .help {
+  margin: 0;
+  font-size: 0.85em;
+}
+
 .note-view-tabs {
   display: flex;
   gap: 0;

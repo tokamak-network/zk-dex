@@ -91,51 +91,50 @@ const NoteState = {
 };
 
 /**
- * Note class with address-based ownership (160-bit)
- * Uses Poseidon hash: hash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+ * Note class with 7-input Poseidon hash
+ * hash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+ *
+ * Regular notes: owner0=pkX, owner1=pkY, vk0=pkX, vk1=pkY
+ * Smart notes: owner0=parentHash>>128, owner1=parentHash&MASK_128, vk0=owner0, vk1=owner1
  *
  * IMPORTANT: Call init() once before using hash().
  */
 class Note {
   /**
-   * @param { String | BN } ownerAddress 160-bit address
-   * @param { String | BN } value The amount of token
-   * @param { String | BN } token The type of token
-   * @param { String | BN } viewingKey The viewing key of the sender
-   * @param { String | BN } salt Random salt to prevent pre-image attack on note hash
+   * @param { String | BN } owner0 - Owner field 0 (regular: pkX, smart: parentHash_hi)
+   * @param { String | BN } owner1 - Owner field 1 (regular: pkY, smart: parentHash_lo)
+   * @param { String | BN } value - The amount of token
+   * @param { String | BN } token - The type of token
+   * @param { String | BN } vk0 - Viewing key part 0 (regular: pkX, smart: owner0)
+   * @param { String | BN } vk1 - Viewing key part 1 (regular: pkY, smart: owner1)
+   * @param { String | BN } salt - Random salt to prevent pre-image attack on note hash
    */
-  constructor(ownerAddress, value, token, viewingKey, salt) {
-    // ownerAddress is 160-bit (40 hex chars)
-    this.ownerAddress = Web3Utils.padLeft(ownerAddress, 40);
+  constructor(owner0, owner1, value, token, vk0, vk1, salt) {
+    this.owner0 = Web3Utils.padLeft(Web3Utils.toHex(owner0), 64);
+    this.owner1 = Web3Utils.padLeft(Web3Utils.toHex(owner1), 64);
     this.value = Web3Utils.padLeft(Web3Utils.toHex(value), 64);
     this.token = Web3Utils.padLeft(Web3Utils.toHex(token), 64);
-    this.viewingKey = Web3Utils.padLeft(Web3Utils.toHex(viewingKey), 64);
+    this.vk0 = Web3Utils.padLeft(Web3Utils.toHex(vk0), 64);
+    this.vk1 = Web3Utils.padLeft(Web3Utils.toHex(vk1), 64);
     this.salt = Web3Utils.padLeft(Web3Utils.toHex(salt), 64);
   }
 
   /**
-   * @returns { String } The owner address (160-bit)
-   */
-  getOwner() {
-    return this.ownerAddress;
-  }
-
-  /**
    * Compute Poseidon note hash (synchronous, requires init() first)
-   * hash = Poseidon(ownerAddress, value, tokenType, vk0, vk1, salt)
+   * hash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
    * @returns { String } 0x-prefixed 64-char hex string
    */
   hash() {
     if (!_poseidon) {
       throw new Error('Poseidon not initialized. Call init() before using Note.hash()');
     }
-    const [vk0, vk1] = _split256To128(this.viewingKey);
     const hash = _poseidon([
-      _hexToBigInt(this.ownerAddress),
+      _hexToBigInt(this.owner0),
+      _hexToBigInt(this.owner1),
       _hexToBigInt(this.value),
       _hexToBigInt(this.token),
-      vk0,
-      vk1,
+      _hexToBigInt(this.vk0),
+      _hexToBigInt(this.vk1),
       _hexToBigInt(this.salt)
     ]);
     return '0x' + _poseidonF.toObject(hash).toString(16).padStart(64, '0');
@@ -147,6 +146,18 @@ class Note {
    */
   hashArr() {
     return split32BytesTo16BytesArr(this.hash());
+  }
+
+  /**
+   * For smart notes: reconstruct parentHash from (owner0, owner1).
+   * parentHash = owner0 * 2^128 + owner1
+   * @returns {string} 0x-prefixed 64-char hex string
+   */
+  getParentHash() {
+    const hi = _hexToBigInt(this.owner0);
+    const lo = _hexToBigInt(this.owner1);
+    const parentHash = (hi << BigInt(128)) + lo;
+    return '0x' + parentHash.toString(16).padStart(64, '0');
   }
 
   /**
@@ -177,31 +188,27 @@ class Note {
 }
 
 /**
- * Get smart note owner address from a note hash (Poseidon version)
- * Smart note owner = lower 160 bits of the Poseidon note hash
- * @param {String} noteHash - Note hash (hex string)
- * @returns {String} - 160-bit address (hex string with 0x prefix)
- */
-function getSmartNoteOwner(noteHash) {
-  const hashBigInt = _hexToBigInt(noteHash);
-  const mask160 = (BigInt(1) << BigInt(160)) - BigInt(1);
-  const address = hashBigInt & mask160;
-  return '0x' + address.toString(16).padStart(40, '0');
-}
-
-/**
- * Create a smart note with owner derived from origin note hash
- * @param {Note} originNote - The origin note whose hash becomes the owner
+ * Create a smart note with owner derived from origin note hash.
+ * Smart note: owner0=parentHash_hi, owner1=parentHash_lo, vk0=owner0, vk1=owner1
+ * @param {Note} originNote - The origin note whose hash becomes the parent
  * @param {String|BN} value - Note value
  * @param {String|BN} token - Token type
- * @param {String|BN} viewingKey - Viewing key
  * @param {String|BN} salt - Salt
- * @returns {Note} - Smart note with owner = truncated origin hash
+ * @returns {Note} - Smart note with split parent hash as owner
  */
-function createSmartNote(originNote, value, token, viewingKey, salt) {
+function createSmartNote(originNote, value, token, salt) {
   const originHash = originNote.hash();
-  const smartOwner = getSmartNoteOwner(originHash);
-  return new Note(smartOwner, value, token, viewingKey, salt);
+  const [hi, lo] = _split256To128(originHash);
+  // Smart note: owner = split(parentHash), vk = owner
+  return new Note(
+    '0x' + hi.toString(16).padStart(64, '0'),
+    '0x' + lo.toString(16).padStart(64, '0'),
+    value,
+    token,
+    '0x' + hi.toString(16).padStart(64, '0'),
+    '0x' + lo.toString(16).padStart(64, '0'),
+    salt
+  );
 }
 
 /**
@@ -231,7 +238,7 @@ function marshalEncDecKey(_key) {
 /**
  * Decrypt an encrypted note string using AES-256-CBC and reconstruct the Note object.
  * @param {string} v - The encrypted note data as a marshalled hex string
- * @param {string} decKey - The decryption key (hex-encoded viewing key)
+ * @param {string} decKey - The decryption key (hex-encoded)
  * @returns {Note} The decrypted and reconstructed Note instance
  */
 function decrypt(v, decKey) {
@@ -246,7 +253,7 @@ function decrypt(v, decKey) {
   const r2 = decipher.final('utf8');
 
   const note = JSON.parse(r1 + r2);
-  return new Note(note.ownerAddress, note.value, note.token, note.viewingKey, note.salt);
+  return new Note(note.owner0, note.owner1, note.value, note.token, note.vk0, note.vk1, note.salt);
 }
 
 // --- Dummy proof functions (Groth16 / Poseidon format) ---
@@ -339,7 +346,7 @@ function dummyProofMakeOrder(makerNote) {
 
 /**
  * Generate a dummy proof for the TakeOrder circuit (development mode only).
- * Public inputs: [output, oldNoteHash, oldType, newNoteHash, newOwnerAddress, newType].
+ * Public inputs: [output, oldNoteHash, oldType, newNoteHash, newParentHash, newType].
  * @param {Note} parentNote - The taker's parent note being committed
  * @param {Note} stakeNote - The stake note created with maker note hash as owner
  * @returns {Object} A dummy Groth16 proof object with placeholder a, b, c values and computed public inputs
@@ -354,7 +361,7 @@ function dummyProofTakeOrder(parentNote, stakeNote) {
       parentNote.hash(),
       parentNote.token,
       stakeNote.hash(),
-      stakeNote.ownerAddress,
+      stakeNote.getParentHash(),
       stakeNote.token,
     ]
   };
@@ -363,8 +370,8 @@ function dummyProofTakeOrder(parentNote, stakeNote) {
 /**
  * Generate a dummy proof for the SettleOrder circuit (development mode only).
  * Public inputs: [output, o0Hash, o0Type, o1Hash, o1Type,
- *                 n0Hash, n0OwnerAddress, n0Type,
- *                 n1Hash, n1OwnerAddress, n1Type,
+ *                 n0Hash, n0ParentHash, n0Type,
+ *                 n1Hash, n1ParentHash, n1Type,
  *                 n2Hash, n2Type, price].
  * @param {Note} makerNote - The maker's original note (o0)
  * @param {Note} stakeNote - The taker's stake note (o1)
@@ -386,10 +393,10 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
       stakeNote.hash(),
       stakeNote.token,
       rewardNote.hash(),
-      rewardNote.ownerAddress,
+      rewardNote.getParentHash(),
       rewardNote.token,
       paymentNote.hash(),
-      paymentNote.ownerAddress,
+      paymentNote.getParentHash(),
       paymentNote.token,
       changeNote.hash(),
       changeNote.token,
@@ -398,7 +405,7 @@ function dummyProofSettleOrder(makerNote, stakeNote, rewardNote, paymentNote, ch
   };
 }
 
-const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00');
+const EMPTY_NOTE = new Note('0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00');
 
 const constants = {
     MAX_FIELD_VALUE,
@@ -414,7 +421,6 @@ module.exports = {
   NoteState,
   Note,
   decrypt,
-  getSmartNoteOwner,
   createSmartNote,
   // Shared hash utilities (used by snarkjsUtils.js)
   _hexToBigInt,

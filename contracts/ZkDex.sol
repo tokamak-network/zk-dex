@@ -18,7 +18,6 @@ contract ZkDex is ZkDai {
   enum OrderState {Created, Taken, Settled}
 
   struct Order {
-    bytes32 makerViewingKey;
     bytes32 makerNote;
     uint256 sourceToken;
     uint256 targetToken;
@@ -97,7 +96,6 @@ contract ZkDex is ZkDai {
    *  - [2] = maker note type
    */
   function makeOrder(
-    bytes32 makerViewingKey,
     uint256 targetToken,
     uint price,
     uint256[2] calldata a,
@@ -116,7 +114,6 @@ contract ZkDex is ZkDai {
     orders.push();
     Order storage order = orders[orderId];
 
-    order.makerViewingKey = makerViewingKey;
     order.makerNote = makerNote;
     order.sourceToken = input[2];
     order.targetToken = targetToken;
@@ -136,7 +133,7 @@ contract ZkDex is ZkDai {
    *  - [1] = parent note hash (oldNoteHash)
    *  - [2] = parent note type (oldType)
    *  - [3] = stake note hash (newNoteHash)
-   *  - [4] = stake note owner address (160-bit, truncated from maker note hash)
+   *  - [4] = stake note parent hash (full hash of maker note)
    *  - [5] = stake note type (newType)
    */
    function takeOrder(
@@ -155,8 +152,8 @@ contract ZkDex is ZkDai {
 
     require(order.targetToken == input[2], "ZkDex: parent note token type mismatch");
     require(order.targetToken == input[5], "ZkDex: stake note token type mismatch");
-    // Verify stake note owner == truncated maker note hash (last 160 bits)
-    require(uint160(uint256(order.makerNote)) == input[4], "ZkDex: owner of taker note to maker mismatch");
+    // Verify stake note parent hash == maker note hash (full hash comparison)
+    require(uint256(order.makerNote) == input[4], "ZkDex: parent hash of taker note to maker mismatch");
 
     bytes32 parentNote = bytes32(input[1]);
     bytes32 takerNoteToMaker = bytes32(input[3]);
@@ -186,10 +183,10 @@ contract ZkDex is ZkDai {
    *  - [3]  = taker stake note hash (o1Hash)
    *  - [4]  = taker stake note type (o1Type)
    *  - [5]  = reward note hash (n0Hash)
-   *  - [6]  = reward note owner (160-bit, truncated parent note hash)
+   *  - [6]  = reward note parent hash (full parent note hash)
    *  - [7]  = reward note type (n0Type)
    *  - [8]  = payment note hash (n1Hash)
-   *  - [9]  = payment note owner (160-bit, truncated maker note hash)
+   *  - [9]  = payment note parent hash (full maker note hash)
    *  - [10] = payment note type (n1Type)
    *  - [11] = change note hash (n2Hash)
    *  - [12] = change note type (n2Type)
@@ -214,11 +211,11 @@ contract ZkDex is ZkDai {
     require(order.targetToken == input[4], "ZkDex: target token mismatch");
 
     require(order.sourceToken == input[7], "ZkDex: reward token type mismatch");
-    // Verify reward note owner == truncated parent note hash (160-bit)
-    require(uint160(uint256(order.parentNote)) == input[6], "ZkDex: owner of reward note mismatch");
+    // Verify reward note parent hash == parent note hash (full hash comparison)
+    require(uint256(order.parentNote) == input[6], "ZkDex: parent hash of reward note mismatch");
     require(order.targetToken == input[10], "ZkDex: payment token type mismatch");
-    // Verify payment note owner == truncated maker note hash (160-bit)
-    require(uint160(uint256(order.makerNote)) == input[9], "ZkDex: owner of payment note mismatch");
+    // Verify payment note parent hash == maker note hash (full hash comparison)
+    require(uint256(order.makerNote) == input[9], "ZkDex: parent hash of payment note mismatch");
 
     require(order.price == input[13], "ZkDex: order price mismatch");
 
@@ -266,9 +263,8 @@ contract ZkDex is ZkDai {
    * @param order The Order struct containing the fields to hash
    * @return The keccak256 hash of the order's key fields as a bytes32 value
    */
-  function hashOrder(Order memory order) internal view returns (bytes32) {
+  function hashOrder(Order memory order) internal pure returns (bytes32) {
     return keccak256(abi.encode(
-      order.makerViewingKey,
       order.makerNote,
       order.sourceToken,
       order.targetToken,
