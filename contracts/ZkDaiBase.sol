@@ -35,8 +35,21 @@ contract ZkDaiBase is Requestable {
    * @param _development When true, bypasses zk-SNARK proof verification for testing
    * @param _dai The address of the DAI ERC20 token contract
    * @param _requestVerifier The verifier contract for mint/burn note proofs used in cross-chain requests
+   *
+   * Security: Development mode is restricted to local networks only (chainId 1337 or 31337).
+   *           Attempting to deploy with development=true on production networks will revert.
    */
   constructor(bool _development, address _dai, IMintNBurnNoteVerifier _requestVerifier) {
+    // Security check: Prevent development mode on production networks
+    // Development mode bypasses ZK proof verification and MUST NOT be enabled in production
+    if (_development) {
+      // Allow only on local test networks (Ganache: 1337, Hardhat: 31337)
+      require(
+        block.chainid == 1337 || block.chainid == 31337,
+        "ZkDaiBase: Development mode only allowed on local networks (chainId 1337 or 31337)"
+      );
+    }
+
     development = _development;
     dai = ERC20(_dai);
     requestVerifier = _requestVerifier;
