@@ -6,6 +6,7 @@
  */
 
 import type { WorkerMessage, WorkerResponse, FormattedProof } from '@/workers/proofWorker'
+import { logger } from '@/lib/logger'
 
 export type { FormattedProof }
 
@@ -72,7 +73,7 @@ class ProofGeneratorService {
 
           const pending = this.pendingRequests.get(response.id)
           if (!pending) {
-            console.warn('Received response for unknown request:', response.id)
+            logger.warn('Received response for unknown request:', response.id)
             return
           }
 
@@ -111,7 +112,7 @@ class ProofGeneratorService {
         }
 
         this.worker.onerror = (error) => {
-          console.error('Worker error:', error)
+          logger.error('Worker error:', error)
           reject(new Error('Worker initialization failed'))
         }
 

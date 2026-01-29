@@ -7,6 +7,7 @@ import App from './App.vue'
 import router from './router'
 
 import '@oruga-ui/theme-bulma/dist/bulma.css'
+import './assets/action-button.css'
 
 const app = createApp(App)
 

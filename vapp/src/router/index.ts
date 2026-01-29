@@ -14,9 +14,7 @@ import NoteCombinePage from '@/views/NoteCombinePage.vue'
 import NoteConvertPage from '@/views/NoteConvertPage.vue'
 import HistoryNoteTransferPage from '@/views/HistoryNoteTransferPage.vue'
 import HistoryOrderPage from '@/views/HistoryOrderPage.vue'
-import AccountImportPage from '@/views/AccountImportPage.vue'
-import AccountExportPage from '@/views/AccountExportPage.vue'
-import AccountDeletePage from '@/views/AccountDeletePage.vue'
+import ZAccountsPage from '@/views/ZAccountsPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -64,16 +62,8 @@ const routes: RouteRecordRaw[] = [
             component: HistoryOrderPage,
           },
           {
-            path: 'accounts/import',
-            component: AccountImportPage,
-          },
-          {
-            path: 'accounts/export',
-            component: AccountExportPage,
-          },
-          {
-            path: 'accounts/delete',
-            component: AccountDeletePage,
+            path: 'zaccounts',
+            component: ZAccountsPage,
           },
         ],
       },
