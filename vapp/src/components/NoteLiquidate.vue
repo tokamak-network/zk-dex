@@ -45,7 +45,7 @@
       <p class="help">{{ proofProgress }}</p>
     </div>
     <div style="display: flex; justify-content: flex-end">
-      <a class="button is-link" style="margin-top: 20px;" :class="{ 'is-static': !canLiquidate, 'is-loading': loading }" @click="liquidateNote">Redeem</a>
+      <button class="button action-button" style="margin-top: 20px;" :class="{ 'is-static': !canLiquidate, 'is-loading': loading }" @click="liquidateNote">Redeem</button>
     </div>
   </div>
 </template>
@@ -62,10 +62,13 @@ import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareMintInputs, type NoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
-defineProps<{
-  token: string
-}>()
+withDefaults(defineProps<{
+  token?: string
+}>(), {
+  token: 'ETH'
+})
 
 const router = useRouter()
 const web3Store = useWeb3Store()
@@ -113,6 +116,16 @@ const ownerAccount = computed(() => {
 })
 
 function selectNote(note: Note) {
+  logger.log('[NoteLiquidate] selectNote called with:', {
+    hash: note.hash?.slice(0, 12),
+    owner: note.owner?.slice(0, 12),
+    value: note.value,
+    state: note.state,
+    pkX: note.pkX?.slice(0, 12),
+    pkY: note.pkY?.slice(0, 12),
+    salt: note.salt?.slice(0, 12),
+    secretKey: note.secretKey ? 'present' : 'missing'
+  })
   selectedNote.value = note
   noteOwner.value = note.owner
   noteHash.value = note.hash
@@ -122,6 +135,12 @@ function selectNote(note: Note) {
   unlockedSecretKey.value = ''
   passphrase.value = ''
   proofProgress.value = ''
+
+  logger.log('[NoteLiquidate] After selectNote:', {
+    canLiquidate: canLiquidate.value,
+    needsUnlock: needsUnlock.value,
+    effectiveSecretKey: effectiveSecretKey.value ? 'present' : 'missing'
+  })
 }
 
 async function unlockAccountHandler() {
@@ -137,7 +156,7 @@ async function unlockAccountHandler() {
     unlockedSecretKey.value = result.secretKey
     isUnlocked.value = true
   } catch (err) {
-    console.error('Failed to unlock account:', err)
+    logger.error('Failed to unlock account:', err)
     alert('Failed to unlock account: Wrong passphrase?')
     isUnlocked.value = false
   } finally {
@@ -150,11 +169,27 @@ async function unlockAccountHandler() {
  * Uses the same mint_burn_note circuit
  */
 async function generateBurnProof(): Promise<FormattedProof> {
+  logger.log('[NoteLiquidate] generateBurnProof called')
+  logger.log('[NoteLiquidate] effectiveSecretKey:', effectiveSecretKey.value ? 'present' : 'MISSING')
+  logger.log('[NoteLiquidate] selectedNote FULL data:', {
+    hash: selectedNote.value?.hash,
+    pkX: selectedNote.value?.pkX,
+    pkY: selectedNote.value?.pkY,
+    value: selectedNote.value?.value,
+    token: selectedNote.value?.token,
+    salt: selectedNote.value?.salt,
+    owner: selectedNote.value?.owner
+  })
+
   if (!effectiveSecretKey.value) {
     throw new Error('No secret key available. Please unlock account.')
   }
   if (!selectedNote.value?.pkX || !selectedNote.value?.pkY) {
+    logger.error('[NoteLiquidate] CRITICAL: Note missing pkX or pkY!')
     throw new Error('Note does not have public key. Cannot generate burn proof.')
+  }
+  if (!selectedNote.value?.salt) {
+    logger.error('[NoteLiquidate] WARNING: Note missing salt! Using 0x0')
   }
 
   // Create note data for circuit input
@@ -166,8 +201,24 @@ async function generateBurnProof(): Promise<FormattedProof> {
     salt: selectedNote.value.salt || '0x0'
   }
 
+  logger.log('[NoteLiquidate] noteData for circuit:', noteData)
+
   // Prepare circuit inputs (same as mint - mint_burn_note circuit)
   const inputs = await prepareMintInputs(noteData, effectiveSecretKey.value)
+  logger.log('[NoteLiquidate] Circuit inputs:', inputs)
+  logger.log('[NoteLiquidate] Expected noteHash (from note):', selectedNote.value.hash)
+  logger.log('[NoteLiquidate] Computed noteHash (from inputs):', inputs.noteHash)
+
+  // Check if hashes match
+  const expectedHashBigInt = BigInt(selectedNote.value.hash)
+  const computedHashBigInt = BigInt(inputs.noteHash)
+  if (expectedHashBigInt !== computedHashBigInt) {
+    logger.error('[NoteLiquidate] HASH MISMATCH!')
+    logger.error('[NoteLiquidate] Expected (hex):', '0x' + expectedHashBigInt.toString(16))
+    logger.error('[NoteLiquidate] Computed (hex):', '0x' + computedHashBigInt.toString(16))
+    throw new Error('Note hash mismatch! The note data (pkX, pkY, salt) does not match the on-chain note.')
+  }
+  logger.log('[NoteLiquidate] Hash verification PASSED')
 
   // Generate proof in browser Web Worker
   proofProgress.value = 'Generating proof...'
@@ -183,14 +234,29 @@ async function generateBurnProof(): Promise<FormattedProof> {
 }
 
 async function liquidateNote() {
-  if (!selectedNote.value) return
+  logger.log('[NoteLiquidate] liquidateNote called')
+  logger.log('[NoteLiquidate] selectedNote:', selectedNote.value ? {
+    hash: selectedNote.value.hash?.slice(0, 12),
+    state: selectedNote.value.state,
+    pkX: selectedNote.value.pkX ? 'present' : 'MISSING',
+    pkY: selectedNote.value.pkY ? 'present' : 'MISSING',
+    salt: selectedNote.value.salt ? 'present' : 'MISSING',
+    secretKey: selectedNote.value.secretKey ? 'present' : 'missing'
+  } : 'null')
+
+  if (!selectedNote.value) {
+    logger.log('[NoteLiquidate] No note selected!')
+    return
+  }
 
   if (selectedNote.value.state !== '0x1') {
+    logger.log('[NoteLiquidate] Note state is not VALID:', selectedNote.value.state)
     alert('Note is not in VALID state. Cannot redeem.')
     return
   }
 
   if (!effectiveSecretKey.value) {
+    logger.log('[NoteLiquidate] No secret key!')
     alert('Please unlock your account first.')
     return
   }
@@ -198,12 +264,54 @@ async function liquidateNote() {
   loading.value = true
 
   try {
-    console.log('Generating burn proof...')
+    // First, verify on-chain note state
+    logger.log('[NoteLiquidate] Checking on-chain note state...')
+    // Convert hash to bytes32 hex format if it's a decimal string
+    let hashForQuery = selectedNote.value.hash
+    if (!selectedNote.value.hash.startsWith('0x')) {
+      hashForQuery = '0x' + BigInt(selectedNote.value.hash).toString(16).padStart(64, '0')
+    }
+    const onChainState = await contractStore.dexContract!.notes(hashForQuery)
+    logger.log('[NoteLiquidate] On-chain note state:', onChainState.toString())
+    logger.log('[NoteLiquidate] Frontend note state:', selectedNote.value.state)
+
+    // State enum: 0=Invalid, 1=Valid, 2=Trading, 3=Spent
+    const stateNames = ['Invalid', 'Valid', 'Trading', 'Spent']
+    const onChainStateName = stateNames[Number(onChainState)] || 'Unknown'
+
+    if (Number(onChainState) !== 1) {
+      // Sync all note states from blockchain
+      await noteStore.refreshNoteStatesFromChain()
+
+      // Also update local selectedNote state
+      const stateMap: Record<number, string> = { 0: '0x0', 1: '0x1', 2: '0x2', 3: '0x3' }
+      selectedNote.value.state = stateMap[Number(onChainState)] || '0x0'
+
+      alert(`Cannot redeem: Note is "${onChainStateName}" on-chain (expected "Valid").\n\nNote states have been synced from blockchain.`)
+      return
+    }
+
+    logger.log('[NoteLiquidate] On-chain state verified: Valid')
+    logger.log('[NoteLiquidate] Generating burn proof...')
     const proof = await generateBurnProof()
-    console.log('Burn proof generated:', proof)
+    logger.log('[NoteLiquidate] Burn proof generated:', proof)
 
     // Extract proof components
     const { a, b, c, input } = proof
+    logger.log('[NoteLiquidate] Proof input (public signals):', input)
+    logger.log('[NoteLiquidate] input[0] (out):', input[0])
+    logger.log('[NoteLiquidate] input[1] (noteHash):', input[1])
+    logger.log('[NoteLiquidate] input[2] (value):', input[2])
+    logger.log('[NoteLiquidate] input[3] (tokenType):', input[3])
+
+    // Verify the proof input matches expected values
+    const expectedNoteHash = BigInt(selectedNote.value!.hash)
+    const proofNoteHash = BigInt(input[1])
+    logger.log('[NoteLiquidate] Expected noteHash:', expectedNoteHash.toString())
+    logger.log('[NoteLiquidate] Proof noteHash:', proofNoteHash.toString())
+    if (expectedNoteHash !== proofNoteHash) {
+      logger.error('[NoteLiquidate] CRITICAL: Proof noteHash does not match expected!')
+    }
 
     // Convert proof values to BigInt for ethers v6
     const aBigInt = a.map(v => BigInt(v))
@@ -213,19 +321,45 @@ async function liquidateNote() {
 
     // First parameter is the recipient address for the liquidated funds
     const recipientAddress = web3Store.account
-    console.log('Calling contract liquidate with:', { to: recipientAddress, a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('[NoteLiquidate] Calling contract liquidate with:')
+    logger.log('  to:', recipientAddress)
+    logger.log('  a:', aBigInt)
+    logger.log('  b:', bBigInt)
+    logger.log('  c:', cBigInt)
+    logger.log('  input:', inputBigInt)
+
+    // Try to estimate gas first to catch errors early
+    try {
+      const gasEstimate = await contractStore.dexContract!.liquidate.estimateGas(
+        recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
+      )
+      logger.log('[NoteLiquidate] Gas estimate:', gasEstimate.toString())
+    } catch (gasErr) {
+      logger.error('[NoteLiquidate] Gas estimation failed:', gasErr)
+      // Try to get more details by calling staticCall
+      try {
+        await contractStore.dexContract!.liquidate.staticCall(
+          recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
+        )
+      } catch (staticErr) {
+        logger.error('[NoteLiquidate] Static call error:', staticErr)
+      }
+      throw gasErr
+    }
+
     const tx = await contractStore.dexContract!.liquidate(
       recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       // Update note state to spent
       await api.updateNoteState(noteOwner.value, noteHash.value, '0x3')
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage (important for state sync)
+      await noteStore.fetchAllNoteEvents()
       await updateDaiAmount()
       alert('Redemption successful!')
     } else {
@@ -234,7 +368,7 @@ async function liquidateNote() {
 
     router.push({ path: '/' })
   } catch (err) {
-    console.error('Failed to redeem note:', err)
+    logger.error('Failed to redeem note:', err)
     alert('Failed to redeem note: ' + (err as Error).message)
   } finally {
     loading.value = false

@@ -1,8 +1,5 @@
 <template>
   <div class="box" style="text-align: center;">
-    <div style="float: left;">
-      <p style="margin-left: 10px; margin-bottom: 20px;">Notes</p>
-    </div>
     <table class="table">
       <thead>
         <tr>

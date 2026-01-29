@@ -1,37 +1,34 @@
 <template>
   <div class="box">
     <div class="header-row">
-      <p style="margin-left: 10px; margin-bottom: 0;">Recent Note Transfer</p>
+      <p style="margin-left: 10px; margin-bottom: 0;">Recent Transaction</p>
     </div>
     <table class="table">
       <thead>
         <tr>
-          <th>Note</th>
+          <th>Transaction</th>
           <th>Type</th>
           <th>Token</th>
           <th>Value</th>
           <th>From</th>
           <th>To</th>
           <th>Change</th>
-          <th>Transaction</th>
+          <th>Note</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="note in visibleTransferNotes" :key="note.hash + note.type">
-          <td>{{ fmt.abbreviate(note.hash) }}</td>
+        <tr v-for="note in transferNotes" :key="note.hash + note.type">
+          <td>{{ fmt.abbreviate(note.transactionHash || '') }}</td>
           <td>{{ fmt.transferNoteType(note.type) }}</td>
           <td>{{ fmt.tokenType(note.token) }}</td>
           <td>{{ fmt.formatNoteValue(note.value) }}</td>
-          <td>{{ fmt.formatZkPk(addressToPk(note.from || '')) }}</td>
-          <td>{{ fmt.formatZkPk(addressToPk(note.to || '')) }}</td>
+          <td>{{ formatFromPk(note) }}</td>
+          <td>{{ formatToPk(note) }}</td>
           <td>{{ note.change ? fmt.formatNoteValue(note.change) : '' }}</td>
-          <td>{{ fmt.abbreviate(note.transactionHash || '') }}</td>
+          <td>{{ fmt.abbreviate(note.hash) }}</td>
         </tr>
       </tbody>
     </table>
-    <p v-if="hiddenCount > 0" class="help" style="text-align: center; margin-top: 10px;">
-      {{ hiddenCount }} records hidden (unlock accounts to view)
-    </p>
   </div>
 </template>
 
@@ -47,6 +44,8 @@ interface TransferNoteDisplay {
   value: string
   from?: string
   to?: string
+  fromPk?: { x: string; y: string }
+  toPk?: { x: string; y: string }
   change?: string
   transactionHash?: string
 }
@@ -72,18 +71,37 @@ const unlockedAddresses = computed(() => {
   return addresses
 })
 
-// Filter transfer notes - show only if from OR to is an unlocked account
-const visibleTransferNotes = computed(() => {
-  return props.transferNotes.filter(note => {
-    const fromUnlocked = note.from && unlockedAddresses.value.has(note.from)
-    const toUnlocked = note.to && unlockedAddresses.value.has(note.to)
-    return fromUnlocked || toUnlocked
-  })
-})
+// Format From pk - show ** if account is not unlocked
+function formatFromPk(note: TransferNoteDisplay): string {
+  if (!note.from && !note.fromPk) return ''
 
-const hiddenCount = computed(() => {
-  return props.transferNotes.length - visibleTransferNotes.value.length
-})
+  // If from address is unlocked, show the pk
+  if (note.from && unlockedAddresses.value.has(note.from)) {
+    const pk = note.fromPk || addressToPk(note.from)
+    if (pk) return fmt.formatZkPk(pk)
+  }
+
+  // If from address exists but not unlocked, mask it
+  if (note.from) return '**'
+
+  return ''
+}
+
+// Format To pk - show ** if account is not unlocked
+function formatToPk(note: TransferNoteDisplay): string {
+  if (!note.to && !note.toPk) return ''
+
+  // If to address is unlocked, show the pk
+  if (note.to && unlockedAddresses.value.has(note.to)) {
+    const pk = note.toPk || addressToPk(note.to)
+    if (pk) return fmt.formatZkPk(pk)
+  }
+
+  // If to address exists but not unlocked, mask it
+  if (note.to) return '**'
+
+  return ''
+}
 
 function addressToPk(addr: string) {
   if (!addr) return undefined

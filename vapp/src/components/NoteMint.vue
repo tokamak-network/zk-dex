@@ -25,12 +25,12 @@
       </p>
     </div>
     <div style="display: flex; justify-content: flex-end">
-      <a
-        class="button is-link"
+      <button
+        class="button action-button"
         style="margin-top: 20px;"
         :class="{ 'is-static': !canCreate, 'is-loading': loading }"
         @click="createNewNote"
-      >Issue</a>
+      >Issue</button>
     </div>
     <!-- Passphrase modal -->
     <o-modal v-model:active="showPassphraseModal">
@@ -47,7 +47,7 @@
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button class="button" @click="showPassphraseModal = false">Cancel</button>
-          <button class="button is-link" :class="{ 'is-loading': unlocking }" @click="confirmPassphrase" :disabled="!passphrase">Confirm</button>
+          <button class="button action-button" :class="{ 'is-loading': unlocking }" @click="confirmPassphrase" :disabled="!passphrase">Confirm</button>
         </div>
       </div>
     </o-modal>
@@ -67,13 +67,16 @@ import { useFormatters } from '@/composables/useFormatters'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareMintInputs, computeCircuitHash, generateSalt } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 const fmt = useFormatters()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   accounts: Account[]
-  token: string
-}>()
+  token?: string
+}>(), {
+  token: 'ETH'
+})
 
 const router = useRouter()
 const web3Store = useWeb3Store()
@@ -133,7 +136,7 @@ async function confirmPassphrase() {
     // Now proceed with note creation
     await doCreateNote()
   } catch (err) {
-    console.error('Failed to unlock account:', err)
+    logger.error('Failed to unlock account:', err)
     alert('Failed to unlock account: Wrong passphrase?')
   } finally {
     unlocking.value = false
@@ -266,11 +269,11 @@ async function doCreateNote() {
 
     if (receipt.status === 1) {
       // Note data is now stored on-chain via RLP encoding
-      // Scan blockchain to discover the new note
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage
+      await noteStore.fetchAllNoteEvents()
 
       // Update DAI amount (non-blocking)
-      updateDaiAmount().catch(err => console.warn('Failed to update DAI:', err))
+      updateDaiAmount().catch(err => logger.warn('Failed to update DAI:', err))
 
       alert('Note issued successfully!')
     } else {
@@ -279,7 +282,7 @@ async function doCreateNote() {
 
     router.push({ path: '/' })
   } catch (err) {
-    console.error('Failed to issue note:', err)
+    logger.error('Failed to issue note:', err)
     alert('Failed to issue note: ' + (err as Error).message)
   } finally {
     loading.value = false
@@ -294,7 +297,7 @@ async function updateDaiAmount() {
     const daiAmount = await contractStore.daiContract.balanceOf(web3Store.account)
     orderStore.setDaiAmount(daiAmount.toString())
   } catch (err) {
-    console.warn('Failed to update DAI amount:', err)
+    logger.warn('Failed to update DAI amount:', err)
     // Non-critical error, continue
   }
 }

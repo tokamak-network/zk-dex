@@ -48,6 +48,7 @@ import * as api from '@/api'
 import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareMakeOrderInputs, type NoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 defineProps<{
   radio: string
@@ -133,9 +134,9 @@ async function makeNewOrder() {
 
   try {
     // Generate proof entirely in browser (secretKey never leaves browser!)
-    console.log('Generating makeOrder proof...')
+    logger.log('Generating makeOrder proof...')
     const proof = await generateMakeOrderProof(selectedNote.value, selectedNote.value.secretKey)
-    console.log('MakeOrder proof generated:', proof)
+    logger.log('MakeOrder proof generated:', proof)
 
     // Determine target token
     const targetToken = selectedNote.value.token === ETH_TOKEN_TYPE ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
@@ -150,7 +151,7 @@ async function makeNewOrder() {
     const inputBigInt = input.map(v => BigInt(v))
 
     // Execute make order
-    console.log('Calling contract makeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('Calling contract makeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.makeOrder(
       selectedNote.value.token,
       targetToken,
@@ -158,9 +159,9 @@ async function makeNewOrder() {
       aBigInt, bBigInt, cBigInt, inputBigInt
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       const noteOwner = zeroPadValue(toBeHex(toBigInt(selectedNote.value.owner)), 20)
@@ -168,8 +169,8 @@ async function makeNewOrder() {
       // Update note state to TRADING
       await api.updateNoteState(noteOwner, noteHash.value, '0x2')
 
-      // Reload data
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage
+      await noteStore.fetchAllNoteEvents()
       await orderStore.loadOrders()
       await orderStore.loadOrderHistory()
 
@@ -179,7 +180,7 @@ async function makeNewOrder() {
       alert('Transaction failed')
     }
   } catch (err) {
-    console.error('Failed to make order:', err)
+    logger.error('Failed to make order:', err)
     alert('Failed to make order: ' + (err as Error).message)
   } finally {
     loading.value = false

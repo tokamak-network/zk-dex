@@ -1,7 +1,7 @@
 <template>
   <div class="box" style="text-align: center;">
     <div v-if="web3Store.account" class="wallet-info" style="text-align: left; margin-bottom: 10px; padding: 8px 10px; background: #f5f5f5; border-radius: 4px; font-size: 0.85em; color: #555;">
-      <span style="margin-right: 15px;">{{ fmt.abbreviate(web3Store.account) }}</span>
+      <span style="margin-right: 15px;">{{ web3Store.account }}</span>
       <span style="margin-right: 15px;">ETH: {{ formatEthBalance }}</span>
       <span>DAI: {{ formatDaiBalance }}</span>
       <button
@@ -13,98 +13,20 @@
         {{ isMinting ? 'Minting...' : 'Faucet (+100)' }}
       </button>
     </div>
-    <div style="float: left; display: flex; align-items: center; gap: 10px;">
-      <p style="margin-left: 10px;">Total Note Balance</p>
-      <button
-        class="button is-small is-light"
-        :class="{ 'is-loading': isRefreshing }"
-        @click="refreshNotes"
-        title="Scan blockchain for notes"
-      >
-        Refresh
-      </button>
-    </div>
-    <div style="float: right;" v-if="route.path === '/combine'">
-      <section>
-        <o-select placeholder="Select Account" v-model="selectedAccount">
-          <option v-for="account in accounts" :key="account.address" :value="account">
-            {{ fmt.formatZkPk(account.publicKey) }}
-          </option>
-        </o-select>
-      </section>
-    </div>
-    <table class="table" style="margin-top: 40px;">
-      <thead>
-        <tr>
-          <th>Currency Name</th>
-          <th>Symbol</th>
-          <th>Total Notes</th>
-          <th>Total Value</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="token in tokens" :key="token.type">
-          <td>{{ token.name }}</td>
-          <td>{{ token.symbol }}</td>
-          <td>{{ hasUnlockedAccount ? totalNotes(token.type) : '**' }}</td>
-          <td>{{ hasUnlockedAccount ? totalValue(token.type) : '**' }}</td>
-          <td v-if="route.path === '/' || route.path === ''">
-            <router-link :to="{ path: '/notes', query: { action: 'mint', token: token.symbol } }" class="button is-small is-primary">Issue</router-link>
-            <router-link :to="{ path: '/notes', query: { action: 'liquidate', token: token.symbol } }" class="button is-small is-warning" style="margin-left: 5px;">Redeem</router-link>
-          </td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { toBigInt, formatEther } from 'ethers'
-import { useFormatters } from '@/composables/useFormatters'
+import { ref, computed, onMounted, watch } from 'vue'
+import { formatEther } from 'ethers'
 import { useWeb3Store } from '@/stores/web3'
 import { useContractStore } from '@/stores/contract'
-import { useNoteStore, type Note } from '@/stores/note'
-import { useAccountStore, type Account } from '@/stores/account'
 
-interface Token {
-  type: string
-  name: string
-  symbol: string
-  totalNotes: number
-}
-
-const props = defineProps<{
-  accounts?: Account[]
-  notes: Note[] | null
-}>()
-
-const emit = defineEmits<{
-  selectAccount: [account: Account]
-}>()
-
-const route = useRoute()
-const fmt = useFormatters()
 const web3Store = useWeb3Store()
 const contractStore = useContractStore()
-const noteStore = useNoteStore()
-const accountStore = useAccountStore()
 
-const isRefreshing = computed(() => noteStore.isScanning)
-const hasUnlockedAccount = computed(() => {
-  const result = accountStore.accounts.some(acc => acc.secretKey)
-  console.log('[NoteBalanceList] hasUnlockedAccount:', result, 'accounts with sk:', accountStore.accounts.filter(a => a.secretKey).map(a => a.address))
-  return result
-})
 const daiBalance = ref('0')
 const isMinting = ref(false)
-
-// Debug: watch noteStore.notes changes
-watch(() => noteStore.notes.length, (newLen) => {
-  console.log('[NoteBalanceList] noteStore.notes.length changed:', newLen)
-})
 
 const formatDaiBalance = computed(() => {
   if (daiBalance.value === '0') return '0'
@@ -152,47 +74,5 @@ onMounted(() => {
 
 watch(() => contractStore.isInitialized, (initialized) => {
   if (initialized) loadDaiBalance()
-})
-
-// Note: Account unlock watcher is handled in DashboardSummaryPage.vue
-
-async function refreshNotes() {
-  // Fetch fresh events from blockchain and decrypt
-  await noteStore.fetchAllNoteEvents()
-  await loadDaiBalance()
-  await web3Store.updateBalance()
-}
-
-const tokens = ref<Token[]>([
-  { type: '0', name: 'Ethereum', symbol: 'ETH', totalNotes: 0 },
-  { type: '1', name: 'Dai', symbol: 'DAI', totalNotes: 0 },
-])
-
-const selectedAccount = ref<Account | null>(null)
-
-function totalNotes(type: string): number {
-  if (!props.notes) return 0
-  return props.notes.filter(n => {
-    const t = fmt.hexToNumberString(n.token)
-    return t === type && n.state === '0x1' // VALID notes only
-  }).length
-}
-
-function totalValue(type: string): string {
-  if (!props.notes) return '0'
-  const sum = props.notes
-    .filter(n => {
-      const t = fmt.hexToNumberString(n.token)
-      return t === type && n.state === '0x1' // VALID notes only
-    })
-    .reduce((acc, n) => acc + toBigInt(n.value), BigInt(0))
-  if (sum === BigInt(0)) return '0'
-  return formatEther(sum)
-}
-
-watch(selectedAccount, (newAccount) => {
-  if (newAccount) {
-    emit('selectAccount', newAccount)
-  }
 })
 </script>

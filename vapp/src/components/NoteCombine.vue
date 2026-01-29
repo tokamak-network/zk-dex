@@ -60,6 +60,7 @@ import { toBigInt, formatEther } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 const props = defineProps<{
   account: string
@@ -218,14 +219,14 @@ async function combineNote() {
 
   try {
     // Generate combine proof entirely in browser (secretKeys never leave browser!)
-    console.log('Generating combine proof...')
+    logger.log('Generating combine proof...')
     const { proof, combinedNote } = await generateCombineProof(
       note0,
       note1,
       ownerAccount.value.publicKey
     )
-    console.log('Combine proof generated:', proof)
-    console.log('Combined note:', combinedNote)
+    logger.log('Combine proof generated:', proof)
+    logger.log('Combined note:', combinedNote)
 
     // Extract proof components
     const { a, b, c, input } = proof
@@ -254,24 +255,24 @@ async function combineNote() {
     }, ownerAccount.value!.publicKey)
 
     // Call spend (transfer) on contract
-    console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.spend(
       aBigInt, bBigInt, cBigInt, inputBigInt,
       encryptedCombinedNote,
       encryptedZeroNote
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       // Update original notes state to SPENT
       await api.updateNoteState(note0.owner, note0.hash, '0x3')
       await api.updateNoteState(note1.owner, note1.hash, '0x3')
 
-      // Reload notes from blockchain
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage
+      await noteStore.fetchAllNoteEvents()
 
       alert('Notes combined successfully!')
       selectedNotes.value = []
@@ -280,7 +281,7 @@ async function combineNote() {
       alert('Transaction failed')
     }
   } catch (err) {
-    console.error('Failed to combine notes:', err)
+    logger.error('Failed to combine notes:', err)
     alert('Failed to combine notes: ' + (err as Error).message)
   } finally {
     loading.value = false

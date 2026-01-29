@@ -310,8 +310,8 @@ async function settleOrder(order: OngoingOrder) {
       await api.updateOrderHistoryState(order.orderMaker!, order.orderId, '0x2')
       await api.updateOrderHistoryState(order.orderTaker!, order.orderId, '0x2')
 
-      // Reload data
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage
+      await noteStore.fetchAllNoteEvents()
       await orderStore.loadOrders()
       await orderStore.loadOrderHistory()
 

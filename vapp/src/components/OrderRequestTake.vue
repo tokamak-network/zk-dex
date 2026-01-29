@@ -78,6 +78,7 @@ import { zeroPadValue, toBeHex, toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTakeOrderInputs, computeCircuitHash, computeSmartNoteHash, generateSalt, hexToBigInt, type NoteData, type SmartNoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 interface TakeableOrder extends Order {
   orderId: string
@@ -209,15 +210,15 @@ async function takeOrder() {
 
   try {
     // Generate proof entirely in browser (secretKey never leaves browser!)
-    console.log('Generating takeOrder proof...')
+    logger.log('Generating takeOrder proof...')
     const { proof, stakeNote } = await generateTakeOrderProof(
       selectedOrder.value.makerNoteData,
       selectedNote.value,
       selectedOrder.value.targetToken,
       selectedNote.value.secretKey
     )
-    console.log('TakeOrder proof generated:', proof)
-    console.log('Stake note:', stakeNote)
+    logger.log('TakeOrder proof generated:', proof)
+    logger.log('Stake note:', stakeNote)
 
     // Extract proof components
     const { a, b, c, input } = proof
@@ -245,16 +246,16 @@ async function takeOrder() {
     }, takerAccount.publicKey)
 
     // Execute take order
-    console.log('Calling contract takeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('Calling contract takeOrder with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.takeOrder(
       selectedOrder.value.orderId,
       aBigInt, bBigInt, cBigInt, inputBigInt,
       encryptedStakeNote
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       const noteOwner = zeroPadValue(toBeHex(toBigInt(selectedNote.value.owner)), 20)
@@ -266,8 +267,8 @@ async function takeOrder() {
       await api.updateOrderState(selectedOrder.value.orderId, '0x1')
       await api.updateOrderTaker(selectedOrder.value.orderId, noteOwner)
 
-      // Reload data from blockchain
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage
+      await noteStore.fetchAllNoteEvents()
       await orderStore.loadOrders()
       await orderStore.loadOrderHistory()
 
@@ -277,7 +278,7 @@ async function takeOrder() {
       alert('Transaction failed')
     }
   } catch (err) {
-    console.error('Failed to take order:', err)
+    logger.error('Failed to take order:', err)
     alert('Failed to take order: ' + (err as Error).message)
   } finally {
     loading.value = false
