@@ -75,6 +75,27 @@ ZKDIP는 ZK-DEX 프로토콜의 개선 제안을 문서화하는 표준 형식�
 관련 문서/링크
 ```
 
+## 미래 아이디어
+
+[**미래 기능 아이디어**](../future/README.md)에서 구현 방식별로 정리된 100개의 기능 제안을 확인하세요:
+
+- **회로 애드온** (65개) - 새 회로 추가만으로 구현 가능
+  - [핵심 거래](../future/circuit-addons/a-core-trading/) (8개)
+  - [시간 & 조건](../future/circuit-addons/b-time-conditions/) (6개)
+  - [프라이버시](../future/circuit-addons/c-privacy/) (10개)
+  - [거버넌스](../future/circuit-addons/d-governance/) (8개)
+  - [DeFi](../future/circuit-addons/e-defi/) (15개)
+  - [NFT & 게이밍](../future/circuit-addons/f-nft-gaming/) (10개)
+  - [엔터프라이즈](../future/circuit-addons/g-enterprise/) (8개)
+
+- **인프라 필요** (25개) - 추가 오프체인 시스템 필요
+  - [크로스체인](../future/infrastructure/h-cross-chain/) (7개)
+  - [오프체인 시스템](../future/infrastructure/i-off-chain/) (10개)
+  - [프로토콜 변경](../future/infrastructure/j-protocol/) (8개)
+
+- **고복잡도** (10개) - 300K 이상 제약조건의 고급 기능
+  - [고복잡도 아이디어](../future/high-complexity/)
+
 ## 기여
 
 ZKDIP 제안은 누구나 할 수 있습니다. 새 제안은 Draft 상태로 시작하며, 리뷰 과정을 거쳐 승인됩니다.
