@@ -19,7 +19,7 @@
 
 ## 실제 제품 및 사용자 경험
 
-참조: [포트폴리오 리밸런싱 - 실제 제품](../../../product/e-defi/e12-rebalance-products.md)
+참조: [포트폴리오 리밸런싱 - 실제 제품](../../product/e-defi/e12-rebalance-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

@@ -244,7 +244,7 @@ component main {public [noteHashes, minIncome, maxIncome, merkleRoot, timePeriod
 
 ## Real-World Products & User Experience
 
-See [Income Range Proof - Products & UX](../../../product/c-privacy/c8-income-range-products.md) for detailed real-world applications and user experience scenarios.
+See [Income Range Proof - Products & UX](../../product/c-privacy/c8-income-range-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

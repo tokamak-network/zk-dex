@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "비밀 베스팅 스케줄" - 직원 토큰 보상 프라이버시 보호
+## 1. "Private Vesting Schedule" - Employee Token Compensation Privacy Protection
 
-**제품 설명**:
-스타트업이 직원들에게 토큰 보상을 지급할 때, 각 직원의 보상 규모와 베스팅 일정을 완전히 비공개로 유지하는 서비스. 블록체인의 투명성이 오히려 조직 내 갈등을 유발하는 문제를 해결.
+**Product Description**:
+A service that keeps each employee's compensation amount and vesting schedule completely private when startups distribute token rewards to employees. Solves the problem where blockchain transparency can actually cause organizational conflicts.
 
-**일반 사용자 경험**:
-- 블록체인 스타트업 "체인랩스"의 CTO 이준혁씨(38세)는 핵심 개발자 5명에게 각각 다른 규모의 토큰 보상을 설계
-- 기존 온체인 베스팅(Sablier 등)을 사용하면 모든 직원이 서로의 보상 금액을 볼 수 있어 심각한 내부 갈등 우려
-- ZK 타임락으로 각 직원의 베스팅 스케줄 설정: 금액, 해제 일정 모두 본인만 확인 가능
-- 경쟁사도 "체인랩스가 핵심 인력에게 얼마를 주는지" 파악 불가능
-- 직원들은 서로의 보상을 모르니 불필요한 비교 없이 업무에 집중
+**General User Experience**:
+- Jun-hyuk Lee (38), CTO of blockchain startup "ChainLabs," designs different token compensation packages for 5 core developers
+- Using existing on-chain vesting (Sablier, etc.) would allow all employees to see each other's compensation amounts, raising serious internal conflict concerns
+- Sets up ZK time-lock vesting schedules for each employee: amounts and unlock schedules visible only to the individual
+- Competitors cannot determine "how much ChainLabs is paying their key talent"
+- Employees focus on work without unnecessary comparisons since they don't know each other's compensation
 
-**관찰 가능한 이점**:
-- 직원 간 보상 비교로 인한 조직 내 갈등과 이직 방지
-- 경쟁사의 인력 스카우트 시 보상 정보 기반 타겟팅 차단
-- 투자자나 외부인이 회사의 토큰 분배 전략을 역추적하는 것 방지
+**Observable Benefits**:
+- Prevents organizational conflicts and turnover due to compensation comparisons among employees
+- Blocks competitor targeting in recruitment based on compensation information
+- Prevents investors or outsiders from reverse-engineering the company's token distribution strategy
 
-## 2. "익명 유산 상속" - 가족 분쟁 방지 상속 시스템
+## 2. "Anonymous Inheritance" - Family Dispute Prevention Inheritance System
 
-**제품 설명**:
-부모가 자녀들에게 서로 다른 금액의 유산을 남길 때, 각 상속인이 받는 금액을 다른 가족에게 숨길 수 있는 프라이버시 보호 상속 서비스. 상속 분쟁의 근본 원인인 "불공평 인식"을 제거.
+**Product Description**:
+A privacy-preserving inheritance service where parents can leave different amounts to their children while keeping each heir's amount hidden from other family members. Eliminates the root cause of inheritance disputes: the perception of unfairness.
 
-**일반 사용자 경험**:
-- 자산가 김정호씨(72세)는 세 자녀에게 유산을 남기려 하나, 각자 상황이 달라 균등 분배가 어려움
-- 장남에게 5억(사업 실패 후 재기 지원), 차남에게 2억(안정적 직장), 막내에게 3억(유학 지원) 설정
-- 일반 상속은 유언장 공개 시 금액이 드러나 형제간 갈등 필연적
-- ZK 타임락으로 각 자녀별 상속금을 별도 설정, 김정호씨 사망 후 자동 해제
-- 각 자녀는 본인 몫만 확인 가능, 다른 형제가 얼마 받았는지 알 수 없음
-- "왜 나만 적게?" 라는 갈등 없이 부모의 뜻대로 유산 분배 완료
+**General User Experience**:
+- Asset holder Jung-ho Kim (72) wants to leave inheritance to three children, but each has different circumstances making equal distribution difficult
+- Sets eldest son 500M KRW (business recovery support), middle son 200M KRW (stable job), youngest 300M KRW (study abroad support)
+- Regular inheritance reveals amounts when will is disclosed, inevitably causing sibling conflicts
+- ZK time-lock sets separate inheritance for each child, automatically unlocking after Jung-ho Kim's passing
+- Each child can only see their own share, cannot know how much siblings received
+- Inheritance distributed according to parent's wishes without conflicts over "why did I get less?"
 
-**관찰 가능한 이점**:
-- 상속 금액 차등으로 인한 가족 분쟁과 소송 방지
-- 상속 내역이 공개 기록에 남지 않아 가족 프라이버시 보호
-- 상속인들이 서로 감시하거나 의심하는 불신 관계 예방
+**Observable Benefits**:
+- Prevents family disputes and lawsuits due to differential inheritance amounts
+- Protects family privacy as inheritance details don't appear in public records
+- Prevents distrust relationships where heirs monitor or suspect each other
 
-## 3. "기밀 투자 락업" - 투자 조건 비공개 VC 락업
+## 3. "Confidential Investment Lockup" - Private VC Lockup Conditions
 
-**제품 설명**:
-VC가 스타트업에 투자할 때 필수적인 토큰 락업 조건을 완전히 비공개로 유지하는 서비스. 투자 금액, 락업 기간, 해제 일정이 경쟁 VC나 시장에 노출되지 않음.
+**Product Description**:
+A service that keeps VC token lockup conditions completely private when investing in startups. Investment amount, lockup period, and unlock schedule are not exposed to competing VCs or the market.
 
-**일반 사용자 경험**:
-- VC 펀드 "넥스트벤처스"의 파트너 박서윤씨(45세)는 유망 AI 스타트업에 시드 투자 진행
-- 투자 조건: 100만 달러, 2년 락업, 분기별 25% 해제
-- 기존 온체인 락업 사용 시 경쟁 VC들이 "넥스트벤처스가 얼마에 들어갔는지" 즉시 파악
-- 이 정보로 경쟁사는 더 좋은 조건 제시하여 후속 라운드 선점 가능
-- ZK 타임락으로 투자금 락업 설정: 금액, 기간 모두 비공개
-- 분기마다 자동으로 25%씩 해제되지만, 외부에서는 해제 시점과 금액 파악 불가
-- 투자 전략과 포트폴리오 구성이 경쟁사에 노출되지 않아 협상력 유지
+**General User Experience**:
+- Seo-yoon Park (45), Partner at VC fund "NextVentures," proceeds with seed investment in promising AI startup
+- Investment terms: $1M, 2-year lockup, 25% quarterly unlock
+- Using existing on-chain lockup allows competing VCs to immediately know "how much NextVentures invested"
+- With this information, competitors can offer better terms and preempt follow-on rounds
+- ZK time-lock sets investment lockup: amount and duration both private
+- Automatically unlocks 25% quarterly, but outsiders cannot determine unlock timing or amounts
+- Investment strategy and portfolio composition not exposed to competitors, maintaining negotiating power
 
-**관찰 가능한 이점**:
-- 투자 조건이 공개되어 후속 투자자가 유리한 조건을 요구하는 상황 방지
-- VC의 투자 전략과 밸류에이션 판단이 시장에 노출되는 것 차단
-- 락업 해제 일정을 노린 시장 조작(해제 직전 매도 압력 예상 등) 불가능
+**Observable Benefits**:
+- Prevents situations where disclosed investment terms lead follow-on investors to demand favorable conditions
+- Blocks VC's investment strategy and valuation judgments from market exposure
+- Makes market manipulation targeting lockup unlock schedules (anticipating selling pressure before unlock, etc.) impossible

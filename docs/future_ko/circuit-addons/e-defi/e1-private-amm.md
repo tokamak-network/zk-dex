@@ -262,7 +262,7 @@ component main {public [inputNoteHash, outputNoteHash, poolStateCommitment,
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Private AMM Swap - Real-World Products](../../../product/e-defi/e1-private-amm-products.md)
+참조: [Private AMM Swap - Real-World Products](../../product/e-defi/e1-private-amm-products.md)
 
 ---
 

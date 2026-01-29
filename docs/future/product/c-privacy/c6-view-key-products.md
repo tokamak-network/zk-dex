@@ -4,50 +4,50 @@
 
 ---
 
-## 1. "프라이버시 보호 세무 대행" - 자산 노출 없는 세금 신고 서비스
+## 1. "Privacy-Protected Tax Agency" - Tax Filing Service without Asset Exposure
 
-**제품 설명**:
-세무사에게 세금 계산에 필요한 거래 정보만 제공하고, 전체 자산 현황이나 다른 계좌 정보는 완전히 숨기는 서비스입니다. 기존 방식에서는 세무사에게 모든 금융 정보를 공개해야 했습니다.
+**Product Description**:
+A service that provides tax accountants with only the transaction information necessary for tax calculations while completely hiding overall asset status or other account information. Traditional methods required disclosing all financial information to tax accountants.
 
-**일반 사용자 경험**:
-최수빈씨(33세, 개인사업자)는 암호화폐 거래가 많아 세금 신고가 복잡합니다. 프라이버시 없이는: 세무사에게 전체 지갑 접근 권한을 주거나, 모든 거래 내역을 CSV로 내보내 공유해야 합니다. 세무사는 최수빈씨의 총 자산 규모, 투자 전략, 다른 지갑 주소까지 모두 알게 됩니다. 이 정보가 유출되면 사이버 공격의 표적이 될 수 있습니다.
+**User Experience**:
+Su-bin Choi (33, self-employed) has many cryptocurrency transactions, making tax filing complex. Without privacy: she must give the tax accountant full wallet access or export and share all transaction history as CSV. The accountant learns Ms. Choi's total asset scale, investment strategy, and other wallet addresses. If this information leaks, she could become a target for cyber attacks.
 
-뷰 키 위임으로: 최수빈씨는 "2024년 과세 대상 거래만" 볼 수 있는 제한된 뷰 키를 생성합니다. 세무사는 세금 계산에 필요한 거래만 확인할 수 있고, 최수빈씨의 현재 보유량, 다른 지갑, 총 자산 규모는 전혀 알 수 없습니다. 자금 이동 권한도 없어 착복 위험이 원천 차단됩니다.
+With view key delegation: Ms. Choi generates a restricted view key that can only see "taxable transactions for 2024." The tax accountant can verify only transactions needed for tax calculation and cannot know Ms. Choi's current holdings, other wallets, or total asset scale. Without fund transfer authority, embezzlement risk is fundamentally eliminated.
 
-**관찰 가능한 이점**:
-- 세금 계산에 불필요한 자산 정보 완전 차단으로 표적 공격 방지
-- 세무사 정보 유출 시에도 현재 자산 현황은 안전
-- 기간 만료 후 자동 접근 차단으로 영구적 정보 노출 방지
+**Observable Benefits**:
+- Prevents targeted attacks by completely blocking asset information unnecessary for tax calculation
+- Current asset status remains safe even if accountant's information leaks
+- Automatic access blocking after period expiry prevents permanent information exposure
 
-## 2. "감사 대응 프라이버시 시스템" - 선택적 공개 감사 서비스
+## 2. "Audit Response Privacy System" - Selective Disclosure Audit Service
 
-**제품 설명**:
-기업이나 펀드가 감사를 받을 때, 감사에 필요한 특정 거래 기록만 공개하고 영업 비밀이나 전략적 포지션은 숨길 수 있는 서비스입니다.
+**Product Description**:
+A service that allows companies or funds undergoing audits to disclose only specific transaction records necessary for the audit while hiding trade secrets or strategic positions.
 
-**일반 사용자 경험**:
-ABC 투자펀드의 운용역 김도현씨는 연례 외부 감사를 받아야 합니다. 프라이버시 없이는: 감사인에게 전체 거래 로그를 제공해야 합니다. 감사인은 펀드의 모든 투자 전략, 거래 타이밍, 수익률을 알게 됩니다. 감사인이 경쟁 펀드로 이직하면 이 정보가 유출될 위험이 있습니다. 일부 감사법인은 여러 경쟁사를 동시에 담당하기도 합니다.
+**User Experience**:
+Do-hyun Kim, portfolio manager at ABC Investment Fund, must undergo annual external audits. Without privacy: he must provide complete transaction logs to auditors. Auditors learn all of the fund's investment strategies, trading timing, and returns. If auditors switch to competing funds, this information could leak. Some audit firms simultaneously handle multiple competing firms.
 
-뷰 키 위임으로: 김도현씨는 "규정 준수 확인에 필요한 거래만" 열람 가능한 스코프 제한 뷰 키를 발급합니다. 감사인은 불법 거래 여부를 확인할 수 있지만, 구체적인 투자 전략이나 미공개 포지션은 볼 수 없습니다. 감사 완료 후 키는 자동 만료됩니다.
+With view key delegation: Mr. Kim issues scope-limited view keys that can only access "transactions necessary for compliance verification." Auditors can verify absence of illegal transactions but cannot see specific investment strategies or undisclosed positions. Keys automatically expire after audit completion.
 
-**관찰 가능한 이점**:
-- 투자 전략 노출 없이 규제 준수 증명 가능
-- 감사인 정보 유출 시에도 핵심 영업 비밀 보호
-- 감사 범위를 명확히 제한하여 과도한 정보 요청 방지
+**Observable Benefits**:
+- Can prove regulatory compliance without exposing investment strategies
+- Core trade secrets protected even if auditor information leaks
+- Clearly limits audit scope to prevent excessive information requests
 
-## 3. "이혼 소송 자산 보호" - 법적 분쟁 시 프라이버시 서비스
+## 3. "Divorce Litigation Asset Protection" - Privacy Service for Legal Disputes
 
-**제품 설명**:
-이혼 등 법적 분쟁 시 법원이나 상대측 변호사에게 필요한 재산 정보만 선택적으로 공개하고, 분쟁과 무관한 자산은 보호하는 서비스입니다.
+**Product Description**:
+A service that selectively discloses only necessary property information to courts or opposing attorneys during legal disputes such as divorce, while protecting assets unrelated to the dispute.
 
-**일반 사용자 경험**:
-박현우씨(50세, 의사)는 이혼 소송 중입니다. 법원은 재산 분할을 위해 자산 공개를 요구합니다. 프라이버시 없이는: 모든 지갑 주소, 거래 내역, 보유 자산을 공개해야 합니다. 상대측 변호사는 이 정보를 이용해 숨겨진 자산을 추적하거나, 공개된 정보를 협상에 악용할 수 있습니다. 블록체인의 투명성으로 인해 공개된 주소의 모든 과거/미래 거래가 영구히 노출됩니다.
+**User Experience**:
+Hyun-woo Park (50, doctor) is going through divorce proceedings. The court requires asset disclosure for property division. Without privacy: he must disclose all wallet addresses, transaction history, and holdings. Opposing counsel can use this information to track hidden assets or exploit disclosed information in negotiations. Due to blockchain transparency, all past and future transactions of disclosed addresses are permanently exposed.
 
-뷰 키 위임으로: 박현우씨는 "결혼 기간 중 형성된 자산만" 볼 수 있는 제한된 뷰 키를 법원 지정 회계사에게 제공합니다. 회계사는 재산 분할 대상 자산만 확인할 수 있고, 결혼 전 자산이나 상속 재산 등은 볼 수 없습니다. 상대측도 구체적인 지갑 주소를 알 수 없어 미래 추적이 불가능합니다.
+With view key delegation: Mr. Park provides a restricted view key to the court-appointed accountant that can only see "assets formed during marriage." The accountant can verify only assets subject to property division and cannot see pre-marital assets or inherited property. The opposing party also cannot know specific wallet addresses, making future tracking impossible.
 
-**관찰 가능한 이점**:
-- 법적 분쟁에 필요한 정보만 공개하여 과도한 노출 방지
-- 상대측의 지속적인 자산 추적 차단
-- 분쟁 종료 후에도 금융 프라이버시 유지
+**Observable Benefits**:
+- Prevents excessive exposure by disclosing only information necessary for legal disputes
+- Blocks opposing party's continuous asset tracking
+- Maintains financial privacy even after dispute resolution
 
 ---
 

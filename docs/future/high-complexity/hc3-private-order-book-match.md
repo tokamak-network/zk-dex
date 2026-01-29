@@ -321,7 +321,7 @@ bidHash.inputs[6] <== bidTimestamp[i];
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc3-private-order-book-match-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc3-private-order-book-match-products.md) for detailed product scenarios and use cases.
 
 ---
 

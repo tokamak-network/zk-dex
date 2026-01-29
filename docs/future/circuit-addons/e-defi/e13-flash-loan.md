@@ -400,7 +400,7 @@ component main {public [loanRequestHash, repaymentNoteHash, poolCommitment,
 
 ## Real-World Products & User Experience
 
-See: [Flash Loan Execute - Real-World Products](../../../product/e-defi/e13-flash-loan-products.md)
+See: [Flash Loan Execute - Real-World Products](../../product/e-defi/e13-flash-loan-products.md)
 ---
 
 [Back to Index](../../README.md)

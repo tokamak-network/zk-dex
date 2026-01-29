@@ -230,7 +230,7 @@ component main {public [delegationHash, noteHash, merkleRoot, currentTime]} =
 
 ## Real-World Products & User Experience
 
-See [View Key Delegation - Products & UX](../../../product/c-privacy/c6-view-key-products.md) for detailed real-world applications and user experience scenarios.
+See [View Key Delegation - Products & UX](../../product/c-privacy/c6-view-key-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

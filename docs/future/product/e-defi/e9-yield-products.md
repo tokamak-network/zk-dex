@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "수익률 역추적 차단" - 원금 규모 보호
+## 1. "Yield Reverse-Tracking Blocking" - Principal Size Protection
 
-**제품 설명**:
-수익 청구 금액이 노출되면 공개된 APY로 나눠서 원금 규모가 역추정되는 문제를 해결.
+**Product Description**:
+Solving the problem where principal size is reverse-estimated by dividing claim amounts by public APY when yield claim amounts are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $50,000 이자 청구 노출 + 공개 APY 10% → 원금 $500,000 역산 → 고래 타겟팅
-- ZK DeFi 사용: 청구 금액 비공개 → 원금 규모 추정 불가
-- 결과: 수익 청구가 자산 규모 노출로 이어지지 않음
+**Typical User Experience**:
+- Without Privacy: $50,000 interest claim exposed + public APY 10% → Principal $500,000 reverse-calculated → Whale targeting
+- With ZK DeFi: Claim amount private → Principal size estimation impossible
+- Result: Yield claiming doesn't lead to asset size exposure
 
-**관찰 가능한 이점**:
-- 이자 수령 금액을 통한 원금 역추정 차단
-- 대형 예치자의 프라이버시 보호
-- 수익 실현 시점에도 자산 정보 보호
+**Observable Benefits**:
+- Blocking principal reverse-estimation through interest receipt amounts
+- Privacy protection for large depositors
+- Asset information protected even during profit realization
 
-## 2. "전략 유출 방지" - 일드파밍 전략 보호
+## 2. "Strategy Leak Prevention" - Yield Farming Strategy Protection
 
-**제품 설명**:
-고수익 일드파밍 전략의 수익 청구 패턴이 노출되면 경쟁자가 전략을 역추적하여 복제하는 문제를 해결.
+**Product Description**:
+Solving the problem where competitors reverse-track and replicate strategies when high-yield farming yield claim patterns are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 특정 풀에서 반복적 고수익 청구 패턴 노출 → 분석가들이 전략 역추적 → 전략 공개 및 수익률 하락
-- ZK DeFi 사용: 어떤 풀에서 얼마의 수익인지 비공개 → 전략 역추적 불가
-- 결과: 독자적 일드파밍 알파 유지
+**Typical User Experience**:
+- Without Privacy: Repeated high-yield claim pattern from specific pool exposed → Analysts reverse-track strategy → Strategy publicized and yield declines
+- With ZK DeFi: Which pool and how much profit is private → Strategy reverse-tracking impossible
+- Result: Proprietary yield farming alpha maintained
 
-**관찰 가능한 이점**:
-- 고수익 전략의 기밀 유지
-- 전략 복제로 인한 수익률 하락 방지
-- 전문 일드파머의 경쟁 우위 보호
+**Observable Benefits**:
+- Confidentiality of high-yield strategies maintained
+- Prevention of yield decline from strategy replication
+- Protection of professional yield farmers' competitive advantage
 
-## 3. "청구 러시 방지" - 프로토콜 뱅크런 차단
+## 3. "Claim Rush Prevention" - Protocol Bank Run Blocking
 
-**제품 설명**:
-대형 수익 청구가 노출되면 다른 사용자들이 "프로토콜에 문제 있나?" 패닉으로 동시 청구하여 프로토콜 유동성 위기를 초래하는 문제를 해결.
+**Product Description**:
+Solving the problem where large yield claims exposure causes other users to panic with "is there a problem with the protocol?", simultaneously claiming and causing protocol liquidity crisis.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 고래의 $1M 수익 청구 노출 → "왜 갑자기 다 빼지?" 의심 → 연쇄 청구 → 프로토콜 유동성 고갈
-- ZK DeFi 사용: 개별 청구 규모 비공개 → 패닉 시그널 차단
-- 결과: 합리적 개별 청구만 존재, 뱅크런 방지
+**Typical User Experience**:
+- Without Privacy: Whale's $1M yield claim exposed → "Why withdrawing everything suddenly?" suspicion → Chain claims → Protocol liquidity depletion
+- With ZK DeFi: Individual claim size private → Panic signal blocked
+- Result: Only rational individual claims exist, bank runs prevented
 
-**관찰 가능한 이점**:
-- 대형 청구의 시장 심리 영향 차단
-- 프로토콜 안정성 유지
-- 개인의 자유로운 수익 실현 보장
+**Observable Benefits**:
+- Blocking market psychology impact of large claims
+- Maintained protocol stability
+- Guaranteed individual free profit realization

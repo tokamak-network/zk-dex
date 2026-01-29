@@ -284,7 +284,7 @@ component main {public [makerNoteHash, takerStakeHash, makerOutputHash,
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a2-partial-fill-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a2-partial-fill-products.md)
 
 ---
 

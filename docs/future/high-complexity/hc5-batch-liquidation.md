@@ -312,7 +312,7 @@ if (remainingDebt < minLiquidationAmount) {
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc5-batch-liquidation-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc5-batch-liquidation-products.md) for detailed product scenarios and use cases.
 
 ---
 

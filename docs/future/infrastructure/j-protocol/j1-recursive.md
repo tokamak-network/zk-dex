@@ -215,7 +215,7 @@ component main {public [aggregateHash, oldStateRoot, newStateRoot]} = RecursiveA
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j1-recursive-products.md](../../../product/j-protocol/j1-recursive-products.md)
+See: [../../product/j-protocol/j1-recursive-products.md](../../product/j-protocol/j1-recursive-products.md)
 
 ---
 

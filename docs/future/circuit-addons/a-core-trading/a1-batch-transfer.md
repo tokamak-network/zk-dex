@@ -240,7 +240,7 @@ component main {public [merkleRoot, inputHash, outputHash, tokenType]} =
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a1-batch-transfer-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a1-batch-transfer-products.md)
 
 ---
 

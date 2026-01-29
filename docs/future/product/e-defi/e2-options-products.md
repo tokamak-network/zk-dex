@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "스텔스 풋" - 대형 포지션 헤지 보호
+## 1. "Stealth Put" - Large Position Hedge Protection
 
-**제품 설명**:
-대형 옵션 포지션이 노출되면 마켓메이커들이 반대 포지션을 잡아 헤지 비용이 급등하는 문제를 해결하는 프라이빗 옵션 서비스.
+**Product Description**:
+Private options service solving the problem where market makers take opposing positions when large option positions are exposed, causing hedge costs to skyrocket.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 1000 ETH 풋옵션 매수 의도가 노출 → 마켓메이커가 선제적으로 풋 매수 → 프리미엄 20% 상승
-- ZK DeFi 사용: 옵션 규모와 행사가가 숨겨진 상태로 체결 → 상대방이 포지션 규모 파악 불가
-- 결과: 공정한 프리미엄으로 헤지 완료, 반대매매 유도 차단
+**Typical User Experience**:
+- Without Privacy: Intent to buy 1000 ETH put options exposed → Market makers preemptively buy puts → Premium rises 20%
+- With ZK DeFi: Option size and strike price hidden during execution → Counterparty cannot determine position size
+- Result: Hedge completed at fair premium, blocking induced counter-trading
 
-**관찰 가능한 이점**:
-- 대형 헤지 포지션 노출로 인한 프리미엄 급등 방지
-- 행사가 노출로 인한 가격 조작 타겟팅 차단
-- 기관 투자자의 리스크 관리 전략 보호
+**Observable Benefits**:
+- Prevention of premium spikes from large hedge position exposure
+- Blocking price manipulation targeting through strike price exposure
+- Protection of institutional investor risk management strategies
 
-## 2. "시크릿 커버드콜" - 전략 복제 방지 수익 창출
+## 2. "Secret Covered Call" - Strategy Replication Prevention Revenue Generation
 
-**제품 설명**:
-커버드콜 전략(보유 자산에 콜옵션 매도)의 행사가가 노출되면 경쟁자가 동일 전략을 복제하여 프리미엄이 하락하는 문제를 해결.
+**Product Description**:
+Solving the problem where competitors replicate covered call strategies (selling call options on held assets) when strike prices are exposed, causing premium decline.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드의 커버드콜 행사가 $4000이 온체인에 노출 → 다른 트레이더들이 같은 행사가에 몰림 → 프리미엄 수익 감소
-- ZK DeFi 사용: 행사가와 물량이 비공개로 옵션 매도 → 전략 복제 불가
-- 결과: 독점적 프리미엄 수익 유지
+**Typical User Experience**:
+- Without Privacy: Fund's covered call strike price $4000 exposed on-chain → Other traders crowd same strike → Premium revenue decreases
+- With ZK DeFi: Strike price and volume private when selling options → Strategy replication impossible
+- Result: Proprietary premium revenue maintained
 
-**관찰 가능한 이점**:
-- 수익 창출 전략의 기밀 유지
-- 행사가 집중으로 인한 프리미엄 하락 방지
-- 기관급 옵션 전략의 알파 보호
+**Observable Benefits**:
+- Confidentiality of revenue generation strategies maintained
+- Prevention of premium decline from strike price concentration
+- Protection of institutional-grade options strategy alpha
 
-## 3. "히든 스트라이크" - 만기 조작 방어
+## 3. "Hidden Strike" - Expiry Manipulation Defense
 
-**제품 설명**:
-옵션 만기일에 행사가 근처로 가격을 조작하여 대량 옵션을 무가치하게 만드는 "만기 핀닝(expiry pinning)" 공격을 방어.
+**Product Description**:
+Defense against "expiry pinning" attacks where price is manipulated near strike price at expiration to render large option positions worthless.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $3500 행사가 콜옵션 대량 보유 노출 → 만기일에 고래들이 $3499로 가격 핀닝 → 옵션 무가치 만료
-- ZK DeFi 사용: 행사가와 보유량 비공개 → 조작 세력이 타겟 가격 특정 불가
-- 결과: 만기 핀닝 공격 무력화, 공정한 옵션 가치 실현
+**Typical User Experience**:
+- Without Privacy: Large holdings of $3500 strike call options exposed → Whales pin price at $3499 at expiration → Options expire worthless
+- With ZK DeFi: Strike price and holdings private → Manipulation actors cannot identify target price
+- Result: Expiry pinning attacks neutralized, fair option value realization
 
-**관찰 가능한 이점**:
-- 만기일 가격 조작 공격 방어
-- 대량 옵션 포지션의 타겟팅 방지
-- 옵션 보유자의 정당한 권리 보호
+**Observable Benefits**:
+- Defense against expiration date price manipulation attacks
+- Prevention of targeting of large option positions
+- Protection of option holders' legitimate rights

@@ -249,7 +249,7 @@ component main {public [noteHash, outputHash, ephemeralPkX, ephemeralPkY, tokenT
 
 ## Real-World Products & User Experience
 
-See [Stealth Address Receive - Products & UX](../../../product/c-privacy/c4-stealth-address-products.md) for detailed real-world applications and user experience scenarios.
+See [Stealth Address Receive - Products & UX](../../product/c-privacy/c4-stealth-address-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

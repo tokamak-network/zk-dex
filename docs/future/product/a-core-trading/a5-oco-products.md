@@ -6,57 +6,57 @@
 
 ## Real-World Products & User Experience
 
-### 1. "완전 비공개 브라켓 오더" - 전체 거래 전략 은닉 서비스
+### 1. "Fully Private Bracket Order" - Complete Trading Strategy Concealment Service
 
-**제품 설명**:
-트레이더가 손절가와 익절가를 동시에 설정할 때, 두 가격 모두 시장에 노출되지 않도록 보호하는 서비스. 일반 DEX에서는 OCO 주문의 양쪽 트리거가 공개되어 트레이더의 전체 리스크/리워드 전략이 노출됨. 이 정보로 경쟁자가 포지션 크기, 레버리지 수준, 리스크 허용도를 역산할 수 있음.
+**Product Description**:
+A service that protects both stop-loss and take-profit prices from market exposure when traders set them simultaneously. On regular DEXs, both triggers of OCO orders are public, revealing the trader's entire risk/reward strategy. Competitors can reverse-engineer position size, leverage level, and risk tolerance from this information.
 
-**일반 사용자 경험**:
-- 최퀀트(38세, 퀀트 트레이더)는 정교한 리스크/리워드 전략 운용
-- 일반 DEX에서 OCO 주문 설정 시 양쪽 트리거가 모두 공개
-- 경쟁 트레이더가 분석: "이 지갑은 리스크 1: 리워드 3 전략, 레버리지 5배 추정"
-- 이 정보로 경쟁자가 역방향 포지션 구축하여 청산 유도 가능
-- ZK OCO 주문으로 손절가, 익절가 모두 암호화
-- 트레이더의 전략, 포지션 크기, 리스크 프로파일 완전 비공개
+**User Experience**:
+- Quant Trader Choi (38) operates sophisticated risk/reward strategies
+- Setting OCO orders on regular DEX exposes both triggers publicly
+- Competing traders analyze: "This wallet uses risk 1: reward 3 strategy, estimated 5x leverage"
+- Competitors can use this information to build reverse positions and induce liquidation
+- Using ZK OCO orders, both stop-loss and take-profit prices are encrypted
+- Trader's strategy, position size, and risk profile completely private
 
-**관찰 가능한 이점**:
-- 전체 거래 전략 및 리스크 관리 방식 비공개
-- 경쟁자가 역방향 포지션으로 청산 유도하는 것 방지
-- 알고리즘/퀀트 전략의 알파 보호
+**Observable Benefits**:
+- Keeps entire trading strategy and risk management approach private
+- Prevents competitors from inducing liquidation with reverse positions
+- Protects alpha from algorithmic/quant strategies
 
-### 2. "기관 포지션 완전 보호" - 펀드 양방향 주문 은닉 서비스
+### 2. "Institutional Position Full Protection" - Fund Bilateral Order Concealment Service
 
-**제품 설명**:
-기관 투자자가 대형 포지션에 손절과 익절을 동시 설정할 때, 이 브라켓의 존재 자체가 시장에 알려지지 않도록 하는 서비스. 기관의 OCO 주문이 공개되면 해당 가격대에서 대량 매물이 나올 것이 예상되어 시장 참여자들의 행동이 변화함.
+**Product Description**:
+A service that prevents the bracket itself from being known to the market when institutional investors simultaneously set stop-loss and take-profit on large positions. When institutional OCO orders are public, market participants' behavior changes as they anticipate large volume at those price levels.
 
-**일반 사용자 경험**:
-- 박CIO(52세, 크립토 펀드)는 5천만 달러 규모 BTC 포지션 운용
-- 일반 DEX에서 OCO 설정 시 "$35K에 손절, $50K에 익절" 공개
-- 시장 참여자들이 이 가격대에서 대량 매물 예상하고 미리 행동
-- $50K 직전에서 매수세 감소 (대형 매물 예상), 가격 상승 억제
-- $35K 근처에서 매도세 가속 (대형 손절 유도하면 이득)
-- ZK OCO로 브라켓 가격과 수량 모두 비공개
-- 시장이 기관 주문에 영향받지 않고 자연스럽게 움직임
+**User Experience**:
+- CIO Park (52, crypto fund) manages $50M BTC position
+- Setting OCO on regular DEX publicly reveals "stop-loss at $35K, take-profit at $50K"
+- Market participants anticipate large sell volume at these levels and act preemptively
+- Buy pressure decreases just before $50K (anticipating large sell), suppressing price rise
+- Sell pressure accelerates near $35K (profit from inducing large stop-loss)
+- Using ZK OCO, both bracket prices and quantities are private
+- Market moves naturally without distortion from institutional orders
 
-**관찰 가능한 이점**:
-- 기관 주문이 시장 가격 형성에 왜곡 효과를 주는 것 방지
-- 대형 매물 예상으로 인한 가격 억제/가속 차단
-- 더 공정하고 효율적인 시장 가격 발견
+**Observable Benefits**:
+- Prevents institutional orders from distorting market price formation
+- Blocks price suppression/acceleration from anticipated large volume
+- More fair and efficient market price discovery
 
-### 3. "MEV 완전 차단 브라켓" - 양방향 트리거 공격 방지 서비스
+### 3. "Complete MEV Block Bracket" - Bilateral Trigger Attack Prevention Service
 
-**제품 설명**:
-OCO 주문의 두 트리거 중 하나라도 실행될 때 MEV 봇이 이를 이용한 공격을 하지 못하도록 하는 서비스. 일반 OCO에서는 어느 쪽 트리거가 먼저 실행되는지에 따라 MEV 봇이 다양한 공격 전략을 구사할 수 있음.
+**Product Description**:
+A service that prevents MEV bots from exploiting whichever OCO order trigger executes. On regular OCO orders, MEV bots can employ various attack strategies depending on which trigger executes first.
 
-**일반 사용자 경험**:
-- 한투자자(44세)는 변동성 높은 토큰에 OCO 주문 설정
-- MEV 봇이 손절 트리거 가격을 파악하고 일시적으로 가격 밀어 손절 유도
-- 또는 익절 트리거 직전에 프론트러닝하여 더 좋은 가격에 먼저 매수
-- 어느 쪽이든 한투자자는 불리한 조건에 체결
-- ZK OCO로 양쪽 트리거 모두 암호화되어 MEV 봇 공격 불가
-- 어느 트리거가 실행되든 설정한 가격에 공정하게 체결
+**User Experience**:
+- Investor Han (44) sets OCO order on high volatility token
+- MEV bots identify stop-loss trigger price and temporarily push price to induce stop-loss
+- Or front-run just before take-profit trigger to buy at better price first
+- Either way, Han fills at unfavorable conditions
+- Using ZK OCO, both triggers are encrypted, preventing MEV bot attacks
+- Whichever trigger executes, fairly fills at set price
 
-**관찰 가능한 이점**:
-- 손절/익절 양방향 모두 MEV 공격으로부터 보호
-- 스톱헌팅과 프론트러닝 동시 방지
-- 설정한 전략대로 정확히 실행되는 신뢰성 확보
+**Observable Benefits**:
+- Protects both stop-loss/take-profit directions from MEV attacks
+- Prevents both stop-hunting and front-running simultaneously
+- Ensures reliability of executing exactly as strategy is set

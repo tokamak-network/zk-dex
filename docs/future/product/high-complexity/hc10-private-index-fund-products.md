@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "시크릿 알파" - 헤지펀드 전략 완전 은닉 인덱스
+## 1. "Secret Alpha" - Hedge Fund Strategy Full Concealment Index
 
-**제품 설명**:
-펀드의 실제 구성, 리밸런싱 전략, 개별 자산 비중이 완전히 암호화되어 운용되는 기관급 프라이빗 인덱스 펀드. LP에게는 수익률과 규정 준수만 증명하고, 알파 소스는 영구 비공개입니다.
+**Product Description**:
+An institutional-grade private index fund where the fund's actual composition, rebalancing strategy, and individual asset weights are fully encrypted. Only proves returns and regulatory compliance to LPs, while alpha sources remain permanently private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드 구성 공개 → 카피트레이딩, 리밸런싱 프론트러닝, 전략 역공학, 경쟁 펀드 분석
-- 고급 ZK 솔루션: "수익률 +25%, 벤치마크 대비 +8%, 규정 준수 100%"만 공개, 20개 자산 구성은 숨김
-- 결과: LP는 성과만 확인, 어떤 자산에 얼마나 투자했는지 영구 비공개
+**User Experience**:
+- Without Privacy: Fund composition public → copy trading, rebalancing front-running, strategy reverse engineering, competitive fund analysis
+- Advanced ZK Solution: Only "return +25%, benchmark outperformance +8%, 100% compliance" public, 20 asset composition hidden
+- Result: LPs only confirm performance, which assets and amounts invested permanently private
 
-**관찰 가능한 이점**:
-- 독자적 투자 전략 및 알파 생성 방법론 완전 보호
-- 리밸런싱 타이밍/패턴 분석 불가로 프론트러닝 차단
-- 경쟁 펀드의 전략 복제 원천 방지
+**Observable Benefits**:
+- Proprietary investment strategy and alpha generation methodology fully protected
+- Rebalancing timing/pattern analysis impossible, blocks front-running
+- Prevents competitive fund strategy replication at source
 
-## 2. "인비저블 트레저리" - 기관 재무 완전 프라이버시
+## 2. "Invisible Treasury" - Institutional Financial Complete Privacy
 
-**제품 설명**:
-기업/재단의 트레저리 운용에서 총 자산 규모, 자산 구성, 리밸런싱 전략을 모두 숨기면서 건전성만 증명하는 기관용 자산관리 시스템.
+**Product Description**:
+An institutional asset management system that hides total asset scale, asset composition, and rebalancing strategy for corporate/foundation treasury operations while proving only soundness.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 트레저리 구성 공개 → 자금력 추정, 투자 방향 분석, 협상 시 불리한 위치
-- 고급 ZK 솔루션: "유동성 충분, 리스크 한도 내, 규정 준수"만 증명
-- 결과: 이해관계자는 건전성만 확인, 정확한 규모/구성/전략은 완전 비공개
+**User Experience**:
+- Without Privacy: Treasury composition public → financial capacity estimated, investment direction analyzed, disadvantaged position in negotiations
+- Advanced ZK Solution: Only proves "sufficient liquidity, within risk limits, compliant"
+- Result: Stakeholders only confirm soundness, exact scale/composition/strategy completely private
 
-**관찰 가능한 이점**:
-- 총 자산 규모 비공개로 협상력 보호
-- 투자 방향 및 관심 섹터 은닉
-- 경쟁사/규제기관의 재무 분석 차단
+**Observable Benefits**:
+- Total asset scale private, protecting negotiating power
+- Investment direction and sector interest hidden
+- Blocks competitor/regulatory financial analysis
 
-## 3. "스텔스 펀드" - 투자자별 포지션 완전 분리
+## 3. "Stealth Fund" - Complete Investor Position Separation
 
-**제품 설명**:
-100명 이상의 LP가 참여하는 펀드에서 개별 LP의 투자 규모, 지분율, 수익 배분을 상호 숨기는 프라이버시 펀드 구조.
+**Product Description**:
+A privacy fund structure that mutually hides individual LP investment scale, stake percentage, and profit distribution in funds with 100+ LPs.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: LP 목록과 지분율 공개 → 대형 LP 영향력 분석, LP간 정보 비대칭, 공동 행동 가능성
-- 고급 ZK 솔루션: 각 LP는 "본인 지분 5.2%, 수익 배분 정확" 만 확인, 타 LP 정보 접근 불가
-- 결과: 펀드 매니저도 개별 LP 규모 모름, 총 AUM만 알 수 있음
+**User Experience**:
+- Without Privacy: LP list and stake percentages public → large LP influence analysis, information asymmetry among LPs, possible collective action
+- Advanced ZK Solution: Each LP only confirms "own stake 5.2%, profit distribution accurate", cannot access other LP info
+- Result: Fund manager also doesn't know individual LP sizes, only total AUM known
 
-**관찰 가능한 이점**:
-- LP간 투자 규모 상호 비공개
-- 대형 LP의 과도한 영향력 행사 방지
-- LP의 전체 포트폴리오 추론 차단
+**Observable Benefits**:
+- LP investment sizes mutually private
+- Prevents excessive large LP influence
+- Blocks inference of LP's total portfolio

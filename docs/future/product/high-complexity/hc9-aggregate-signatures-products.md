@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "익명 거버넌스" - 투표자 프라이버시 보호 시스템
+## 1. "Anonymous Governance" - Voter Privacy Protection System
 
-**제품 설명**:
-DAO 투표에서 "누가 어떻게 투표했는지"를 숨기면서 투표 결과만 검증 가능하게 하는 프라이버시 거버넌스 시스템. 투표 참여는 증명하되 개별 투표 내용은 비공개입니다.
+**Product Description**:
+A privacy governance system that hides "who voted how" in DAO voting while making vote results verifiable. Voting participation is proven but individual vote content remains private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: DAO 투표 시 주소별 찬반 공개 → 대형 홀더 영향력 분석, 보복 투표, 매수 타겟팅
-- 고급 ZK 솔루션: 100명 서명 집계, "찬성 65%, 반대 35%"만 공개, 개별 투표 숨김
-- 결과: 투표 결과는 검증 가능, 개별 투표자의 선택은 영구 비공개
+**User Experience**:
+- Without Privacy: DAO vote shows yes/no by address → large holder influence analysis, retaliatory voting, acquisition targeting
+- Advanced ZK Solution: 100 signatures aggregated, only "65% yes, 35% no" public, individual votes hidden
+- Result: Vote results verifiable, individual voter choices permanently private
 
-**관찰 가능한 이점**:
-- 대형 홀더의 투표 영향력 분석 차단
-- 투표 결과에 따른 보복/압박 방지
-- 진정한 의사 표현 가능 (동료/경쟁자 눈치 없이)
+**Observable Benefits**:
+- Large holder voting influence analysis blocked
+- Prevents retaliation/pressure based on vote results
+- Enables genuine opinion expression (without peer/competitor pressure)
 
-## 2. "프라이빗 밸리데이터" - 검증자 세트 프라이버시
+## 2. "Private Validator" - Validator Set Privacy
 
-**제품 설명**:
-크로스체인 브릿지에서 어떤 검증자가 서명했는지 숨기면서 쿼럼 달성만 증명하는 프라이버시 검증 시스템.
+**Product Description**:
+A privacy verification system that hides which validators signed while proving only quorum achievement in cross-chain bridges.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 100명 검증자 중 67명 서명 공개 → 특정 검증자 타겟 공격, 검열 시도, 매수 대상 특정
-- 고급 ZK 솔루션: "100명 중 67명 이상 서명 확인"만 증명, 누가 서명했는지 비공개
-- 결과: 쿼럼 달성은 검증 가능, 개별 검증자 참여 여부는 숨김
+**User Experience**:
+- Without Privacy: 67 of 100 validators signed publicly → targeted attacks on specific validators, censorship attempts, acquisition targeting
+- Advanced ZK Solution: Only proves "67 or more of 100 validators signed", who signed remains private
+- Result: Quorum achievement verifiable, individual validator participation hidden
 
-**관찰 가능한 이점**:
-- 검증자 개인 타겟 공격 방지
-- 검증자 매수/협박 대상 특정 불가
-- 검증자 세트의 전체 보안 강화
+**Observable Benefits**:
+- Prevents individual validator targeted attacks
+- Cannot identify validators for acquisition/coercion
+- Strengthens overall validator set security
 
-## 3. "익명 멀티시그" - 서명자 프라이버시 기업 지갑
+## 3. "Anonymous Multisig" - Signer Privacy Corporate Wallet
 
-**제품 설명**:
-기업의 다중 서명 승인 시 "누가 승인했는지"를 숨기고 "충분한 승인 획득"만 증명하는 프라이버시 멀티시그 지갑.
+**Product Description**:
+A privacy multisig wallet that hides "who approved" and only proves "sufficient approvals obtained" during corporate multi-signature approvals.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 20명 임원 중 15명 승인 목록 공개 → 내부 의사결정 구조 노출, 핵심 의사결정자 특정, 사회공학 공격
-- 고급 ZK 솔루션: "20명 중 15명 이상 승인"만 증명, 승인자 명단 비공개
-- 결과: 거래 정당성은 검증 가능, 누가 승인했는지는 내부에서만 확인
+**User Experience**:
+- Without Privacy: List of 15 approvers from 20 executives public → internal decision-making structure exposed, key decision-makers identified, social engineering attacks
+- Advanced ZK Solution: Only proves "15 or more of 20 approved", approver list private
+- Result: Transaction legitimacy verifiable, who approved only confirmed internally
 
-**관찰 가능한 이점**:
-- 기업 의사결정 구조 및 핵심 인물 보호
-- 승인자 대상 사회공학 공격 차단
-- 내부 정치/파벌 구조 외부 노출 방지
+**Observable Benefits**:
+- Corporate decision-making structure and key figures protected
+- Blocks social engineering attacks on approvers
+- Prevents external exposure of internal politics/faction structure

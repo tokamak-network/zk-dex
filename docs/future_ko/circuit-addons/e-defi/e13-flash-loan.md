@@ -19,7 +19,7 @@ Aave 및 dYdX와 같은 현재 플래시 론 제공자는 모든 대출 매개�
 
 ## 실제 제품 및 사용자 경험
 
-참조: [플래시 론 실행 - 실제 제품](../../../product/e-defi/e13-flash-loan-products.md)
+참조: [플래시 론 실행 - 실제 제품](../../product/e-defi/e13-flash-loan-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

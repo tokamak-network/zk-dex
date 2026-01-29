@@ -337,7 +337,7 @@ component main {public [tradeCommitment, exporterCommit, complianceRoot, jurisdi
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g8-trade-compliance-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g8-trade-compliance-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

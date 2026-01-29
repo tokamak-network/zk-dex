@@ -211,7 +211,7 @@ component main {public [quoteCommitment, rfqHash, dealerCommitment, expiry]} = R
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i2-rfq-products.md](../../../product/i-off-chain/i2-rfq-products.md)
+See: [../../product/i-off-chain/i2-rfq-products.md](../../product/i-off-chain/i2-rfq-products.md)
 
 ---
 

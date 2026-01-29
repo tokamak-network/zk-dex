@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "공급업체 기밀 보호 시스템" - 경쟁사 공급망 분석 차단
+### 1. "Supplier Confidentiality Protection System" - Blocking Competitor Supply Chain Analysis
 
-**제품 설명**:
-제조업체의 공급업체 정보는 핵심 영업비밀. 경쟁사가 우리 공급업체를 알면 동일 업체에서 더 좋은 조건 제시하거나, 우리 원가 구조를 역산할 수 있음. ZK로 품질 인증은 공개하되 공급업체 신원은 완전 비밀.
+**Product Description**:
+Manufacturer supplier information is core trade secret. If competitors know our suppliers, they can offer better terms to the same suppliers or reverse-engineer our cost structure. ZK publicly certifies quality while keeping supplier identity completely confidential.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 자동차 A사의 배터리 공급업체가 B사에 알려짐, B사가 해당 업체에 더 좋은 조건 제시해 독점 계약 체결, A사 생산 차질
-- ZK 솔루션 사용: "배터리 품질 인증 통과, 안전 기준 충족" 증명만 블록체인에 기록, 공급업체명은 어디에도 노출 안 됨
-- 결과: 경쟁사가 공급망 분석 불가, 핵심 부품 공급선 보호
+**User Experience**:
+- Without Privacy: Automaker A's battery supplier becomes known to Company B, B offers better terms to that supplier and signs exclusive contract, disrupting A's production
+- With ZK Solution: Only "battery quality certification passed, safety standards met" proof recorded on blockchain, supplier name not exposed anywhere
+- Result: Competitors cannot analyze supply chain, protecting key component supply sources
 
-**관찰 가능한 이점**:
-- 핵심 공급업체 정보 경쟁사 유출 차단
-- 공급망 기반 원가 역산 불가
-- 독점 공급 계약 관계 보호
+**Observable Benefits**:
+- Blocks core supplier information leaks to competitors
+- Prevents cost reverse-engineering based on supply chain
+- Protects exclusive supply contract relationships
 
-### 2. "거래 물량 비밀 유지" - 시장 점유율 추정 방지
+### 2. "Transaction Volume Confidentiality" - Preventing Market Share Estimation
 
-**제품 설명**:
-B2B 거래 물량이 공개되면 경쟁사나 투자자가 시장 점유율, 생산 능력, 수요 동향을 추정할 수 있음. ZK로 "정당한 거래" 증명하되 물량/금액은 완전 비공개.
+**Product Description**:
+When B2B transaction volumes are public, competitors or investors can estimate market share, production capacity, and demand trends. ZK proves "legitimate transaction" while keeping volumes/amounts completely private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 반도체 회사의 월 100만개 칩 납품 기록이 공개됨, 경쟁사가 생산 능력과 주요 고객 규모 파악해 영업 전략 수립
-- ZK 솔루션 사용: "납품 완료, 품질 기준 충족" 증명만 기록, 물량/단가 정보 없음
-- 결과: 경쟁사가 시장 점유율이나 가격 경쟁력 분석 불가
+**User Experience**:
+- Without Privacy: Semiconductor company's monthly 1 million chip delivery record is public, competitors identify production capacity and major customer scale to develop sales strategies
+- With ZK Solution: Only "delivery completed, quality standards met" proof recorded, no volume/unit price information
+- Result: Competitors cannot analyze market share or price competitiveness
 
-**관찰 가능한 이점**:
-- 거래 규모 기반 시장 분석 차단
-- 계절별 수요 패턴 유출 방지
-- 가격 협상력 정보 보호
+**Observable Benefits**:
+- Blocks market analysis based on transaction scale
+- Prevents seasonal demand pattern leaks
+- Protects pricing negotiation power information
 
-### 3. "원가 구조 은닉 시스템" - 마진율 역산 방지
+### 3. "Cost Structure Concealment System" - Preventing Margin Calculation
 
-**제품 설명**:
-공급망에서 각 단계의 가격이 드러나면 최종 제품 원가 구조가 노출됨. 경쟁사가 마진율을 알면 가격 경쟁에서 정확한 타격 가능. ZK로 정당한 거래만 증명하고 가격은 완전 비밀.
+**Product Description**:
+When prices at each supply chain stage are revealed, final product cost structure is exposed. If competitors know margins, they can precisely target price competition. ZK proves only legitimate transactions while keeping prices completely confidential.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 부품 A 100원, 부품 B 200원, 조립비 50원... 원가 350원인데 500원에 판매 중이라는 것이 경쟁사에 파악됨
-- ZK 솔루션 사용: 각 거래에서 "정상 거래 완료" 증명만, 금액 정보 없이 회계 감사 가능
-- 결과: 원가 구조 비밀 유지, 마진율 기반 덤핑 공격 방어
+**User Experience**:
+- Without Privacy: Part A 100 won, Part B 200 won, assembly 50 won... competitors discover cost is 350 won while selling at 500 won
+- With ZK Solution: Each transaction shows only "normal transaction completed" proof, accounting audit possible without amount information
+- Result: Cost structure remains confidential, defending against margin-based dumping attacks
 
-**관찰 가능한 이점**:
-- 원가 구조라는 핵심 영업비밀 보호
-- 경쟁사의 가격 공세 전략 정보 차단
-- 공급업체별 납품 단가 비밀 유지
+**Observable Benefits**:
+- Protects cost structure as core trade secret
+- Blocks competitor price attack strategy information
+- Maintains supplier-specific delivery price confidentiality
 
 ---
 

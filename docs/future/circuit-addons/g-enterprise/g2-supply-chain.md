@@ -231,7 +231,7 @@ component main {public [transferId, senderCommit, receiverCommit, goodsHash, qua
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g2-supply-chain-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g2-supply-chain-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

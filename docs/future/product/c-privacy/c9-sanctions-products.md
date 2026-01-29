@@ -4,50 +4,50 @@
 
 ---
 
-## 1. "거래 이력 보호 제재 검증" - 프라이버시 보호 제재 준수 서비스
+## 1. "Transaction History Protection Sanctions Verification" - Privacy-Protected Sanctions Compliance Service
 
-**제품 설명**:
-모든 거래 상대방이 제재 대상이 아님을 증명하면서도, 실제 거래 상대방이 누구인지는 절대 공개하지 않는 서비스입니다. 기존에는 제재 검증을 위해 전체 거래 이력을 금융기관에 공개해야 했습니다.
+**Product Description**:
+A service that proves all transaction counterparties are not sanctioned entities while never disclosing who the actual counterparties are. Traditionally, complete transaction history had to be disclosed to financial institutions for sanctions verification.
 
-**일반 사용자 경험**:
-권도윤씨(40세, 무역업자)는 베트남, 태국, 인도네시아의 여러 거래처와 사업합니다. 프라이버시 없이는: 은행에서 해외 송금 시 모든 거래처 정보를 제출해야 합니다. 은행은 권도윤씨의 전체 공급망 네트워크, 각 거래처와의 거래 규모, 거래 빈도를 파악합니다. 이 정보가 유출되면 경쟁업체가 권도윤씨의 핵심 공급처에 직접 접근할 수 있습니다. 실제로 은행 직원이 기업 고객 정보를 경쟁사에 판매한 사례가 있습니다.
+**User Experience**:
+Do-yun Kwon (40, trader) conducts business with multiple partners in Vietnam, Thailand, and Indonesia. Without privacy: when making international transfers at banks, he must submit all partner information. The bank determines Mr. Kwon's entire supply chain network, transaction volume with each partner, and transaction frequency. If this information leaks, competitors can directly approach Mr. Kwon's key suppliers. There have been actual cases of bank employees selling corporate customer information to competitors.
 
-ZK 제재 검증으로: 권도윤씨는 "지난 1년간 모든 거래 상대방이 OFAC, EU 제재 명단에 없음"을 증명합니다. 은행은 제재 준수를 확인하지만, 거래 상대방이 누구인지, 몇 개 업체와 거래하는지, 각 업체와 얼마나 거래하는지는 전혀 알 수 없습니다. 공급망 정보라는 핵심 영업 비밀이 보호됩니다.
+With ZK sanctions verification: Mr. Kwon proves "all transaction counterparties in the past year are not on OFAC or EU sanctions lists." The bank verifies sanctions compliance but cannot know who the counterparties are, how many companies he trades with, or transaction volumes with each. Core trade secrets of supply chain information are protected.
 
-**관찰 가능한 이점**:
-- 공급망 네트워크 정보라는 핵심 영업 비밀 완전 보호
-- 은행의 거래 정보 유출 시에도 비즈니스 피해 방지
-- 제재 준수 증명과 거래 관계 기밀 유지 양립
+**Observable Benefits**:
+- Complete protection of core trade secrets like supply chain network information
+- Prevents business damage even if bank transaction information leaks
+- Balances sanctions compliance proof with transaction relationship confidentiality
 
-## 2. "DeFi 참여자 프라이버시 보호" - 기관의 익명 DeFi 진입 서비스
+## 2. "DeFi Participant Privacy Protection" - Institutional Anonymous DeFi Entry Service
 
-**제품 설명**:
-기관 투자자가 DeFi에 참여할 때, 제재 준수를 증명하면서도 어떤 프로토콜에 얼마를 투자했는지 외부에 노출하지 않는 서비스입니다.
+**Product Description**:
+A service that proves sanctions compliance when institutional investors participate in DeFi without externally exposing which protocols or amounts they invested in.
 
-**일반 사용자 경험**:
-ABC 자산운용의 펀드매니저 이지은씨는 회사 자금을 DeFi 프로토콜에 투자합니다. 프라이버시 없이는: 규제 기관에 제재 준수를 보고하려면 모든 DeFi 상호작용 기록을 제출해야 합니다. 이 보고서는 정보공개 청구 대상이 되어 경쟁 펀드가 ABC의 전략을 파악할 수 있습니다. 또한 DeFi 투자 규모가 공개되면 시장에서 ABC의 포지션을 노리는 청산 공격이 가능합니다.
+**User Experience**:
+Ji-eun Lee, fund manager at ABC Asset Management, invests company funds in DeFi protocols. Without privacy: to report sanctions compliance to regulators, she must submit all DeFi interaction records. These reports become subject to freedom of information requests, allowing competing funds to understand ABC's strategy. Additionally, if DeFi investment scale is disclosed, market actors can launch liquidation attacks targeting ABC's positions.
 
-ZK 제재 검증으로: 이지은씨는 분기별로 "모든 DeFi 상호작용이 제재 준수"임을 증명합니다. 규제 기관은 컴플라이언스를 확인하지만, ABC가 어떤 프로토콜에 투자했는지, 포지션 규모가 얼마인지, 어떤 전략을 사용하는지는 알 수 없습니다. 경쟁사도 정보공개 청구로 전략을 파악할 수 없습니다.
+With ZK sanctions verification: Ms. Lee proves quarterly that "all DeFi interactions are sanctions compliant." Regulators verify compliance but cannot know which protocols ABC invested in, position sizes, or strategies used. Competitors also cannot determine strategy through freedom of information requests.
 
-**관찰 가능한 이점**:
-- 투자 전략 노출 없이 규제 준수 증명
-- 정보공개 청구로부터 영업 비밀 보호
-- DeFi 포지션 공개로 인한 청산 공격 위험 차단
+**Observable Benefits**:
+- Proves regulatory compliance without exposing investment strategy
+- Protects trade secrets from freedom of information requests
+- Blocks liquidation attack risks from DeFi position disclosure
 
-## 3. "거래 파트너 상호 익명 검증" - B2B 프라이버시 보호 실사 서비스
+## 3. "Trading Partner Mutual Anonymous Verification" - B2B Privacy-Protected Due Diligence Service
 
-**제품 설명**:
-기업 간 거래 시 상대방이 제재 대상이 아님을 검증하면서, 양측 모두 자신의 다른 거래 관계를 상대방에게 숨길 수 있는 서비스입니다.
+**Product Description**:
+A service that verifies counterparties are not sanctioned entities in corporate transactions while allowing both sides to hide their other trading relationships from each other.
 
-**일반 사용자 경험**:
-글로벌 제조업체 DEF의 구매팀장 김현우씨는 새로운 중국 공급업체 XYZ와 계약하려 합니다. 프라이버시 없이는: DEF는 XYZ에 제재 준수 증빙을 요청하고, XYZ는 자사의 주요 고객 목록을 제출합니다. DEF는 XYZ가 경쟁사에도 납품한다는 것을 알게 됩니다. 반대로 XYZ도 DEF의 다른 공급업체를 알게 되어, 향후 협상에서 이 정보를 활용할 수 있습니다.
+**User Experience**:
+Hyun-woo Kim, purchasing manager at global manufacturer DEF, wants to contract with new Chinese supplier XYZ. Without privacy: DEF requests sanctions compliance evidence from XYZ, and XYZ submits its major customer list. DEF learns that XYZ also supplies to competitors. Conversely, XYZ also learns about DEF's other suppliers and can use this information in future negotiations.
 
-ZK 제재 검증으로: DEF와 XYZ 모두 "제재 대상과 거래 없음"만 증명합니다. DEF는 XYZ의 다른 고객을 알 수 없고, XYZ도 DEF의 다른 공급업체를 알 수 없습니다. 양측 모두 제재 준수를 확인하면서도 각자의 거래 네트워크라는 영업 비밀은 보호됩니다.
+With ZK sanctions verification: both DEF and XYZ prove only "no transactions with sanctioned entities." DEF cannot know XYZ's other customers, and XYZ cannot know DEF's other suppliers. Both sides verify sanctions compliance while protecting their respective trading networks as trade secrets.
 
-**관찰 가능한 이점**:
-- 상대방에게 자사의 거래 관계 정보 노출 방지
-- 협상력 약화로 이어질 수 있는 정보 유출 차단
-- 상호 신뢰 기반의 비즈니스 관계 구축
+**Observable Benefits**:
+- Prevents exposing company's trading relationships to counterparties
+- Blocks information leakage that could lead to weakened negotiating power
+- Builds business relationships based on mutual trust
 
 ---
 

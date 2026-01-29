@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "시크릿 핸드" - 패를 숨기면서 공정성 증명
+## 1. "Secret Hand" - Hiding Hand While Proving Fairness
 
-**제품 설명**:
-온라인 카드 게임에서 내 패를 상대에게 숨기면서도, 그 패가 정당하게 뽑힌 것임을 증명하는 시스템. 핸드 해킹이나 패 엿보기 완전 차단.
+**Product Description**:
+A system in online card games that hides your hand from opponents while proving it was legitimately drawn. Completely blocks hand hacking or peeking.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 온라인 포커에서 핵 프로그램이 상대 패 실시간 노출 → 완벽한 폴드/콜 판단 → 일반 유저는 무조건 패배
-- ZK 솔루션 사용: 모든 패가 암호화, 서버조차 각 플레이어의 카드 확인 불가 → 핵이 있어도 뚫을 수 없음
-- 결과: "핵 유저 때문에 온라인 포커 접었었는데, 이제 해킹이 원리적으로 불가능해서 다시 시작했어요"
+**General User Experience**:
+- Without Privacy: Hack programs reveal opponent's hand in real-time in online poker → Perfect fold/call decisions → Regular users inevitably lose
+- Using ZK Solution: All hands encrypted, even server cannot verify each player's cards → Hacks cannot penetrate even if present
+- Result: "I quit online poker because of hackers, but now hacking is fundamentally impossible, so I started again"
 
-**관찰 가능한 이점**:
-- 패 해킹/엿보기 원천 불가능
-- 숨겨진 정보 기반 전략 게임 보장
-- 온라인 카드게임 신뢰성 회복
+**Observable Benefits**:
+- Fundamentally impossible to hack/peek at hands
+- Guaranteeing strategic games based on hidden information
+- Restoring trust in online card games
 
-## 2. "페어플레이 TCG" - 상대 덱 정보 차단 대전
+## 2. "Fair Play TCG" - Blocking Opponent Deck Information in Battles
 
-**제품 설명**:
-TCG 대전에서 상대 덱 구성과 남은 카드를 알 수 없도록 숨기는 시스템. 덱 트래커 프로그램으로 상대 남은 카드 계산하는 것 방지.
+**Product Description**:
+A system in TCG battles that hides opponent deck composition and remaining cards. Prevents deck tracker programs from calculating opponent's remaining cards.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 덱 트래커가 "상대 덱에 광역기 2장 남음" 표시 → 그에 맞춰 완벽한 플레이 → 머리 싸움이 아닌 정보 싸움
-- ZK 솔루션 사용: 덱과 묘지가 암호화되어 트래커가 정보 수집 불가 → 카드 카운팅은 머릿속으로만 가능
-- 결과: "트래커 쓰는 사람이랑 붙으면 너무 불공평했는데, 이제 순수하게 머리 싸움해요"
+**General User Experience**:
+- Without Privacy: Deck tracker displays "Opponent has 2 AOE cards left" → Perfect play based on that → Information battle, not mental battle
+- Using ZK Solution: Deck and graveyard encrypted, tracker cannot collect information → Card counting only possible mentally
+- Result: "It was too unfair against tracker users, but now it's purely a mental battle"
 
-**관찰 가능한 이점**:
-- 덱 트래커/분석 툴 무력화
-- 기억력과 판단력 기반 공정한 대전
-- 실력 위주 경쟁 환경 조성
+**Observable Benefits**:
+- Neutralization of deck trackers/analysis tools
+- Fair battles based on memory and judgment
+- Creating skill-oriented competitive environment
 
 ---
 

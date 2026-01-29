@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "인스티튜셔널 라우팅" - 기관 자금 이동 프라이버시
+## 1. "Institutional Routing" - Institutional Fund Movement Privacy
 
-**제품 설명**:
-헤지펀드, 패밀리오피스의 대규모 자금 이동 시 출발지, 도착지, 금액, 경로를 완전히 숨기는 멀티홉 라우팅 서비스. 각 중간 노드는 인접 노드만 알고 전체 경로는 누구도 알 수 없습니다.
+**Product Description**:
+A multi-hop routing service that completely hides origin, destination, amount, and path during large-scale fund movements by hedge funds and family offices. Each intermediate node only knows adjacent nodes, and no one can see the entire path.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드 A→거래소 B로 $100M 이동 → 대규모 매도 예상 → 프론트러닝, 시장 조작
-- 고급 ZK 솔루션: 5개 중간 노드 경유, 각 노드는 이전/다음만 인지, 전체 경로 재구성 불가
-- 결과: 최종 수취처도 출발지 파악 불가, 자금 규모 추론 불가
+**User Experience**:
+- Without Privacy: Fund A→Exchange B $100M movement → large sell-off expected → front-running, market manipulation
+- Advanced ZK Solution: Routed through 5 intermediate nodes, each node only aware of previous/next, full path reconstruction impossible
+- Result: Final recipient cannot identify origin, fund size cannot be inferred
 
-**관찰 가능한 이점**:
-- 대규모 자금 이동 의도 완전 은닉
-- 기관 간 자금 흐름 분석 차단
-- 거래 전략 실행 전 정보 유출 제로
+**Observable Benefits**:
+- Large fund movement intent completely hidden
+- Inter-institutional fund flow analysis blocked
+- Zero information leakage before trading strategy execution
 
-## 2. "프라이빗 트레저리" - 기업 재무 이동 프라이버시
+## 2. "Private Treasury" - Corporate Financial Movement Privacy
 
-**제품 설명**:
-다국적 기업의 법인 간 자금 이동 시 송금 패턴, 금액, 목적지를 숨기는 기업용 멀티홉 시스템. 경쟁사나 규제 기관의 재무 분석을 방지합니다.
+**Product Description**:
+A corporate multi-hop system that hides remittance patterns, amounts, and destinations during multinational corporation inter-entity fund movements. Prevents competitor or regulatory financial analysis.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 본사→해외 법인 송금 패턴 공개 → 사업 확장 방향 노출, 경쟁사 대응, 규제 타겟팅
-- 고급 ZK 솔루션: 법인 간 이동이 멀티홉으로 분산, 개별 송금 연결 불가
-- 결과: "총 이동 자금: 확인 불가, 목적지: 확인 불가"
+**User Experience**:
+- Without Privacy: HQ→overseas entity remittance patterns public → business expansion direction exposed, competitor response, regulatory targeting
+- Advanced ZK Solution: Inter-entity movements distributed via multi-hop, individual remittances cannot be connected
+- Result: "Total moved funds: unverifiable, destination: unverifiable"
 
-**관찰 가능한 이점**:
-- 사업 전략 및 투자 방향 비공개
-- 법인 간 재무 관계 은닉
-- 경쟁사의 재무 정보 수집 차단
+**Observable Benefits**:
+- Business strategy and investment direction kept private
+- Inter-entity financial relationships hidden
+- Blocks competitor financial intelligence gathering
 
-## 3. "익명 M&A 펀딩" - 인수자금 프라이버시
+## 3. "Anonymous M&A Funding" - Acquisition Fund Privacy
 
-**제품 설명**:
-기업 인수 시 인수 자금의 출처, 규모, 이동 경로를 완전히 숨기는 프라이버시 펀딩 시스템. 인수 완료 전까지 자금 조달 상황이 외부에 노출되지 않습니다.
+**Product Description**:
+A privacy funding system that completely hides the source, scale, and movement path of acquisition funds during corporate acquisitions. Fund raising status not exposed externally until acquisition complete.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: PE 펀드의 자금 이동 추적 → "대규모 인수 준비 중" 추론 → 타겟 기업 주가 급등, 협상력 약화
-- 고급 ZK 솔루션: 복수 출처에서 멀티홉으로 자금 집결, 최종 금액만 인수 에스크로에 증명
-- 결과: 자금 출처 다양성, 총 규모, 조달 타이밍 모두 비공개
+**User Experience**:
+- Without Privacy: PE fund capital movement tracked → "large acquisition in preparation" inferred → target company stock price surges, negotiating power weakens
+- Advanced ZK Solution: Funds converge from multiple sources via multi-hop, only final amount proven to acquisition escrow
+- Result: Fund source diversity, total scale, and raising timing all private
 
-**관찰 가능한 이점**:
-- 인수 자금 조달 전략 완전 보호
-- 자금 출처(LP 구성) 기밀 유지
-- 인수 협상력 보호 (자금력 추론 방지)
+**Observable Benefits**:
+- Acquisition fund raising strategy fully protected
+- Fund source (LP composition) kept confidential
+- Acquisition negotiating power protected (prevents fund capacity inference)

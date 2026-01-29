@@ -277,7 +277,7 @@ component main {public [historyRoot, sanctionsListRoot, complianceResult, listVe
 
 ## Real-World Products & User Experience
 
-See [Sanctions Compliance - Products & UX](../../../product/c-privacy/c9-sanctions-products.md) for detailed real-world applications and user experience scenarios.
+See [Sanctions Compliance - Products & UX](../../product/c-privacy/c9-sanctions-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

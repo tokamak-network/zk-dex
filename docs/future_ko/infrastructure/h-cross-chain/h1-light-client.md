@@ -170,7 +170,7 @@ Source Chain                    Bridge Infrastructure                 ZK-DEX Cha
 
 ## 실제 제품 및 사용자 경험
 
-[H1. ZK Light Client Bridge - Real-World Products](../../future/product/h-cross-chain/h1-light-client-products.md) 참조
+[H1. ZK Light Client Bridge - Real-World Products](../../product/h-cross-chain/h1-light-client-products.md) 참조
 
 ---
 

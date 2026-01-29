@@ -452,7 +452,7 @@ component main {public [positionNoteHash, collateralNoteHash, borrowNoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Leverage Position - Real-World Products](../../../product/e-defi/e10-leverage-products.md)
+See: [Leverage Position - Real-World Products](../../product/e-defi/e10-leverage-products.md)
 ---
 
 [Back to Index](../../README.md)

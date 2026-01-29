@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "스텔스 인벤토리" - PvP 게임 비밀 장비 시스템
+## 1. "Stealth Inventory" - PvP Game Secret Equipment System
 
-**제품 설명**:
-PvP 게임에서 상대방이 내 장비와 인벤토리를 미리 파악하지 못하도록 숨기는 시스템. 전투 전 상대 장비 분석을 통한 카운터 픽 방지.
+**Product Description**:
+A system that hides your equipment and inventory from opponents in PvP games so they cannot analyze it beforehand. Prevents counter-picking through pre-battle equipment analysis.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 상대가 내 인벤토리 조회 → "불 속성 장비 풀셋이네" → 물 속성 카운터 장비로 교체 → 일방적 패배
-- ZK 솔루션 사용: 인벤토리가 암호화되어 전투 전까지 상대가 내 장비 확인 불가, 실시간 전략 싸움 가능
-- 결과: "이제 상대가 내 빌드 미리 분석 못 해요. 진짜 실력으로 붙는 거죠"
+**General User Experience**:
+- Without Privacy: Opponent checks my inventory → "Full fire attribute equipment set" → Switches to water attribute counter equipment → One-sided defeat
+- Using ZK Solution: Inventory is encrypted, opponent cannot verify my equipment until battle, enabling real-time strategic combat
+- Result: "Now opponents can't analyze my build beforehand. It's a real skill-based fight"
 
-**관찰 가능한 이점**:
-- 카운터 픽 메타 방지로 다양한 빌드 생존
-- 정보전이 아닌 실력 기반 PvP
-- 숨겨진 전략으로 역전 가능한 긴장감
+**Observable Benefits**:
+- Prevention of counter-pick meta, allowing diverse builds to survive
+- Skill-based PvP rather than information warfare
+- Tension with comeback possibilities through hidden strategies
 
-## 2. "시크릿 길드 무기고" - 경쟁 길드 정찰 차단
+## 2. "Secret Guild Armory" - Blocking Competitive Guild Reconnaissance
 
-**제품 설명**:
-길드전/공성전 게임에서 우리 길드의 보유 장비와 전략 아이템을 경쟁 길드가 사전 파악하지 못하도록 숨기는 시스템.
+**Product Description**:
+A system that prevents competing guilds from determining our held equipment and strategic items in guild war/siege games.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 스파이 계정이 우리 길드 무기고 정찰 → "공성 무기 3개밖에 없네" → 적 길드가 정보 기반 공격 타이밍 결정
-- ZK 솔루션 사용: 무기고 내용물이 암호화되어 길드원만 확인 가능, 적 길드는 우리 전력 파악 불가
-- 결과: "적이 우리 물자 현황을 모르니까 함부로 선빵 못 쳐요. 정보전에서 이겼어요"
+**General User Experience**:
+- Without Privacy: Spy accounts scout our guild armory → "They only have 3 siege weapons" → Enemy guild decides attack timing based on information
+- Using ZK Solution: Armory contents encrypted, only guild members can verify, enemy guilds cannot determine our strength
+- Result: "The enemy doesn't know our supply status, so they can't attack recklessly. We won the information war"
 
-**관찰 가능한 이점**:
-- 스파이/정찰을 통한 정보 유출 차단
-- 전략적 기습과 역전 가능
-- 공정한 길드전 환경 조성
+**Observable Benefits**:
+- Blocking information leaks through spies/reconnaissance
+- Enabling strategic surprises and comebacks
+- Creating fair guild war environment
 
 ---
 

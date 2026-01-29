@@ -223,7 +223,7 @@ component main {public [bondNoteHash, proposalHash, minBond, proposalType, bondN
 
 ## Real-World Products & User Experience
 
-See: [Proposal Bond Products & UX](../../../product/d-governance/d6-proposal-bond-products.md)
+See: [Proposal Bond Products & UX](../../product/d-governance/d6-proposal-bond-products.md)
 
 ---
 

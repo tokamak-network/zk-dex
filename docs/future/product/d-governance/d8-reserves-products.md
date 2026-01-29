@@ -4,53 +4,53 @@
 
 ---
 
-## 1. "거래소 지급능력 증명" - 경쟁사 노출 없는 건전성 검증
+## 1. "Exchange Solvency Proof" - Soundness Verification Without Competitor Exposure
 
-**제품 설명**:
-암호화폐 거래소가 고객 자산을 충분히 보유하고 있음을 증명하되, 정확한 보유량이나 지갑 구조를 경쟁사에 노출하지 않는 시스템. 완전 공개 시 경쟁사가 거래소 규모, 자금 흐름, 핫월렛/콜드월렛 비율 등 전략적 정보 파악 가능.
+**Product Description**:
+A system for crypto exchanges to prove sufficient customer asset holdings without exposing exact holdings or wallet structure to competitors. Full disclosure enables competitors to analyze exchange size, fund flows, hot/cold wallet ratios, and other strategic information.
 
-**일반 사용자 경험**:
-- 거래소 "크립토익스체인지"가 월간 지급능력 증명 발표
-- 공개 증명 시: 정확한 BTC/ETH 보유량 -> 경쟁사가 시장 점유율, 자금력 분석
-- ZK 증명: "고객 예치금 100% 이상 보유" 증명, 정확한 금액/구조는 비밀
-- 사용자 김고객씨: 자신의 자산이 안전함 확인, 경쟁사는 전략 정보 획득 불가
-- 결과: 신뢰와 영업 비밀 동시 보호
+**End-User Experience**:
+- Exchange "CryptoExchange" publishes monthly solvency proof
+- Full disclosure: exact BTC/ETH holdings -> competitors analyze market share, capital strength
+- ZK proof: proves "holds 100%+ of customer deposits," exact amounts/structure remain secret
+- Customer Kim: confirms asset safety, competitors cannot acquire strategic information
+- Result: Protects both trust and trade secrets
 
-**관찰 가능한 이점**:
-- 고객 자산 안전성 암호학적 검증
-- 거래소 영업 비밀(자금 규모, 구조) 보호
-- 경쟁 환경에서 투명성과 프라이버시 균형
+**Observable Benefits**:
+- Cryptographic verification of customer asset safety
+- Exchange trade secret protection (fund size, structure)
+- Balance between transparency and privacy in competitive environment
 
-## 2. "DAO 트레저리 건전성 검증" - 고래 분석 방지 공개
+## 2. "DAO Treasury Soundness Verification" - Public Disclosure Preventing Whale Analysis
 
-**제품 설명**:
-DAO 트레저리가 충분한 자금을 보유하고 있음을 증명하되, 정확한 구성이나 특정 토큰 보유량을 숨기는 시스템. 완전 공개 시 시장 참여자들이 DAO의 매도/매수 여력을 분석하여 가격 조작에 활용 가능.
+**Product Description**:
+A system for DAO treasuries to prove sufficient funds while hiding exact composition or specific token holdings. Full disclosure enables market participants to analyze DAO's selling/buying capacity for price manipulation.
 
-**일반 사용자 경험**:
-- DeFi DAO가 분기별 트레저리 건전성 보고서 발행
-- 완전 공개 시: "ETH 5만개, USDC 1억달러 보유" -> 시장이 DAO 매도 압력 계산
-- ZK 증명: "운영 비용 2년치 이상 보유, 다각화 기준 충족" 증명, 상세 구성은 비밀
-- 커뮤니티 멤버: DAO가 건전함을 확인, 시장 조작자는 정보 획득 불가
-- 결과: 투명한 거버넌스와 시장 조작 방지 동시 달성
+**End-User Experience**:
+- DeFi DAO publishes quarterly treasury soundness report
+- Full disclosure: "50K ETH, $100M USDC held" -> market calculates DAO selling pressure
+- ZK proof: proves "holds 2+ years operating costs, meets diversification criteria," detailed composition remains secret
+- Community members: confirm DAO soundness, market manipulators cannot acquire information
+- Result: Transparent governance and market manipulation prevention simultaneously achieved
 
-**관찰 가능한 이점**:
-- DAO 재정 건전성에 대한 커뮤니티 신뢰 구축
-- 트레저리 구성 노출로 인한 시장 조작 방지
-- 장기적 DAO 운영 안정성 확보
+**Observable Benefits**:
+- Builds community trust in DAO financial soundness
+- Prevents market manipulation from treasury composition exposure
+- Ensures long-term DAO operational stability
 
-## 3. "스테이블코인 담보 비밀 증명" - 준비금 검증 without 포트폴리오 노출
+## 3. "Stablecoin Collateral Secret Proof" - Reserve Verification Without Portfolio Exposure
 
-**제품 설명**:
-스테이블코인 발행사가 충분한 담보를 보유하고 있음을 증명하되, 정확한 담보 구성(어떤 자산에 얼마)을 숨기는 시스템. 담보 구성 공개 시 경쟁사 전략 파악, 시장 공격 벡터 노출 가능.
+**Product Description**:
+A system for stablecoin issuers to prove sufficient collateral while hiding exact collateral composition (which assets, how much). Collateral composition disclosure enables competitor strategy analysis, exposes market attack vectors.
 
-**일반 사용자 경험**:
-- 스테이블코인 "zkUSD" 발행사가 주간 담보 증명 발행
-- 완전 공개 시: "국채 60%, 기업어음 30%, 현금 10%" -> 시장 스트레스 시 공격 벡터
-- ZK 증명: "담보 비율 105% 이상, 유동성 기준 충족" 증명, 구성은 비밀
-- 사용자: zkUSD가 안전하게 담보됨 확인, 공격자는 취약점 분석 불가
-- 결과: 스테이블코인 신뢰와 보안 동시 강화
+**End-User Experience**:
+- Stablecoin "zkUSD" issuer publishes weekly collateral proof
+- Full disclosure: "60% treasuries, 30% commercial paper, 10% cash" -> attack vector during market stress
+- ZK proof: proves "collateral ratio 105%+, meets liquidity criteria," composition remains secret
+- Users: confirm zkUSD is safely collateralized, attackers cannot analyze vulnerabilities
+- Result: Stablecoin trust and security simultaneously strengthened
 
-**관찰 가능한 이점**:
-- 스테이블코인 안전성에 대한 사용자 신뢰
-- 담보 구성 노출로 인한 시장 공격 방지
-- 규제 요건 충족과 영업 비밀 보호 균형
+**Observable Benefits**:
+- User trust in stablecoin safety
+- Prevents market attacks from collateral composition exposure
+- Balance between regulatory compliance and trade secret protection

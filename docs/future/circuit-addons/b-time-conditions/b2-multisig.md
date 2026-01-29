@@ -208,7 +208,7 @@ component main {public [noteHash, outputHash, threshold, tokenType]} =
 
 ## Real-World Products & User Experience
 
-See [Multi-Signature Notes - Products & User Experience](../../../product/b-time-conditions/b2-multisig-products.md) for detailed product scenarios and user stories.
+See [Multi-Signature Notes - Products & User Experience](../../product/b-time-conditions/b2-multisig-products.md) for detailed product scenarios and user stories.
 
 ---
 

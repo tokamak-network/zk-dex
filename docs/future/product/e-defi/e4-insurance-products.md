@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "해킹 보험 스텔스" - 보험 타겟팅 공격 방어
+## 1. "Hack Insurance Stealth" - Insurance Targeting Attack Defense
 
-**제품 설명**:
-대형 DeFi 보험 가입이 노출되면 해커들이 "보험 처리될 것"이라는 판단 하에 해당 프로토콜을 우선 타겟팅하는 문제를 해결.
+**Product Description**:
+Solving the problem where hackers prioritize protocols with large DeFi insurance coverage, reasoning "it will be covered anyway" when insurance subscriptions are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 프로토콜의 $50M 보험 가입 공개 → 해커들이 "보험 있으니 공격해도 유저 피해 적음" 판단 → 공격 우선순위 상승
-- ZK DeFi 사용: 보험 가입 규모와 조건 비공개 → 해커가 타겟 선정 기준으로 활용 불가
-- 결과: 보험 가입이 역설적 공격 유인이 되는 문제 해결
+**Typical User Experience**:
+- Without Privacy: Protocol's $50M insurance subscription public → Hackers judge "user damage minimal since insured" → Attack priority increases
+- With ZK DeFi: Insurance coverage size and conditions private → Hackers cannot use as target selection criteria
+- Result: Problem solved where insurance subscription paradoxically becomes attack incentive
 
-**관찰 가능한 이점**:
-- 보험 정보가 해커의 타겟 선정에 악용되는 것 방지
-- 프로토콜 TVL이 보험 규모로 역추정되는 것 차단
-- 보험 시장의 역선택 문제 완화
+**Observable Benefits**:
+- Prevention of insurance information being exploited for hacker target selection
+- Blocking protocol TVL reverse-estimation from insurance size
+- Mitigation of insurance market adverse selection problem
 
-## 2. "청구 패닉 방어" - 보험 청구 뱅크런 방지
+## 2. "Claim Panic Defense" - Insurance Claim Bank Run Prevention
 
-**제품 설명**:
-대형 보험 청구가 온체인에 노출되면 다른 사용자들이 패닉에 빠져 추가 청구가 쇄도하는 "청구 뱅크런"을 방지.
+**Product Description**:
+Preventing "claim bank runs" where other users panic and rush additional claims when large insurance claims are exposed on-chain.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 고래의 $10M 보험 청구 노출 → "무슨 일이야?" 패닉 → 다른 사용자들도 불안에 청구 쇄도 → 보험 풀 고갈
-- ZK DeFi 사용: 청구 규모 비공개 → 개별 청구가 시장 심리에 영향 주지 않음
-- 결과: 침착한 청구 처리, 보험 풀 안정성 유지
+**Typical User Experience**:
+- Without Privacy: Whale's $10M insurance claim exposed → "What's happening?" panic → Other users anxiously rush claims → Insurance pool depleted
+- With ZK DeFi: Claim size private → Individual claims don't affect market psychology
+- Result: Calm claim processing, insurance pool stability maintained
 
-**관찰 가능한 이점**:
-- 대형 청구 노출로 인한 연쇄 패닉 방지
-- 보험 풀의 지급 능력에 대한 불필요한 의심 차단
-- 합리적인 개별 청구 판단 환경 조성
+**Observable Benefits**:
+- Prevention of chain panic reactions from large claim exposure
+- Blocking unnecessary doubt about insurance pool's payment capacity
+- Creating environment for rational individual claim decisions
 
-## 3. "익스플로잇 감지 방어" - 취약점 정보 유출 방지
+## 3. "Exploit Detection Defense" - Vulnerability Information Leak Prevention
 
-**제품 설명**:
-특정 리스크 유형에 대한 보험 가입 급증이 노출되면 해커들이 "뭔가 취약점이 있구나" 추론하는 문제를 해결.
+**Product Description**:
+Solving the problem where hackers infer "there must be a vulnerability" when spikes in insurance subscriptions for specific risk types are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 특정 프로토콜 오라클 리스크 보험 가입 급증 노출 → 해커들이 오라클 취약점 집중 탐색 → 공격 성공
-- ZK DeFi 사용: 어떤 리스크 유형에 보험이 몰리는지 불투명 → 취약점 힌트 제공 차단
-- 결과: 보험 시장이 해커의 정보 소스가 되는 것 방지
+**Typical User Experience**:
+- Without Privacy: Spike in specific protocol oracle risk insurance subscriptions exposed → Hackers concentrate search on oracle vulnerabilities → Attack succeeds
+- With ZK DeFi: Which risk types insurance is concentrating on opaque → Blocking vulnerability hint provision
+- Result: Prevention of insurance market becoming hackers' information source
 
-**관찰 가능한 이점**:
-- 보험 가입 패턴이 취약점 힌트가 되는 것 차단
-- 화이트햇/블랙햇 모두에게 동등한 정보 환경
-- 보험 시장의 중립성 보장
+**Observable Benefits**:
+- Blocking insurance subscription patterns from becoming vulnerability hints
+- Equal information environment for both white hat and black hat
+- Guaranteed neutrality of insurance market

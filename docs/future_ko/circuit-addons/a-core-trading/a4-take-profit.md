@@ -189,7 +189,7 @@ component main {public [noteHash, outputHash, targetPrice, currentPrice, tokenTy
 
 ## 실제 제품 및 사용자 경험
 
-전용 제품 문서 참조: [제품 응용](../../../product/a-core-trading/a4-take-profit-products.md)
+전용 제품 문서 참조: [제품 응용](../../product/a-core-trading/a4-take-profit-products.md)
 
 ---
 

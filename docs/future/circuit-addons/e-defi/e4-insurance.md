@@ -366,7 +366,7 @@ component main {public [policyNoteHash, premiumNoteHash, poolCommitment,
 
 ## Real-World Products & User Experience
 
-See: [Insurance Buy/Claim - Real-World Products](../../../product/e-defi/e4-insurance-products.md)
+See: [Insurance Buy/Claim - Real-World Products](../../product/e-defi/e4-insurance-products.md)
 ---
 
 [Back to Index](../../README.md)

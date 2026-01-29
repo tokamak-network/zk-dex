@@ -6,58 +6,58 @@
 
 ## Real-World Products & User Experience
 
-### 1. "기관 매집 은폐 시스템" - 대형 매수 정보 완전 비공개 서비스
+### 1. "Institutional Accumulation Stealth System" - Large Purchase Information Complete Privacy Service
 
-**제품 설명**:
-기관 투자자가 대규모 매수를 진행할 때, 전체 주문 규모와 실행 일정이 시장에 노출되지 않도록 TWAP 실행하는 서비스. 매수 계획이 공개되면 프론트러닝, 가격 조작, 경쟁자의 선행 매수가 발생하여 매수 비용이 크게 증가함.
+**Product Description**:
+A service that executes TWAP while preventing total order size and execution schedule from being exposed to the market when institutional investors conduct large-scale purchases. When purchase plans are public, front-running, price manipulation, and competitor advance purchases occur, significantly increasing purchase costs.
 
-**일반 사용자 경험**:
-- 박펀드매니저(48세, 크립토 헤지펀드)는 ETH 5만 개 매수 계획
-- 일반 TWAP 사용 시 "하루에 2,500 ETH씩 20일간 매수" 패턴이 온체인 분석으로 노출
-- 경쟁 펀드가 먼저 매수하여 가격 상승, MEV 봇이 각 청크 프론트러닝
-- 총 매수 비용 10% 이상 증가
-- ZK TWAP으로 전체 규모, 청크 크기, 일정 모두 암호화
-- 각 청크 실행 시점에도 전체 주문과의 연관성 파악 불가
-- 시장 반응 없이 계획대로 평균 가격에 매수 완료
+**User Experience**:
+- Fund Manager Park (48, crypto hedge fund) plans to buy 50,000 ETH
+- Using regular TWAP exposes pattern of "buying 2,500 ETH daily for 20 days" through on-chain analysis
+- Competing funds buy first to raise prices, MEV bots front-run each chunk
+- Total purchase cost increases by over 10%
+- Using ZK TWAP, total size, chunk size, and schedule are all encrypted
+- Even at each chunk execution, impossible to identify connection to overall order
+- Completes purchase at average price as planned without market reaction
 
-**관찰 가능한 이점**:
-- 대형 매수 계획 노출로 인한 프론트러닝 완전 차단
-- 경쟁자의 선행 매수 방지
-- 총 매수 비용 대폭 절감
+**Observable Benefits**:
+- Completely blocks front-running from large purchase plan exposure
+- Prevents competitor advance purchases
+- Significantly reduces total purchase cost
 
-### 2. "프로젝트 토큰 조용한 매도" - 내부자 매도 패닉 방지 서비스
+### 2. "Project Token Quiet Selling" - Insider Selling Panic Prevention Service
 
-**제품 설명**:
-프로젝트 팀, 초기 투자자, VC가 베스팅 해제된 토큰을 매도할 때, 매도 규모와 일정이 시장에 알려지지 않도록 TWAP 실행하는 서비스. 내부자 매도가 감지되면 "덤핑 시작" 루머로 시장 패닉이 발생함.
+**Product Description**:
+A service that executes TWAP while preventing sale size and schedule from being known to the market when project teams, early investors, and VCs sell vested tokens. When insider selling is detected, market panic occurs from "dumping has started" rumors.
 
-**일반 사용자 경험**:
-- 이창업자(36세, DeFi 프로토콜 창업자)는 베스팅 해제된 토큰 5% 매도 예정
-- 일반 TWAP 사용 시 온체인 분석 서비스가 "창업자 지갑 매도 패턴 감지" 알림
-- 트위터에 "창업자 덤핑" 소문 확산, 토큰 가격 40% 급락
-- 예상 매도 수익 대비 절반만 회수
-- ZK TWAP으로 매도 패턴, 총 규모, 일정 완전 비공개
-- 시장에 아무 신호 없이 계획대로 조용히 현금화
-- 프로젝트 토큰 가격 안정 유지, 정당한 자산 관리 완료
+**User Experience**:
+- Founder Lee (36, DeFi protocol founder) plans to sell 5% of vested tokens
+- Using regular TWAP triggers on-chain analysis service alert "founder wallet selling pattern detected"
+- Twitter spreads "founder dumping" rumors, token price crashes 40%
+- Recovers only half of expected sale proceeds
+- Using ZK TWAP, selling pattern, total size, and schedule completely private
+- Quietly liquidates as planned without any market signal
+- Project token price remains stable, legitimate asset management completed
 
-**관찰 가능한 이점**:
-- 내부자 매도 감지로 인한 시장 패닉 방지
-- 프로젝트 평판과 토큰 가격 보호
-- 정당한 자산 관리를 시장 왜곡 없이 수행
+**Observable Benefits**:
+- Prevents market panic from insider selling detection
+- Protects project reputation and token price
+- Performs legitimate asset management without market distortion
 
-### 3. "DAO 재무 프라이버시" - 트레저리 운용 정보 비공개 서비스
+### 3. "DAO Treasury Privacy" - Treasury Management Information Privacy Service
 
-**제품 설명**:
-DAO 트레저리가 자산 리밸런싱, 다각화, 매각을 진행할 때, 운용 계획과 실행 상황이 외부에 노출되지 않도록 TWAP 실행하는 서비스. 트레저리 움직임이 공개되면 투기 세력이 이를 이용하거나, 거버넌스 공격에 활용할 수 있음.
+**Product Description**:
+A service that executes TWAP while preventing operational plans and execution status from being exposed externally when DAO treasuries conduct asset rebalancing, diversification, or sales. When treasury movements are public, speculators can exploit this or use it for governance attacks.
 
-**일반 사용자 경험**:
-- DeFi DAO 트레저리는 분기별 리밸런싱으로 자산 구성 조정
-- 일반 실행 시 "DAO가 토큰 A 매도, 토큰 B 매수 중" 패턴 공개
-- 투기 세력이 토큰 B 선매수 후 DAO에게 비싸게 매도
-- 또는 DAO 트레저리 상태를 파악하여 거버넌스 공격 계획
-- ZK TWAP으로 어떤 자산을, 얼마나, 언제 거래하는지 완전 비공개
-- 트레저리 운용 전략이 외부에 노출되지 않음
+**User Experience**:
+- DeFi DAO treasury adjusts asset composition through quarterly rebalancing
+- Regular execution publicly reveals pattern "DAO selling token A, buying token B"
+- Speculators pre-purchase token B then sell expensively to DAO
+- Or identify DAO treasury status to plan governance attacks
+- Using ZK TWAP, completely private which assets, how much, and when being traded
+- Treasury operational strategy not exposed externally
 
-**관찰 가능한 이점**:
-- DAO 자산 운용 전략 비공개로 투기 방지
-- 트레저리 상태 노출로 인한 거버넌스 공격 차단
-- 더 효율적이고 안전한 DAO 재무 관리
+**Observable Benefits**:
+- Prevents speculation by keeping DAO asset management strategy private
+- Blocks governance attacks from treasury status exposure
+- More efficient and secure DAO financial management

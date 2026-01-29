@@ -19,7 +19,7 @@
 
 ## 실제 제품 및 사용자 경험
 
-참조: [채권 발행/상환 - 실제 제품](../../../product/e-defi/e6-bonds-products.md)
+참조: [채권 발행/상환 - 실제 제품](../../product/e-defi/e6-bonds-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

@@ -396,7 +396,7 @@ component main {public [rangeOrderNoteHash, depositNoteHash, poolId,
 
 ## Real-World Products & User Experience
 
-See: [Range Order - Real-World Products](../../../product/e-defi/e11-range-order-products.md)
+See: [Range Order - Real-World Products](../../product/e-defi/e11-range-order-products.md)
 ---
 
 [Back to Index](../../README.md)

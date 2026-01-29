@@ -276,7 +276,7 @@ component main {public [merkleRoot, decoyHashes, outputHash, tokenType, keyImage
 
 ## 실제 제품 및 사용자 경험
 
-자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Ring Signature Spend - Products & UX](../../../product/c-privacy/c1-ring-signature-products.md)를 참조하세요.
+자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Ring Signature Spend - Products & UX](../../product/c-privacy/c1-ring-signature-products.md)를 참조하세요.
 
 ---
 

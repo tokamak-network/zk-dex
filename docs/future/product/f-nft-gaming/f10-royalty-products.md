@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "스텔스 로열티" - 거래가 비공개 상태에서 창작자 보상
+## 1. "Stealth Royalty" - Creator Compensation with Hidden Transaction Price
 
-**제품 설명**:
-NFT가 프라이빗하게 거래되어도 창작자에게 정당한 로열티가 지급되는 시스템. 거래 가격은 숨기면서도 로열티 정산은 정확히 이루어짐.
+**Product Description**:
+A system where creators receive fair royalties even when NFTs are traded privately. Transaction price is hidden while royalty settlement occurs accurately.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 프라이빗 거래 시 "가격 0원" 신고하여 로열티 0원 지급 → 창작자 수익 탈취
-- ZK 솔루션 사용: 거래 가격은 암호화되어 외부 확인 불가 → 하지만 로열티 비율은 자동 적용되어 창작자에게 정확히 지급
-- 결과: "거래 가격 숨기고 싶은 컬렉터도, 로열티 받고 싶은 작가도 모두 만족해요"
+**General User Experience**:
+- Without Privacy: Private transaction reported as "$0 price" to pay $0 royalty → Creator revenue stolen
+- Using ZK Solution: Transaction price encrypted and unverifiable externally → But royalty percentage automatically applied and accurately paid to creator
+- Result: "Collectors wanting to hide prices and artists wanting royalties are both satisfied"
 
-**관찰 가능한 이점**:
-- 프라이빗 거래에서도 로열티 강제 집행
-- 가격 비공개와 창작자 보상 양립
-- 로열티 회피 우회 거래 차단
+**Observable Benefits**:
+- Forced royalty enforcement even in private transactions
+- Balancing price privacy with creator compensation
+- Blocking workaround trades to avoid royalties
 
-## 2. "시크릿 수익 분배" - 협업 NFT 비공개 정산
+## 2. "Secret Revenue Distribution" - Collaborative NFT Private Settlement
 
-**제품 설명**:
-여러 창작자가 협업한 NFT의 수익 분배 비율을 외부에 숨기면서도 정확하게 정산하는 시스템. 창작자 간 분배 협상 내용 유출 방지.
+**Product Description**:
+A system that accurately settles revenue distribution for NFTs created by multiple collaborators while hiding distribution ratios from outsiders. Prevents leaks of distribution negotiation details between creators.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "A작가 70%, B작가 30% 분배" 정보 유출 → "왜 B가 적게 받아?" 커뮤니티 논쟁 → 협업 관계 파탄
-- ZK 솔루션 사용: 정산이 합의된 비율대로 이루어짐은 증명되지만, 실제 분배율은 당사자들만 앎
-- 결과: "분배율 공개되면 팬들이 난리치는데, 비공개로 서로 합의한 대로 편하게 정산해요"
+**General User Experience**:
+- Without Privacy: Information leaks "Artist A 70%, Artist B 30% split" → "Why does B get less?" community controversy → Collaboration relationship breaks down
+- Using ZK Solution: Settlement verified to occur at agreed ratio but actual distribution rate known only to parties involved
+- Result: "When distribution rates are public, fans riot, but we settle comfortably privately on mutually agreed terms"
 
-**관찰 가능한 이점**:
-- 창작자 간 민감한 협상 내용 보호
-- 커뮤니티 여론에 흔들리지 않는 협업
-- 건전한 크리에이터 협업 생태계 조성
+**Observable Benefits**:
+- Protection of sensitive negotiation details between creators
+- Collaboration not swayed by community opinion
+- Creating healthy creator collaboration ecosystem
 
 ---
 

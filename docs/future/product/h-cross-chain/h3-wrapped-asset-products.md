@@ -6,53 +6,53 @@
 
 ## Real-World Products & User Experience
 
-### 1. "숨겨진 브릿지 금액" - 래핑 금액 비공개 서비스
+### 1. "Hidden Wrapping Amount" - Wrapping Amount Privacy Service
 
-**제품 설명**:
-자산을 래핑할 때 얼마나 래핑했는지가 외부에 공개되지 않는 프라이버시 래핑 서비스. 일반 WBTC, WETH는 래핑 금액이 모두 공개됩니다.
+**Product Description**:
+A privacy wrapping service where the amount wrapped is not publicly exposed. Regular WBTC and WETH wrapping amounts are completely public.
 
-**일반 사용자 경험**:
-- 김태영씨(40세, 사업가)는 10 BTC를 ZK-DEX에서 사용하려 함
-- 일반 래핑: "태영씨 주소가 10 BTC를 WBTC로 래핑" 공개
-- 프라이빗 래핑: 금액이 commitment로 숨겨진 채 래핑
-- 외부에서는 래핑 이벤트만 보이고 금액은 알 수 없음
-- 태영씨의 자산 규모가 래핑 과정에서 노출되지 않음
+**User Experience**:
+- Mr. Kim (40, entrepreneur) wants to use 10 BTC on ZK-DEX
+- Regular wrapping: "Kim's address wrapped 10 BTC into WBTC" is public
+- Private wrapping: Amount is wrapped while hidden in commitment
+- Externally only wrapping event is visible, amount is unknown
+- Kim's asset size is not exposed during wrapping process
 
-**관찰 가능한 이점**:
-- 래핑 금액으로 자산 규모 추정 방지
-- 대량 래핑 시 "고래" 추적 회피
-- 브릿지 사용 패턴으로 재정 상황 추론 차단
+**Observable Benefits**:
+- Prevention of asset size estimation through wrapping amounts
+- Avoidance of "whale" tracking during large wrapping
+- Blocks inference of financial situation from bridge usage patterns
 
-### 2. "출처 숨김 래핑" - 원본 체인 익명화
+### 2. "Origin Concealment Wrapping" - Source Chain Anonymization
 
-**제품 설명**:
-래핑된 자산이 어느 체인에서 왔는지, 언제 래핑되었는지 추적이 불가능한 프라이버시 래핑 서비스.
+**Product Description**:
+A privacy wrapping service where tracking which chain wrapped assets came from and when they were wrapped becomes impossible.
 
-**일반 사용자 경험**:
-- 이수진씨(33세)는 이더리움 ETH, 폴리곤 ETH, 아비트럼 ETH 보유
-- 각각을 ZK-DEX로 래핑하면 일반적으로 출처가 구분됨
-- 출처 숨김 래핑: 모든 래핑된 자산이 동일하게 보임
-- 수진씨의 zkETH가 어느 체인에서 왔는지 구분 불가
-- 체인별 보유 현황을 역추적으로 파악할 수 없음
+**User Experience**:
+- Ms. Lee (33) holds ETH on Ethereum, Polygon, and Arbitrum
+- Regular wrapping: Source chain is distinguishable for each
+- Origin concealment wrapping: All wrapped assets appear identical
+- Lee's zkETH origin chain cannot be distinguished
+- Chain-specific holdings cannot be reverse-tracked
 
-**관찰 가능한 이점**:
-- 멀티체인 포트폴리오 구성 비공개
-- 래핑된 자산 간 완전한 대체가능성
-- 특정 체인 자산의 "오염" 딱지 제거
+**Observable Benefits**:
+- Multi-chain portfolio composition remains private
+- Complete fungibility between wrapped assets
+- Removal of "tainted" labels from specific chain assets
 
-### 3. "선택적 공개 래핑" - 규제 준수 프라이빗 브릿지
+### 3. "Selective Disclosure Wrapping" - Compliance-Friendly Private Bridge
 
-**제품 설명**:
-래핑 금액을 기본적으로 숨기되, 필요시 특정 감사자에게만 선택적으로 공개할 수 있는 기관용 프라이버시 래핑.
+**Product Description**:
+An institutional privacy wrapping that hides wrapping amounts by default but allows selective disclosure to specific auditors when necessary.
 
-**일반 사용자 경험 (기관 관점)**:
-- ABC 펀드는 $50M을 ZK-DEX로 래핑하여 운용
-- 경쟁사: 래핑 금액을 볼 수 없어 AUM 파악 불가
-- 감사자: 펀드가 제공한 뷰잉 키로 래핑 금액 확인 가능
-- 규제 당국: 필요시 별도 키로 전체 이력 감사 가능
-- 프라이버시와 규제 준수를 동시에 달성
+**User Experience (Institutional Perspective)**:
+- ABC Fund wraps and manages $50M on ZK-DEX
+- Competitors: Cannot see wrapping amount, unable to determine AUM
+- Auditors: Can verify wrapping amount with viewing key provided by fund
+- Regulators: Can audit complete history with separate key when needed
+- Achieves both privacy and regulatory compliance
 
-**관찰 가능한 이점**:
-- 경쟁사로부터 AUM 비공개
-- 규제 요구 시 즉시 증명 가능
-- "얼마나 운용하는지"가 영업비밀로 보호
+**Observable Benefits**:
+- Keeps AUM private from competitors
+- Can provide immediate proof when regulations require
+- "How much is being managed" protected as trade secret

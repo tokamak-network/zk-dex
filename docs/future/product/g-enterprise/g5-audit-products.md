@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "M&A 협상용 선별 공개 감사" - 핵심 정보만 증명, 나머지 비밀
+### 1. "M&A Negotiation Selective Disclosure Audit" - Prove Only Key Information, Keep Rest Secret
 
-**제품 설명**:
-M&A 실사에서 모든 재무 정보를 공개하면, 협상 결렬 시 경쟁사(인수 후보였던)에 핵심 영업비밀이 유출됨. ZK로 "매출 100억 이상, 부채비율 100% 이하" 등 조건 충족만 증명하고, 상세 재무는 최종 계약 후에만 공개.
+**Product Description**:
+If all financial information is disclosed during M&A due diligence, core trade secrets leak to competitors (who were acquisition candidates) if negotiations fail. ZK proves only conditions like "revenue above 10 billion, debt ratio below 100%", detailed financials disclosed only after final contract.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: M&A 실사에서 전체 재무제표 공개, 협상 결렬 후 인수 후보였던 경쟁사가 핵심 고객사 목록과 원가 구조로 우리 시장 공략
-- ZK 솔루션 사용: "영업이익률 20% 이상, 주요 고객 3사 이상 다변화됨" 증명만 제공
-- 결과: 협상 결렬해도 상세 정보 미유출, 경쟁 피해 없음
+**User Experience**:
+- Without Privacy: Full financial statements disclosed in M&A due diligence, after negotiations fail, competitor who was acquisition candidate uses core customer list and cost structure to attack our market
+- With ZK Solution: Provide only proofs like "operating profit margin above 20%, diversified with 3+ major customers"
+- Result: Even if negotiations fail, detailed information not leaked, no competitive damage
 
-**관찰 가능한 이점**:
-- M&A 결렬 시 정보 유출 피해 방지
-- 협상력 유지하면서 실사 진행
-- 경쟁사의 정보 낚시 시도 차단
+**Observable Benefits**:
+- Prevents information leak damage when M&A fails
+- Proceeds with due diligence while maintaining negotiating power
+- Blocks competitor information fishing attempts
 
-### 2. "대출 심사용 비밀 유지 감사" - 금융기관에 최소 정보만 제공
+### 2. "Confidential Audit for Loan Review" - Provide Only Minimum Information to Financial Institutions
 
-**제품 설명**:
-기업 대출 심사 시 제출하는 재무 정보가 금융기관 내부에서 유출되거나, 심사 거절 후에도 보관되어 리스크. ZK로 대출 요건 충족만 증명하고, 상세 재무는 금융기관도 열람 불가.
+**Product Description**:
+Financial information submitted during corporate loan review risks leaking within financial institutions or being retained after rejection. ZK proves only loan requirements met, detailed financials not accessible even to financial institutions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대출 심사에 제출한 재무제표가 은행 직원 통해 유출, 경쟁사가 자금 사정 파악
-- ZK 솔루션 사용: "담보가치 대비 대출비율 60% 이하, 이자보상배율 3배 이상" 조건 충족 증명만 제출
-- 결과: 대출 승인받으면서 상세 재무 노출 없음
+**User Experience**:
+- Without Privacy: Financial statements submitted for loan review leak through bank employee, competitors discover cash flow situation
+- With ZK Solution: Submit only proof of "loan-to-collateral ratio below 60%, interest coverage ratio above 3x" conditions met
+- Result: Get loan approval without detailed financial exposure
 
-**관찰 가능한 이점**:
-- 금융기관 직원 통한 정보 유출 차단
-- 대출 거절 시에도 재무 정보 보호
-- 여러 금융기관 동시 타진해도 정보 분산 안 됨
+**Observable Benefits**:
+- Blocks information leaks through financial institution employees
+- Protects financial information even when loan rejected
+- No information dispersal even when approaching multiple financial institutions simultaneously
 
-### 3. "부서 간 내부 감사" - 사업부 비밀 유지하며 그룹 감사
+### 3. "Inter-Department Internal Audit" - Group Audit While Maintaining Division Confidentiality
 
-**제품 설명**:
-대기업 그룹 내부 감사 시 각 사업부의 상세 실적이 다른 사업부에 노출되면 내부 경쟁 과열, 인력 이동 문제 발생. ZK로 "예산 준수, 컴플라이언스 충족" 증명하고 상세 수치는 해당 사업부만 보유.
+**Product Description**:
+During large corporate group internal audits, exposing each division's detailed performance to other divisions causes internal competition overheating and personnel movement issues. ZK proves "budget compliance, compliance met" while detailed figures held only by respective division.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 그룹 감사 보고서에서 A사업부가 B사업부보다 이익률 2배 높다는 것 노출, B사업부 핵심 인력들이 A로 이동 신청
-- ZK 솔루션 사용: 각 사업부는 "예산 목표 달성, 비용 기준 준수" 증명만 그룹에 제출
-- 결과: 그룹 차원 관리 가능하면서 사업부 간 불필요한 비교 방지
+**User Experience**:
+- Without Privacy: Group audit report reveals Division A has twice the profit margin of Division B, Division B's key personnel apply to transfer to A
+- With ZK Solution: Each division submits only "budget targets achieved, cost standards complied" proof to group
+- Result: Group-level management possible while preventing unnecessary inter-division comparisons
 
-**관찰 가능한 이점**:
-- 사업부 간 실적 비교로 인한 갈등 방지
-- 핵심 인력의 내부 이동 압력 완화
-- 각 사업부의 경영 자율성 보호
+**Observable Benefits**:
+- Prevents conflicts from inter-division performance comparisons
+- Eases pressure for key personnel internal movement
+- Protects each division's management autonomy
 
 ---
 

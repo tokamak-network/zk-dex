@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "시크릿 렌탈" - 임대 조건 비공개 장비 대여
+## 1. "Secret Rental" - Equipment Rental with Hidden Terms
 
-**제품 설명**:
-게임 아이템 렌탈 시 임대료와 조건을 경쟁자에게 숨길 수 있는 시스템. 렌탈 가격 정보를 이용한 경쟁 길드의 가격 후려치기 방지.
+**Product Description**:
+A system for renting game items where rental fees and conditions can be hidden from competitors. Prevents competing guilds from undercutting prices using rental price information.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "A 길드가 전설무기 일 10만원에 렌탈 중" 정보 노출 → 경쟁 길드가 "우리는 8만원에 해줄게" 가로채기
-- ZK 솔루션 사용: 렌탈 계약 존재는 확인되지만 가격/조건은 암호화, 경쟁자가 조건 파악 불가
-- 결과: "렌탈 조건 노출되면 경쟁사가 바로 덤핑하는데, 이제 그럴 수가 없어요"
+**General User Experience**:
+- Without Privacy: Information exposed "Guild A renting legendary weapon for $1K/day" → Competing guild intercepts: "We'll do it for $800"
+- Using ZK Solution: Rental contract existence verified but price/terms encrypted, competitors cannot determine conditions
+- Result: "When rental terms are exposed, competitors immediately dump prices, but now they can't"
 
-**관찰 가능한 이점**:
-- 렌탈 시장 가격 담합/덤핑 방지
-- 렌탈 사업자 간 공정 경쟁
-- 안정적인 렌탈 수익 보장
+**Observable Benefits**:
+- Prevention of rental market price collusion/dumping
+- Fair competition among rental operators
+- Guaranteeing stable rental revenue
 
-## 2. "익명 스칼라십" - 비공개 수익분배 렌탈
+## 2. "Anonymous Scholarship" - Private Revenue-Sharing Rental
 
-**제품 설명**:
-Play-to-Earn 게임에서 NFT를 빌려주고 수익을 분배하는 스칼라십 계약 내용을 외부에 숨기는 시스템. 스칼라 착취 논란이나 과도한 분배율 경쟁 방지.
+**Product Description**:
+A system in Play-to-Earn games that hides scholarship contract contents for NFT lending and revenue sharing from outsiders. Prevents scholar exploitation controversies or excessive distribution rate competition.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "저 길드는 스칼라에게 70%나 줘" 정보 확산 → 다른 길드도 70% 맞춰야 하는 출혈 경쟁
-- ZK 솔루션 사용: 스칼라십 존재와 정상 작동은 증명되지만 분배율은 양 당사자만 앎
-- 결과: "분배율 공개되면 커뮤니티에서 난리 나는데, 비공개로 서로 합의된 조건으로 운영해요"
+**General User Experience**:
+- Without Privacy: Information spreads "That guild gives 70% to scholars" → Other guilds forced to match 70% in bleeding competition
+- Using ZK Solution: Scholarship existence and proper operation verified but distribution rate known only to both parties
+- Result: "When distribution rates are public, the community riots, but we operate privately on mutually agreed terms"
 
-**관찰 가능한 이점**:
-- 스칼라십 조건 기반 여론전 방지
-- 각자 상황에 맞는 유연한 계약
-- 렌탈 생태계의 건전한 성장
+**Observable Benefits**:
+- Prevention of public opinion wars based on scholarship conditions
+- Flexible contracts suited to individual situations
+- Healthy growth of rental ecosystem
 
 ---
 

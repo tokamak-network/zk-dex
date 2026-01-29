@@ -193,7 +193,7 @@ component main {public [noteHash, commitment, denomination, tokenType]} =
 
 ## Real-World Products & User Experience
 
-See [Privacy Pool Deposit - Products & UX](../../../product/c-privacy/c2-pool-deposit-products.md) for detailed real-world applications and user experience scenarios.
+See [Privacy Pool Deposit - Products & UX](../../product/c-privacy/c2-pool-deposit-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

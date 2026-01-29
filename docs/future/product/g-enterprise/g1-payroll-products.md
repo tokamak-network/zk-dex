@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "경쟁사 차단 급여 시스템" - 헤드헌팅 정보 유출 방지
+### 1. "Competitor-Blocking Payroll System" - Preventing Headhunting Information Leaks
 
-**제품 설명**:
-기업의 급여 정보가 외부로 유출되면 경쟁사가 핵심 인재의 연봉 수준을 파악해 타겟 스카우트할 수 있음. ZK 급여 시스템은 개별 급여를 완전히 숨기면서 회계 감사와 세금 신고만 가능하게 함.
+**Product Description**:
+When corporate payroll information is leaked externally, competitors can identify salary levels of key talent and conduct targeted recruitment. The ZK payroll system completely hides individual salaries while still enabling accounting audits and tax reporting.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 경쟁사 B가 A사 급여 DB 유출 정보로 핵심 개발자들의 연봉 파악, 20% 인상 제안으로 집중 스카우트
-- ZK 솔루션 사용: A사는 급여 지급 시 ZK 증명만 생성, 누가 얼마 받는지 경리팀도 모름
-- 결과: 경쟁사가 연봉 정보를 알 수 없어 무차별 스카우트 시도만 가능, 핵심 인력 이탈 방지
+**User Experience**:
+- Without Privacy: Competitor B obtains leaked salary database from Company A, identifies core developers' salaries, and launches concentrated recruitment with 20% salary increases
+- With ZK Solution: Company A generates only ZK proofs during payroll, even the accounting team doesn't know who receives what amount
+- Result: Competitors cannot access salary information, can only attempt random recruitment approaches, preventing key personnel loss
 
-**관찰 가능한 이점**:
-- 경쟁사의 타겟 헤드헌팅 정보 차단
-- 급여 유출로 인한 직원 간 갈등 원천 봉쇄
-- HR 담당자 이직 시에도 급여 정보 유출 불가
+**Observable Benefits**:
+- Blocks competitor's targeted headhunting intelligence
+- Fundamentally prevents employee conflicts arising from salary leaks
+- Prevents salary information leaks even when HR personnel change jobs
 
-### 2. "직원 프라이버시 급여 증명" - 동료 간 급여 비교 불가 시스템
+### 2. "Employee Privacy Payroll Proof" - System Preventing Peer Salary Comparison
 
-**제품 설명**:
-같은 팀 동료들 사이에서 급여 차이가 알려지면 팀워크 파괴, 퇴사 러시 발생. 직원이 대출/청약 시 급여 증명이 필요할 때, 본인 급여 범위만 증명하고 정확한 금액은 누구에게도 노출 안 됨.
+**Product Description**:
+When salary differences among team colleagues become known, it destroys teamwork and triggers resignation waves. When employees need salary proof for loans/subscriptions, they prove only their salary range without exposing exact amounts to anyone.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 경리팀 직원이 동기 연봉이 500만원 더 높은 것 발견, 팀 전체에 소문 퍼지며 분위기 악화
-- ZK 솔루션 사용: 김대리가 주택청약 위해 "월 400만원 이상" 범위 증명서만 발급, 정확한 금액은 본인도 회사 외부에 공개 안 함
-- 결과: 동료 간 급여 비교 불가, 팀 내 갈등 방지, 회사는 성과급 차등 지급해도 분쟁 없음
+**User Experience**:
+- Without Privacy: An accounting team member discovers a colleague earns 5 million won more, rumors spread throughout the team, damaging morale
+- With ZK Solution: Manager Kim issues only a "monthly salary above 4 million won" range certificate for housing subscription, exact amount not disclosed even by the employee
+- Result: No peer salary comparison possible, prevents team conflicts, company can implement performance-based differential compensation without disputes
 
-**관찰 가능한 이점**:
-- 동료 간 연봉 비교로 인한 조직 갈등 방지
-- 성과 기반 차등 보상 시스템 안전하게 운영
-- 직원 개인의 재무 프라이버시 보호
+**Observable Benefits**:
+- Prevents organizational conflicts from peer salary comparisons
+- Safely operates performance-based differential compensation systems
+- Protects employees' personal financial privacy
 
-### 3. "인건비 구조 기밀 보호" - 투자자/경쟁사로부터 급여 체계 숨김
+### 3. "Personnel Cost Structure Confidentiality Protection" - Hiding Salary Structure from Investors/Competitors
 
-**제품 설명**:
-스타트업이 투자 실사나 M&A 협상 시 인건비 구조가 노출되면 협상력 약화. "총 인건비 10억"은 공개하되, 핵심 인력 급여 수준은 숨겨 경쟁사/투자자의 인력 빼가기 방지.
+**Product Description**:
+When startups undergo investment due diligence or M&A negotiations, exposure of personnel cost structure weakens negotiating power. Disclose "total personnel costs of 1 billion" while hiding key personnel salary levels to prevent talent poaching by competitors/investors.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: M&A 실사에서 CTO 연봉 2억 확인한 인수사가 CTO에게 직접 3억 제안, 딜 파토
-- ZK 솔루션 사용: "임원 3명 총 인건비 5억, 개발팀 10명 총 인건비 8억" 범위만 증명
-- 결과: 인수사는 인건비 적정성만 확인, 개별 급여 몰라 핵심 인력 타겟 스카우트 불가
+**User Experience**:
+- Without Privacy: During M&A due diligence, acquiring company confirms CTO's 200 million salary and directly offers 300 million to CTO, deal falls through
+- With ZK Solution: Only prove ranges like "3 executives total personnel costs 500 million, 10-person development team total personnel costs 800 million"
+- Result: Acquiring company only verifies personnel cost appropriateness, cannot target key personnel for recruitment without individual salary information
 
-**관찰 가능한 이점**:
-- M&A/투자 협상 시 인력 빼가기 방지
-- 인건비 구조라는 경영 기밀 보호
-- 회계 감사 요건은 충족하면서 세부 정보 비공개
+**Observable Benefits**:
+- Prevents talent poaching during M&A/investment negotiations
+- Protects personnel cost structure as business confidential information
+- Meets accounting audit requirements while keeping details private
 
 ---
 

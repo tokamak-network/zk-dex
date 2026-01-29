@@ -211,7 +211,7 @@ component main {public [marketId, tradeCommitment, priceCommitment, nullifier]} 
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i7-futarchy-products.md](../../../product/i-off-chain/i7-futarchy-products.md)
+See: [../../product/i-off-chain/i7-futarchy-products.md](../../product/i-off-chain/i7-futarchy-products.md)
 
 ---
 

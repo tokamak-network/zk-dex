@@ -303,7 +303,7 @@ component main {public [orderHash, executionHash, newOrderHash, chunkIndex,
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a8-twap-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a8-twap-products.md)
 
 ---
 

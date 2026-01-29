@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "거래 규모 비밀 유지" - 경쟁사/투자자로부터 매출 숨김
+### 1. "Transaction Scale Confidentiality" - Hiding Revenue from Competitors/Investors
 
-**제품 설명**:
-기업 간 인보이스 금액이 공개되면 거래 규모, 협상력, 의존도가 노출됨. 경쟁사는 주요 고객 빼앗기 전략 수립, 투자자는 불리한 밸류에이션 협상 가능. ZK로 정당한 채권만 증명하고 금액은 완전 비밀.
+**Product Description**:
+When inter-company invoice amounts are public, transaction scale, negotiating power, and dependencies are exposed. Competitors can strategize to steal major customers, investors can negotiate unfavorable valuations. ZK proves only legitimate receivables while keeping amounts completely confidential.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: A사가 B대기업에 월 10억 매출이라는 게 알려짐, 경쟁사 C가 B에 더 좋은 조건 제시해 거래처 뺏음
-- ZK 솔루션 사용: 팩토링 시 "검증된 우량 매출채권 보유" 증명, 거래처명/금액은 은행에도 비공개
-- 결과: 경쟁사가 주요 거래처와 거래 규모 파악 불가, 핵심 매출원 보호
+**User Experience**:
+- Without Privacy: Company A's monthly 1 billion won revenue to large enterprise B becomes known, competitor C offers better terms to B and wins the account
+- With ZK Solution: During factoring, prove only "verified quality receivables held", client name/amount undisclosed even to banks
+- Result: Competitors cannot identify major clients and transaction scales, protecting core revenue sources
 
-**관찰 가능한 이점**:
-- 주요 거래처 정보 경쟁사 유출 차단
-- 거래 규모 기반 협상력 분석 방지
-- 매출 의존도 노출로 인한 불리한 협상 방지
+**Observable Benefits**:
+- Blocks major client information leaks to competitors
+- Prevents negotiating power analysis based on transaction scale
+- Prevents unfavorable negotiations due to revenue dependency exposure
 
-### 2. "가격 정책 보호" - 고객별 단가 비밀 유지
+### 2. "Pricing Policy Protection" - Maintaining Client-Specific Unit Price Confidentiality
 
-**제품 설명**:
-같은 제품도 고객마다 다른 가격 적용하는 것이 일반적인데, 인보이스가 공개되면 가격 차별 정책이 노출됨. 저가에 납품받던 고객이 알면 재협상 요구, 고가 고객은 이탈 가능.
+**Product Description**:
+Applying different prices to different customers for the same product is common practice, but public invoices expose price discrimination policies. Customers receiving lower prices demand renegotiation if they find out, high-price customers may leave.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 소프트웨어 회사가 고객 A에는 1억, 고객 B에는 5천만원에 같은 제품 판매 중. B가 A의 가격 알게 되면 동일 조건 요구
-- ZK 솔루션 사용: 각 인보이스는 "정당한 거래 완료" 증명만, 금액은 어떤 제3자도 비교 불가
-- 결과: 고객별 차등 가격 정책 안전하게 유지, 매출 극대화
+**User Experience**:
+- Without Privacy: Software company sells same product to customer A for 100 million won, customer B for 50 million won. B demands same terms if they discover A's price
+- With ZK Solution: Each invoice shows only "legitimate transaction completed" proof, amounts not comparable by any third party
+- Result: Safely maintains differential pricing policy per customer, maximizing revenue
 
-**관찰 가능한 이점**:
-- 고객별 가격 차별 정책 보호
-- 가격 정보 유출로 인한 재협상 압박 방지
-- 유연한 가격 전략 유지 가능
+**Observable Benefits**:
+- Protects customer-specific price discrimination policies
+- Prevents renegotiation pressure from price information leaks
+- Enables flexible pricing strategies
 
-### 3. "현금흐름 상태 은닉" - 자금 사정 노출 방지
+### 3. "Cash Flow Status Concealment" - Preventing Financial Situation Exposure
 
-**제품 설명**:
-기업이 급하게 인보이스 팩토링하면 "현금 부족" 신호로 해석됨. 거래처가 알면 결제 조건 불리하게 변경, 경쟁사는 공세 강화. ZK로 자금 조달하되 급박함은 숨김.
+**Product Description**:
+When companies urgently factor invoices, it signals "cash shortage". If clients know, they change payment terms unfavorably, competitors intensify attacks. ZK enables fundraising while hiding urgency.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 중소기업 A가 매출채권 급매각 사실이 알려짐, 거래처 B가 "A 자금 사정 안 좋네" 판단해 결제 조건을 현금에서 60일 후불로 변경
-- ZK 솔루션 사용: 정상적인 자금 관리 차원에서 팩토링, 누가 언제 얼마나 팩토링했는지 외부 노출 없음
-- 결과: 자금 상태 노출 없이 유동성 확보, 거래처와의 협상력 유지
+**User Experience**:
+- Without Privacy: SME A's accounts receivable fire sale becomes known, client B judges "A has cash flow problems" and changes payment terms from cash to 60-day deferred
+- With ZK Solution: Factoring as normal cash management, no external exposure of who factored when and how much
+- Result: Secures liquidity without exposing financial status, maintains negotiating power with clients
 
-**관찰 가능한 이점**:
-- 자금난 신호 노출로 인한 불이익 방지
-- 정상적 재무 관리로 인식됨
-- 거래처와의 신용 관계 보호
+**Observable Benefits**:
+- Prevents disadvantages from cash shortage signal exposure
+- Perceived as normal financial management
+- Protects credit relationships with clients
 
 ---
 

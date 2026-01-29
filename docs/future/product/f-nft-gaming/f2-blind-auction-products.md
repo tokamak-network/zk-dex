@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "안티스나이핑 경매장" - 밀봉입찰 NFT 경매
+## 1. "Anti-Sniping Auction House" - Sealed Bid NFT Auction
 
-**제품 설명**:
-고가 NFT 경매에서 마지막 순간 스나이핑을 원천 차단하는 밀봉입찰 플랫폼. 다른 입찰자의 금액을 볼 수 없어 봇이나 고래의 조작적 입찰 불가능.
+**Product Description**:
+A sealed bid platform that completely prevents last-second sniping in high-value NFT auctions. Other bidders' amounts are invisible, making manipulative bidding by bots or whales impossible.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 경매 마감 1초 전 봇이 현재 최고가 +1원으로 스나이핑, 일반 유저는 매번 패배
-- ZK 솔루션 사용: 컬렉터 김진심씨(32세)가 자신이 생각하는 가치 500만원으로 밀봉 입찰, 다른 입찰가 확인 불가
-- 결과: "스나이핑 걱정 없이 내가 생각하는 진정한 가치로 입찰했어요. 낙찰됐든 안 됐든 공정했다는 게 중요해요"
+**General User Experience**:
+- Without Privacy: Bots snipe with current highest bid +$0.01 at 1 second before auction end, regular users lose every time
+- Using ZK Solution: Collector Kim Jin-sim (age 32) submits sealed bid at their perceived value of $50,000, cannot see other bids
+- Result: "I bid my true perceived value without worrying about sniping. Whether I won or not, what matters is that it was fair"
 
-**관찰 가능한 이점**:
-- 봇/고래의 스나이핑 전략 원천 무력화
-- 진정한 가치 기반 가격 형성
-- 소액 컬렉터도 공정하게 경쟁 가능
+**Observable Benefits**:
+- Complete neutralization of bot/whale sniping strategies
+- Price formation based on true value
+- Fair competition for small collectors
 
-## 2. "담합방지 한정판 드롭" - 공정한 희귀 NFT 배분
+## 2. "Collusion-Proof Limited Drop" - Fair Rare NFT Distribution
 
-**제품 설명**:
-인기 NFT 드롭에서 고래들의 담합이나 정보 공유를 통한 독점을 방지하는 밀봉입찰 시스템. 누가 얼마를 썼는지 알 수 없어 사전 조율 불가.
+**Product Description**:
+A sealed bid system that prevents whales from monopolizing through collusion or information sharing in popular NFT drops. Since nobody knows who spent how much, pre-coordination is impossible.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 고래 그룹이 서로 입찰가 공유하며 "너는 1~100번, 나는 101~200번" 담합하여 물량 독식
-- ZK 솔루션 사용: 모든 입찰이 암호화되어 담합 시도해도 상대 입찰가 확인 불가, 배신 우려로 담합 자체가 무의미해짐
-- 결과: "예전엔 고래 카르텔이 다 가져갔는데, 이제 저도 민팅 성공했어요!"
+**General User Experience**:
+- Without Privacy: Whale groups share bids with each other and collude: "You take #1-100, I'll take #101-200," monopolizing supply
+- Using ZK Solution: All bids are encrypted, even collusion attempts can't verify counterparty bids, fear of betrayal makes collusion meaningless
+- Result: "Whale cartels used to take everything, but now I successfully minted too!"
 
-**관찰 가능한 이점**:
-- 고래 담합/카르텔 형성 방지
-- NFT 분산 소유로 건강한 커뮤니티 형성
-- 신규 컬렉터 진입 장벽 완화
+**Observable Benefits**:
+- Prevention of whale collusion/cartel formation
+- Healthy community through distributed NFT ownership
+- Lowered entry barriers for new collectors
 
 ---
 

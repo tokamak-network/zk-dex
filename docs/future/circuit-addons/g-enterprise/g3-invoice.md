@@ -257,7 +257,7 @@ component main {public [invoiceCommitment, minValue, maxAge, sellerCommit, facto
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g3-invoice-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g3-invoice-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

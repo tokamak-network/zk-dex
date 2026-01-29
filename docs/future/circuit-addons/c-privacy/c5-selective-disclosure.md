@@ -234,7 +234,7 @@ component main {public [noteHash, merkleRoot, disclosureFlags, disclosedTokenTyp
 
 ## Real-World Products & User Experience
 
-See [Selective Disclosure - Products & UX](../../../product/c-privacy/c5-selective-disclosure-products.md) for detailed real-world applications and user experience scenarios.
+See [Selective Disclosure - Products & UX](../../product/c-privacy/c5-selective-disclosure-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "인스티튜셔널 크레딧" - 기관 신용 프라이버시 증명
+## 1. "Institutional Credit" - Institutional Credit Privacy Proof
 
-**제품 설명**:
-헤지펀드, 트레이딩 데스크가 카운터파티에게 신용도를 증명할 때 AUM, 수익률, 레버리지 등 민감 정보를 숨기는 기관용 신용 증명 시스템.
+**Product Description**:
+An institutional credit proof system that hides sensitive information like AUM, returns, and leverage when hedge funds and trading desks prove creditworthiness to counterparties.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드 A가 대출 요청 → AUM $500M, 연 수익률 15%, 현재 레버리지 2.5x 공개 → 전략 역추적, 경쟁사 분석
-- 고급 ZK 솔루션: "신용등급 AA 이상, 레버리지 한도 내, 유동성 충분" 세 가지만 ZK로 증명
-- 결과: 카운터파티는 신용도만 확인, AUM/수익률/전략은 완전 비공개
+**User Experience**:
+- Without Privacy: Fund A requests loan → discloses AUM $500M, annual return 15%, current leverage 2.5x → strategy reverse engineering, competitor analysis
+- Advanced ZK Solution: Proves with ZK only three facts: "credit rating AA or above, within leverage limit, sufficient liquidity"
+- Result: Counterparty only verifies creditworthiness, AUM/returns/strategy completely private
 
-**관찰 가능한 이점**:
-- 펀드 규모 및 성과 데이터 완전 보호
-- 전략 역추적 및 포지션 추론 차단
-- 신용 평가에 필요한 최소 정보만 선택적 공개
+**Observable Benefits**:
+- Fund size and performance data fully protected
+- Strategy reverse engineering and position inference blocked
+- Only minimum information needed for credit assessment selectively disclosed
 
-## 2. "프라이빗 언더라이팅" - 기관 대출 심사 프라이버시
+## 2. "Private Underwriting" - Institutional Loan Review Privacy
 
-**제품 설명**:
-기업/기관의 대출 심사 시 재무제표, 현금흐름, 자산 구성의 상세 내역 없이 신용도만 증명하는 프라이버시 언더라이팅 서비스.
+**Product Description**:
+A privacy underwriting service that proves creditworthiness during corporate/institutional loan review without detailed financial statements, cash flow, or asset composition.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대출 심사에 전체 재무제표 제출 → 매출 구조, 고객사, 비용 구조 노출 → 경쟁사 분석, 협상력 약화
-- 고급 ZK 솔루션: "부채비율 200% 이하, 이자보상비율 3x 이상, 유동비율 150% 이상" ZK 증명
-- 결과: 대출 기관은 건전성만 확인, 상세 재무 구조는 비공개
+**User Experience**:
+- Without Privacy: Submit entire financial statements for loan review → revenue structure, customer base, cost structure exposed → competitor analysis, weakened negotiating power
+- Advanced ZK Solution: Proves with ZK "debt ratio ≤200%, interest coverage ratio ≥3x, current ratio ≥150%"
+- Result: Lender only verifies soundness, detailed financial structure private
 
-**관찰 가능한 이점**:
-- 사업 모델 및 비용 구조 기밀 유지
-- 고객사/공급사 정보 보호
-- 대출 심사 과정에서의 정보 유출 차단
+**Observable Benefits**:
+- Business model and cost structure kept confidential
+- Customer/supplier information protected
+- Blocks information leaks during loan review process
 
-## 3. "멀티소스 크레딧" - 복합 데이터 프라이버시 신용평가
+## 3. "Multi-Source Credit" - Composite Data Privacy Credit Assessment
 
-**제품 설명**:
-온체인 활동, 오프체인 금융 데이터, 거래 이력 등 다중 소스를 결합한 신용평가에서 개별 데이터 소스의 상세를 모두 숨기는 프라이버시 신용 시스템.
+**Product Description**:
+A privacy credit system that hides details from all individual data sources during credit assessment combining on-chain activity, off-chain financial data, and transaction history.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 5개 데이터 소스(은행, 거래소, DeFi, 급여, 자산) 각각의 상세 공개 → 전체 재정 상황 재구성 가능
-- 고급 ZK 솔루션: 각 소스에서 "충분/미달" 신호만 추출, 최종 점수만 계산
-- 결과: "신용점수 780점, 상위 15%" 결과만 공개, 어느 소스에서 어떤 점수인지 비공개
+**User Experience**:
+- Without Privacy: 5 data sources (bank, exchange, DeFi, payroll, assets) each detailed publicly → entire financial situation reconstructable
+- Advanced ZK Solution: Each source only extracts "sufficient/insufficient" signal, only final score calculated
+- Result: Only "credit score 780, top 15%" result public, which source gave which score private
 
-**관찰 가능한 이점**:
-- 개별 금융 계좌/활동 상세 완전 보호
-- 데이터 소스 간 연결 분석 차단
-- 전체 재정 상황 재구성 불가
+**Observable Benefits**:
+- Individual financial account/activity details fully protected
+- Blocks analysis connecting data sources
+- Entire financial situation reconstruction impossible

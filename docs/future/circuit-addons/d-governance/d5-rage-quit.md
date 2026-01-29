@@ -252,7 +252,7 @@ component main {public [membershipNullifier, outputHashes, treasuryRoot, members
 
 ## Real-World Products & User Experience
 
-See: [Rage Quit Products & UX](../../../product/d-governance/d5-rage-quit-products.md)
+See: [Rage Quit Products & UX](../../product/d-governance/d5-rage-quit-products.md)
 
 ---
 

@@ -4,44 +4,44 @@
 
 ---
 
-## 1. "프라이버시 저축 계좌" - 익명 예금 서비스
+## 1. "Privacy Savings Account" - Anonymous Deposit Service
 
-**제품 설명**:
-은행 예금처럼 안전하게 자금을 예치하되, 입금 기록이 추적되지 않는 프라이버시 보호 저축 서비스. 고정 금액 단위로 예치하여 익명성 풀을 형성합니다.
+**Product Description**:
+A privacy-protected savings service that securely stores funds like a bank account, but with untraceable deposit records. Deposits are made in fixed denominations to form an anonymity pool.
 
-**일반 사용자 경험**:
-최영호씨(45세, 자영업자)는 사업 수익을 안전하게 저축하고 싶지만, 경쟁업체가 블록체인에서 그의 자산 규모를 파악할까 걱정됩니다. 이 서비스에서 1,000만원 단위로 예치하면, 같은 금액을 예치한 다른 수천 명의 사용자들과 섞여 누가 언제 얼마를 입금했는지 구분할 수 없게 됩니다. 최영호씨는 사업 정보 노출 걱정 없이 자산을 축적할 수 있게 되었습니다.
+**User Experience**:
+Young-ho Choi (45, self-employed) wants to safely save his business profits but worries that competitors might track his asset scale on the blockchain. When he deposits in 10 million won units through this service, his deposits mix with thousands of other users depositing the same amount, making it impossible to distinguish who deposited how much and when. Mr. Choi can now accumulate assets without worrying about business information exposure.
 
-**관찰 가능한 이점**:
-- 자산 규모가 외부에 노출되지 않아 사업 보안 유지
-- 동일 금액 예치자들과 섞여 개인 식별 불가능
-- 은행 수준의 안전성과 블록체인의 투명성을 동시에 확보
+**Observable Benefits**:
+- Asset scale not exposed externally, maintaining business security
+- Individual identification impossible due to mixing with same-amount depositors
+- Achieves both bank-level safety and blockchain transparency simultaneously
 
-## 2. "급여 프라이버시 브릿지" - 급여 입금 익명화 서비스
+## 2. "Salary Privacy Bridge" - Salary Deposit Anonymization Service
 
-**제품 설명**:
-회사로부터 받은 급여를 개인 지갑으로 옮길 때, 회사가 직원의 소비 패턴을 추적할 수 없도록 하는 서비스입니다.
+**Product Description**:
+A service that prevents employers from tracking employees' spending patterns when transferring salary from company accounts to personal wallets.
 
-**일반 사용자 경험**:
-정민지씨(31세, IT기업 직원)는 암호화폐로 급여를 받습니다. 회사 지갑에서 바로 쇼핑을 하면 고용주가 그녀의 소비 습관을 볼 수 있습니다. 급여가 입금되면 이 서비스를 통해 프라이버시 풀에 예치하고, 일주일 후 개인 지갑으로 인출합니다. 이제 정민지씨의 급여와 개인 소비는 완전히 분리되어, 회사는 그녀가 어디에 돈을 쓰는지 알 수 없습니다.
+**User Experience**:
+Min-ji Jung (31, IT company employee) receives her salary in cryptocurrency. Shopping directly from her company wallet would allow her employer to see her consumption habits. When salary is deposited, she uses this service to deposit into a privacy pool, then withdraws to her personal wallet a week later. Now Ms. Jung's salary and personal spending are completely separated, and her company cannot track where she spends her money.
 
-**관찰 가능한 이점**:
-- 고용주로부터 개인 소비 패턴 완벽히 보호
-- 급여 수령과 개인 금융 활동의 완전한 분리
-- 직원의 금융 프라이버시권 실현
+**Observable Benefits**:
+- Personal spending patterns perfectly protected from employer
+- Complete separation of salary receipt and personal financial activities
+- Realizes employees' financial privacy rights
 
-## 3. "크라우드펀딩 익명 후원" - 프라이버시 보호 후원 서비스
+## 3. "Crowdfunding Anonymous Support" - Privacy-Protected Sponsorship Service
 
-**제품 설명**:
-크라우드펀딩 프로젝트에 후원할 때, 후원자의 신원과 후원 금액을 숨길 수 있는 서비스입니다.
+**Product Description**:
+A service that allows sponsors to hide their identity and sponsorship amounts when contributing to crowdfunding projects.
 
-**일반 사용자 경험**:
-한승우씨(33세, 공무원)는 독립 게임 개발자의 프로젝트를 후원하고 싶습니다. 하지만 공무원으로서 특정 프로젝트 후원이 공개되면 곤란할 수 있습니다. 이 서비스로 후원금을 풀에 먼저 예치하고, 프로젝트 측에서 인출할 때는 한승우씨와의 연결고리가 완전히 끊어집니다. 프로젝트는 후원금을 받고, 한승우씨는 익명으로 좋아하는 프로젝트를 응원할 수 있습니다.
+**User Experience**:
+Seung-woo Han (33, civil servant) wants to sponsor an independent game developer's project. However, as a civil servant, public disclosure of supporting certain projects could be problematic. Using this service, he first deposits the sponsorship into the pool, and when the project withdraws it, the connection to Mr. Han is completely severed. The project receives the sponsorship, and Mr. Han can anonymously support projects he likes.
 
-**관찰 가능한 이점**:
-- 후원자의 직업이나 사회적 지위와 관계없이 자유로운 후원 가능
-- 후원 금액과 타이밍이 외부에 노출되지 않음
-- 민감한 주제의 프로젝트도 부담 없이 후원 가능
+**Observable Benefits**:
+- Free sponsorship regardless of sponsor's occupation or social status
+- Sponsorship amounts and timing not exposed externally
+- Comfortable sponsorship of projects on sensitive topics
 
 ---
 

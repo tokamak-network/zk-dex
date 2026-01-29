@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "시퀀서 블라인드 롤업" - 운영자로부터의 프라이버시
+## 1. "Sequencer Blind Rollup" - Privacy from Operator
 
-**제품 설명**:
-롤업 시퀀서조차 거래 내용을 볼 수 없는 프라이버시 롤업. 일반 롤업은 시퀀서가 모든 거래를 보고 MEV를 추출할 수 있습니다.
+**Product Description**:
+A privacy rollup where even the rollup sequencer cannot see transaction content. Regular rollups allow sequencers to see all transactions and extract MEV.
 
-**일반 사용자 경험**:
-- 한지원씨(24세)는 롤업에서 대량 매수를 실행하려 함
-- 일반 롤업: 시퀀서가 거래를 보고 프론트러닝 가능
-- 블라인드 롤업: 거래가 암호화되어 시퀀서에게 전달
-- 시퀀서는 순서만 정하고 내용은 알 수 없음
-- 배치 증명 생성 시에만 거래가 처리됨
+**User Experience**:
+- Ms. Han (24) wants to execute large buy on rollup
+- Regular rollup: Sequencer sees transaction and can front-run
+- Blind rollup: Transaction encrypted when delivered to sequencer
+- Sequencer only orders, cannot see content
+- Transaction only processed during batch proof generation
 
-**관찰 가능한 이점**:
-- 시퀀서 MEV 추출 원천 차단
-- 롤업 운영자를 신뢰할 필요 없음
-- 거래 의도가 체결 전까지 완전히 비공개
+**Observable Benefits**:
+- Fundamentally blocks sequencer MEV extraction
+- No need to trust rollup operator
+- Transaction intent completely private until execution
 
-## 2. "배치 내 프라이버시" - 거래 간 연결 차단
+## 2. "In-Batch Privacy" - Transaction Connection Blocking
 
-**제품 설명**:
-같은 배치에 포함된 여러 거래가 서로 연결되지 않도록 하는 프라이버시 레이어. 배치 분석으로 사용자 패턴 파악을 방지합니다.
+**Product Description**:
+A privacy layer that prevents multiple transactions included in same batch from being connected. Prevents batch analysis from determining user patterns.
 
-**일반 사용자 경험 (트레이더 관점)**:
-- 김성준씨(30세)는 하루 수백 번 거래
-- 일반 롤업: "같은 배치의 이 거래들이 같은 사람" 분석 가능
-- 프라이버시 배치: 각 거래가 독립적인 노트로 처리
-- 배치 내 거래 간 연결고리 없음
-- 성준씨의 고빈도 거래 패턴이 숨겨짐
+**User Experience (Trader Perspective)**:
+- Mr. Kim (30) trades hundreds of times daily
+- Regular rollup: "These transactions in same batch are same person" analysis possible
+- Privacy batch: Each transaction processed as independent note
+- No linkage between transactions within batch
+- Kim's high-frequency trading pattern remains hidden
 
-**관찰 가능한 이점**:
-- 배치 분석으로 트레이딩 패턴 추론 방지
-- 고빈도 거래자 식별 차단
-- 거래 전략의 완전한 비밀 유지
+**Observable Benefits**:
+- Prevention of trading pattern inference from batch analysis
+- Blocks high-frequency trader identification
+- Complete secrecy of trading strategy
 
-## 3. "DA 레이어 프라이버시" - 데이터 가용성도 비공개
+## 3. "DA Layer Privacy" - Data Availability Also Private
 
-**제품 설명**:
-롤업의 데이터 가용성 레이어에 저장되는 데이터도 암호화하여 DA 노드조차 거래 내용을 알 수 없게 하는 서비스.
+**Product Description**:
+A service that encrypts data stored on rollup's data availability layer so even DA nodes cannot see transaction content.
 
-**일반 사용자 경험**:
-- 윤서연씨(26세)는 롤업에서 프라이빗 결제를 사용
-- 일반 롤업: DA 레이어에 평문 거래 데이터 저장
-- 프라이빗 DA: 암호화된 데이터만 DA에 게시
-- DA 노드 운영자도 거래 내용을 볼 수 없음
-- 검증에 필요한 commitment만 공개
+**User Experience**:
+- Ms. Yoon (26) uses private payments on rollup
+- Regular rollup: Plain transaction data stored on DA layer
+- Private DA: Only encrypted data published to DA
+- DA node operators also cannot see transaction content
+- Only commitments necessary for verification are public
 
-**관찰 가능한 이점**:
-- DA 레이어를 통한 거래 분석 차단
-- "롤업 데이터 = 공개 데이터" 전제 제거
-- 완전한 엔드투엔드 프라이버시
+**Observable Benefits**:
+- Blocks transaction analysis through DA layer
+- Removes "rollup data = public data" assumption
+- Complete end-to-end privacy
 
 ---
 

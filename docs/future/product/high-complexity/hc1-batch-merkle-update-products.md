@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "시크릿 페이롤" - 기업 급여 프라이버시 플랫폼
+## 1. "Secret Payroll" - Enterprise Salary Privacy Platform
 
-**제품 설명**:
-수백 명 직원의 급여를 단일 배치로 처리하면서, 개별 급여 정보를 완전히 암호화하는 기관용 급여 시스템. 온체인에는 "배치 총액"만 공개되고, 누가 얼마를 받았는지는 ZK 증명으로 보호됩니다.
+**Product Description**:
+An institutional payroll system that processes salaries for hundreds of employees in a single batch while fully encrypting individual salary information. Only the "batch total" is public on-chain, while individual amounts are protected with ZK proofs.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 블록체인 급여 지급 시 모든 직원의 개별 급여가 공개됨 → 연봉 정보 유출, 직원 간 갈등, 경쟁사의 인재 스카우트 타겟팅
-- 고급 ZK 솔루션: 200명 급여가 단일 배치로 처리되며, 관찰자는 "총 15억원이 200개 주소로 분배됨"만 확인 가능
-- 결과: 각 직원은 자신의 급여만 확인 가능, 다른 직원의 급여는 암호학적으로 접근 불가
+**User Experience**:
+- Without Privacy: Blockchain payroll reveals every employee's individual salary → salary information leaks, conflicts between employees, competitor talent targeting
+- Advanced ZK Solution: 200 salaries processed in a single batch, observers can only see "total $1.5M distributed to 200 addresses"
+- Result: Each employee can only view their own salary, other employees' salaries are cryptographically inaccessible
 
-**관찰 가능한 이점**:
-- 개별 급여 금액 완전 비공개 (배치 총액만 공개)
-- 임원/핵심인재의 보상 패키지 기밀 유지
-- 급여 기반 사회공학 공격 및 피싱 차단
+**Observable Benefits**:
+- Individual salary amounts completely private (only batch total public)
+- Executive/key talent compensation packages remain confidential
+- Blocks salary-based social engineering attacks and phishing
 
-## 2. "익명 세틀먼트" - 기관 트레이더 정산 시스템
+## 2. "Anonymous Settlement" - Institutional Trader Settlement System
 
-**제품 설명**:
-헤지펀드, 기관 트레이더들의 일일 거래를 배치 정산하면서 개별 거래 내역과 포지션 규모를 완전히 숨기는 프라이버시 정산 인프라.
+**Product Description**:
+Privacy settlement infrastructure that batch-settles daily trades from hedge funds and institutional traders while completely hiding individual trade details and position sizes.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 기관의 일일 거래량, 포지션 방향, 거래 상대방이 온체인에 노출 → 전략 복제, 프론트러닝, 경쟁사 분석
-- 고급 ZK 솔루션: 수십 개 기관의 수천 건 거래가 단일 배치로 정산, 개별 거래는 암호화
-- 결과: 정산 완료 확인만 가능, 누가 누구와 얼마에 거래했는지 영구 비공개
+**User Experience**:
+- Without Privacy: Institutional daily volume, position direction, and counterparties exposed on-chain → strategy replication, front-running, competitor analysis
+- Advanced ZK Solution: Thousands of trades from dozens of institutions settled in single batch, individual trades encrypted
+- Result: Only settlement completion visible, who traded what at what price permanently private
 
-**관찰 가능한 이점**:
-- 기관별 거래 전략 및 포지션 완전 보호
-- 거래 상대방 관계 기밀 유지
-- 대규모 포지션 축적/청산 시 시장 충격 최소화
+**Observable Benefits**:
+- Institution-specific trading strategies and positions fully protected
+- Counterparty relationships kept confidential
+- Minimizes market impact when accumulating/liquidating large positions
 
-## 3. "프라이빗 벤딩" - 투자사 자금 분배 플랫폼
+## 3. "Private Vending" - Investment Firm Capital Distribution Platform
 
-**제품 설명**:
-VC, 투자사가 포트폴리오 회사들에게 자금을 분배할 때, 개별 투자 금액과 기업명을 숨기는 프라이버시 분배 시스템.
+**Product Description**:
+A privacy distribution system that hides individual investment amounts and company names when VCs and investment firms distribute funds to portfolio companies.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 어떤 스타트업이 얼마를 받았는지 공개 → 밸류에이션 유출, 경쟁사 정보 수집, 협상력 약화
-- 고급 ZK 솔루션: 15개 포트폴리오 회사에 총 500억 분배, 개별 금액은 각 회사만 확인 가능
-- 결과: 투자 포트폴리오 전략 완전 기밀, 개별 투자 규모 보호
+**User Experience**:
+- Without Privacy: Which startups received how much is public → valuation leaks, competitor intelligence gathering, weakened negotiating power
+- Advanced ZK Solution: $5B distributed to 15 portfolio companies, individual amounts only visible to each company
+- Result: Investment portfolio strategy completely confidential, individual investment sizes protected
 
-**관찰 가능한 이점**:
-- 투자 전략 및 집중 영역 비공개
-- 포트폴리오 회사별 투자 규모 기밀 유지
-- 후속 라운드 협상에서 정보 비대칭 방지
+**Observable Benefits**:
+- Investment strategy and focus areas kept private
+- Portfolio company-specific investment sizes remain confidential
+- Prevents information asymmetry in subsequent round negotiations

@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "청산 사냥 방어" - 담보 청산가 보호
+## 1. "Liquidation Hunting Defense" - Collateral Liquidation Price Protection
 
-**제품 설명**:
-담보 포지션의 청산 가격이 노출되면 고래들이 해당 가격까지 오라클을 조작하거나 시장을 밀어붙여 강제 청산시키는 "청산 사냥" 공격을 방어.
+**Product Description**:
+Defense against "liquidation hunting" attacks where whales manipulate oracles or push markets to liquidation prices when collateral position liquidation prices are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 담보비율 155%, 청산선 150% 노출 → 오라클 조작으로 담보 가치 3% 하락 유도 → 강제 청산 + 페널티
-- ZK DeFi 사용: 담보비율과 청산가 비공개 → 공격자가 "얼마나 밀어야 청산되는지" 알 수 없음
-- 결과: 청산 사냥 공격 무력화, 합리적 가격에서 자율적 관리
+**Typical User Experience**:
+- Without Privacy: 155% collateral ratio, 150% liquidation line exposed → Oracle manipulation induces 3% collateral value decline → Forced liquidation + penalty
+- With ZK DeFi: Collateral ratio and liquidation price private → Attacker doesn't know "how far to push for liquidation"
+- Result: Liquidation hunting attacks neutralized, autonomous management at reasonable price
 
-**관찰 가능한 이점**:
-- 청산 가격 타겟팅 공격 완전 차단
-- 오라클 조작 인센티브 감소
-- 담보 포지션의 안정적 관리 가능
+**Observable Benefits**:
+- Complete blocking of liquidation price targeting attacks
+- Reduced oracle manipulation incentives
+- Stable collateral position management enabled
 
-## 2. "자산 규모 은닉" - 담보를 통한 부 노출 방지
+## 2. "Asset Size Concealment" - Wealth Exposure Prevention Through Collateral
 
-**제품 설명**:
-담보 규모가 노출되면 차입자의 총 자산 규모가 추정되어 표적 공격, 피싱, 사회공학 공격의 대상이 되는 문제를 해결.
+**Product Description**:
+Solving the problem where collateral size exposure allows estimation of borrower's total asset size, becoming target of targeted attacks, phishing, and social engineering attacks.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $5M ETH 담보 노출 → "고가치 타겟" 식별 → 개인 정보 추적, 피싱 공격, 협박 시도
-- ZK DeFi 사용: 담보 규모 비공개, 적정 담보화만 증명 → 자산 규모 추정 불가
-- 결과: 부의 노출 없이 DeFi 대출 이용
+**Typical User Experience**:
+- Without Privacy: $5M ETH collateral exposed → "High-value target" identified → Personal information tracking, phishing attacks, extortion attempts
+- With ZK DeFi: Collateral size private, only adequate collateralization proven → Asset size estimation impossible
+- Result: DeFi lending use without wealth exposure
 
-**관찰 가능한 이점**:
-- 담보를 통한 자산 규모 역추정 차단
-- 고가치 지갑 타겟팅 공격 방지
-- 프라이버시를 유지한 금융 서비스 이용
+**Observable Benefits**:
+- Blocking asset size reverse-estimation through collateral
+- Prevention of high-value wallet targeting attacks
+- Financial service use with privacy maintained
 
-## 3. "카스케이드 청산 방지" - 담보 청산 집중 공격 차단
+## 3. "Cascade Liquidation Prevention" - Collateral Liquidation Concentration Attack Blocking
 
-**제품 설명**:
-특정 가격대에 담보 청산이 집중된 것이 노출되면 의도적으로 해당 가격까지 밀어붙여 연쇄 청산을 유발하는 공격을 방어.
+**Product Description**:
+Defense against attacks that intentionally push to specific price levels to trigger chain liquidations when collateral liquidation concentration at specific price levels is exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "$1,800에 $100M 청산 물량 집중" 노출 → 공격자가 $1,800까지 가격 하락 유도 → 연쇄 청산으로 $1,500까지 폭락
-- ZK DeFi 사용: 청산 가격 분포 불투명 → 청산 집중 지점 파악 불가
-- 결과: 카스케이드 청산 공격 무력화, 시스템 안정성 향상
+**Typical User Experience**:
+- Without Privacy: "$100M liquidation volume concentrated at $1,800" exposed → Attacker induces price decline to $1,800 → Chain liquidation crashes to $1,500
+- With ZK DeFi: Liquidation price distribution opaque → Cannot identify liquidation concentration points
+- Result: Cascade liquidation attacks neutralized, improved system stability
 
-**관찰 가능한 이점**:
-- 청산 물량 집중 지점 노출 방지
-- 의도적 가격 조작 인센티브 제거
-- 프로토콜 전체의 시스템 리스크 감소
+**Observable Benefits**:
+- Prevention of liquidation volume concentration point exposure
+- Elimination of intentional price manipulation incentives
+- Reduced systemic risk across protocol

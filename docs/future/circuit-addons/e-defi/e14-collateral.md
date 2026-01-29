@@ -441,7 +441,7 @@ component main {public [collateralNoteHash, depositNoteHash, lendingPoolCommitme
 
 ## Real-World Products & User Experience
 
-See: [Collateral Deposit/Withdraw - Real-World Products](../../../product/e-defi/e14-collateral-products.md)
+See: [Collateral Deposit/Withdraw - Real-World Products](../../product/e-defi/e14-collateral-products.md)
 ---
 
 [Back to Index](../../README.md)

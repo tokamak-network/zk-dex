@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "프라이빗 컬렉터 네트워크" - 익명 고가 NFT 수집 플랫폼
+## 1. "Private Collector Network" - Anonymous High-Value NFT Collection Platform
 
-**제품 설명**:
-고가 NFT 컬렉터들이 자신의 보유 현황과 거래 내역을 숨긴 채 안전하게 수집 활동을 할 수 있는 플랫폼. 부유한 컬렉터를 노리는 표적 공격과 스토킹으로부터 보호.
+**Product Description**:
+A platform where high-value NFT collectors can safely engage in collecting activities while hiding their holdings and transaction history. Protects wealthy collectors from targeted attacks and stalking.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 고래 지갑이 공개되어 "이 주소가 10억 NFT 보유" 기사 노출, 피싱 공격과 사회공학적 해킹 시도 증가
-- ZK 솔루션 사용: 컬렉터 박진수씨(50세)가 희귀 NFT 수집, 보유 내역은 암호화되어 외부에서 추적 불가
-- 결과: "내가 뭘 가지고 있는지 아무도 몰라서 편하게 수집해요. 예전엔 SNS에서 협박 DM도 받았거든요"
+**General User Experience**:
+- Without Privacy: Whale wallet exposed, leading to articles like "This address holds $1B in NFTs," resulting in increased phishing attacks and social engineering hacking attempts
+- Using ZK Solution: Collector Park Jin-soo (age 50) collects rare NFTs, holdings are encrypted and untraceable by outsiders
+- Result: "It's comfortable to collect knowing nobody knows what I own. I used to get threatening DMs on social media"
 
-**관찰 가능한 이점**:
-- 고액 컬렉터 타겟팅 공격 방지
-- 수집 취향 노출로 인한 가격 조작 방지
-- 안심하고 장기 수집 가능한 환경
+**Observable Benefits**:
+- Prevention of targeted attacks on high-value collectors
+- Prevention of price manipulation through exposure of collecting preferences
+- Safe environment for long-term collecting
 
-## 2. "셀럽 시크릿 갤러리" - 유명인 익명 NFT 수집
+## 2. "Celebrity Secret Gallery" - Anonymous NFT Collection for Public Figures
 
-**제품 설명**:
-연예인, 운동선수, 기업인 등 유명인이 자신의 신원을 숨기고 NFT를 수집할 수 있는 서비스. 팬들의 과도한 관심이나 언론 노출 없이 취미 활동 가능.
+**Product Description**:
+A service that allows celebrities, athletes, and business figures to collect NFTs while hiding their identity. Enables hobby activities without excessive fan attention or media exposure.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "A 연예인이 NFT 구매" 뉴스 → 팬들 동일 NFT 매수 러시 → 가격 폭등 → 조작 의혹
-- ZK 솔루션 사용: 탑배우 K씨가 좋아하는 아티스트 작품 조용히 수집, 누구도 K씨 지갑 추적 불가
-- 결과: "연예인이라고 NFT도 못 사나요? 이제 마음 편히 취미 생활해요"
+**General User Experience**:
+- Without Privacy: News breaks "Celebrity A purchased NFT" → Fans rush to buy same NFT → Price explosion → Manipulation suspicions
+- Using ZK Solution: Top actor K quietly collects works from favorite artists, nobody can track K's wallet
+- Result: "Just because I'm a celebrity doesn't mean I can't buy NFTs. Now I can enjoy my hobby in peace"
 
-**관찰 가능한 이점**:
-- 유명인 지갑 추적으로 인한 시장 왜곡 방지
-- 팬덤에 의한 가격 조작/스토킹 차단
-- 모든 사람이 동등한 조건에서 수집 참여
+**Observable Benefits**:
+- Prevention of market distortion from celebrity wallet tracking
+- Blocking price manipulation/stalking by fan communities
+- Equal conditions for everyone to participate in collecting
 
 ---
 

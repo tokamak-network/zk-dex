@@ -275,7 +275,7 @@ component main {public [threshold, isAccredited, merkleRoot, priceOracleRoot, ve
 
 ## Real-World Products & User Experience
 
-See [Accredited Investor Proof - Products & UX](../../../product/c-privacy/c10-accredited-products.md) for detailed real-world applications and user experience scenarios.
+See [Accredited Investor Proof - Products & UX](../../product/c-privacy/c10-accredited-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

@@ -219,7 +219,7 @@ component main {public [stakeHash, proposalId, convictionPower, currentTime]} =
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Conviction Voting Products & UX](../../../product/d-governance/d3-conviction-products.md)
+참조: [Conviction Voting Products & UX](../../product/d-governance/d3-conviction-products.md)
 
 ---
 

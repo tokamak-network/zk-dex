@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "정확한 점수 숨김 대출" - 금융기관도 모르는 신용점수
+### 1. "Hidden Exact Score Loans" - Credit Score Unknown Even to Financial Institutions
 
-**제품 설명**:
-정확한 신용점수가 알려지면 금융기관이 그 점수에 딱 맞는 금리 제시(협상 여지 없음), 또는 점수 유출 시 사기 타겟. ZK로 "700점 이상" 조건 충족만 증명하고 실제 점수(예: 823점)는 금융기관도 절대 모름.
+**Product Description**:
+When exact credit score is known, financial institutions offer interest rates precisely matched to that score (no negotiation room), or score leaks create fraud targets. ZK proves only "above 700 points" condition met while actual score (e.g., 823 points) absolutely unknown to financial institutions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 정확한 신용점수 823점이 A은행에 알려짐, 은행은 "823점이면 5.2% 금리" 산정해 협상 여지 없이 제시
-- ZK 솔루션 사용: "신용점수 750점 이상" 증명만 제출, 은행은 750점인지 850점인지 모름
-- 결과: 실제 점수 기반 정밀 가격 책정 불가, 소비자 협상력 유지
+**User Experience**:
+- Without Privacy: Exact credit score 823 points known to Bank A, bank calculates "5.2% interest rate for 823 points" and offers with no negotiation room
+- With ZK Solution: Submit only "credit score above 750 points" proof, bank doesn't know whether 750 or 850
+- Result: Precise pricing based on actual score impossible, consumer maintains negotiating power
 
-**관찰 가능한 이점**:
-- 정밀한 신용점수 기반 가격 차별 방지
-- 금융기관의 정보 우위 완화
-- 신용점수 유출로 인한 사기 타겟화 방지
+**Observable Benefits**:
+- Prevents price discrimination based on precise credit scores
+- Mitigates financial institution's information advantage
+- Prevents fraud targeting from credit score leaks
 
-### 2. "신용이력 비공개 취업" - 고용주에게 재무 상태 숨김
+### 2. "Private Credit History Employment" - Hide Financial Status from Employer
 
-**제품 설명**:
-금융권 취업 시 신용조회가 필수인데, 정확한 신용이력(과거 연체, 대출 잔액 등)이 고용주에게 알려지면 채용 차별 우려. ZK로 "신용등급 양호, 현재 연체 없음" 조건만 증명하고 상세 이력은 비공개.
+**Product Description**:
+Credit checks are mandatory for financial sector employment, but exact credit history (past delinquencies, loan balances, etc.) known to employer raises discrimination concerns. ZK proves only "credit grade good, no current delinquencies" conditions while keeping detailed history private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 5년 전 일시적 연체 이력이 있는 지원자, 능력 우수하지만 신용이력 보고 탈락
-- ZK 솔루션 사용: "현재 신용등급 2등급, 최근 2년 연체 없음" 증명만 제출
-- 결과: 과거 일시적 어려움으로 인한 채용 차별 방지
+**User Experience**:
+- Without Privacy: Applicant with temporary delinquency history from 5 years ago, despite excellent abilities, rejected after seeing credit history
+- With ZK Solution: Submit only "current credit grade 2, no delinquencies in recent 2 years" proof
+- Result: Prevents employment discrimination from past temporary difficulties
 
-**관찰 가능한 이점**:
-- 과거 재무 어려움으로 인한 취업 차별 방지
-- 고용주에게 필요한 정보만 제공
-- 개인 재무 프라이버시와 취업 기회 양립
+**Observable Benefits**:
+- Prevents employment discrimination from past financial difficulties
+- Provides only necessary information to employer
+- Balances personal financial privacy with employment opportunities
 
-### 3. "여러 대출 비교해도 점수 안 깎이는 서비스" - 신용조회 영향 없는 대출 쇼핑
+### 3. "No Score Reduction Loan Shopping Service" - Loan Shopping Without Credit Inquiry Impact
 
-**제품 설명**:
-여러 금융기관에 대출 문의하면 각각 신용조회 → 조회 횟수 많아지면 점수 하락. ZK로 한 번 생성한 증명을 여러 금융기관에 제출, 실제 신용조회 없이 조건 확인.
+**Product Description**:
+Inquiring about loans at multiple financial institutions means each credit check → many inquiries lower score. ZK submits proof generated once to multiple financial institutions, verifying conditions without actual credit checks.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 5개 은행에 대출 조건 문의 → 5회 신용조회 → 점수 20점 하락
-- ZK 솔루션 사용: "신용등급 1등급" 증명 한 번 생성해 10개 금융기관에 제출, 실제 조회는 최종 선택한 1곳만
-- 결과: 마음껏 대출 조건 비교해도 신용점수 영향 없음
+**User Experience**:
+- Without Privacy: Inquiring about loan terms at 5 banks → 5 credit checks → score drops 20 points
+- With ZK Solution: Generate "credit grade 1" proof once and submit to 10 financial institutions, actual check only at final chosen 1
+- Result: Compare loan conditions freely without credit score impact
 
-**관찰 가능한 이점**:
-- 신용조회로 인한 점수 하락 방지
-- 소비자의 금융 상품 비교 자유 보장
-- 조회 기록 노출로 인한 "대출 급한 사람" 낙인 방지
+**Observable Benefits**:
+- Prevents score reduction from credit inquiries
+- Guarantees consumer freedom to compare financial products
+- Prevents "desperate for loan" stigma from inquiry record exposure
 
 ---
 

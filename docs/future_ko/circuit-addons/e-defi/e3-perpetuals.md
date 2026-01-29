@@ -365,7 +365,7 @@ component main {public [positionNoteHash, marginNoteHash, marketId,
 
 ## 실제 제품 및 사용자 경험
 
-참조: [무기한 포지션 개설/청산 - 실제 제품](../../../product/e-defi/e3-perpetuals-products.md)
+참조: [무기한 포지션 개설/청산 - 실제 제품](../../product/e-defi/e3-perpetuals-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

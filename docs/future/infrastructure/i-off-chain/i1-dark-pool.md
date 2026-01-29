@@ -230,7 +230,7 @@ component main {public [orderCommitment, nullifier, traderCommitment]} = DarkPoo
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i1-dark-pool-products.md](../../../product/i-off-chain/i1-dark-pool-products.md)
+See: [../../product/i-off-chain/i1-dark-pool-products.md](../../product/i-off-chain/i1-dark-pool-products.md)
 
 ---
 

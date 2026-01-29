@@ -203,7 +203,7 @@ component main {public [voteCommitment, proposalId, votingPower, merkleRoot]} =
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Private Voting Products & UX](../../../product/d-governance/d1-private-voting-products.md)
+참조: [Private Voting Products & UX](../../product/d-governance/d1-private-voting-products.md)
 
 ---
 

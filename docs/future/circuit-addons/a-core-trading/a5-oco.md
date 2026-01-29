@@ -238,7 +238,7 @@ component main {public [noteHash, outputHash, stopLossPrice, takeProfitPrice,
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a5-oco-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a5-oco-products.md)
 
 ---
 

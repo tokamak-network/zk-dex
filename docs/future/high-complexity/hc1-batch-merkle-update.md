@@ -248,7 +248,7 @@ For BATCH_SIZE=16, the sequential approach adds ~10% to proving time but signifi
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc1-batch-merkle-update-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc1-batch-merkle-update-products.md) for detailed product scenarios and use cases.
 
 ---
 

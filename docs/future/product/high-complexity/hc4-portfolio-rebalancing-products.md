@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "알파가드" - 헤지펀드 전략 보호 리밸런싱
+## 1. "AlphaGuard" - Hedge Fund Strategy Protection Rebalancing
 
-**제품 설명**:
-헤지펀드의 포트폴리오 리밸런싱 시 전략, 포지션, 거래 규모를 완전히 숨기는 기관용 자산관리 시스템. 투자자에게는 수익률과 규정 준수만 증명하고, 실제 보유 내역과 리밸런싱 패턴은 영구 비공개입니다.
+**Product Description**:
+An institutional asset management system that completely hides strategies, positions, and trade sizes during hedge fund portfolio rebalancing. Only proves returns and regulatory compliance to investors, while actual holdings and rebalancing patterns remain permanently private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드의 리밸런싱 거래 공개 → 카피트레이딩, 전략 복제, 경쟁 펀드의 역공학
-- 고급 ZK 솔루션: 리밸런싱 전후 상태 커밋먼트만 공개, 실제 거래 내역은 ZK 증명으로 보호
-- 결과: "목표 배분 달성률 99.5%, 규정 준수 확인"만 공개. 어떤 자산을 얼마나 사고팔았는지 비공개
+**User Experience**:
+- Without Privacy: Fund rebalancing trades public → copy trading, strategy replication, competitive fund reverse engineering
+- Advanced ZK Solution: Only pre/post rebalancing state commitments public, actual trade details protected with ZK proofs
+- Result: "Target allocation achieved 99.5%, compliance verified" public. Which assets bought/sold and amounts private
 
-**관찰 가능한 이점**:
-- 독자적 투자 전략 및 알파 소스 완전 보호
-- 포지션 축적/청산 패턴 분석 불가
-- 경쟁사의 역공학 및 전략 복제 차단
+**Observable Benefits**:
+- Proprietary investment strategies and alpha sources fully protected
+- Position accumulation/liquidation patterns cannot be analyzed
+- Blocks competitor reverse engineering and strategy replication
 
-## 2. "컴플라이언스 프루프" - 기관 규제 준수 증명
+## 2. "Compliance Proof" - Institutional Regulatory Compliance Verification
 
-**제품 설명**:
-연기금, 보험사 등 규제 대상 기관이 자산 배분 규정을 준수함을 증명하면서 실제 보유 내역은 숨기는 규제 기술 솔루션.
+**Product Description**:
+A regulatory technology solution that allows regulated institutions like pension funds and insurance companies to prove asset allocation compliance while hiding actual holdings.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 규제 당국에 전체 포트폴리오 제출 → 민감 포지션 노출, 규제 기관 내부 정보 유출 위험
-- 고급 ZK 솔루션: "주식 40% 이하, 해외 자산 30% 이하, 고위험 5% 이하" 조건 충족을 ZK로 증명
-- 결과: 규제 기관은 준수 여부만 확인, 개별 종목/금액은 확인 불가
+**User Experience**:
+- Without Privacy: Submit entire portfolio to regulators → sensitive positions exposed, risk of internal regulator information leaks
+- Advanced ZK Solution: Proves with ZK "equities ≤40%, foreign assets ≤30%, high-risk ≤5%" compliance
+- Result: Regulators only verify compliance status, cannot see individual holdings/amounts
 
-**관찰 가능한 이점**:
-- 규제 준수와 영업 비밀 보호 동시 달성
-- 민감 포지션 정보의 규제 기관 내 유출 방지
-- 실시간 컴플라이언스 검증으로 감사 비용 절감
+**Observable Benefits**:
+- Achieves both regulatory compliance and trade secret protection
+- Prevents sensitive position information leaks within regulatory agencies
+- Real-time compliance verification reduces audit costs
 
-## 3. "프라이빗 패밀리오피스" - 초고액자산가 전략 보호
+## 3. "Private Family Office" - Ultra-High-Net-Worth Strategy Protection
 
-**제품 설명**:
-패밀리오피스의 멀티에셋 리밸런싱 시 자산 규모, 구성, 전략을 완전히 숨기는 UHNW(초고액자산가) 전용 자산관리 플랫폼.
+**Product Description**:
+A UHNW-exclusive asset management platform that completely hides asset scale, composition, and strategy during family office multi-asset rebalancing.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 리밸런싱 거래로 자산 규모 추정 가능 → 타겟 마케팅, 사기 시도, 상속 분쟁 시 증거 수집
-- 고급 ZK 솔루션: 10개 자산 클래스 리밸런싱, 외부에는 아무 정보도 공개 안됨
-- 결과: 가족 구성원 각자도 자신의 지분 비율만 확인, 총 자산 규모나 타 구성원 지분 불명
+**User Experience**:
+- Without Privacy: Rebalancing trades allow asset scale estimation → targeted marketing, fraud attempts, evidence collection for inheritance disputes
+- Advanced ZK Solution: 10 asset class rebalancing, no external information disclosed
+- Result: Each family member only sees their own stake percentage, total asset scale and other members' stakes unknown
 
-**관찰 가능한 이점**:
-- 총 자산 규모 완전 비공개로 보안 위협 최소화
-- 가족 구성원 간 자산 비교 불가로 분쟁 예방
-- 세대 간 자산 이전 전략 기밀 유지
+**Observable Benefits**:
+- Total asset scale completely private, minimizing security threats
+- Asset comparison between family members impossible, preventing disputes
+- Intergenerational wealth transfer strategies kept confidential

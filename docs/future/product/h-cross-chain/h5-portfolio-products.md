@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "총 자산 숨기기" - 전체 포트폴리오 규모 비공개
+## 1. "Total Asset Concealment" - Complete Portfolio Size Privacy
 
-**제품 설명**:
-여러 체인에 분산된 자산을 관리하면서 전체 포트폴리오 규모가 추론되지 않도록 보호하는 서비스. 각 체인 자산을 연결하면 총자산이 노출됩니다.
+**Product Description**:
+A service that protects overall portfolio size from being inferred while managing assets distributed across multiple chains. Total assets are exposed when linking assets across chains.
 
-**일반 사용자 경험**:
-- 강민준씨(32세)는 5개 체인에 총 $500,000 분산 보유
-- 일반 관리: 각 체인 잔액을 더하면 전체 자산 파악됨
-- 프라이빗 관리: 각 체인의 commitment만 집계, 금액은 숨김
-- 민준씨 본인만 "$500K 보유" 확인 가능
-- 외부 분석가는 "이 5개 지갑이 같은 사람인지"도 모름
+**User Experience**:
+- Mr. Kang (32) holds a total of $500,000 distributed across 5 chains
+- Regular management: Total assets can be determined by adding each chain's balance
+- Private management: Only commitments from each chain are aggregated, amounts hidden
+- Only Kang himself can confirm "$500K held"
+- External analysts don't even know "if these 5 wallets belong to the same person"
 
-**관찰 가능한 이점**:
-- 멀티체인 자산 연결 분석 방지
-- 전체 순자산 규모 비공개
-- "고액 자산가" 타겟팅 공격 방지
+**Observable Benefits**:
+- Prevention of multi-chain asset connection analysis
+- Total net worth size remains private
+- Prevention of "high net worth individual" targeting attacks
 
-## 2. "비밀 리밸런싱" - 포트폴리오 조정 패턴 숨김
+## 2. "Secret Rebalancing" - Portfolio Adjustment Pattern Concealment
 
-**제품 설명**:
-포트폴리오 리밸런싱 시 어떤 자산을 얼마나 조정했는지가 외부에 노출되지 않는 프라이빗 리밸런싱 서비스.
+**Product Description**:
+A private rebalancing service where which assets were adjusted by how much during portfolio rebalancing is not exposed externally.
 
-**일반 사용자 경험**:
-- 박지영씨(38세)는 ETH 비중이 높아져 BTC로 리밸런싱 필요
-- 일반 리밸런싱: "$100K ETH 매도, $100K BTC 매수" 패턴 공개
-- 비밀 리밸런싱: 여러 체인에서 동시에 비공개로 조정
-- 외부에서는 어떤 조정이 일어났는지 알 수 없음
-- 리밸런싱 의도(약세 전환?)가 시장에 노출되지 않음
+**User Experience**:
+- Ms. Park (38) needs to rebalance due to high ETH weight into BTC
+- Regular rebalancing: "$100K ETH sell, $100K BTC buy" pattern is public
+- Secret rebalancing: Adjustments made privately across multiple chains simultaneously
+- External observers cannot determine what adjustments occurred
+- Rebalancing intent (bearish shift?) not exposed to market
 
-**관찰 가능한 이점**:
-- 투자 전략 변경이 비공개
-- 리밸런싱이 시장 신호가 되지 않음
-- 대량 리밸런싱의 시장 영향 최소화
+**Observable Benefits**:
+- Investment strategy changes remain private
+- Rebalancing does not become market signal
+- Minimizes market impact of large rebalancing
 
-## 3. "증명 가능한 잔액" - 선택적 공개 자산 증명
+## 3. "Provable Balance" - Selective Disclosure Asset Proof
 
-**제품 설명**:
-전체 포트폴리오를 공개하지 않고 "X 이상 보유"만 증명할 수 있는 선택적 공개 서비스. 대출, 투자 자격 등에 활용됩니다.
+**Product Description**:
+A selective disclosure service that can prove "holding X or more" without revealing entire portfolio. Used for loans, investment qualifications, etc.
 
-**일반 사용자 경험 (기관 관점)**:
-- XYZ 펀드는 투자자에게 "AUM $100M 이상" 증명 필요
-- 일반 증명: 전체 포지션 공개 → 경쟁사에 전략 노출
-- 선택적 증명: "총 자산 ≥ $100M" ZK 증명만 제공
-- 구체적으로 어디에 얼마 투자했는지는 비공개
-- 투자자는 안심, 경쟁사는 전략 파악 불가
+**User Experience (Institutional Perspective)**:
+- XYZ Fund needs to prove "AUM over $100M" to investors
+- Regular proof: Reveals entire positions → exposes strategy to competitors
+- Selective proof: Only provides ZK proof of "total assets ≥ $100M"
+- Specific investment amounts and locations remain private
+- Investors are reassured, competitors cannot determine strategy
 
-**관찰 가능한 이점**:
-- 자격 증명 시 최소 정보만 공개
-- 포트폴리오 구성이 영업 비밀로 보호
-- 규제/감사 요구에 과도한 공개 없이 대응
+**Observable Benefits**:
+- Only minimum information disclosed for qualification proof
+- Portfolio composition protected as trade secret
+- Respond to regulatory/audit requirements without excessive disclosure
 
 ---
 

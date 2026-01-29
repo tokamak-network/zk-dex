@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "스텔스 민트" - 합성자산 대량 발행 시장 영향 방지
+## 1. "Stealth Mint" - Preventing Market Impact of Large Synthetic Asset Issuance
 
-**제품 설명**:
-대형 합성자산 발행이 노출되면 기초자산 시장에서 선행매매가 발생하는 문제를 해결. 예: sETH 대량 민트 → ETH 선행 매수 → 발행자에게 불리한 가격.
+**Product Description**:
+Solving the problem where front-running occurs in underlying asset markets when large synthetic asset issuance is exposed. Example: sETH large mint → ETH front-running buy → unfavorable price for issuer.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $5M sGOLD 민트 의도 노출 → 차익거래자들이 금 선물 선행 매수 → 합성자산 발행가 상승
-- ZK DeFi 사용: 민트 규모와 기초자산 비공개 → 선행매매 불가
-- 결과: 공정한 가격으로 합성자산 발행, 시장 영향 제로
+**Typical User Experience**:
+- Without Privacy: $5M sGOLD mint intent exposed → Arbitrageurs front-run gold futures buying → Synthetic asset issuance price rises
+- With ZK DeFi: Mint size and underlying asset private → Front-running impossible
+- Result: Synthetic asset issuance at fair price, zero market impact
 
-**관찰 가능한 이점**:
-- 대량 민트 시 기초자산 시장 조작 방지
-- 합성자산 발행 전략 보호
-- 발행자와 트레이더 간 정보 비대칭 해소
+**Observable Benefits**:
+- Prevention of underlying asset market manipulation during large mints
+- Protection of synthetic asset issuance strategies
+- Elimination of information asymmetry between issuers and traders
 
-## 2. "청산가 은닉" - 합성자산 담보 청산 사냥 방어
+## 2. "Liquidation Price Concealment" - Synthetic Asset Collateral Liquidation Hunting Defense
 
-**제품 설명**:
-합성자산의 담보비율과 청산가격이 노출되면 오라클 조작을 통해 강제 청산을 유도하는 공격을 방어.
+**Product Description**:
+Defense against attacks inducing forced liquidation through oracle manipulation when synthetic asset collateral ratios and liquidation prices are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 담보비율 155% 포지션 노출 (청산선 150%) → 오라클 공격으로 기초자산 가격 일시 급락 유도 → 강제 청산
-- ZK DeFi 사용: 담보비율과 청산가 비공개 → 공격자가 얼마나 밀어야 하는지 알 수 없음
-- 결과: 오라클 조작 기반 청산 사냥 무력화
+**Typical User Experience**:
+- Without Privacy: 155% collateral ratio position exposed (liquidation line 150%) → Oracle attack induces temporary underlying asset price drop → Forced liquidation
+- With ZK DeFi: Collateral ratio and liquidation price private → Attacker doesn't know how far to push
+- Result: Oracle manipulation-based liquidation hunting neutralized
 
-**관찰 가능한 이점**:
-- 담보 포지션 타겟팅 청산 공격 차단
-- 오라클 조작 인센티브 감소
-- 합성자산 발행자의 포지션 안정성 향상
+**Observable Benefits**:
+- Blocking collateral position targeting liquidation attacks
+- Reduced oracle manipulation incentives
+- Improved stability for synthetic asset issuers' positions
 
-## 3. "인버스 전략 보호" - 숏 합성자산 전략 유출 방지
+## 3. "Inverse Strategy Protection" - Short Synthetic Asset Strategy Leak Prevention
 
-**제품 설명**:
-인버스(역방향) 합성자산 대량 발행이 노출되면 "큰손이 하락에 베팅한다"는 신호가 되어 전략이 무력화되는 문제를 해결.
+**Product Description**:
+Solving the problem where inverse (reverse) synthetic asset large issuance exposure becomes a "big player betting on decline" signal, neutralizing the strategy.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대형 펀드의 sETH-inverse 대량 발행 노출 → 시장 "펀드가 하락 예상" 해석 → 다른 트레이더들도 숏 → 펀드 진입가 불리해짐
-- ZK DeFi 사용: 합성자산 종류와 규모 비공개 → 방향성 베팅 신호 차단
-- 결과: 독자적 투자 판단 보호, 전략 알파 유지
+**Typical User Experience**:
+- Without Privacy: Large fund's sETH-inverse large issuance exposed → Market interprets "fund expects decline" → Other traders also short → Fund's entry price becomes unfavorable
+- With ZK DeFi: Synthetic asset type and size private → Directional betting signal blocked
+- Result: Protection of independent investment judgment, alpha preserved
 
-**관찰 가능한 이점**:
-- 방향성 베팅 전략의 시장 신호화 방지
-- 기관 투자자의 투자 판단 기밀 유지
-- 시장 따라하기(herding) 유도 차단
+**Observable Benefits**:
+- Prevention of directional betting strategies becoming market signals
+- Confidentiality maintained for institutional investor investment decisions
+- Blocking market herding induction

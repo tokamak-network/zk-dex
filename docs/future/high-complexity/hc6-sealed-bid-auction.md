@@ -301,7 +301,7 @@ component main {public [itemHash, bidCommitments, winnerOutputHash,
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc6-sealed-bid-auction-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc6-sealed-bid-auction-products.md) for detailed product scenarios and use cases.
 
 ---
 

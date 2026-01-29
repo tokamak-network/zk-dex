@@ -6,56 +6,56 @@
 
 ## Real-World Products & User Experience
 
-### 1. "스톱헌팅 방어 시스템" - 손절가 노출 방지 거래 서비스
+### 1. "Stop-Hunting Defense System" - Stop Price Exposure Prevention Trading Service
 
-**제품 설명**:
-트레이더가 손절가(stop-loss)를 설정할 때, 이 가격이 시장에 노출되지 않도록 보호하는 서비스. 일반 DEX에서는 손절 주문이 온체인에 공개되어 MEV 봇이 의도적으로 가격을 손절가까지 밀어붙여 청산시킨 후 다시 원래 가격으로 복귀시키는 "스톱헌팅" 공격이 가능함. ZK 손절 주문은 트리거 가격을 숨겨 이 공격을 무력화함.
+**Product Description**:
+A service that protects traders' stop-loss prices from being exposed to the market. On regular DEXs, stop-loss orders are publicly visible on-chain, enabling MEV bots to deliberately push prices to stop-loss levels to trigger liquidations, then revert prices back (stop-hunting attack). ZK stop-loss orders hide trigger prices, neutralizing this attack.
 
-**일반 사용자 경험**:
-- 정트레이더(34세, 전업 트레이더)는 ETH 롱 포지션에 5% 손절 설정
-- 일반 DEX에서는 손절가가 온체인에 공개되어 있음
-- MEV 봇이 다른 트레이더들의 손절가를 분석, 집중된 가격대 파악
-- 순간적으로 가격을 그 가격대까지 밀어 대량 손절 유발 후 복귀 (스톱헌팅)
-- ZK 손절 주문 사용 시 트리거 가격이 암호화되어 MEV 봇이 손절가 파악 불가
-- 스톱헌팅 공격이 불가능해져 정당한 시장 움직임에서만 손절 실행
+**User Experience**:
+- Trader Jung (34, full-time trader) sets 5% stop-loss on ETH long position
+- On regular DEX, stop-loss price is publicly visible on-chain
+- MEV bots analyze other traders' stop-loss prices, identifying concentrated price levels
+- Momentarily pushes price to that level to trigger mass stop-losses, then reverts (stop-hunting)
+- Using ZK stop-loss orders, trigger price is encrypted, MEV bots cannot determine stop-loss price
+- Stop-hunting attacks become impossible, stop-loss only executes on legitimate market movements
 
-**관찰 가능한 이점**:
-- 스톱헌팅/스톱러닝 공격으로부터 보호
-- 인위적 청산 유도 공격 무력화
-- 손절가 정보 유출로 인한 불공정 거래 방지
+**Observable Benefits**:
+- Protection from stop-hunting/stop-running attacks
+- Neutralizes artificial liquidation inducement attacks
+- Prevents unfair trading from stop-loss information leakage
 
-### 2. "청산 가격 비공개 레버리지" - 담보 대출 청산 정보 보호 서비스
+### 2. "Private Liquidation Price Leverage" - Collateral Loan Liquidation Information Protection Service
 
-**제품 설명**:
-DeFi에서 담보 대출을 받을 때, 청산 가격이 노출되지 않도록 하는 서비스. 청산 가격이 공개되면 공격자가 의도적으로 오라클 가격을 조작하거나 시장을 일시적으로 움직여 청산을 유도하고 이익을 취할 수 있음.
+**Product Description**:
+A service that prevents liquidation prices from being exposed when taking collateral loans in DeFi. When liquidation prices are public, attackers can manipulate oracle prices or temporarily move the market to induce liquidations and profit.
 
-**일반 사용자 경험**:
-- 이투자자(45세)는 ETH를 담보로 스테이블코인 대출
-- 일반 프로토콜에서는 "이 지갑은 ETH 가격 $1,500에서 청산" 정보가 공개
-- 고래 트레이더가 일시적으로 $1,500까지 가격을 밀어 청산 유도
-- 청산된 담보를 싸게 획득한 후 가격 복귀로 이익 실현
-- ZK 손절(청산) 시스템에서는 청산 가격이 암호화
-- 공격자가 청산 가격을 알 수 없어 타겟팅된 청산 공격 불가능
+**User Experience**:
+- Investor Lee (45) takes stablecoin loan with ETH collateral
+- Regular protocols publicly reveal "this wallet liquidates at ETH price $1,500"
+- Whale traders temporarily push price to $1,500 to induce liquidation
+- Acquire liquidated collateral cheaply, then profit from price recovery
+- In ZK stop-loss (liquidation) system, liquidation price is encrypted
+- Attackers cannot know liquidation price, making targeted liquidation attacks impossible
 
-**관찰 가능한 이점**:
-- 청산 가격 타겟팅 공격 방지
-- 담보 대출자의 포지션 정보 보호
-- 더 안전한 레버리지 거래 환경 제공
+**Observable Benefits**:
+- Prevents liquidation price targeting attacks
+- Protects collateral borrowers' position information
+- Provides safer leveraged trading environment
 
-### 3. "포지션 비공개 리스크 관리" - 거래 전략 노출 방지 서비스
+### 3. "Private Position Risk Management" - Trading Strategy Exposure Prevention Service
 
-**제품 설명**:
-펀드나 기관 투자자가 리스크 관리를 위해 손절 주문을 설정할 때, 이 정보가 경쟁자나 시장에 노출되지 않도록 하는 서비스. 손절 가격이 알려지면 펀드의 포지션 크기, 리스크 허용도, 거래 전략이 노출됨.
+**Product Description**:
+A service that prevents this information from being exposed to competitors or the market when funds or institutional investors set stop-loss orders for risk management. When stop-loss prices are known, the fund's position size, risk tolerance, and trading strategies are revealed.
 
-**일반 사용자 경험**:
-- 박펀드매니저(50세, 크립토 헤지펀드)는 수백억 원 규모 포지션 운용
-- 손절 주문을 공개 DEX에 설정하면 경쟁 펀드가 분석 가능
-- "A펀드는 10% 손실에서 항상 손절한다" 패턴이 파악되면 전략 노출
-- 경쟁자가 이 정보를 이용해 역으로 수익 추구 가능
-- ZK 손절 시스템으로 트리거 가격과 수량 모두 비공개
-- 펀드의 리스크 관리 전략이 시장에 노출되지 않음
+**User Experience**:
+- Fund Manager Park (50, crypto hedge fund) manages positions worth hundreds of millions
+- Setting stop-loss orders on public DEX allows competitor funds to analyze
+- Pattern of "Fund A always stops out at 10% loss" gets identified, strategy exposed
+- Competitors can use this information to pursue reverse profits
+- Using ZK stop-loss system keeps both trigger price and quantity private
+- Fund's risk management strategy not exposed to market
 
-**관찰 가능한 이점**:
-- 기관의 거래 전략 및 리스크 관리 패턴 비공개
-- 경쟁자의 정보 이용 방지
-- 공정한 시장 환경에서 순수 실력으로 경쟁 가능
+**Observable Benefits**:
+- Keeps institutional trading strategies and risk management patterns private
+- Prevents competitors from exploiting information
+- Enables competition based on pure skill in fair market environment

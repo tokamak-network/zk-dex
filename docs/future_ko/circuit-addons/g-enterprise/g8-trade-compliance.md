@@ -337,7 +337,7 @@ component main {public [tradeCommitment, exporterCommit, complianceRoot, jurisdi
 
 ## 실제 제품 및 사용자 경험
 
-자세한 제품 설명 및 사용자 경험 시나리오는 [실제 제품 및 사용자 경험](../../../product/g-enterprise/g8-trade-compliance-products.md)을 참조하십시오.
+자세한 제품 설명 및 사용자 경험 시나리오는 [실제 제품 및 사용자 경험](../../product/g-enterprise/g8-trade-compliance-products.md)을 참조하십시오.
 
 ---
 

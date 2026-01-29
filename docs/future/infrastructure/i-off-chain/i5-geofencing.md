@@ -223,7 +223,7 @@ component main {public [jurisdictionCommitment, userCommitment, timestamp, allow
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i5-geofencing-products.md](../../../product/i-off-chain/i5-geofencing-products.md)
+See: [../../product/i-off-chain/i5-geofencing-products.md](../../product/i-off-chain/i5-geofencing-products.md)
 
 ---
 

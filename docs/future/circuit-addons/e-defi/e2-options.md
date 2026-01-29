@@ -326,7 +326,7 @@ component main {public [optionNoteHash, collateralNoteHash, premiumNoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Options Write/Exercise - Real-World Products](../../../product/e-defi/e2-options-products.md)
+See: [Options Write/Exercise - Real-World Products](../../product/e-defi/e2-options-products.md)
 
 ---
 

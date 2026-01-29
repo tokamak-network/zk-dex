@@ -231,6 +231,499 @@ Advanced features with >300K constraints requiring significant prover resources.
 
 ---
 
+## Real-World Use Cases by Category
+
+Each feature in the ZK-DEX roadmap includes detailed product scenarios demonstrating real-world privacy value. Below are all use case titles extracted from the product documentation, organized by category.
+
+### A. Core Trading (8 features, 24 use cases)
+
+**A1. Batch Transfer** ([Product Doc](product/a-core-trading/a1-batch-transfer-products.md))
+- Confidential Corporate Payroll System
+- Anonymous Donation Pool
+- DAO Grant Privacy Distribution
+
+**A2. Partial Fill Orders** ([Product Doc](product/a-core-trading/a2-partial-fill-products.md))
+- Whale Stealth Trading System
+- Corporate Acquisition Silent Accumulation Service
+- OTC Trade Information Shield
+
+**A3. Stop-Loss Order** ([Product Doc](product/a-core-trading/a3-stop-loss-products.md))
+- Stop-Hunting Defense System
+- Private Liquidation Price Leverage
+- Private Position Risk Management
+
+**A4. Take-Profit Order** ([Product Doc](product/a-core-trading/a4-take-profit-products.md))
+- Private Exit Strategy System
+- Institutional Exit Privacy
+- Front-Running Prevention Take-Profit Order
+
+**A5. OCO Order** ([Product Doc](product/a-core-trading/a5-oco-products.md))
+- Fully Private Bracket Order
+- Institutional Position Full Protection
+- Complete MEV Block Bracket
+
+**A6. Grid Trading** ([Product Doc](product/a-core-trading/a6-grid-trading-products.md))
+- Hidden Grid Level Market Making
+- Market Maker Inventory Privacy
+- Institutional-Grade Private AMM
+
+**A7. Auction** ([Product Doc](product/a-core-trading/a7-auction-products.md))
+- Sealed Bid Auction
+- Liquidation Auction Privacy
+- DAO Asset Sale Private Auction
+
+**A8. TWAP Order** ([Product Doc](product/a-core-trading/a8-twap-products.md))
+- Institutional Accumulation Stealth System
+- Project Token Quiet Selling
+- DAO Treasury Privacy
+
+### B. Time Conditions (6 features, 18 use cases)
+
+**B1. Time-Locked Notes** ([Product Doc](product/b-time-conditions/b1-time-lock-products.md))
+- Private Vesting Schedule
+- Anonymous Inheritance
+- Confidential Investment Lockup
+
+**B2. Multi-Signature Notes** ([Product Doc](product/b-time-conditions/b2-multisig-products.md))
+- Anonymous DAO Governance
+- Corporate Finance Privacy
+- Whistleblower Protection Fund
+
+**B3. Conditional Payment** ([Product Doc](product/b-time-conditions/b3-conditional-products.md))
+- Confidential M&A Conditional Payment
+- Anonymous Political Pledge Deposit
+- Confidential Trade Trigger
+
+**B4. Streaming Payment** ([Product Doc](product/b-time-conditions/b4-streaming-products.md))
+- Private Salary Streaming
+- Anonymous Creator Support
+- Confidential Advisory Fees
+
+**B5. Escrow with Timeout** ([Product Doc](product/b-time-conditions/b5-escrow-products.md))
+- Confidential Negotiation Escrow
+- Anonymous Dispute Arbitration
+- Sensitive Transaction Protection
+
+**B6. DCA** ([Product Doc](product/b-time-conditions/b6-dca-products.md))
+- Whale Tracking Prevention DCA
+- DAO Treasury Diversification Anonymization
+- Anonymous Political Fund Accumulation
+
+### C. Privacy (10 features, 30 use cases)
+
+**C1. Ring Signature** ([Product Doc](product/c-privacy/c1-ring-signature-products.md))
+- Anonymous Donation Platform
+- Whistleblower Protection System
+- Privacy Payroll System
+
+**C2. Privacy Pool Deposit** ([Product Doc](product/c-privacy/c2-pool-deposit-products.md))
+- Privacy Savings Account
+- Salary Privacy Bridge
+- Crowdfunding Anonymous Support
+
+**C3. Privacy Pool Withdraw** ([Product Doc](product/c-privacy/c3-pool-withdraw-products.md))
+- Privacy Savings Account
+- Exchange Privacy Bridge
+- Anonymous Payment Receipt
+
+**C4. Stealth Address** ([Product Doc](product/c-privacy/c4-stealth-address-products.md))
+- Disposable Payment Address Generator
+- Freelancer Anonymous Invoice
+- Sponsor Appreciation System
+
+**C5. Selective Disclosure** ([Product Doc](product/c-privacy/c5-selective-disclosure-products.md))
+- Identity Verification without Full Disclosure
+- Token Holding Authentication
+- Transaction Range Proof
+
+**C6. View Key Delegation** ([Product Doc](product/c-privacy/c6-view-key-products.md))
+- Privacy-Protected Tax Agency
+- Audit Response Privacy System
+- Divorce Litigation Asset Protection
+
+**C7. Compliance Proof** ([Product Doc](product/c-privacy/c7-compliance-products.md))
+- International Remittance Privacy Service
+- Exchange Withdrawal Tracking Prevention
+- Corporate Transaction Confidentiality Protection
+
+**C8. Income Range Proof** ([Product Doc](product/c-privacy/c8-income-range-products.md))
+- Income-Based Discrimination Prevention Loan
+- Rent Negotiation Power Protection
+- Dignity-Protecting Welfare Application
+
+**C9. Sanctions Compliance** ([Product Doc](product/c-privacy/c9-sanctions-products.md))
+- Transaction History Protection Sanctions Verification
+- DeFi Participant Privacy Protection
+- Trading Partner Mutual Anonymous Verification
+
+**C10. Accredited Investor** ([Product Doc](product/c-privacy/c10-accredited-products.md))
+- Investment Qualification Proof Service
+- Real Estate Syndication Qualification Verification
+- STO Automatic Whitelist
+
+### D. Governance (8 features, 24 use cases)
+
+**D1. Private Voting** ([Product Doc](product/d-governance/d1-private-voting-products.md))
+- Union Strike Voting System
+- DAO Whale Protection Voting
+- Whistleblower Proposal Submission
+
+**D2. Quadratic Voting** ([Product Doc](product/d-governance/d2-quadratic-products.md))
+- DAO Budget Allocation Secret Voting
+- Sensitive Issue Preference Voting
+- Executive Performance Evaluation Voting
+
+**D3. Conviction Voting** ([Product Doc](product/d-governance/d3-conviction-products.md))
+- Anonymous Long-Term Support Voting
+- Secret Support Withdrawal System
+- Flash Loan Prevention + Privacy Voting
+
+**D4. Delegated Voting** ([Product Doc](product/d-governance/d4-delegated-products.md))
+- Secret Delegation Network
+- Institutional Voting Strategy Protection
+- Insider Protection Delegation
+
+**D5. Rage Quit** ([Product Doc](product/d-governance/d5-rage-quit-products.md))
+- Anonymous Mass Exit Warning System
+- Insider Quiet Exit
+- Opposition Retaliation Prevention Exit
+
+**D6. Proposal Bond** ([Product Doc](product/d-governance/d6-proposal-bond-products.md))
+- Anonymous Whistleblower Proposal Submission
+- Controversial Proposal Anonymous Submission
+- Competitor Confidentiality Proposal
+
+**D7. Snapshot Voting** ([Product Doc](product/d-governance/d7-snapshot-products.md))
+- Whale Holdings Confidentiality Snapshot
+- Historical Holdings Anonymous Proof
+- Multi-Chain Anonymous Aggregated Voting
+
+**D8. Proof of Reserves** ([Product Doc](product/d-governance/d8-reserves-products.md))
+- Exchange Solvency Proof
+- DAO Treasury Soundness Verification
+- Stablecoin Collateral Secret Proof
+
+### E. DeFi (15 features, 45 use cases)
+
+**E1. Private AMM** ([Product Doc](product/e-defi/e1-private-amm-products.md))
+- Whale Swap
+- Secret Rebalancer
+- Stealth Liquidation Defense
+
+**E2. Options** ([Product Doc](product/e-defi/e2-options-products.md))
+- Stealth Put
+- Secret Covered Call
+- Hidden Strike
+
+**E3. Perpetuals** ([Product Doc](product/e-defi/e3-perpetuals-products.md))
+- Liquidation Shield
+- Ghost Trading
+- Funding Rate Exploit Defense
+
+**E4. Insurance** ([Product Doc](product/e-defi/e4-insurance-products.md))
+- Hack Insurance Stealth
+- Claim Panic Defense
+- Exploit Detection Defense
+
+**E5. Synthetics** ([Product Doc](product/e-defi/e5-synthetics-products.md))
+- Stealth Mint
+- Liquidation Price Concealment
+- Inverse Strategy Protection
+
+**E6. Bonds** ([Product Doc](product/e-defi/e6-bonds-products.md))
+- Issuance Size Concealment
+- Maturity Cliff Defense
+- Interest Rate Signal Blocking
+
+**E7. Liquidity** ([Product Doc](product/e-defi/e7-liquidity-products.md))
+- LP Stealth
+- IL Calculation Blocking
+- Whale Tracking Prevention
+
+**E8. Staking** ([Product Doc](product/e-defi/e8-staking-products.md))
+- Governance Anonymity
+- Slashing Target Defense
+- Unstaking Rush Prevention
+
+**E9. Yield Claim** ([Product Doc](product/e-defi/e9-yield-products.md))
+- Yield Reverse-Tracking Blocking
+- Strategy Leak Prevention
+- Claim Rush Prevention
+
+**E10. Leverage** ([Product Doc](product/e-defi/e10-leverage-products.md))
+- Liquidation Hunting Defense
+- Loan Size Concealment
+- Cascade Liquidation Prevention
+
+**E11. Range Order** ([Product Doc](product/e-defi/e11-range-order-products.md))
+- Hidden Limit
+- Range Strategy Protection
+- Support/Resistance Concealment
+
+**E12. Portfolio Rebalance** ([Product Doc](product/e-defi/e12-rebalance-products.md))
+- Rebalancing Front-Run Defense
+- Strategy Replication Blocking
+- Herding Signal Blocking
+
+**E13. Flash Loan** ([Product Doc](product/e-defi/e13-flash-loan-products.md))
+- Arbitrage Strategy Protection
+- Opportunity Size Concealment
+- Liquidation Strategy Protection
+
+**E14. Collateral Deposit** ([Product Doc](product/e-defi/e14-collateral-products.md))
+- Liquidation Hunting Defense
+- Asset Size Concealment
+- Cascade Liquidation Prevention
+
+**E15. Loan Repay** ([Product Doc](product/e-defi/e15-loan-repay-products.md))
+- Repayment Pattern Protection
+- Debt Size Concealment
+- Early Repayment Signal Blocking
+
+### F. NFT & Gaming (10 features, 20 use cases)
+
+**F1. Private NFT Transfer** ([Product Doc](product/f-nft-gaming/f1-nft-transfer-products.md))
+- Private Collector Network
+- Celebrity Secret Gallery
+
+**F2. Blind Auction** ([Product Doc](product/f-nft-gaming/f2-blind-auction-products.md))
+- Anti-Sniping Auction House
+- Collusion-Proof Limited Drop
+
+**F3. NFT Fractionalize** ([Product Doc](product/f-nft-gaming/f3-fractionalize-products.md))
+- Anonymous Stake Investment
+- Secret Guild Vault
+
+**F4. Loot Box** ([Product Doc](product/f-nft-gaming/f4-loot-box-products.md))
+- Secret Loot Box
+- Anti-Sniping Mystery Minting
+
+**F5. Gaming Item Trade** ([Product Doc](product/f-nft-gaming/f5-gaming-items-products.md))
+- Stealth Inventory
+- Secret Guild Armory
+
+**F6. Tournament Entry** ([Product Doc](product/f-nft-gaming/f6-tournament-products.md))
+- Blind Tournament
+- Secret Stakes
+
+**F7. Achievement Proof** ([Product Doc](product/f-nft-gaming/f7-achievement-products.md))
+- Smurf Shield
+- Secret Trophy
+
+**F8. Card Draw** ([Product Doc](product/f-nft-gaming/f8-card-draw-products.md))
+- Secret Hand
+- Fair Play TCG
+
+**F9. NFT Rental** ([Product Doc](product/f-nft-gaming/f9-rental-products.md))
+- Secret Rental
+- Anonymous Scholarship
+
+**F10. Royalty Payment** ([Product Doc](product/f-nft-gaming/f10-royalty-products.md))
+- Stealth Royalty
+- Secret Revenue Distribution
+
+### G. Enterprise (8 features, 24 use cases)
+
+**G1. Private Payroll** ([Product Doc](product/g-enterprise/g1-payroll-products.md))
+- Competitor-Blocking Payroll System
+- Employee Privacy Payroll Proof
+- Personnel Cost Structure Confidentiality Protection
+
+**G2. Supply Chain** ([Product Doc](product/g-enterprise/g2-supply-chain-products.md))
+- Supplier Confidentiality Protection System
+- Transaction Volume Confidentiality
+- Cost Structure Concealment System
+
+**G3. Invoice Factoring** ([Product Doc](product/g-enterprise/g3-invoice-products.md))
+- Transaction Scale Confidentiality
+- Pricing Policy Protection
+- Cash Flow Status Concealment
+
+**G4. Tax Report** ([Product Doc](product/g-enterprise/g4-tax-report-products.md))
+- Private Financial Structure Tax Filing
+- Client Confidential VAT Filing
+- Personal Financial Privacy Tax Filing
+
+**G5. Audit Disclosure** ([Product Doc](product/g-enterprise/g5-audit-products.md))
+- M&A Negotiation Selective Disclosure Audit
+- Confidential Audit for Loan Review
+- Inter-Department Internal Audit
+
+**G6. KYC Verify** ([Product Doc](product/g-enterprise/g6-kyc-products.md))
+- Identity Verification, Identity Not Stored
+- Anonymous Qualified Investor Certification
+- Identity Unlinkability Across Services
+
+**G7. Credit Score Range** ([Product Doc](product/g-enterprise/g7-credit-products.md))
+- Hidden Exact Score Loans
+- Private Credit History Employment
+- No Score Reduction Loan Shopping Service
+
+**G8. Trade Compliance** ([Product Doc](product/g-enterprise/g8-trade-compliance-products.md))
+- Export Buyer Confidentiality
+- Technology Export Spec Privacy
+- Sanction Screening Untraceability
+
+### H. Cross-Chain (7 features, 21 use cases)
+
+**H1. ZK Light Client Bridge** ([Product Doc](product/h-cross-chain/h1-light-client-products.md))
+- Private Bridge
+- Anonymous Cross-Chain Portfolio
+- Stealth Cross-Chain Remittance
+
+**H2. HTLC Atomic Swap** ([Product Doc](product/h-cross-chain/h2-htlc-products.md))
+- Chain Link Breaker
+- Secret Cross-Chain OTC
+- Private Onramp
+
+**H3. Wrapped Asset Bridge** ([Product Doc](product/h-cross-chain/h3-wrapped-asset-products.md))
+- Hidden Wrapping Amount
+- Origin Concealment Wrapping
+- Selective Disclosure Wrapping
+
+**H4. Cross-Chain Messaging** ([Product Doc](product/h-cross-chain/h4-messaging-products.md))
+- Metadata Concealment Messaging
+- Private Cross-Chain Instructions
+- Anonymous Cross-Chain Voting
+
+**H5. Multi-Chain Portfolio** ([Product Doc](product/h-cross-chain/h5-portfolio-products.md))
+- Total Asset Concealment
+- Secret Rebalancing
+- Provable Balance
+
+**H6. Cross-Chain Arbitrage** ([Product Doc](product/h-cross-chain/h6-arbitrage-products.md))
+- Hidden Arbitrage
+- MEV-Protected Cross-Chain
+- Private Profit Accumulation
+
+**H7. Rollup Settlement** ([Product Doc](product/h-cross-chain/h7-rollup-products.md))
+- Sequencer Blind Rollup
+- In-Batch Privacy
+- DA Layer Privacy
+
+### I. Off-Chain (3 features, 9 use cases)
+
+**I1. Dark Pool** ([Product Doc](product/i-off-chain/i1-dark-pool-products.md))
+- Fully Private Exchange
+- Identity-Isolated Matching
+- Pattern Prevention Execution
+
+**I2. RFQ System** ([Product Doc](product/i-off-chain/i2-rfq-products.md))
+- Private Quote Request
+- Quote Content Privacy
+- Transaction History Isolation
+
+**I3. Yield Aggregator** ([Product Doc](product/i-off-chain/i3-yield-aggregator-products.md))
+- Hidden Deposit Size
+- Strategy Allocation Privacy
+- Rebalancing Concealment
+
+### J. Protocol (8 features, 24 use cases)
+
+**J1. Recursive Aggregation** ([Product Doc](product/j-protocol/j1-recursive-products.md))
+- Privacy Shield Exchange
+- Anonymous Payroll Network
+- Private Voting Federation
+
+**J2. Proof Compression** ([Product Doc](product/j-protocol/j2-compression-products.md))
+- Mobile Privacy Wallet
+- Anonymous Micropayments Network
+- Private Healthcare Records
+
+**J3. State Channels** ([Product Doc](product/j-protocol/j3-state-channels-products.md))
+- Private Gaming Lounge
+- Confidential Messenger Payments
+- Anonymous Trading Desk
+
+**J4. Optimistic Rollup** ([Product Doc](product/j-protocol/j4-optimistic-products.md))
+- Fast-Track Private Transfers
+- Private Subscription Service
+- Instant Private Exchange
+
+**J5. Hardware Acceleration** ([Product Doc](product/j-protocol/j5-hardware-products.md))
+- Personal Privacy Device
+- Private ATM Network
+- Enterprise Privacy Server
+
+**J6. Witness Encryption** ([Product Doc](product/j-protocol/j6-witness-encryption-products.md))
+- Time-Locked Inheritance
+- Private Bounty Platform
+- Conditional Escrow Network
+
+**J7. VDF Integration** ([Product Doc](product/j-protocol/j7-vdf-products.md))
+- Fair Launch Lottery
+- Private Auction Sealer
+- Time-Release Secrets
+
+**J8. Threshold Signatures** ([Product Doc](product/j-protocol/j8-threshold-sig-products.md))
+- Family Wealth Protection
+- Corporate Treasury Privacy
+- DAO Privacy Council
+
+### HC. High Complexity (10 features, 30 use cases)
+
+**HC1. Batch Merkle Update** ([Product Doc](product/high-complexity/hc1-batch-merkle-update-products.md))
+- Secret Payroll
+- Anonymous Settlement
+- Private Vending
+
+**HC2. Multi-Asset Atomic Swap** ([Product Doc](product/high-complexity/hc2-multi-asset-atomic-swap-products.md))
+- Secret OTC
+- Private Netting
+- Anonymous LP Swap
+
+**HC3. Private Order Book Match** ([Product Doc](product/high-complexity/hc3-private-order-book-match-products.md))
+- Fully Encrypted Dark Pool
+- Institutional RFQ
+- Private Primary
+
+**HC4. Portfolio Rebalancing** ([Product Doc](product/high-complexity/hc4-portfolio-rebalancing-products.md))
+- AlphaGuard
+- Compliance Proof
+- Private Family Office
+
+**HC5. Batch Liquidation** ([Product Doc](product/high-complexity/hc5-batch-liquidation-products.md))
+- Private Liquidator
+- Anonymous Deleveraging
+- Systemic Shield
+
+**HC6. Sealed-Bid Auction** ([Product Doc](product/high-complexity/hc6-sealed-bid-auction-products.md))
+- Private M&A
+- Secret IP Auction
+- Anonymous Real Estate Bidding
+
+**HC7. Multi-Hop Transfer** ([Product Doc](product/high-complexity/hc7-multi-hop-transfer-products.md))
+- Institutional Routing
+- Private Treasury
+- Anonymous M&A Funding
+
+**HC8. Private Credit Score** ([Product Doc](product/high-complexity/hc8-private-credit-score-products.md))
+- Institutional Credit
+- Private Underwriting
+- Multi-Source Credit
+
+**HC9. Aggregate Signatures** ([Product Doc](product/high-complexity/hc9-aggregate-signatures-products.md))
+- Anonymous Governance
+- Private Validator
+- Anonymous Multisig
+
+**HC10. Private Index Fund** ([Product Doc](product/high-complexity/hc10-private-index-fund-products.md))
+- Secret Alpha
+- Invisible Treasury
+- Stealth Fund
+
+### Summary Statistics
+
+- **Total Categories with Use Cases**: 11 (A, B, C, D, E, F, G, H, I, J, HC)
+- **Total Features Documented**: 93 (I4-I10 are placeholders with 7 features pending)
+- **Total Use Cases**: 269
+- **Average Use Cases per Feature**: ~3
+- **Coverage**: 93 out of 100 features have detailed product scenarios
+
+**Note**: Categories I (Off-Chain) has 3 features with use cases; I4-I10 (7 features) are placeholders awaiting detailed product documentation. Each documented feature includes 2-3 comprehensive use cases with user personas, scenarios, and observable benefits.
+
+---
+
 ## References
 
 - [ZKDIP-1: Fungible Smart Notes](../zkdip/zkdip-1.md)

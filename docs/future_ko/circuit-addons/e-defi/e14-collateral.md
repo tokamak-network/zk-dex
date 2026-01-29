@@ -19,7 +19,7 @@ Aave 및 Compound와 같은 현재 대출 프로토콜은 모든 담보 매개�
 
 ## 실제 제품 및 사용자 경험
 
-참조: [담보 예치/출금 - 실제 제품](../../../product/e-defi/e14-collateral-products.md)
+참조: [담보 예치/출금 - 실제 제품](../../product/e-defi/e14-collateral-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

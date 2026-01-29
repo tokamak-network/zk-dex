@@ -239,7 +239,7 @@ component main {public [companyNoteHash, totalPayout, payrollRoot, outputNotesRo
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g1-payroll-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g1-payroll-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

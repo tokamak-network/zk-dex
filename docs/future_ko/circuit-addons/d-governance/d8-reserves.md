@@ -239,7 +239,7 @@ component main {public [merkleRoot, minReserves, tokenType, entityCommitment, at
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Proof of Reserves Products & UX](../../../product/d-governance/d8-reserves-products.md)
+참조: [Proof of Reserves Products & UX](../../product/d-governance/d8-reserves-products.md)
 
 ---
 

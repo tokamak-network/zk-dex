@@ -211,7 +211,7 @@ component main {public [proposalId, stakeCommitment, prediction, nullifier]} = H
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i8-holographic-products.md](../../../product/i-off-chain/i8-holographic-products.md)
+See: [../../product/i-off-chain/i8-holographic-products.md](../../product/i-off-chain/i8-holographic-products.md)
 
 ---
 

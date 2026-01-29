@@ -371,7 +371,7 @@ component main {public [bondNoteHash, principalNoteHash, issuerCommitment,
 
 ## Real-World Products & User Experience
 
-See: [Bond Issue/Redeem - Real-World Products](../../../product/e-defi/e6-bonds-products.md)
+See: [Bond Issue/Redeem - Real-World Products](../../product/e-defi/e6-bonds-products.md)
 ---
 
 [Back to Index](../../README.md)

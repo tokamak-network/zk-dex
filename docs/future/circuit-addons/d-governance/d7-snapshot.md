@@ -218,7 +218,7 @@ component main {public [voteCommitment, proposalId, snapshotBlock, historicalRoo
 
 ## Real-World Products & User Experience
 
-See: [Snapshot Voting Products & UX](../../../product/d-governance/d7-snapshot-products.md)
+See: [Snapshot Voting Products & UX](../../product/d-governance/d7-snapshot-products.md)
 
 ---
 

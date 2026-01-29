@@ -4,57 +4,57 @@
 
 ---
 
-## 1. "비밀 M&A 조건부 결제" - 인수합병 조건 비공개 거래
+## 1. "Confidential M&A Conditional Payment" - Private Terms for Mergers & Acquisitions
 
-**제품 설명**:
-기업 인수합병에서 특정 조건(규제 승인, 실사 완료, 주가 조건 등) 충족 시 대금이 자동 지급되는 시스템. 조건 내용과 금액이 완전히 비공개로 유지되어 협상 중 정보 유출로 인한 피해 방지.
+**Product Description**:
+A system where payment is automatically released when specific conditions are met in corporate M&A (regulatory approval, due diligence completion, stock price conditions, etc.). Condition details and amounts remain completely private, preventing damage from information leaks during negotiations.
 
-**일반 사용자 경험**:
-- 테크 기업 "클라우드원"의 CEO 김현수씨(48세)는 경쟁사 인수 협상 중
-- 인수 조건: "규제 승인 완료 + 대상 기업 주가 $50 이하 유지 시 8억 달러 지급"
-- 기존 공개 스마트 컨트랙트 사용 시 → 시장이 조건 파악 → 주가 조작 시도, 경쟁사 방해 공작
-- ZK 조건부 결제 설정: 조건 유형, 임계값, 금액 모두 비공개
-- 오라클이 조건 충족 확인 시 자동 실행, 외부에서는 "어떤 조건이 충족됐는지"도 알 수 없음
-- 경쟁사나 투기꾼의 방해 없이 안전하게 M&A 완료
+**General User Experience**:
+- Hyun-soo Kim (48), CEO of tech company "CloudOne," is in competitor acquisition negotiations
+- Acquisition terms: "If regulatory approval completed + target company stock price stays below $50, pay $800M"
+- Using existing public smart contracts → market identifies conditions → price manipulation attempts, competitor sabotage
+- Sets up ZK conditional payment: condition type, threshold, amount all private
+- When oracle confirms conditions met, automatically executes; outsiders cannot know "which conditions were met"
+- M&A completed safely without interference from competitors or speculators
 
-**관찰 가능한 이점**:
-- M&A 조건 공개로 인한 주가 조작, 시장 교란 방지
-- 협상 레버리지 유지 (상대방이 "어떤 조건에 돈이 나가는지" 추론 불가)
-- 경쟁사가 동일 조건으로 선제적 인수 시도하는 것 차단
+**Observable Benefits**:
+- Prevents price manipulation and market disruption due to M&A condition disclosure
+- Maintains negotiation leverage (counterparty cannot infer "what conditions trigger payment")
+- Blocks competitors from preemptive acquisition attempts under identical terms
 
-## 2. "익명 정치 서약금" - 공약 이행 연동 비공개 후원
+## 2. "Anonymous Political Pledge Deposit" - Private Donations Tied to Promise Fulfillment
 
-**제품 설명**:
-정치인이 특정 공약을 이행할 경우에만 후원금이 전달되는 조건부 기부 시스템. 후원자의 신원과 후원 금액이 완전히 비공개로 유지되어 정치적 보복이나 사회적 압력 방지.
+**Product Description**:
+A conditional donation system where contributions are delivered only if politicians fulfill specific pledges. Donor identity and donation amounts remain completely private, preventing political retaliation or social pressure.
 
-**일반 사용자 경험**:
-- 사업가 박진우씨(55세)는 환경 정책에 관심이 있지만, 정치 후원 사실이 알려지면 사업에 악영향 우려
-- 특정 시장 후보의 "탄소중립 조례 통과 시 5천만원 후원" 조건 설정
-- 기존 정치자금은 기부자 명단이 공개되어 정치 성향 노출 필연적
-- ZK 조건부 결제: 후원자, 금액, 조건 모두 비공개
-- 시장 당선 후 탄소중립 조례 통과 → 자동으로 5천만원 전달
-- 시장실은 "누군가 환경 공약 이행에 후원했다"는 것만 알 뿐, 박진우씨 특정 불가
-- 박진우씨는 정치 성향 노출 없이 원하는 정책을 재정적으로 지원
+**General User Experience**:
+- Businessman Jin-woo Park (55) is interested in environmental policy but fears business repercussions if political donations become known
+- Sets condition for mayoral candidate: "50M KRW donation if carbon-neutral ordinance passes"
+- Existing political funds require disclosure of donor lists, inevitably exposing political leanings
+- ZK conditional payment: donor, amount, conditions all private
+- After mayor elected and carbon-neutral ordinance passes → automatically delivers 50M KRW
+- Mayor's office only knows "someone donated for environmental pledge fulfillment," cannot identify Park Jin-woo
+- Park Jin-woo financially supports desired policy without exposing political orientation
 
-**관찰 가능한 이점**:
-- 정치 후원으로 인한 사업적, 사회적 불이익 방지
-- 후원자-정치인 간 유착 의혹 원천 차단 (조건 기반이므로 대가성 X)
-- 다양한 정치 성향의 시민이 부담 없이 정책 기반 후원 참여 가능
+**Observable Benefits**:
+- Prevents business and social disadvantages from political donations
+- Blocks suspicion of collusion between donor and politician (condition-based, so no quid pro quo)
+- Enables diverse political orientations of citizens to participate in policy-based donations without burden
 
-## 3. "기밀 거래 트리거" - 가격 조건 비공개 자동 매매
+## 3. "Confidential Trade Trigger" - Private Price-Condition Automated Trading
 
-**제품 설명**:
-특정 가격 조건 충족 시 자동으로 거래가 실행되는 서비스. 목표 가격과 거래 규모가 비공개로 유지되어 시장 참여자들의 프런트러닝이나 가격 조작 방지.
+**Product Description**:
+A service where trades automatically execute when specific price conditions are met. Target price and trade size remain private, preventing market participants' front-running or price manipulation.
 
-**일반 사용자 경험**:
-- 자산운용사 "알파캐피탈"의 트레이더 이서연씨(35세)는 대규모 ETH 매수 계획
-- 조건: "ETH가 $3,000 이하로 하락 시 500만 달러 매수"
-- 기존 공개 주문은 시장에 노출 → 다른 트레이더들이 $3,000 직전에 선매수 후 가격 상승시켜 조건 충족 방해
-- ZK 조건부 결제 설정: 가격 조건, 수량 모두 비공개
-- ETH $2,950 도달 → 자동 매수 실행, 시장은 "누군가 샀다"만 인지
-- 프런트러닝 없이 원하는 가격에 대량 매수 성공
+**General User Experience**:
+- Trader Seo-yeon Lee (35) at asset management firm "AlphaCapital" plans large-scale ETH purchase
+- Condition: "If ETH drops below $3,000, buy $5M"
+- Existing public orders are exposed to market → other traders front-run just before $3,000, driving price up and preventing condition fulfillment
+- Sets up ZK conditional payment: price condition and quantity both private
+- ETH reaches $2,950 → automatic buy execution, market only aware "someone bought"
+- Successfully purchases large quantity at desired price without front-running
 
-**관찰 가능한 이점**:
-- 대규모 주문의 시장 영향(market impact) 최소화
-- 다른 트레이더의 프런트러닝, 백러닝 전략 무력화
-- 투자 전략과 포지션 규모가 경쟁사에 노출되지 않음
+**Observable Benefits**:
+- Minimizes market impact of large orders
+- Neutralizes other traders' front-running and back-running strategies
+- Investment strategy and position size not exposed to competitors

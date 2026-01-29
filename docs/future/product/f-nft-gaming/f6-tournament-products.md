@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "블라인드 토너먼트" - 상대 신원 숨긴 익명 대회
+## 1. "Blind Tournament" - Anonymous Competition with Hidden Opponent Identity
 
-**제품 설명**:
-대회 참가자 명단과 대진표가 경기 직전까지 숨겨지는 토너먼트 시스템. 특정 선수를 타겟으로 한 사전 연습이나 담합 방지.
+**Product Description**:
+A tournament system where participant roster and brackets are hidden until just before matches. Prevents pre-practice targeting specific players or collusion.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대진표 공개 → "A선수와 붙는구나" → 해당 선수 VOD 100시간 분석 → 카운터 전략 완벽 준비 → 상대만 분석한 쪽이 유리
-- ZK 솔루션 사용: 대진표가 경기 30분 전까지 암호화, 누구와 붙을지 사전 파악 불가
-- 결과: "상대 분석할 시간이 없으니까 기본기와 순발력으로 승부해야 해요. 진짜 실력전이에요"
+**General User Experience**:
+- Without Privacy: Bracket revealed → "I'm facing Player A" → Analyzes that player's VODs for 100 hours → Perfectly prepares counter strategy → Side with analysis gains advantage
+- Using ZK Solution: Bracket encrypted until 30 minutes before match, cannot know opponent in advance
+- Result: "No time to analyze opponents, so we have to compete with fundamentals and quick thinking. It's a true skill contest"
 
-**관찰 가능한 이점**:
-- 특정 선수 타겟 연습/전략 무력화
-- 기본 실력 기반 공정한 경쟁
-- 다크호스 출현 가능성 증가
+**Observable Benefits**:
+- Neutralizing targeted practice/strategy against specific players
+- Fair competition based on fundamental skills
+- Increased possibility of dark horse emergence
 
-## 2. "시크릿 스테이크" - 숨겨진 참가비 토너먼트
+## 2. "Secret Stakes" - Hidden Entry Fee Tournament
 
-**제품 설명**:
-참가자들의 베팅 금액과 총 상금 풀이 경기 종료까지 숨겨지는 대회. 고액 베팅 정보를 이용한 승부 조작이나 표적 공격 방지.
+**Product Description**:
+A competition where participants' betting amounts and total prize pool are hidden until match end. Prevents match-fixing or targeted attacks using high-stake betting information.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "A가 1000만원 걸었대" 정보 유출 → A 타겟으로 담합/방해 공작 → 또는 A에게 승부 조작 압박
-- ZK 솔루션 사용: 모든 참가비가 암호화되어 누가 얼마를 걸었는지 확인 불가, 결과 발표 시에만 상금 공개
-- 결과: "큰 돈 걸어도 표적 안 되니까 안심하고 베팅해요. 승부 조작 압박도 없어요"
+**General User Experience**:
+- Without Privacy: Information leaks "A bet $100K" → Collusion/sabotage targeting A → Or pressure on A to fix matches
+- Using ZK Solution: All entry fees encrypted, cannot verify who bet how much, prizes only revealed at results announcement
+- Result: "Even when betting big, I'm not targeted, so I bet with confidence. No pressure to fix matches either"
 
-**관찰 가능한 이점**:
-- 고액 베팅자 타겟 공격 방지
-- 승부 조작 유인 감소
-- 순수하게 실력으로 결정되는 경기
+**Observable Benefits**:
+- Prevention of targeted attacks on high-stake bettors
+- Reduced incentives for match-fixing
+- Matches purely decided by skill
 
 ---
 

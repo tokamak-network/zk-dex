@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "스머프 실드" - 고수 신분 숨긴 매칭
+## 1. "Smurf Shield" - Hidden Pro Identity Matchmaking
 
-**제품 설명**:
-고랭크 플레이어가 새 계정에서도 자신의 실력 범위를 증명하되, 정확한 신원이나 메인 계정은 숨길 수 있는 시스템. 스트리밍 시 고스팅 방지.
+**Product Description**:
+A system where high-rank players can prove their skill range on new accounts while hiding exact identity or main account. Prevents ghosting during streaming.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 유명 스트리머가 서브 계정 플레이 → 시청자가 신고 "스머핑이다!" → 또는 매칭된 상대가 고스팅
-- ZK 솔루션 사용: "이 계정은 다이아 이상 실력입니다" 익명 증명 → 적정 매칭 보장 → 하지만 누구인지는 비공개
-- 결과: "서브 계정으로 연습해도 실력에 맞게 매칭되고, 시청자 고스팅도 안 당해요"
+**General User Experience**:
+- Without Privacy: Famous streamer plays on sub-account → Viewers report "That's smurfing!" → Or matched opponents ghost
+- Using ZK Solution: Anonymous proof "This account has Diamond+ skill" → Ensures appropriate matchmaking → But identity remains private
+- Result: "Even practicing on sub-account, I get matched appropriately by skill, and no viewer ghosting"
 
-**관찰 가능한 이점**:
-- 스트리머 고스팅/표적 공격 방지
-- 정정당당한 매칭 환경 유지
-- 프라이버시와 공정성 동시 확보
+**Observable Benefits**:
+- Prevention of streamer ghosting/targeted attacks
+- Maintaining fair matchmaking environment
+- Securing both privacy and fairness
 
-## 2. "시크릿 트로피" - 숨겨진 업적 자랑
+## 2. "Secret Trophy" - Hidden Achievement Showcase
 
-**제품 설명**:
-게임 업적이나 희귀 아이템 획득 사실을 자랑하되, 정확한 계정 정보는 숨길 수 있는 시스템. 업적 인증은 되지만 타겟 공격 방지.
+**Product Description**:
+A system that allows showcasing game achievements or rare item acquisition while hiding exact account information. Achievement verified but targeted attacks prevented.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: SNS에 "월드 퍼스트 클리어!" 인증 → 계정 노출 → 해킹 시도, 사기 DM 폭주
-- ZK 솔루션 사용: "누군가가 월드 퍼스트 클리어했음"을 암호학적으로 증명 → 하지만 누구인지는 본인만 앎
-- 결과: "업적은 인정받고 싶은데 해킹 타겟 되긴 싫잖아요. 이제 둘 다 가능해요"
+**General User Experience**:
+- Without Privacy: Post "World First Clear!" on social media → Account exposed → Hacking attempts, scam DMs flood in
+- Using ZK Solution: Cryptographically proves "someone achieved world first clear" → But only the achiever knows who
+- Result: "I want recognition for achievements but don't want to be a hacking target. Now I can have both"
 
-**관찰 가능한 이점**:
-- 업적 자랑과 프라이버시 보호 양립
-- 고가치 계정 타겟 공격 방지
-- 안전하게 커뮤니티 참여 가능
+**Observable Benefits**:
+- Balancing achievement recognition with privacy protection
+- Prevention of targeted attacks on high-value accounts
+- Safe community participation
 
 ---
 

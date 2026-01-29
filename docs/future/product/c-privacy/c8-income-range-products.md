@@ -4,50 +4,50 @@
 
 ---
 
-## 1. "소득 기반 차별 방지 대출" - 공정 금리 보장 대출 서비스
+## 1. "Income-Based Discrimination Prevention Loan" - Fair Interest Rate Guarantee Loan Service
 
-**제품 설명**:
-은행 대출 심사 시 정확한 소득 금액을 공개하지 않아, 은행이 소득을 근거로 불리한 금리를 제시하는 것을 방지하는 서비스입니다.
+**Product Description**:
+A service that prevents banks from proposing unfavorable interest rates based on income by not disclosing exact income amounts during loan screening.
 
-**일반 사용자 경험**:
-임서준씨(34세, 프리랜서)는 아파트 담보대출을 받으려 합니다. 프라이버시 없이는: 은행에 세금 신고서, 거래 내역서 등 모든 재정 정보를 제출합니다. 은행은 임서준씨의 정확한 소득(연 8,500만원)을 파악합니다. 이 정보로 은행은 "이 고객은 다소 높은 금리도 감당할 여력이 있다"고 판단하여 기준 금리보다 0.3% 높은 금리를 제시합니다. 또한 제출한 재정 정보는 은행 시스템에 수년간 저장되어 마케팅 분석이나 신용평가에 활용됩니다.
+**User Experience**:
+Seo-jun Lim (34, freelancer) wants to get a mortgage loan. Without privacy: he submits all financial information to the bank including tax returns and transaction statements. The bank determines Mr. Lim's exact income (85 million won annually). With this information, the bank judges "this customer has capacity to bear somewhat higher interest" and proposes an interest rate 0.3% higher than the base rate. Additionally, submitted financial information is stored in bank systems for years and utilized for marketing analysis or credit evaluation.
 
-ZK 소득 범위 증명으로: 임서준씨는 "연 소득 5,000만원~1억원 범위"만 증명합니다. 은행은 상환 능력을 확인하지만, 정확히 5,000만원인지 9,000만원인지 알 수 없습니다. 은행은 모든 "5,000만원~1억원 범위" 고객에게 동일한 표준 금리를 적용합니다. 소득 기반 차별적 금리 책정이 원천적으로 불가능합니다.
+With ZK income range proof: Mr. Lim proves only "annual income in 50-100 million won range." The bank verifies repayment capacity but cannot know whether it's exactly 50 million or 90 million won. The bank applies the same standard interest rate to all "50-100 million won range" customers. Income-based discriminatory interest rate setting becomes fundamentally impossible.
 
-**관찰 가능한 이점**:
-- 정확한 소득 파악을 통한 맞춤형 고금리 책정 방지
-- 금융기관의 장기 재정 데이터 축적 차단
-- 동일 조건 고객 간 공정한 금리 적용 보장
+**Observable Benefits**:
+- Prevents customized high-interest rate setting through exact income determination
+- Blocks financial institutions' long-term financial data accumulation
+- Ensures fair interest rate application among customers with same conditions
 
-## 2. "월세 협상력 보호" - 소득 노출 없는 임대 자격 증명
+## 2. "Rent Negotiation Power Protection" - Rental Qualification Proof without Income Exposure
 
-**제품 설명**:
-월세 계약 시 집주인에게 납부 능력만 증명하고, 정확한 소득을 숨겨 월세 인상 협상에서 불리해지는 것을 방지하는 서비스입니다.
+**Product Description**:
+A service that proves only payment capacity to landlords during rent contracts while hiding exact income, preventing disadvantage in rent increase negotiations.
 
-**일반 사용자 경험**:
-한예진씨(27세, 신입사원)는 월세 150만원 아파트를 구하고 있습니다. 프라이버시 없이는: 집주인에게 급여 명세서를 제출합니다. 집주인은 한예진씨의 연봉이 5,500만원임을 알게 됩니다. 1년 후 재계약 시, 집주인은 "작년보다 연봉이 올랐을 테니 월세도 올려야겠다"고 생각합니다. 또한 동네 다른 집주인들에게 "이 세입자는 연봉이 이 정도라 더 받을 수 있다"는 정보가 퍼질 수 있습니다.
+**User Experience**:
+Ye-jin Han (27, new employee) is looking for an apartment with 1.5 million won monthly rent. Without privacy: she submits salary statements to the landlord. The landlord learns Ms. Han's annual salary is 55 million won. After 1 year at renewal time, the landlord thinks "salary must have increased from last year, so rent should increase too." Information like "this tenant's salary is at this level, so you can charge more" can spread to other landlords in the neighborhood.
 
-ZK 소득 범위 증명으로: 한예진씨는 "월 소득 450만원 이상"만 증명합니다. 집주인은 납부 능력을 확인했지만, 정확한 연봉은 알 수 없습니다. 재계약 시에도 "이 세입자가 여유가 있다"는 판단을 할 근거가 없어, 부당한 월세 인상을 요구하기 어렵습니다.
+With ZK income range proof: Ms. Han proves only "monthly income over 4.5 million won." The landlord verified payment capacity but cannot know exact annual salary. Even at renewal, there's no basis for judging "this tenant has room to spare," making it difficult to demand unreasonable rent increases.
 
-**관찰 가능한 이점**:
-- 정확한 소득 파악을 통한 월세 인상 압박 방지
-- 집주인 네트워크를 통한 소득 정보 유포 차단
-- 재계약 시에도 협상력 유지
+**Observable Benefits**:
+- Prevents rent increase pressure through exact income determination
+- Blocks income information dissemination through landlord networks
+- Maintains negotiating power even at renewal time
 
-## 3. "존엄성 보호 복지 신청" - 수치심 없는 자격 증명 서비스
+## 3. "Dignity-Protecting Welfare Application" - Qualification Proof Service without Shame
 
-**제품 설명**:
-저소득층 보조금이나 장학금 신청 시, 소득이 기준 이하임만 증명하고 정확한 재정 상황은 공개하지 않아 신청자의 존엄성을 보호하는 서비스입니다.
+**Product Description**:
+A service that protects applicants' dignity when applying for low-income subsidies or scholarships by proving only that income is below threshold without disclosing exact financial situation.
 
-**일반 사용자 경험**:
-박성호씨(22세, 대학생)는 저소득층 장학금을 신청하려 합니다. 프라이버시 없이는: 부모님의 소득금액증명원, 재산세 과세 증명서, 건강보험료 납부 확인서를 제출합니다. 학교 장학 담당자는 박성호씨 가정의 정확한 연 소득(2,800만원), 부모님 직업, 보유 재산까지 모두 열람합니다. 이 정보를 담당자가 의도치 않게 다른 직원에게 언급하거나, 시스템 접근 권한이 있는 여러 사람이 열람할 수 있습니다. 소규모 학교에서는 "누가 저소득층 장학금을 받는다"는 것이 알려지기도 합니다.
+**User Experience**:
+Seong-ho Park (22, college student) wants to apply for a low-income scholarship. Without privacy: he submits parents' income certificates, property tax assessment certificates, and health insurance payment confirmations. The school scholarship officer views the Park family's exact annual income (28 million won), parents' occupations, and all holdings. This information may be unintentionally mentioned to other staff by the officer, or viewed by multiple people with system access. At small schools, it may become known "who receives low-income scholarships."
 
-ZK 소득 범위 증명으로: 박성호씨는 "가구 소득 중위 50% 이하"라는 조건 충족만 증명합니다. 학교는 자격을 확인하지만, 정확한 소득이 2,800만원인지 1,500만원인지, 부모님이 무슨 일을 하시는지 알 수 없습니다. 담당자도 "이 학생은 자격 조건을 충족했다"는 것만 확인하므로, 불필요한 정보 열람이나 유출 가능성이 원천 차단됩니다.
+With ZK income range proof: Mr. Park proves only meeting the condition of "household income below median 50%." The school verifies eligibility but cannot know whether exact income is 28 million or 15 million won, or what work parents do. Officers only confirm "this student meets eligibility conditions," fundamentally eliminating possibilities of unnecessary information viewing or leakage.
 
-**관찰 가능한 이점**:
-- 복지 신청 시 상세 재정 상황 노출로 인한 수치심 제거
-- 담당자의 과도한 개인정보 열람 방지
-- 복지 수혜 사실과 구체적 빈곤 수준의 분리로 프라이버시 보호
+**Observable Benefits**:
+- Removes shame from detailed financial situation exposure during welfare application
+- Prevents officers' excessive personal information viewing
+- Privacy protection by separating welfare benefit fact from specific poverty level
 
 ---
 

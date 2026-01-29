@@ -214,7 +214,7 @@ component main {public [delegationHash, voteCommitment, proposalId, votingPower,
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Delegated Voting Products & UX](../../../product/d-governance/d4-delegated-products.md)
+참조: [Delegated Voting Products & UX](../../product/d-governance/d4-delegated-products.md)
 
 ---
 

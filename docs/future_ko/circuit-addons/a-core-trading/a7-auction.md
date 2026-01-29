@@ -282,7 +282,7 @@ component main {public [auctionId, itemNoteHash, bidNoteHash, sellerOutputHash,
 
 ## 실제 제품 및 사용자 경험
 
-전용 제품 문서 참조: [제품 응용](../../../product/a-core-trading/a7-auction-products.md)
+전용 제품 문서 참조: [제품 응용](../../product/a-core-trading/a7-auction-products.md)
 
 ---
 

@@ -276,7 +276,7 @@ component main {public [merkleRoot, decoyHashes, outputHash, tokenType, keyImage
 
 ## Real-World Products & User Experience
 
-See [Ring Signature Spend - Products & UX](../../../product/c-privacy/c1-ring-signature-products.md) for detailed real-world applications and user experience scenarios.
+See [Ring Signature Spend - Products & UX](../../product/c-privacy/c1-ring-signature-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

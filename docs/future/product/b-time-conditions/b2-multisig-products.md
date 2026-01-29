@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "익명 DAO 거버넌스" - 서명자 신원 보호 조직 자금 관리
+## 1. "Anonymous DAO Governance" - Organizational Fund Management with Signer Identity Protection
 
-**제품 설명**:
-DAO나 조직의 자금을 다중 서명으로 관리하면서, 서명자들의 신원을 완전히 숨기는 서비스. 기존 Gnosis Safe 같은 멀티시그는 모든 서명자 주소가 공개되어 사회공학 공격이나 협박의 타겟이 됨.
+**Product Description**:
+A service that completely hides the identities of signers while managing DAO or organizational funds with multi-signature. Existing multisig like Gnosis Safe exposes all signer addresses, making them targets for social engineering attacks or coercion.
 
-**일반 사용자 경험**:
-- 인권 단체 "프리덤워치"는 억압적 정권 하의 활동가들을 지원하는 기금 운영
-- 5명의 이사 중 3명이 승인해야 자금 집행 가능 (3-of-5)
-- 기존 멀티시그 사용 시 서명자 주소가 온체인에 공개 → 정부가 서명자 추적 가능
-- ZK 멀티시그로 전환: 서명자가 누구인지, 몇 명인지도 외부에서 파악 불가
-- 거래 승인 시에도 "누가 승인했는지"가 아닌 "충분한 수가 승인했다"만 증명
-- 이사진은 신변 위협 없이 활동 지속, 기금도 안전하게 운영
+**General User Experience**:
+- Human rights organization "FreedomWatch" operates a fund supporting activists under oppressive regimes
+- 3 out of 5 board members must approve for fund disbursement (3-of-5)
+- Using existing multisig exposes signer addresses on-chain → government can track signers
+- Switching to ZK multisig: outsiders cannot determine who signers are or how many there are
+- When approving transactions, only proves "sufficient number approved" not "who approved"
+- Board members continue activities without personal threats, fund operated safely
 
-**관찰 가능한 이점**:
-- 서명자 신원 노출로 인한 협박, 뇌물, 사회공학 공격 원천 차단
-- 조직의 의사결정 구조와 권력 분포가 외부에 공개되지 않음
-- 서명자 교체 시에도 조직 구조 변화가 추적되지 않아 내부 정보 유출 방지
+**Observable Benefits**:
+- Completely blocks blackmail, bribery, and social engineering attacks due to signer identity exposure
+- Organization's decision-making structure and power distribution not disclosed externally
+- Even when replacing signers, organizational structure changes are not tracked, preventing internal information leaks
 
-## 2. "기업 재무팀 프라이버시" - 조직 구조 비공개 기업 자금 관리
+## 2. "Corporate Finance Privacy" - Enterprise Fund Management with Hidden Organizational Structure
 
-**제품 설명**:
-기업의 재무 승인권자 구성을 외부에 숨기면서 다중 승인 기반 자금 관리를 하는 서비스. 경쟁사가 "누가 결제 권한이 있는지" 파악하여 내부자를 표적 삼는 것을 방지.
+**Product Description**:
+A service for multi-approval-based fund management while hiding the composition of corporate financial approvers from outsiders. Prevents competitors from identifying "who has payment authority" and targeting insiders.
 
-**일반 사용자 경험**:
-- 핀테크 기업 "페이플로우"의 CFO 장민서씨(42세)는 회사 운영 자금 관리 체계 구축
-- CEO, CFO, 재무이사 3명 중 2명 승인 필요 (2-of-3)
-- 경쟁사가 공개 멀티시그 분석하여 "장민서가 결제권자"임을 파악하면 → 스카우트 시도, 내부 정보 유출 표적
-- ZK 멀티시그 도입: 서명자 구성이 완전히 비공개
-- 외부에서 "페이플로우 지갑"은 보이지만, 누가 통제하는지 알 수 없음
-- 경쟁사의 핵심 인력 타겟팅 불가능, 내부자 협박 시도도 차단
+**General User Experience**:
+- Min-seo Jang (42), CFO of fintech company "PayFlow," establishes company operating fund management system
+- Requires approval from 2 of 3 people: CEO, CFO, Finance Director (2-of-3)
+- If competitors analyze public multisig and discover "Jang Min-seo is a payment approver" → recruitment attempts, target for internal information leaks
+- Implements ZK multisig: signer composition completely private
+- Outsiders can see "PayFlow wallet" but cannot know who controls it
+- Competitor targeting of key personnel impossible, insider coercion attempts also blocked
 
-**관찰 가능한 이점**:
-- 결제 권한자를 노린 스피어피싱, 사회공학 공격 방어
-- 기업의 내부 권한 구조가 경쟁사에 노출되는 것 방지
-- 임원 변경 시 조직 개편 정보가 외부에 유출되지 않음
+**Observable Benefits**:
+- Defends against spear phishing and social engineering attacks targeting payment approvers
+- Prevents company's internal authority structure from being exposed to competitors
+- When executives change, organizational restructuring information doesn't leak externally
 
-## 3. "내부고발자 보호 기금" - 제보자 후원 익명 승인 시스템
+## 3. "Whistleblower Protection Fund" - Anonymous Approval System for Informant Support
 
-**제품 설명**:
-언론사나 시민단체가 내부고발자를 재정적으로 지원할 때, 지원 승인자들의 신원을 보호하는 서비스. 고발 대상 기업이나 정부가 "누가 고발자를 지원하는지" 추적하여 보복하는 것을 차단.
+**Product Description**:
+A service that protects the identities of approvers when news organizations or civic groups financially support whistleblowers. Blocks the target company or government from tracking "who supports the informant" and retaliating.
 
-**일반 사용자 경험**:
-- 탐사보도 매체 "진실의눈"은 대기업 비리 내부고발자에게 법률비용 지원 결정
-- 편집장, 기자 2명, 변호사 총 4명 중 3명 승인 필요 (3-of-4)
-- 고발 대상 대기업이 "누가 고발자를 돕는지" 파악하면 → 해당 기자들에게 압력, 소송 위협
-- ZK 멀티시그로 지원금 승인: 승인자 신원 완전 비공개
-- 대기업은 "진실의눈에서 누군가 승인했다"는 것만 알 뿐, 개별 기자 특정 불가
-- 기자들은 보복 걱정 없이 공익 활동 지속 가능
+**General User Experience**:
+- Investigative journalism outlet "Eye of Truth" decides to provide legal cost support to corporate misconduct whistleblower
+- Requires approval from 3 of 4 people: Editor-in-chief, 2 reporters, lawyer (3-of-4)
+- If target corporation identifies "who is helping the informant" → pressure on those reporters, lawsuit threats
+- Support fund approval via ZK multisig: approver identities completely private
+- Corporation only knows "someone from Eye of Truth approved," cannot identify individual reporters
+- Reporters can continue public interest activities without fear of retaliation
 
-**관찰 가능한 이점**:
-- 내부고발 지원 활동에 참여한 개인에 대한 보복 불가능
-- 언론의 취재원 보호와 유사한 "지원자 보호" 실현
-- 공익 활동 참여의 심리적 장벽 제거로 더 많은 참여 유도
+**Observable Benefits**:
+- Makes retaliation against individuals participating in whistleblower support activities impossible
+- Realizes "supporter protection" similar to journalism's source protection
+- Removes psychological barriers to public interest participation, encouraging more involvement

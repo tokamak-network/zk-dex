@@ -224,7 +224,7 @@ component main {public [executionHash, profitCommitment, nullifier]} = Arbitrage
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i4-arbitrage-bot-products.md](../../../product/i-off-chain/i4-arbitrage-bot-products.md)
+See: [../../product/i-off-chain/i4-arbitrage-bot-products.md](../../product/i-off-chain/i4-arbitrage-bot-products.md)
 
 ---
 

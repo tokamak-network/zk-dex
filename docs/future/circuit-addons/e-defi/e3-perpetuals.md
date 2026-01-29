@@ -365,7 +365,7 @@ component main {public [positionNoteHash, marginNoteHash, marketId,
 
 ## Real-World Products & User Experience
 
-See: [Perpetual Position Open/Close - Real-World Products](../../../product/e-defi/e3-perpetuals-products.md)
+See: [Perpetual Position Open/Close - Real-World Products](../../product/e-defi/e3-perpetuals-products.md)
 ---
 
 [Back to Index](../../README.md)

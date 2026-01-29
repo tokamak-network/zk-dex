@@ -4,44 +4,44 @@
 
 ---
 
-## 1. "투자 자격 증명 서비스" - 프라이빗 투자 접근 게이트웨이
+## 1. "Investment Qualification Proof Service" - Private Investment Access Gateway
 
-**제품 설명**:
-사모펀드, 헤지펀드 등 적격투자자 전용 상품에 투자할 때, 자산 규모를 공개하지 않고 자격만 증명하는 서비스입니다.
+**Product Description**:
+A service that proves only qualification without disclosing asset scale when investing in accredited investor-only products such as private equity and hedge funds.
 
-**일반 사용자 경험**:
-정승민씨(48세, 사업가)는 유망한 스타트업 투자 라운드에 참여하고 싶습니다. 적격투자자 요건(순자산 10억원 이상)을 증명해야 하지만, 정확한 자산 규모를 공개하면 투자 협상에서 불리해질 수 있습니다. 이 서비스로 "순자산 10억원 이상"이라는 자격만 증명합니다. 펀드는 규제 요건을 충족했고, 정승민씨의 정확한 자산 규모는 비밀로 유지됩니다. 협상력을 잃지 않고 투자 기회를 얻었습니다.
+**User Experience**:
+Seung-min Jung (48, entrepreneur) wants to participate in a promising startup investment round. He must prove accredited investor requirements (net worth over 1 billion won), but disclosing exact asset scale could disadvantage him in investment negotiations. Using this service, he proves only qualification of "net worth over 1 billion won." The fund meets regulatory requirements, and Mr. Jung's exact asset scale remains confidential. He gained investment opportunities without losing negotiating power.
 
-**관찰 가능한 이점**:
-- 투자 자격 증명과 자산 규모 프라이버시 양립
-- 정확한 자산 노출로 인한 협상력 약화 방지
-- 여러 투자 기회에 재사용 가능한 증명서
+**Observable Benefits**:
+- Balances investment qualification proof with asset scale privacy
+- Prevents negotiating power weakness from exact asset exposure
+- Reusable proof certificate for multiple investment opportunities
 
-## 2. "부동산 신디케이션 자격 검증" - 공동 투자 자격 서비스
+## 2. "Real Estate Syndication Qualification Verification" - Joint Investment Eligibility Service
 
-**제품 설명**:
-부동산 공동 투자 시 참여자 전원이 적격투자자임을 증명하되, 각자의 정확한 자산 규모는 서로 알 수 없게 하는 서비스입니다.
+**Product Description**:
+A service that proves all participants are accredited investors in real estate joint investments while preventing participants from knowing each other's exact asset scales.
 
-**일반 사용자 경험**:
-부동산 신디케이션에 참여하려는 5명의 투자자가 있습니다. 그 중 한 명인 안재현씨(55세, 의사)는 자신의 정확한 자산이 다른 투자자들에게 알려지는 것이 불편합니다. 이 서비스로 모든 참여자가 개별적으로 "적격투자자 자격 충족"을 증명합니다. 신디케이션 운영자는 전원의 자격을 확인하지만, 투자자들끼리는 서로의 자산 규모를 알 수 없습니다. 안재현씨는 프라이버시를 유지하면서 매력적인 부동산에 공동 투자할 수 있게 되었습니다.
+**User Experience**:
+Five investors want to participate in a real estate syndication. One of them, Jae-hyun Ahn (55, doctor), is uncomfortable with his exact assets being known to other investors. Using this service, all participants individually prove "accredited investor qualification met." The syndication operator verifies everyone's qualification, but investors cannot know each other's asset scales. Mr. Ahn can jointly invest in attractive real estate while maintaining privacy.
 
-**관찰 가능한 이점**:
-- 공동 투자자 간 자산 정보 비교 불가
-- 자산 규모에 따른 그룹 내 위화감 방지
-- 각 투자자의 참여 금액과 무관하게 자격만 검증
+**Observable Benefits**:
+- Asset information comparison impossible among joint investors
+- Prevents group discord based on asset scale
+- Verifies only qualification regardless of each investor's participation amount
 
-## 3. "STO 자동 화이트리스트" - 토큰 증권 발행 자격 서비스
+## 3. "STO Automatic Whitelist" - Security Token Issuance Qualification Service
 
-**제품 설명**:
-증권형 토큰(STO) 발행 시 적격투자자 화이트리스트에 자동으로 등록되는 서비스. 한 번 증명하면 여러 STO에 참여할 수 있습니다.
+**Product Description**:
+A service that automatically registers on accredited investor whitelists when issuing security token offerings (STOs). Once proven, can participate in multiple STOs.
 
-**일반 사용자 경험**:
-기술 투자에 관심 있는 이소영씨(42세, 기업 임원)는 여러 STO 프로젝트에 투자하고 싶습니다. 매번 적격투자자 서류를 제출하는 것은 번거롭고, 여러 곳에 자산 정보가 분산되는 것도 걱정됩니다. 이 서비스로 한 번만 "적격투자자 자격"을 증명하면, 해당 증명이 블록체인에 기록되어 모든 STO 플랫폼에서 자동으로 화이트리스트에 등록됩니다. 이소영씨는 새 프로젝트를 발견할 때마다 바로 투자할 수 있고, 자산 정보는 어디에도 저장되지 않습니다.
+**User Experience**:
+So-young Lee (42, corporate executive) interested in technology investing wants to invest in multiple STO projects. Submitting accredited investor documents every time is cumbersome, and she worries about asset information being dispersed across multiple places. Using this service, proving "accredited investor qualification" once records the proof on the blockchain, automatically whitelisting her across all STO platforms. Ms. Lee can invest immediately upon discovering new projects, and her asset information is stored nowhere.
 
-**관찰 가능한 이점**:
-- 한 번 증명으로 다수의 투자 기회에 접근
-- 여러 플랫폼에 자산 정보 분산 저장 방지
-- 즉시 투자 가능하여 좋은 기회를 놓치지 않음
+**Observable Benefits**:
+- Access to multiple investment opportunities with single proof
+- Prevents dispersed asset information storage across platforms
+- Can invest immediately without missing good opportunities
 
 ---
 

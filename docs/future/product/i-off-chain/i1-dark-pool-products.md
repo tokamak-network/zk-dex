@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "완전 비공개 거래소" - 거래 존재 자체를 숨기는 다크풀
+## 1. "Fully Private Exchange" - Dark Pool Hiding Transaction Existence
 
-**제품 설명**:
-거래 금액, 참여자뿐 아니라 거래가 일어났다는 사실조차 외부에 알려지지 않는 완전 프라이버시 다크풀. 시장에서 어떤 신호도 발생하지 않습니다.
+**Product Description**:
+A complete privacy dark pool where not only transaction amounts and participants, but even the fact that a transaction occurred, remains hidden from the outside. No market signals are generated.
 
-**일반 사용자 경험 (기관 관점)**:
-- ABC 펀드는 $500만 ETH 매도 시 시장 영향 우려
-- 일반 다크풀: 매칭 후 "큰 거래가 있었다" 신호 발생
-- 완전 비공개 다크풀: 매칭 결과도 commitment로 숨김
-- 외부에서는 거래 존재 자체를 알 수 없음
-- 정산 후에도 "누군가 팔았다"는 사실조차 비공개
+**User Experience (Institutional Perspective)**:
+- ABC Fund needs to sell $5M in ETH, concerned about market impact
+- Regular dark pool: After matching, signals "large transaction occurred"
+- Fully private dark pool: Matching results hidden via commitment
+- External observers cannot detect transaction existence
+- Even after settlement, the fact "someone sold" remains private
 
-**관찰 가능한 이점**:
-- "고래 움직임" 뉴스 자체가 발생하지 않음
-- 거래 의도와 거래 사실 모두 비공개
-- 시장 분석가도 대량 거래 추적 불가
+**Observable Benefits**:
+- No "whale movement" news generated
+- Both trading intent and execution remain private
+- Market analysts cannot track large transactions
 
-## 2. "신원 격리 매칭" - 상대방도 모르는 거래
+## 2. "Identity-Isolated Matching" - Trading Without Knowing Counterparty
 
-**제품 설명**:
-거래가 체결된 후에도 누가 매수하고 누가 매도했는지 양쪽 모두 알 수 없는 완전 익명 매칭 서비스.
+**Product Description**:
+Fully anonymous matching service where even after trade execution, neither buyer nor seller can identify their counterparty.
 
-**일반 사용자 경험**:
-- 김사장(50세)은 $100만 매도, 이대표(45세)는 매수 희망
-- MPC 매칭: 주문이 매칭되지만 상대방 정보는 비공개
-- 김사장은 "누가 내 물량을 샀는지" 모름
-- 이대표는 "이 물량의 이전 소유자가 누구인지" 모름
-- 거래 관계가 형성되지 않아 향후 추적도 불가
+**User Experience**:
+- Mr. Kim (50) wants to sell $1M, Ms. Lee (45) wants to buy
+- MPC matching: Orders match but counterparty information stays private
+- Mr. Kim doesn't know "who bought my position"
+- Ms. Lee doesn't know "who was the previous owner"
+- No trading relationship formed, preventing future tracking
 
-**관찰 가능한 이점**:
-- 거래 상대방 프라이버시 완벽 보호
-- "누가 누구에게 팔았다" 정보 원천 차단
-- 거래 후 관계 추적 방지
+**Observable Benefits**:
+- Perfect counterparty privacy protection
+- Completely blocks "who sold to whom" information
+- Prevents post-trade relationship tracking
 
-## 3. "패턴 방지 실행" - 거래 행동 분석 차단
+## 3. "Pattern Prevention Execution" - Blocking Trading Behavior Analysis
 
-**제품 설명**:
-대량 거래를 실행할 때 시간, 금액, 빈도 패턴이 외부에 노출되지 않아 행동 분석을 차단하는 서비스.
+**Product Description**:
+Service that prevents behavioral analysis by hiding timing, amount, and frequency patterns during large trade execution.
 
-**일반 사용자 경험**:
-- 이재무팀장은 매월 회사 자금 $50만씩 투자
-- 일반 실행: "매월 $50만씩 사는 주소" 패턴 노출
-- 패턴 방지: 금액, 타이밍이 무작위화되어 매칭
-- 외부에서는 "정기 투자자"인지 알 수 없음
-- 회사의 투자 전략과 자금 규모 추론 불가
+**User Experience**:
+- CFO Lee invests $500K of company funds monthly
+- Regular execution: Pattern exposed as "address buying $500K monthly"
+- Pattern prevention: Amount and timing randomized during matching
+- External observers cannot identify "regular investor"
+- Company investment strategy and fund size cannot be inferred
 
-**관찰 가능한 이점**:
-- 투자 패턴으로 의도 추론 방지
-- 정기 투자자 타겟팅 공격 차단
-- 기업 재무 전략 비공개 유지
+**Observable Benefits**:
+- Prevents intent inference from investment patterns
+- Blocks targeting attacks on regular investors
+- Maintains corporate financial strategy privacy
 
 ---
 

@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "시크릿 OTC" - 기관 간 프라이빗 대량 거래
+## 1. "Secret OTC" - Private Institutional Large-Block Trading
 
-**제품 설명**:
-헤지펀드, 패밀리오피스 간의 대규모 다자산 스왑을 완전히 비공개로 처리하는 OTC 플랫폼. 거래 참여자, 자산 종류, 거래 금액 모두 암호화됩니다.
+**Product Description**:
+An OTC platform that processes large-scale multi-asset swaps between hedge funds and family offices completely privately. Trading participants, asset types, and trade amounts are all encrypted.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 기관 A가 BTC를 ETH로 바꾸면 → 포지션 방향, 거래 규모, 상대방이 노출 → 카피트레이딩, 프론트러닝, 경쟁 분석
-- 고급 ZK 솔루션: 4개 기관이 5종 자산을 원자적 스왑, 외부에는 "스왑 완료"만 공개
-- 결과: 누가 무엇을 얼마에 교환했는지 영구 비공개, 각 기관은 자신의 거래만 확인
+**User Experience**:
+- Without Privacy: Institution A swaps BTC for ETH → position direction, trade size, counterparty exposed → copy trading, front-running, competitor analysis
+- Advanced ZK Solution: 4 institutions atomically swap 5 asset types, external observers only see "swap completed"
+- Result: Who exchanged what at what price permanently private, each institution only confirms their own trade
 
-**관찰 가능한 이점**:
-- 기관별 포지션 변화 완전 은닉
-- 거래 상대방 관계망 기밀 유지
-- 대규모 리밸런싱 시 시장 정보 유출 제로
+**Observable Benefits**:
+- Institution-specific position changes completely hidden
+- Counterparty relationship networks kept confidential
+- Zero market information leakage during large rebalancing
 
-## 2. "프라이빗 네팅" - 기업 간 비밀 채무 청산
+## 2. "Private Netting" - Confidential Corporate Debt Settlement
 
-**제품 설명**:
-복수 기업 간 복잡한 채권/채무 관계를 청산하면서 개별 거래 금액과 관계를 완전히 숨기는 기관용 네팅 서비스.
+**Product Description**:
+An institutional netting service that settles complex credit/debt relationships between multiple corporations while completely hiding individual transaction amounts and relationships.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: A→B 100억, B→C 80억, C→A 60억 채무가 공개 → 기업 재무상태 노출, 신용도 추론, 협력관계 파악
-- 고급 ZK 솔루션: 최종 네팅 결과만 각 기업에 전달 (A는 40억 수취, B는 20억 지급, C는 20억 수취)
-- 결과: 개별 채권/채무 관계는 비공개, 순 결제액만 처리
+**User Experience**:
+- Without Privacy: A→B $10M, B→C $8M, C→A $6M debts public → corporate financial status exposed, creditworthiness inferred, partnerships revealed
+- Advanced ZK Solution: Only final netting results delivered to each company (A receives $4M, B pays $2M, C receives $2M)
+- Result: Individual credit/debt relationships private, only net settlement amounts processed
 
-**관찰 가능한 이점**:
-- 기업 간 거래 관계 및 규모 완전 비공개
-- 공급망/파트너십 정보 기밀 유지
-- 재무 상태 추론 방지로 협상력 보호
+**Observable Benefits**:
+- Corporate transaction relationships and scale completely private
+- Supply chain/partnership information kept confidential
+- Prevents financial status inference, protecting negotiating power
 
-## 3. "익명 LP 스왑" - 유동성 공급자 포지션 프라이버시
+## 3. "Anonymous LP Swap" - Liquidity Provider Position Privacy
 
-**제품 설명**:
-대형 유동성 공급자(LP)들이 멀티에셋 포지션을 조정할 때 전략과 규모를 숨기는 프라이버시 스왑 프로토콜.
+**Product Description**:
+A privacy swap protocol that hides strategies and scale when large liquidity providers (LPs) adjust multi-asset positions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: LP가 ETH-USDC에서 BTC-USDT로 유동성 이동 시 → 전략 방향, 이동 규모, 타이밍 노출 → 경쟁 LP의 선제 대응
-- 고급 ZK 솔루션: 복수 LP가 동시에 포지션 조정, 개별 이동은 암호화
-- 결과: LP별 전략과 규모 보호, 유동성 풀 총량 변화만 공개
+**User Experience**:
+- Without Privacy: LP moves liquidity from ETH-USDC to BTC-USDT → strategy direction, movement scale, timing exposed → competitive LP preemptive response
+- Advanced ZK Solution: Multiple LPs simultaneously adjust positions, individual movements encrypted
+- Result: LP-specific strategies and scale protected, only total liquidity pool changes public
 
-**관찰 가능한 이점**:
-- LP 전략 및 수익 구조 완전 비공개
-- 대규모 포지션 이동 시 역선택 방지
-- 경쟁 LP로부터 알파 전략 보호
+**Observable Benefits**:
+- LP strategies and profit structures completely private
+- Prevents adverse selection during large position movements
+- Protects alpha strategies from competing LPs

@@ -230,7 +230,7 @@ component main {public [noteHash, merkleRoot, threshold, complianceResult, compl
 
 ## Real-World Products & User Experience
 
-See [Compliance Proof (AML) - Products & UX](../../../product/c-privacy/c7-compliance-products.md) for detailed real-world applications and user experience scenarios.
+See [Compliance Proof (AML) - Products & UX](../../product/c-privacy/c7-compliance-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 

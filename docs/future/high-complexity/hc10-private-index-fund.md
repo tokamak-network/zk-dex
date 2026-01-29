@@ -342,7 +342,7 @@ component main {public [fundCommitment, newFundCommitment, indexWeights,
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc10-private-index-fund-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc10-private-index-fund-products.md) for detailed product scenarios and use cases.
 
 ---
 

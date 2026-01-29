@@ -289,7 +289,7 @@ This reduces ZK circuit complexity while gaining BLS efficiency.
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc9-aggregate-signatures-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc9-aggregate-signatures-products.md) for detailed product scenarios and use cases.
 
 ---
 

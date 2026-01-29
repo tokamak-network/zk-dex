@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "발행규모 은닉" - 자금조달 신호 차단
+## 1. "Issuance Size Concealment" - Funding Signal Blocking
 
-**제품 설명**:
-채권 발행 규모가 노출되면 "자금 압박" 신호로 해석되어 신용도 하락 및 금리 상승을 초래하는 문제를 해결.
+**Product Description**:
+Solving the problem where bond issuance size exposure is interpreted as a "funding pressure" signal, causing credit rating decline and interest rate increases.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: DAO가 $20M 채권 발행 공개 → "자금 부족한가?" 의심 → 토큰 가격 하락 + 금리 프리미엄 요구
-- ZK DeFi 사용: 발행 규모 비공개, 적정 담보화만 증명 → 시장 신호 없이 자금 조달
-- 결과: 불필요한 시장 반응 없이 효율적 자금 조달
+**Typical User Experience**:
+- Without Privacy: DAO issues $20M bond publicly → "Funding shortage?" suspicion → Token price drop + interest premium demanded
+- With ZK DeFi: Issuance size private, only adequate collateralization proven → Funding secured without market signal
+- Result: Efficient funding without unnecessary market reaction
 
-**관찰 가능한 이점**:
-- 자금 조달이 약세 신호가 되는 것 방지
-- 발행자의 협상력 보호
-- 공정한 금리로 채권 발행 가능
+**Observable Benefits**:
+- Prevention of funding activity becoming bearish signal
+- Protection of issuer's negotiation power
+- Bond issuance at fair interest rates
 
-## 2. "만기 클리프 방어" - 만기 집중 공격 차단
+## 2. "Maturity Cliff Defense" - Maturity Concentration Attack Blocking
 
-**제품 설명**:
-대량 채권의 만기일이 노출되면 해당 시점에 매도 압력을 예상하고 선제적 공매도가 발생하는 문제를 해결.
+**Product Description**:
+Solving the problem where preemptive short selling occurs when large bond maturity dates are exposed, anticipating selling pressure at that time.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $50M 채권 만기 3월 15일 공개 → 숏셀러들이 3월 초부터 공매도 → 만기 상환 시점에 가격 급락
-- ZK DeFi 사용: 개별 만기일 비공개 → 매도 압력 시점 예측 불가
-- 결과: 만기 시점 노린 공매도 공격 무력화
+**Typical User Experience**:
+- Without Privacy: $50M bond maturity March 15 public → Short sellers start shorting from early March → Price crashes at maturity repayment time
+- With ZK DeFi: Individual maturity dates private → Selling pressure timing unpredictable
+- Result: Short selling attacks targeting maturity neutralized
 
-**관찰 가능한 이점**:
-- 만기 집중에 따른 시장 조작 방지
-- 발행자의 리파이낸싱 계획 보호
-- 채권 보유자의 상환 가치 보호
+**Observable Benefits**:
+- Prevention of market manipulation from maturity concentration
+- Protection of issuer's refinancing plans
+- Protection of bondholders' redemption value
 
-## 3. "금리 시그널 차단" - 신용 스프레드 정보 유출 방지
+## 3. "Interest Rate Signal Blocking" - Credit Spread Information Leak Prevention
 
-**제품 설명**:
-개별 채권의 금리가 노출되면 발행자의 신용도가 역추정되어 다른 거래에서 불리해지는 문제를 해결.
+**Product Description**:
+Solving the problem where individual bond interest rates expose the issuer's creditworthiness, causing disadvantages in other transactions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 프로토콜 채권 금리 12% 공개 → "리스크 높은 프로토콜" 인식 → 파트너십, 통합 협상에서 불리
-- ZK DeFi 사용: 금리 조건 비공개, 상환 의무 이행만 증명 → 신용 정보 유출 차단
-- 결과: 채권 조건이 사업 관계에 영향 주지 않음
+**Typical User Experience**:
+- Without Privacy: Protocol bond interest rate 12% public → "High risk protocol" perception → Disadvantaged in partnership and integration negotiations
+- With ZK DeFi: Interest rate conditions private, only repayment obligation fulfillment proven → Credit information leak blocked
+- Result: Bond terms don't affect business relationships
 
-**관찰 가능한 이점**:
-- 금리 조건을 통한 신용도 역추정 차단
-- 발행자의 협상 지위 보호
-- 다양한 금리 조건의 채권 시장 활성화
+**Observable Benefits**:
+- Blocking creditworthiness reverse-estimation through interest rate conditions
+- Protection of issuer's negotiation position
+- Activation of bond market with diverse interest rate conditions

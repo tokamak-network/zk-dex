@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "숨겨진 예금 규모" - 예치 금액 완전 비공개
+## 1. "Hidden Deposit Size" - Fully Private Deposit Amounts
 
-**제품 설명**:
-수익률 최적화 서비스에 얼마를 예치했는지 외부에서 알 수 없는 프라이버시 볼트. 자산 규모로 타겟이 되는 것을 방지합니다.
+**Product Description**:
+Privacy vault where the deposited amount in yield optimization services remains unknown to external observers. Prevents targeting based on asset size.
 
-**일반 사용자 경험**:
-- 한미영씨(33세)는 $100,000를 DeFi에 예치하려 함
-- 일반 볼트: "이 주소가 $100K 예치" 공개 → 피싱 타겟
-- 프라이빗 볼트: commitment만 기록, 금액은 숨김
-- 외부에서는 "누군가 예치함"만 알고 금액 모름
-- 미영씨가 고액 예치자라는 사실 자체가 비공개
+**User Experience**:
+- Ms. Han (33) wants to deposit $100,000 into DeFi
+- Regular vault: "This address deposited $100K" exposed → phishing target
+- Private vault: Only commitment recorded, amount hidden
+- External observers only know "someone deposited," not the amount
+- The fact that Ms. Han is a large depositor remains private
 
-**관찰 가능한 이점**:
-- 자산 규모로 피싱/해킹 타겟 방지
-- "부자 주소" 라벨링 회피
-- 대량 예치자 식별 차단
+**Observable Benefits**:
+- Prevents phishing/hacking targeting based on asset size
+- Avoids "wealthy address" labeling
+- Blocks identification of large depositors
 
-## 2. "전략 배분 비공개" - 어디에 투자했는지 숨김
+## 2. "Strategy Allocation Privacy" - Hiding Investment Destinations
 
-**제품 설명**:
-수익률 최적화 전략이 어느 프로토콜에 얼마나 배분했는지 외부에 공개되지 않아 전략 복제를 방지하는 서비스.
+**Product Description**:
+Service that prevents strategy replication by keeping protocol allocation details private from external observers, protecting yield optimization strategies.
 
-**일반 사용자 경험**:
-- 김투자씨(48세)는 "Alpha 전략 볼트"에 $50,000 예치
-- 일반 볼트: "이 볼트가 Aave 40%, Compound 30%..." 공개
-- 비공개 볼트: 배분 내역이 암호화되어 ZK로만 검증
-- 경쟁자가 "이 볼트 전략을 따라하자" 불가능
-- 전략 매니저의 알파가 보호됨
+**User Experience**:
+- Mr. Kim (48) deposits $50,000 into "Alpha Strategy Vault"
+- Regular vault: "This vault allocated 40% Aave, 30% Compound..." exposed
+- Private vault: Allocation details encrypted, verified only via ZK
+- Competitors cannot "copy this vault's strategy"
+- Strategy manager's alpha protected
 
-**관찰 가능한 이점**:
-- 수익률 높은 전략의 복제 방지
-- 지속 가능한 초과수익 유지
-- 매니저의 지적재산권 보호
+**Observable Benefits**:
+- Prevents replication of high-yield strategies
+- Maintains sustainable excess returns
+- Protects manager's intellectual property
 
-## 3. "리밸런싱 은닉" - 전략 변경 신호 차단
+## 3. "Rebalancing Concealment" - Blocking Strategy Change Signals
 
-**제품 설명**:
-볼트가 프로토콜 간 자금을 이동할 때 이동 내역이 공개되지 않아 "시장 신호"를 주지 않는 프라이버시 리밸런싱.
+**Product Description**:
+Privacy rebalancing where vault fund movements between protocols remain hidden, preventing market signals.
 
-**일반 사용자 경험**:
-- 안전 볼트가 프로토콜 A에서 B로 $1M 이동 예정
-- 일반 이동: "대형 볼트가 A에서 빠진다" → A 프로토콜 FUD
-- 프라이빗 이동: 이동 금액과 경로가 숨겨진 채 실행
-- 시장에서 "볼트가 이동 중"이라는 신호 없음
-- 리밸런싱이 시장에 영향을 주지 않음
+**User Experience**:
+- Safety Vault plans to move $1M from Protocol A to B
+- Regular movement: "Large vault exiting A" → FUD for Protocol A
+- Private movement: Movement amount and path executed while hidden
+- No market signal that "vault is moving"
+- Rebalancing doesn't impact the market
 
-**관찰 가능한 이점**:
-- 대형 이동이 시장 신호가 되지 않음
-- 리밸런싱 의도 (리스크 회피?) 숨김
-- 프로토콜 간 자금 흐름 추적 차단
+**Observable Benefits**:
+- Large movements don't become market signals
+- Hides rebalancing intent (risk avoidance?)
+- Blocks tracking of fund flows between protocols
 
 ---
 

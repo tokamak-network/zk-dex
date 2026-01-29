@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "거버넌스 익명성" - 투표권 집중 공격 방지
+## 1. "Governance Anonymity" - Voting Power Concentration Attack Prevention
 
-**제품 설명**:
-스테이킹 규모가 곧 거버넌스 투표권인 PoS 네트워크에서, 대형 스테이커 노출 시 뇌물 공격이나 협박의 타겟이 되는 문제를 해결.
+**Product Description**:
+Solving the problem where large stakers become targets of bribery attacks or threats in PoS networks where staking size equals governance voting power.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $50M 스테이킹 = 5% 투표권 노출 → 악성 제안 통과를 위한 뇌물 타겟 → 거버넌스 공격
-- ZK DeFi 사용: 스테이킹 규모 비공개, 투표 시에만 영지식 증명으로 권한 행사
-- 결과: 뇌물/협박 기반 거버넌스 공격 무력화
+**Typical User Experience**:
+- Without Privacy: $50M staking = 5% voting power exposed → Bribery target for passing malicious proposals → Governance attack
+- With ZK DeFi: Staking size private, power exercised only through zero-knowledge proofs during voting
+- Result: Bribery/threat-based governance attacks neutralized
 
-**관찰 가능한 이점**:
-- 대형 스테이커 타겟팅 공격 차단
-- 거버넌스 투표의 진정한 익명성 확보
-- 뇌물 시장 형성 방지
+**Observable Benefits**:
+- Blocking large staker targeting attacks
+- Securing true anonymity in governance voting
+- Prevention of bribery market formation
 
-## 2. "슬래싱 타겟 방어" - 검증인 지분 공격 방지
+## 2. "Slashing Target Defense" - Validator Stake Attack Prevention
 
-**제품 설명**:
-특정 검증인에 대한 위임 규모가 노출되면 해당 검증인을 공격하여 위임자들에게 슬래싱 피해를 주는 공격을 방어.
+**Product Description**:
+Defense against attacks where delegation amounts to specific validators are exposed, leading to attacks on those validators to cause slashing damage to delegators.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 검증인 A에 $100M 위임 노출 → 공격자가 A의 이중 서명 유도 공격 집중 → 위임자 대규모 슬래싱
-- ZK DeFi 사용: 개별 검증인 위임 규모 비공개 → 고가치 타겟 식별 불가
-- 결과: 슬래싱 기반 공격의 경제성 파괴
+**Typical User Experience**:
+- Without Privacy: $100M delegation to validator A exposed → Attacker concentrates attacks to induce A's double signing → Massive delegator slashing
+- With ZK DeFi: Individual validator delegation size private → High-value target identification impossible
+- Result: Economics of slashing-based attacks destroyed
 
-**관찰 가능한 이점**:
-- 검증인 공격의 예상 수익 계산 불가
-- 위임자 분산이 공격자에게 보이지 않음
-- 네트워크 전체의 보안성 향상
+**Observable Benefits**:
+- Validator attack expected revenue incalculable
+- Delegator distribution invisible to attackers
+- Improved overall network security
 
-## 3. "언스테이킹 러시 방지" - 대량 철수 패닉 차단
+## 3. "Unstaking Rush Prevention" - Mass Withdrawal Panic Blocking
 
-**제품 설명**:
-대형 스테이커의 언스테이킹이 노출되면 "뭔가 문제가 있나?" 패닉으로 연쇄 철수가 발생하는 문제를 해결.
+**Product Description**:
+Solving the problem where large staker unstaking exposure causes "is there a problem?" panic, triggering chain withdrawals.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 고래의 $30M 언스테이킹 요청 노출 → 커뮤니티 패닉 → 다른 스테이커들도 철수 → 네트워크 보안 약화
-- ZK DeFi 사용: 언스테이킹 규모 비공개 → 개별 철수가 시장 심리에 영향 없음
-- 결과: 합리적 개인 결정만 존재, 패닉 기반 뱅크런 방지
+**Typical User Experience**:
+- Without Privacy: Whale's $30M unstaking request exposed → Community panic → Other stakers also withdraw → Network security weakened
+- With ZK DeFi: Unstaking size private → Individual withdrawals don't affect market psychology
+- Result: Only rational individual decisions exist, panic-based bank runs prevented
 
-**관찰 가능한 이점**:
-- 대형 스테이커 움직임의 시그널 효과 차단
-- 네트워크 스테이킹 비율의 안정성 확보
-- 개인의 자유로운 철수 권리 보장
+**Observable Benefits**:
+- Blocking signal effect of large staker movements
+- Secured stability of network staking ratio
+- Guaranteed individual free withdrawal rights

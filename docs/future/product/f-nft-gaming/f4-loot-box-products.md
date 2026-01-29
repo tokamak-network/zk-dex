@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "시크릿 루트박스" - 열기 전까지 내용물 숨김 보장
+## 1. "Secret Loot Box" - Guaranteed Content Hiding Until Opening
 
-**제품 설명**:
-루트박스 내용물이 열기 전까지 운영자조차 알 수 없도록 암호화된 게임 아이템 박스. 운영자의 "좋은 박스 빼돌리기" 조작이 수학적으로 불가능함을 증명.
+**Product Description**:
+Game item boxes where contents are encrypted so that even operators cannot know until opened. Mathematically proves that operators' "stealing good boxes" manipulation is impossible.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 운영자가 레전더리 들어있는 박스 미리 확인 → 내부자 거래로 좋은 박스만 빼돌림 → 유저들은 꽝만 구매
-- ZK 솔루션 사용: 박스 생성 시 내용물이 암호학적으로 봉인, 열기 전까지 누구도(운영자 포함) 확인 불가
-- 결과: "운영자도 뭐가 들었는지 모르니까 조작이 불가능해요. 진짜 운으로 승부하는 거예요"
+**General User Experience**:
+- Without Privacy: Operator checks which boxes contain legendary items → Insider trading to take only good boxes → Users only buy duds
+- Using ZK Solution: Box contents are cryptographically sealed upon creation, nobody (including operators) can verify until opening
+- Result: "Since even the operator doesn't know what's inside, manipulation is impossible. It's truly based on luck"
 
-**관찰 가능한 이점**:
-- 내부자 거래/조작 원천 차단
-- "좋은 박스는 다 빠졌다" 의혹 해소
-- 공정한 랜덤 보상 시스템 신뢰 구축
+**Observable Benefits**:
+- Complete blocking of insider trading/manipulation
+- Resolving suspicions that "all good boxes are gone"
+- Building trust in fair random reward systems
 
-## 2. "안티스나이핑 미스터리 민팅" - 내용물 숨김 NFT 드롭
+## 2. "Anti-Sniping Mystery Minting" - Hidden Content NFT Drop
 
-**제품 설명**:
-NFT 민팅 시 어떤 토큰 ID가 희귀한지 미리 알 수 없도록 내용물을 숨기는 시스템. 봇이 메타데이터 스나이핑으로 레어만 골라 민팅하는 것 방지.
+**Product Description**:
+A system that hides contents during NFT minting so nobody can know which token IDs are rare. Prevents bots from sniping rare items through metadata analysis.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 봇이 메타데이터 분석 → "#123이 레전더리" 파악 → 해당 토큰만 노려서 민팅 → 일반 유저는 커먼만 획득
-- ZK 솔루션 사용: 모든 NFT가 리빌 전까지 동일하게 보임, 메타데이터 숨겨져 스나이핑 불가
-- 결과: "봇이 레어 다 가져가던 시절은 끝났어요. 저도 드디어 레전더리 민팅 성공!"
+**General User Experience**:
+- Without Privacy: Bots analyze metadata → Identify "#123 is legendary" → Target only those tokens for minting → Regular users only get commons
+- Using ZK Solution: All NFTs appear identical until reveal, metadata hidden, sniping impossible
+- Result: "The era of bots taking all the rares is over. I finally minted a legendary!"
 
-**관찰 가능한 이점**:
-- 메타데이터 스나이핑 봇 무력화
-- 모든 참여자에게 공평한 희귀 아이템 기회
-- NFT 민팅 생태계 공정성 확보
+**Observable Benefits**:
+- Neutralization of metadata sniping bots
+- Equal rare item opportunities for all participants
+- Ensuring fairness in NFT minting ecosystem
 
 ---
 

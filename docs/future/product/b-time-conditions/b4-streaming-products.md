@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "비공개 급여 스트리밍" - 동료에게 연봉이 노출되지 않는 실시간 급여
+## 1. "Private Salary Streaming" - Real-Time Salary Without Colleague Exposure
 
-**제품 설명**:
-직원들이 실시간으로 급여를 받으면서도, 각자의 급여 수준이 다른 동료에게 절대 노출되지 않는 서비스. 기존 온체인 급여 스트리밍(Sablier, Superfluid)은 모든 급여가 공개되어 조직 내 갈등 유발.
+**Product Description**:
+A service where employees receive real-time salary while their individual salary levels remain absolutely hidden from other colleagues. Existing on-chain salary streaming (Sablier, Superfluid) exposes all salaries, causing organizational conflicts.
 
-**일반 사용자 경험**:
-- 블록체인 기업 "디파이랩스"는 20명 직원에게 실시간 급여 스트리밍 도입
-- 기존 Sablier 사용 시 모든 직원이 서로의 연봉을 즉시 확인 가능 → 심각한 내부 갈등
-- 신입 개발자 김지훈씨(26세)는 연봉 5천만원, 시니어 박민수씨(35세)는 1억 2천만원
-- ZK 스트리밍 도입: 각자 본인 급여만 실시간 확인, 타인 급여는 절대 조회 불가
-- 김지훈씨는 매초 약 1.58원씩 급여가 쌓이는 것을 확인하며 동기부여
-- 동료 급여를 몰라서 불필요한 비교 대신 본인 성장에 집중
+**General User Experience**:
+- Blockchain company "DeFiLabs" introduces real-time salary streaming for 20 employees
+- Using existing Sablier allows all employees to instantly check each other's salaries → serious internal conflicts
+- Junior developer Ji-hoon Kim (26) earns 50M KRW annually, senior Min-soo Park (35) earns 120M KRW annually
+- Implements ZK streaming: each person sees only their own salary in real-time, absolutely cannot view others'
+- Ji-hoon Kim sees salary accumulating at about 1.58 KRW per second, feels motivated
+- Not knowing colleagues' salaries, focuses on personal growth instead of unnecessary comparisons
 
-**관찰 가능한 이점**:
-- 급여 차이로 인한 조직 내 갈등, 시기, 이직 충동 방지
-- 경쟁사가 급여 수준 파악하여 스카우트 조건 설정하는 것 차단
-- 실시간 급여의 동기부여 효과는 유지하면서 프라이버시 문제 해결
+**Observable Benefits**:
+- Prevents organizational conflicts, envy, and turnover impulses due to salary differences
+- Blocks competitors from determining salary levels to set recruitment conditions
+- Maintains motivational effect of real-time salary while solving privacy issues
 
-## 2. "익명 창작자 후원" - 신원 노출 없는 정기 후원 시스템
+## 2. "Anonymous Creator Support" - Regular Support System Without Identity Exposure
 
-**제품 설명**:
-유튜버, 작가, 예술가 등 창작자에게 정기적으로 후원하면서 후원자의 신원과 후원 금액이 완전히 비공개로 유지되는 서비스. 후원 사실이 알려지면 곤란한 상황에서도 안전하게 지원 가능.
+**Product Description**:
+A service for regularly supporting creators like YouTubers, writers, and artists while supporter identity and donation amounts remain completely private. Enables safe support even when public knowledge of support would be problematic.
 
-**일반 사용자 경험**:
-- 대기업 임원 이정민씨(52세)는 정치 유튜버 "시민의목소리" 채널의 팬
-- 회사 입장과 다른 정치적 콘텐츠라 후원 사실이 알려지면 사내 입지에 악영향
-- 기존 후원 플랫폼은 후원자 명단이 공개되거나 결제 내역 추적 가능
-- ZK 스트리밍 후원: 매월 50만원씩 자동 후원, 신원 완전 비공개
-- 채널 운영자는 "익명 후원자로부터 월 50만원"만 확인, 이정민씨 특정 불가
-- 회사 동료나 가족에게도 후원 사실 노출 걱정 없이 지속적 지원
+**General User Experience**:
+- Corporate executive Jung-min Lee (52) is a fan of political YouTuber "Citizen's Voice" channel
+- Political content differs from company stance; if support becomes known, would negatively impact internal standing
+- Existing support platforms expose supporter lists or have traceable payment records
+- ZK streaming support: automatically donates 500K KRW monthly, identity completely private
+- Channel operator only sees "500K KRW monthly from anonymous supporter," cannot identify Lee Jung-min
+- No worries about colleagues or family discovering support, enables continuous backing
 
-**관찰 가능한 이점**:
-- 정치적, 종교적, 사회적으로 민감한 창작자 후원 시 신원 보호
-- 후원자와 창작자 간 부적절한 관계 의혹 방지 (누군지 모르니까)
-- 가족, 직장 동료에게 지출 내역 설명이 필요 없는 완전한 프라이버시
+**Observable Benefits**:
+- Identity protection when supporting politically, religiously, or socially sensitive creators
+- Prevents suspicion of inappropriate relationships between supporters and creators (since identity unknown)
+- Complete privacy requiring no explanation of spending to family or coworkers
 
-## 3. "기밀 고문료 지급" - 컨설턴트 보수 비공개 시스템
+## 3. "Confidential Advisory Fees" - Private Consultant Compensation System
 
-**제품 설명**:
-기업이 외부 고문, 컨설턴트에게 지급하는 자문료를 비공개로 스트리밍하는 서비스. 고문료 규모가 알려지면 경쟁사의 스카우트 타겟이 되거나, 다른 고문들과의 형평성 문제 발생.
+**Product Description**:
+A service for privately streaming advisory fees that companies pay to external advisors and consultants. If advisory fee amounts become known, they become recruitment targets for competitors or equity issues arise with other advisors.
 
-**일반 사용자 경험**:
-- 스타트업 "넥스트AI"는 전 구글 VP를 기술 고문으로 영입, 월 고문료 3천만원
-- 다른 고문들(월 500만원~1천만원)이 이 금액을 알면 불만 폭발 예상
-- 경쟁사가 "넥스트AI가 전 구글 VP에게 얼마 주는지" 파악하면 더 높은 조건으로 스카우트 시도
-- ZK 스트리밍으로 고문료 지급: 지급액, 수령자 모두 비공개
-- 전 구글 VP는 매일 약 100만원씩 고문료 수령하면서도 금액 노출 없음
-- 다른 고문들은 본인 고문료만 확인 가능, 비교 대상 없어 불만 X
+**General User Experience**:
+- Startup "NextAI" recruits former Google VP as technical advisor, monthly fee 30M KRW
+- If other advisors (monthly 5M~10M KRW) learn this amount, dissatisfaction explosion expected
+- If competitors discover "how much NextAI pays former Google VP," they'll attempt recruitment with higher offers
+- Pays advisory fees via ZK streaming: payment amounts and recipients both private
+- Former Google VP receives approximately 1M KRW daily in advisory fees without amount exposure
+- Other advisors can only check their own fees, no comparison target so no complaints
 
-**관찰 가능한 이점**:
-- 고문/컨설턴트 간 보수 차이로 인한 갈등 방지
-- 핵심 인력의 보수 정보가 경쟁사에 유출되는 것 차단
-- 투자자나 외부인이 회사의 고문단 비용 구조를 파악하는 것 방지
+**Observable Benefits**:
+- Prevents conflicts due to compensation differences among advisors/consultants
+- Blocks key personnel compensation information from leaking to competitors
+- Prevents investors or outsiders from understanding company's advisory cost structure

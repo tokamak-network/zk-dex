@@ -294,7 +294,7 @@ component main {public [gridConfigHash, noteHashes, outputHashes, currentPrice,
 
 ## 실제 제품 및 사용자 경험
 
-전용 제품 문서 참조: [제품 응용](../../../product/a-core-trading/a6-grid-trading-products.md)
+전용 제품 문서 참조: [제품 응용](../../product/a-core-trading/a6-grid-trading-products.md)
 
 ---
 

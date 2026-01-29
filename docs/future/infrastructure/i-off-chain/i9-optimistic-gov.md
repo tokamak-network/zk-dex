@@ -217,7 +217,7 @@ component main {public [proposalHash, challengeCommitment, windowEnd, currentTim
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i9-optimistic-gov-products.md](../../../product/i-off-chain/i9-optimistic-gov-products.md)
+See: [../../product/i-off-chain/i9-optimistic-gov-products.md](../../product/i-off-chain/i9-optimistic-gov-products.md)
 
 ---
 

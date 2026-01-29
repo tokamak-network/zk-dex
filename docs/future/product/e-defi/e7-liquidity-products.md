@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "LP 스텔스" - 대형 LP 철수 프론트러닝 방지
+## 1. "LP Stealth" - Large LP Withdrawal Front-Running Prevention
 
-**제품 설명**:
-대형 LP의 유동성 철수가 노출되면 트레이더들이 선제적으로 스왑하여 LP에게 불리한 가격으로 철수하게 되는 문제를 해결.
+**Product Description**:
+Solving the problem where traders preemptively swap when large LP liquidity withdrawals are exposed, causing LP to withdraw at unfavorable prices.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $10M LP 철수 의도 감지 → 아비트라저들이 선제 스왑 → 풀 가격 비율 불리하게 변동 → LP 손실 증가
-- ZK DeFi 사용: 철수 규모와 타이밍 비공개 → 프론트러닝 불가
-- 결과: 공정한 가격으로 유동성 철수, MEV 손실 제로
+**Typical User Experience**:
+- Without Privacy: $10M LP withdrawal intent detected → Arbitrageurs preemptively swap → Pool price ratio changes unfavorably → LP loss increases
+- With ZK DeFi: Withdrawal size and timing private → Front-running impossible
+- Result: Liquidity withdrawal at fair price, zero MEV loss
 
-**관찰 가능한 이점**:
-- 유동성 철수 시 MEV 추출 차단
-- 대형 LP의 움직임이 시장 신호가 되는 것 방지
-- LP의 자유로운 포지션 관리 보장
+**Observable Benefits**:
+- Blocking MEV extraction during liquidity withdrawal
+- Prevention of large LP movements becoming market signals
+- Guaranteed free position management for LPs
 
-## 2. "IL 계산 차단" - 비영구적 손실 정보 보호
+## 2. "IL Calculation Blocking" - Impermanent Loss Information Protection
 
-**제품 설명**:
-LP 포지션이 노출되면 경쟁자가 정확한 비영구적 손실(IL)을 계산하여 LP의 손익분기점을 파악하고 역이용하는 문제를 해결.
+**Product Description**:
+Solving the problem where competitors calculate exact impermanent loss (IL) when LP positions are exposed, identifying LP's break-even point and exploiting it.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: LP 진입가와 규모 노출 → 경쟁 MM이 IL 손익분기 가격 계산 → 해당 가격대에서 집중 거래로 LP 손실 유도
-- ZK DeFi 사용: 진입가, 규모 비공개 → IL 계산 및 악용 불가
-- 결과: LP의 손익 정보 보호, 공정한 마켓메이킹 경쟁
+**Typical User Experience**:
+- Without Privacy: LP entry price and size exposed → Competing MM calculates IL break-even price → Concentrated trading at that price induces LP loss
+- With ZK DeFi: Entry price, size private → IL calculation and exploitation impossible
+- Result: LP profit information protected, fair market making competition
 
-**관찰 가능한 이점**:
-- 비영구적 손실을 노린 의도적 가격 변동 방지
-- LP 전략의 경쟁 우위 보호
-- 마켓메이커 간 정보 비대칭 해소
+**Observable Benefits**:
+- Prevention of intentional price movements targeting impermanent loss
+- Protection of LP strategy competitive advantage
+- Elimination of information asymmetry between market makers
 
-## 3. "고래 추적 방지" - LP 규모 기반 시장 심리 조작 차단
+## 3. "Whale Tracking Prevention" - LP Size-Based Market Psychology Manipulation Blocking
 
-**제품 설명**:
-대형 LP 진입/철수가 "스마트머니 시그널"로 해석되어 시장 심리를 왜곡하는 문제를 해결.
+**Product Description**:
+Solving the problem where large LP entry/withdrawal is interpreted as "smart money signal," distorting market psychology.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 유명 펀드의 대형 LP 진입 노출 → "이 펀드가 이 풀에 들어갔다" 뉴스 → 무분별한 따라하기 → 거품 형성
-- ZK DeFi 사용: LP 규모와 신원 비공개 → 시장 심리 조작 불가
-- 결과: 개별 LP 활동이 시장 신호가 되는 것 방지
+**Typical User Experience**:
+- Without Privacy: Famous fund's large LP entry exposed → "This fund entered this pool" news → Mindless copying → Bubble formation
+- With ZK DeFi: LP size and identity private → Market psychology manipulation impossible
+- Result: Prevention of individual LP activity becoming market signal
 
-**관찰 가능한 이점**:
-- 고래 추적 기반 투자 조언 산업 무력화
-- 실제 펀더멘털 기반 투자 결정 유도
-- LP의 프라이버시와 시장의 효율성 동시 확보
+**Observable Benefits**:
+- Neutralization of whale-tracking-based investment advice industry
+- Inducing actual fundamental-based investment decisions
+- Simultaneous securing of LP privacy and market efficiency

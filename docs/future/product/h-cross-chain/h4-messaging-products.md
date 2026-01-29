@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "메타데이터 숨김 메시징" - 통신 패턴 비공개 서비스
+## 1. "Metadata Concealment Messaging" - Communication Pattern Privacy Service
 
-**제품 설명**:
-메시지 내용뿐 아니라 누가 누구에게, 언제, 얼마나 자주 통신하는지까지 숨기는 프라이버시 메시징. 일반 암호화 메시지는 내용만 숨기고 패턴은 노출됩니다.
+**Product Description**:
+Privacy messaging that hides not only message content but also who communicates with whom, when, and how frequently. Regular encrypted messaging only hides content while exposing patterns.
 
-**일반 사용자 경험**:
-- 정민호씨(36세, 스타트업 대표)는 M&A 협상 중
-- 일반 암호화: "민호씨가 특정 주소와 매일 통신" 패턴 노출
-- 메타데이터 숨김: 통신 상대, 빈도, 타이밍 모두 비공개
-- 외부 관찰자는 민호씨가 누구와 협상 중인지 알 수 없음
-- M&A 상대방이 누구인지 발표 전까지 완전 비밀
+**User Experience**:
+- Mr. Jung (36, startup CEO) is in M&A negotiations
+- Regular encryption: "Jung communicates daily with specific address" pattern is exposed
+- Metadata concealment: Communication counterparty, frequency, timing all private
+- External observers cannot determine who Jung is negotiating with
+- M&A counterparty remains completely secret until announcement
 
-**관찰 가능한 이점**:
-- 비즈니스 관계 자체가 비공개
-- 통신 패턴으로 거래 추론 방지
-- "누구와 대화하는가"가 전략적 정보일 때 보호
+**Observable Benefits**:
+- Business relationships themselves remain private
+- Prevention of transaction inference from communication patterns
+- Protection when "who you talk to" is strategic information
 
-## 2. "프라이빗 크로스체인 지시" - MEV 방지 거래 전달
+## 2. "Private Cross-Chain Instructions" - MEV-Protected Transaction Relay
 
-**제품 설명**:
-한 체인에서 다른 체인으로 거래 지시를 보낼 때, 릴레이어도 거래 내용을 알 수 없는 프라이버시 메시징.
+**Product Description**:
+Privacy messaging where even relayers cannot see transaction content when sending transaction instructions from one chain to another.
 
-**일반 사용자 경험**:
-- 박소영씨(28세)는 이더리움 가격 조건 충족 시 ZK-DEX에서 자동 매수 설정
-- 일반 크로스체인: 릴레이어가 거래 내용을 보고 MEV 추출 가능
-- 프라이빗 메시징: 거래 지시가 암호화되어 전달
-- 릴레이어는 "어떤 메시지가 있다"만 알고 내용은 모름
-- ZK-DEX 컨트랙트만 복호화하여 실행
+**User Experience**:
+- Ms. Park (28) sets automatic buy on ZK-DEX when Ethereum price condition is met
+- Regular cross-chain: Relayer sees transaction content and can extract MEV
+- Private messaging: Transaction instructions are encrypted during relay
+- Relayer only knows "there is some message," not the content
+- Only ZK-DEX contract decrypts and executes
 
-**관찰 가능한 이점**:
-- 크로스체인 MEV로부터 완벽한 보호
-- 자동화 전략이 릴레이어에게 노출되지 않음
-- 크로스체인 조건부 주문의 프라이버시 확보
+**Observable Benefits**:
+- Perfect protection from cross-chain MEV
+- Automation strategy not exposed to relayers
+- Privacy secured for cross-chain conditional orders
 
-## 3. "익명 크로스체인 투표" - 투표자 신원 완전 비공개
+## 3. "Anonymous Cross-Chain Voting" - Complete Voter Identity Privacy
 
-**제품 설명**:
-여러 체인에 걸친 거버넌스 투표에서 누가 어떻게 투표했는지 완전히 숨기면서 유효한 투표를 증명하는 서비스.
+**Product Description**:
+A service that completely hides who voted how in multi-chain governance voting while proving valid votes.
 
-**일반 사용자 경험**:
-- 이현수씨(45세)는 논쟁적인 DAO 제안에 반대 투표하고 싶음
-- 일반 투표: "현수씨가 반대 투표" 공개 → 커뮤니티 압력 우려
-- 익명 투표: 투표 자격만 ZK로 증명, 투표 내용은 암호화
-- 집계 시 전체 결과만 공개, 개인 투표는 영원히 비밀
-- 현수씨가 반대했는지 찬성했는지 아무도 모름
+**User Experience**:
+- Mr. Lee (45) wants to vote against a controversial DAO proposal
+- Regular voting: "Lee voted against" is public → concerns about community pressure
+- Anonymous voting: Only voting eligibility proven with ZK, vote content encrypted
+- During aggregation only total result is public, individual votes remain secret forever
+- No one knows whether Lee voted against or for
 
-**관찰 가능한 이점**:
-- 투표에 대한 사회적 압력/보복 방지
-- 진정한 의사 표현 가능
-- 대형 토큰 홀더의 영향력 행사 숨김
+**Observable Benefits**:
+- Prevention of social pressure/retaliation on votes
+- Enables genuine expression of opinion
+- Hides large token holders' influence exercise
 
 ---
 

@@ -4,35 +4,35 @@
 
 ---
 
-## 1. "익명 지분 투자" - 프라이빗 NFT 분할 소유
+## 1. "Anonymous Stake Investment" - Private NFT Fractional Ownership
 
-**제품 설명**:
-고가 NFT의 분할 지분을 익명으로 보유하고 거래하는 플랫폼. 누가 얼마나 보유하고 있는지 외부에서 알 수 없어, 대주주 타겟팅이나 지분 매집 압박 방지.
+**Product Description**:
+A platform for anonymously holding and trading fractional shares of high-value NFTs. Since outsiders cannot know who holds how much, it prevents majority shareholder targeting and share accumulation pressure.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "A 지갑이 30% 보유 중" 정보 노출 → 해당 주소로 협박 DM, 매도 압박, 해킹 시도 집중
-- ZK 솔루션 사용: 투자자 이분산씨(35세)가 인기 NFT 15% 지분 보유, 하지만 외부에서는 지분율 확인 불가
-- 결과: "대주주라는 이유로 커뮤니티에서 표적이 될 걱정 없이 편하게 투자해요"
+**General User Experience**:
+- Without Privacy: Information exposed: "Wallet A holds 30%" → Threatening DMs to that address, selling pressure, concentrated hacking attempts
+- Using ZK Solution: Investor Lee Bun-san (age 35) holds 15% stake in popular NFT, but ownership percentage is unverifiable externally
+- Result: "I can invest comfortably without worrying about being targeted by the community for being a major shareholder"
 
-**관찰 가능한 이점**:
-- 대량 보유자 타겟 공격 방지
-- 지분 매집 정보 기반 가격 조작 차단
-- 안전한 장기 투자 환경
+**Observable Benefits**:
+- Prevention of targeted attacks on large holders
+- Blocking price manipulation based on share accumulation information
+- Safe long-term investment environment
 
-## 2. "시크릿 길드 금고" - 길드 자산 익명 관리
+## 2. "Secret Guild Vault" - Anonymous Guild Asset Management
 
-**제품 설명**:
-게임 길드가 보유한 고가 NFT 자산 현황을 경쟁 길드로부터 숨길 수 있는 시스템. 적 길드가 우리 자산 규모나 전략적 아이템 보유 현황을 파악 불가.
+**Product Description**:
+A system that allows gaming guilds to hide their high-value NFT asset holdings from competing guilds. Enemy guilds cannot determine our asset size or strategic item holdings.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 경쟁 길드가 우리 금고 분석 → "저 길드 자금 바닥났네, 지금 공격하자" 전략 노출
-- ZK 솔루션 사용: 길드 "섀도우레이더" 금고에 총 3억원 상당 NFT 보유, 하지만 외부에서는 보유 내역 확인 불가
-- 결과: "우리 전력이 노출 안 되니까 경쟁 길드가 함부로 못 덤벼요"
+**General User Experience**:
+- Without Privacy: Competing guild analyzes our vault → "Their funds are depleted, let's attack now" strategy exposed
+- Using ZK Solution: Guild "ShadowRaiders" holds NFTs worth $3M total, but holdings are unverifiable externally
+- Result: "Since our strength isn't exposed, competing guilds can't attack recklessly"
 
-**관찰 가능한 이점**:
-- 경쟁자의 전략적 정보 수집 차단
-- 길드 간 정보전에서 우위 확보
-- 자산 규모 기반 표적 공격 방지
+**Observable Benefits**:
+- Blocking strategic information gathering by competitors
+- Gaining advantage in inter-guild information warfare
+- Prevention of targeted attacks based on asset size
 
 ---
 

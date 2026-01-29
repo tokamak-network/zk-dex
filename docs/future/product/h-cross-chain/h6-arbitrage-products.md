@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "숨겨진 차익거래" - 전략 완전 비공개 아비트라지
+## 1. "Hidden Arbitrage" - Complete Strategy Privacy Arbitrage
 
-**제품 설명**:
-크로스체인 차익거래를 실행할 때 어느 체인에서 사고 어디서 파는지, 얼마나 수익을 내는지가 완전히 숨겨지는 프라이버시 아비트라지 서비스.
+**Product Description**:
+A privacy arbitrage service where which chains to buy and sell from, and how much profit is made, is completely hidden during cross-chain arbitrage execution.
 
-**일반 사용자 경험**:
-- 최동현씨(29세)는 이더리움-아비트럼 간 가격 차이 발견
-- 일반 차익거래: "이 주소가 ETH에서 사고 Arb에서 팔았다" 공개
-- 프라이빗 차익거래: 양쪽 체인 거래가 연결되지 않음
-- 수익 금액도 숨겨져 "이 전략이 얼마나 수익성 있는지" 비공개
-- 경쟁자가 동현씨의 전략을 복제할 수 없음
+**User Experience**:
+- Mr. Choi (29) discovers price difference between Ethereum and Arbitrum
+- Regular arbitrage: "This address bought on ETH and sold on Arb" is public
+- Private arbitrage: Transactions on both chains are not connected
+- Profit amount also hidden, "how profitable this strategy is" remains private
+- Competitors cannot replicate Choi's strategy
 
-**관찰 가능한 이점**:
-- 차익거래 전략의 영업비밀 보호
-- 수익성 있는 경로가 경쟁자에게 노출되지 않음
-- 지속 가능한 알파(초과수익) 유지
+**Observable Benefits**:
+- Arbitrage strategy trade secret protection
+- Profitable routes not exposed to competitors
+- Sustainable alpha (excess returns) maintenance
 
-## 2. "MEV 보호 크로스체인" - 프론트러닝 차단 거래
+## 2. "MEV-Protected Cross-Chain" - Front-Running Blocked Trading
 
-**제품 설명**:
-크로스체인 거래 시 MEV 봇이 거래 의도를 파악하지 못하도록 암호화하여 실행하는 서비스.
+**Product Description**:
+A service that executes cross-chain transactions encrypted so MEV bots cannot determine transaction intent.
 
-**일반 사용자 경험**:
-- 임수정씨(35세)는 체인 A에서 B로 대량 스왑 실행 예정
-- 일반 실행: MEV 봇이 패턴을 감지하고 샌드위치 공격
-- MEV 보호: 거래 의도가 암호화되어 릴레이어도 내용 모름
-- 양쪽 체인에서 동시에 실행되어 MEV 추출 시간 없음
-- 예상 가격과 실제 체결가가 일치
+**User Experience**:
+- Ms. Im (35) plans to execute large swap from Chain A to B
+- Regular execution: MEV bots detect pattern and sandwich attack
+- MEV protection: Transaction intent encrypted, even relayers don't know content
+- Executes simultaneously on both chains, no time for MEV extraction
+- Expected price matches actual execution price
 
-**관찰 가능한 이점**:
-- 크로스체인 MEV 손실 제로
-- 거래 의도 숨김으로 전략 보호
-- 대량 크로스체인 거래의 안전한 실행
+**Observable Benefits**:
+- Zero cross-chain MEV loss
+- Transaction intent hiding protects strategy
+- Safe execution of large cross-chain transactions
 
-## 3. "비공개 수익 축적" - 차익거래 이익 프라이버시
+## 3. "Private Profit Accumulation" - Arbitrage Earnings Privacy
 
-**제품 설명**:
-차익거래로 얻은 수익이 어디서, 얼마나 발생했는지 숨기면서 안전하게 축적하는 서비스.
+**Product Description**:
+A service that safely accumulates profits from arbitrage while hiding where and how much was generated.
 
-**일반 사용자 경험**:
-- 정재민씨(42세)는 크로스체인 차익거래로 월 $5,000 수익
-- 일반 축적: "이 주소가 아비트라지로 $5K 벌었다" 공개
-- 비공개 축적: 수익이 프라이빗 노트로 직접 축적
-- 총 수익 규모, 빈도, 패턴 모두 비공개
-- 세금 신고 시에만 선택적으로 총액 증명 가능
+**User Experience**:
+- Mr. Jung (42) earns $5,000 monthly profit from cross-chain arbitrage
+- Regular accumulation: "This address earned $5K from arbitrage" is public
+- Private accumulation: Profits directly accumulate as private notes
+- Total profit size, frequency, patterns all remain private
+- Can selectively prove total amount only for tax reporting
 
-**관찰 가능한 이점**:
-- 수익 규모로 전략 수익성 추론 방지
-- 경쟁자가 "이 전략이 먹힌다" 파악 불가
-- 프라이버시와 세금 준수의 균형
+**Observable Benefits**:
+- Prevention of strategy profitability inference from profit size
+- Competitors cannot determine "this strategy works"
+- Balance between privacy and tax compliance
 
 ---
 

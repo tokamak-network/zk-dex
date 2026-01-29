@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "고래 스왑" - MEV 방지 대량 거래 서비스
+## 1. "Whale Swap" - Anti-MEV Large Trade Service
 
-**제품 설명**:
-대량 스왑 시 MEV 봇의 샌드위치 공격을 원천 차단하는 프라이빗 AMM 서비스. 거래 규모가 숨겨져 있어 봇이 선행매매를 할 수 없음.
+**Product Description**:
+Private AMM service that completely blocks sandwich attacks by MEV bots during large swaps. Transaction size is hidden, preventing bots from front-running.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 100 ETH 스왑 주문이 멤풀에 보이자마자 MEV 봇이 선행매매 → 슬리피지 5% 손실 ($15,000)
-- ZK DeFi 사용: 거래 규모가 숨겨진 상태로 스왑 실행 → 봇이 거래 크기를 알 수 없어 공격 불가
-- 결과: 공정한 시장가로 체결, MEV 손실 0
+**Typical User Experience**:
+- Without Privacy: 100 ETH swap order appears in mempool → MEV bots front-run → 5% slippage loss ($15,000)
+- With ZK DeFi: Swap executes with hidden transaction size → Bots cannot detect trade size to attack
+- Result: Fair market price execution, zero MEV loss
 
-**관찰 가능한 이점**:
-- 샌드위치 공격으로 인한 슬리피지 손실 완전 방지
-- 대량 주문의 시장 영향(market impact) 최소화
-- 트레이딩 의도가 경쟁자에게 노출되지 않음
+**Observable Benefits**:
+- Complete prevention of slippage loss from sandwich attacks
+- Minimized market impact of large orders
+- Trading intent not exposed to competitors
 
-## 2. "시크릿 리밸런서" - 펀드 포트폴리오 조정 서비스
+## 2. "Secret Rebalancer" - Fund Portfolio Adjustment Service
 
-**제품 설명**:
-헤지펀드나 자산운용사가 포트폴리오 리밸런싱 시 거래 전략이 복제되는 것을 방지하는 서비스.
+**Product Description**:
+Service preventing hedge funds and asset managers from having their rebalancing strategies copied during portfolio adjustments.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드의 대량 매수 주문이 온체인에 노출 → 카피 트레이더들이 즉시 따라 매수 → 가격 상승으로 펀드 매수 비용 증가
-- ZK DeFi 사용: 리밸런싱 거래 규모와 방향이 숨겨짐 → 전략 복제 불가
-- 결과: 독점적 알파 유지, 전략 수익률 보호
+**Typical User Experience**:
+- Without Privacy: Fund's large buy order exposed on-chain → Copy traders immediately follow → Price rises, increasing fund's purchase cost
+- With ZK DeFi: Rebalancing transaction size and direction hidden → Strategy replication impossible
+- Result: Proprietary alpha preserved, strategy returns protected
 
-**관찰 가능한 이점**:
-- 독자적인 투자 전략의 기밀 유지
-- 카피 트레이딩으로 인한 알파 훼손 방지
-- 기관 투자자의 거래 의도 보호
+**Observable Benefits**:
+- Confidentiality of proprietary investment strategies maintained
+- Prevention of alpha erosion from copy trading
+- Protection of institutional investor trading intent
 
-## 3. "스텔스 청산 방어" - 청산 가격 노출 방지 서비스
+## 3. "Stealth Liquidation Defense" - Liquidation Price Exposure Prevention
 
-**제품 설명**:
-AMM에서 포지션 정리 시 청산 가격대가 노출되어 의도적 가격 조작의 타겟이 되는 것을 방지하는 서비스.
+**Product Description**:
+Service preventing positions from becoming targets of intentional price manipulation when liquidation price ranges are exposed during AMM position exits.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대형 LP 포지션의 손절 가격대가 온체인에 노출 → 고래들이 해당 가격까지 밀어붙여 강제 청산 유도
-- ZK DeFi 사용: 스왑 규모와 타이밍이 비공개 → 청산 사냥꾼이 타겟팅 불가
-- 결과: 시장 조작에 의한 강제 청산 방지
+**Typical User Experience**:
+- Without Privacy: Large LP position's stop-loss price exposed on-chain → Whales push price to trigger forced liquidation
+- With ZK DeFi: Swap size and timing private → Liquidation hunters cannot target
+- Result: Prevention of forced liquidation through market manipulation
 
-**관찰 가능한 이점**:
-- 청산 사냥(liquidation hunting) 공격 방어
-- 포지션 규모 노출로 인한 타겟팅 방지
-- 공정한 가격에서의 자율적 포지션 관리
+**Observable Benefits**:
+- Defense against liquidation hunting attacks
+- Prevention of targeting due to position size exposure
+- Autonomous position management at fair prices

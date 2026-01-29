@@ -223,7 +223,7 @@ component main {public [totalValueCommitment, allocationCommitment, timestamp]} 
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i3-yield-aggregator-products.md](../../../product/i-off-chain/i3-yield-aggregator-products.md)
+See: [../../product/i-off-chain/i3-yield-aggregator-products.md](../../product/i-off-chain/i3-yield-aggregator-products.md)
 
 ---
 

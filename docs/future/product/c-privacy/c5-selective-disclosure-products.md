@@ -4,44 +4,44 @@
 
 ---
 
-## 1. "신원 확인 without 전체 공개" - 최소 정보 인증 서비스
+## 1. "Identity Verification without Full Disclosure" - Minimal Information Authentication Service
 
-**제품 설명**:
-신원 확인이 필요한 상황에서 필요한 정보만 선택적으로 공개하고 나머지는 숨길 수 있는 서비스입니다. 예를 들어 성인 인증 시 생년월일 전체가 아닌 "19세 이상"만 증명합니다.
+**Product Description**:
+A service that allows selective disclosure of only necessary information in situations requiring identity verification, hiding the rest. For example, during age verification, it proves only "over 19 years old" rather than the full date of birth.
 
-**일반 사용자 경험**:
-송민재씨(25세, 대학원생)는 성인 전용 NFT 마켓플레이스에 가입하려 합니다. 기존에는 주민등록번호나 신분증 전체를 제출해야 했습니다. 이 서비스로 송민재씨는 "19세 이상"이라는 사실만 암호학적으로 증명합니다. 마켓플레이스는 성인 확인을 할 수 있고, 송민재씨의 정확한 나이, 이름, 주소 등 다른 정보는 전혀 알 수 없습니다. 최소한의 정보만으로 필요한 검증을 완료했습니다.
+**User Experience**:
+Min-jae Song (25, graduate student) wants to join an adult-only NFT marketplace. Previously, he had to submit his entire resident registration number or ID card. With this service, Mr. Song cryptographically proves only the fact that he is "over 19 years old." The marketplace can confirm age verification, but cannot know Mr. Song's exact age, name, address, or other information. The necessary verification is completed with minimal information.
 
-**관찰 가능한 이점**:
-- 검증에 꼭 필요한 정보만 공개하고 나머지는 완벽히 보호
-- 신분증 전체 노출로 인한 신원 도용 위험 제거
-- 다양한 서비스에 맞춤형 정보 공개 가능
+**Observable Benefits**:
+- Discloses only information essential for verification, perfectly protecting the rest
+- Eliminates identity theft risks from full ID exposure
+- Enables customized information disclosure for various services
 
-## 2. "토큰 보유 인증" - NFT/토큰 소유 증명 서비스
+## 2. "Token Holding Authentication" - NFT/Token Ownership Proof Service
 
-**제품 설명**:
-특정 토큰이나 NFT를 보유하고 있다는 사실만 증명하고, 보유량이나 다른 자산 정보는 숨길 수 있는 서비스입니다.
+**Product Description**:
+A service that proves only the fact of holding specific tokens or NFTs while hiding holding amounts or other asset information.
 
-**일반 사용자 경험**:
-정유진씨(30세, 회사원)는 인기 NFT 커뮤니티에 가입하고 싶습니다. 가입 조건은 해당 NFT 1개 이상 보유입니다. 선택적 공개 기능으로 유진씨는 "해당 NFT 보유자"라는 사실만 증명합니다. 커뮤니티는 가입 자격을 확인할 수 있지만, 유진씨가 몇 개를 보유했는지, 다른 어떤 NFT를 가졌는지, 지갑의 총 가치가 얼마인지는 알 수 없습니다. 프라이버시를 유지하면서 커뮤니티에 참여할 수 있게 되었습니다.
+**User Experience**:
+Yu-jin Jung (30, office worker) wants to join a popular NFT community. The membership condition is holding at least 1 of the specific NFT. Using the selective disclosure feature, Ms. Jung proves only the fact of being a "holder of the NFT." The community can verify membership eligibility, but cannot know how many she holds, what other NFTs she owns, or the total value of her wallet. She can participate in the community while maintaining privacy.
 
-**관찰 가능한 이점**:
-- 자격 조건만 증명하고 전체 포트폴리오는 비공개
-- NFT 보유량에 따른 차별이나 표적화 방지
-- 커뮤니티 가입 시 필요 이상의 정보 노출 방지
+**Observable Benefits**:
+- Proves only eligibility conditions while keeping entire portfolio private
+- Prevents discrimination or targeting based on NFT holding amounts
+- Prevents disclosure of more information than necessary for community membership
 
-## 3. "거래 범위 증명" - 투자 규모 익명 검증 서비스
+## 3. "Transaction Range Proof" - Anonymous Investment Scale Verification Service
 
-**제품 설명**:
-투자 금액이 특정 범위 내에 있다는 것만 증명하고, 정확한 금액은 공개하지 않는 서비스입니다.
+**Product Description**:
+A service that proves only that an investment amount is within a specific range without disclosing the exact amount.
 
-**일반 사용자 경험**:
-황동현씨(38세, 투자자)는 프라이빗 투자 클럽에 가입하려 합니다. 클럽의 조건은 "총 투자금 5천만원~5억원 보유자"입니다. 선택적 공개 서비스로 황동현씨는 자신의 투자금이 이 범위 내에 있다는 것만 증명합니다. 클럽은 자격을 확인하지만, 황동현씨가 정확히 얼마를 가졌는지, 어떤 자산에 투자했는지는 알 수 없습니다. 황동현씨는 자산 규모 노출 없이 클럽의 투자 정보를 얻을 수 있게 되었습니다.
+**User Experience**:
+Dong-hyun Hwang (38, investor) wants to join a private investment club. The club's condition is "total investment between 50 million and 500 million won." Using the selective disclosure service, Mr. Hwang proves only that his investment falls within this range. The club verifies eligibility, but cannot know exactly how much Mr. Hwang has or what assets he's invested in. Mr. Hwang can access the club's investment information without exposing his asset scale.
 
-**관찰 가능한 이점**:
-- 정확한 자산 규모 대신 범위만 공개하여 프라이버시 보호
-- 부유층 타겟팅 공격이나 사기 방지
-- 투자 커뮤니티 참여 시 불필요한 정보 노출 최소화
+**Observable Benefits**:
+- Privacy protection by disclosing only range instead of exact asset scale
+- Prevents wealthy targeting attacks or fraud
+- Minimizes unnecessary information exposure when participating in investment communities
 
 ---
 

@@ -219,7 +219,7 @@ component main {public [stakeHash, proposalId, convictionPower, currentTime]} =
 
 ## Real-World Products & User Experience
 
-See: [Conviction Voting Products & UX](../../../product/d-governance/d3-conviction-products.md)
+See: [Conviction Voting Products & UX](../../product/d-governance/d3-conviction-products.md)
 
 ---
 

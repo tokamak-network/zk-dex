@@ -335,7 +335,7 @@ component main {public [portfolioNoteHash, newPortfolioNoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Portfolio Rebalance - Real-World Products](../../../product/e-defi/e12-rebalance-products.md)
+See: [Portfolio Rebalance - Real-World Products](../../product/e-defi/e12-rebalance-products.md)
 ---
 
 [Back to Index](../../README.md)

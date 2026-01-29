@@ -268,7 +268,7 @@ component main {public [dcaHash, newDcaHash, outputHash, currentTime, currentPri
 
 ## Real-World Products & User Experience
 
-See [DCA (Dollar-Cost Averaging) - Products & User Experience](../../../product/b-time-conditions/b6-dca-products.md) for detailed product scenarios and user stories.
+See [DCA (Dollar-Cost Averaging) - Products & User Experience](../../product/b-time-conditions/b6-dca-products.md) for detailed product scenarios and user stories.
 
 ---
 

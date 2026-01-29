@@ -230,7 +230,7 @@ component main {public [noteHash, merkleRoot, threshold, complianceResult, compl
 
 ## 실제 제품 및 사용자 경험
 
-자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Compliance Proof (AML) - Products & UX](../../../product/c-privacy/c7-compliance-products.md)를 참조하세요.
+자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Compliance Proof (AML) - Products & UX](../../product/c-privacy/c7-compliance-products.md)를 참조하세요.
 
 ---
 

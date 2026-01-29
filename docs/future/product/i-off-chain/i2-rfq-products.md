@@ -4,56 +4,56 @@
 
 ---
 
-## 1. "비공개 견적 요청" - 딜러에게도 신원 숨김
+## 1. "Private Quote Request" - Hiding Identity Even from Dealers
 
-**제품 설명**:
-RFQ를 보낼 때 요청자의 신원이 딜러에게도 공개되지 않는 완전 익명 견적 시스템. 딜러는 "누가 요청했는지" 모른 채 견적만 제시합니다.
+**Product Description**:
+Fully anonymous quoting system where the requester's identity remains hidden even from dealers. Dealers provide quotes without knowing "who is requesting."
 
-**일반 사용자 경험**:
-- 정수민씨(45세)는 $30만 USDC 환전 필요
-- 일반 RFQ: 딜러가 "정씨가 대량 환전 요청" 파악 → 정보 축적
-- 비공개 RFQ: 딜러는 "익명이 $30만 환전 요청"만 봄
-- 견적 제출 후 체결되어도 딜러는 고객 신원 모름
-- 정씨의 거래 빈도, 규모 패턴이 딜러에게 축적되지 않음
+**User Experience**:
+- Ms. Jung (45) needs to exchange $300K USDC
+- Regular RFQ: Dealer learns "Ms. Jung requesting large exchange" → accumulates information
+- Private RFQ: Dealer only sees "anonymous party requesting $300K exchange"
+- Even after quote submission and execution, dealer doesn't know customer identity
+- Ms. Jung's trading frequency and volume patterns not accumulated by dealers
 
-**관찰 가능한 이점**:
-- 딜러의 고객 정보 수집 차단
-- 거래 이력 기반 가격 차별 방지
-- 매번 동등한 조건으로 견적 수신
+**Observable Benefits**:
+- Blocks dealer's customer information collection
+- Prevents price discrimination based on trading history
+- Receives equivalent quotes every time
 
-## 2. "견적 내용 비공개" - 선택 안 된 견적 영구 비밀
+## 2. "Quote Content Privacy" - Unselected Quotes Remain Secret Forever
 
-**제품 설명**:
-여러 딜러 견적 중 선택되지 않은 견적은 절대 공개되지 않아 딜러의 가격 전략이 보호되는 프라이버시 RFQ.
+**Product Description**:
+Privacy RFQ where unselected quotes among multiple dealer quotes are never revealed, protecting dealers' pricing strategies.
 
-**일반 사용자 경험**:
-- 박회장(60세)이 $1,000만 BTC 매입 RFQ 발송
-- 딜러 A: $60,100, 딜러 B: $60,050, 딜러 C: $60,150 견적
-- 딜러 B 선택, 체결
-- 딜러 A, C는 "내 견적이 선택 안 됐다"만 알고 다른 견적 모름
-- 경쟁 딜러의 가격 전략이 서로에게 노출되지 않음
+**User Experience**:
+- Chairman Park (60) sends RFQ for $10M BTC purchase
+- Dealer A: $60,100, Dealer B: $60,050, Dealer C: $60,150 quotes
+- Dealer B selected and executed
+- Dealers A and C only know "my quote wasn't selected," don't see other quotes
+- Competing dealers' pricing strategies not exposed to each other
 
-**관찰 가능한 이점**:
-- 딜러 간 가격 담합 방지
-- 딜러의 독자적 가격 책정 전략 보호
-- 더 공정한 경쟁 견적 유도
+**Observable Benefits**:
+- Prevents dealer price collusion
+- Protects dealers' independent pricing strategies
+- Encourages fairer competitive quotes
 
-## 3. "거래 이력 격리" - 연속 RFQ 간 연결 차단
+## 3. "Transaction History Isolation" - Blocking Links Between Sequential RFQs
 
-**제품 설명**:
-같은 사용자의 연속된 RFQ 요청이 서로 연결되지 않아 "이 사람이 지속적으로 매집 중"이라는 패턴 분석을 차단하는 서비스.
+**Product Description**:
+Service that prevents pattern analysis of "this person is continuously accumulating" by keeping sequential RFQ requests from the same user unlinked.
 
-**일반 사용자 경험**:
-- 투자사가 일주일에 걸쳐 5번의 대량 매수 RFQ 발송
-- 일반 RFQ: 딜러가 "이 고객이 매집 중" 파악 → 가격 조정
-- 이력 격리 RFQ: 각 요청이 완전히 독립적으로 처리
-- 딜러는 5개 요청이 같은 주체인지 알 수 없음
-- 대량 포지션 구축 전략이 딜러에게 노출되지 않음
+**User Experience**:
+- Investment firm sends 5 large buy RFQs over a week
+- Regular RFQ: Dealer identifies "this customer is accumulating" → adjusts prices
+- History-isolated RFQ: Each request processed completely independently
+- Dealer cannot tell if 5 requests are from same entity
+- Large position building strategy not exposed to dealers
 
-**관찰 가능한 이점**:
-- 연속 거래 의도 추론 방지
-- 매집/분배 전략 비공개
-- 공정한 가격 유지 (정보 비대칭 제거)
+**Observable Benefits**:
+- Prevents intent inference from sequential trades
+- Keeps accumulation/distribution strategies private
+- Maintains fair pricing (eliminates information asymmetry)
 
 ---
 

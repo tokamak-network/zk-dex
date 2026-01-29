@@ -335,7 +335,7 @@ component main {public [entityCommit, auditorCommit, periodStart, periodEnd, ass
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g5-audit-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g5-audit-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

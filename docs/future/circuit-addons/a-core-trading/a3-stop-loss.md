@@ -213,7 +213,7 @@ component main {public [noteHash, outputHash, triggerPrice, currentPrice, tokenT
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a3-stop-loss-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a3-stop-loss-products.md)
 
 ---
 

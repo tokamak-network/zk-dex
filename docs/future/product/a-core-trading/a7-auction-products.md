@@ -6,56 +6,56 @@
 
 ## Real-World Products & User Experience
 
-### 1. "봉인 입찰 경매" - 입찰가 유출 방지 고가 자산 경매 서비스
+### 1. "Sealed Bid Auction" - Bid Price Leakage Prevention High-Value Asset Auction Service
 
-**제품 설명**:
-NFT, 대형 토큰 블록, 희귀 디지털 자산 경매 시 입찰 금액이 다른 참여자에게 노출되지 않는 봉인 입찰 서비스. 일반 온체인 경매에서는 입찰가가 공개되어 경쟁자가 "1원만 더" 전략으로 스나이핑하거나, 입찰 정보를 이용한 가격 조작이 가능함.
+**Product Description**:
+A sealed bid service where bid amounts are not exposed to other participants when auctioning NFTs, large token blocks, or rare digital assets. On regular on-chain auctions, bids are public, enabling competitors to use "just one more" sniping strategies or price manipulation using bid information.
 
-**일반 사용자 경험**:
-- 이컬렉터(45세)는 희귀 NFT에 50 ETH 입찰 의향
-- 일반 온체인 경매에서는 입찰가가 실시간 공개
-- 경쟁자가 50.1 ETH로 막판 스나이핑, 또는 입찰 정보 보고 담합
-- ZK 봉인 입찰로 모든 입찰가가 암호화된 상태로 제출
-- 마감 시점에 ZK 증명으로 최고가 검증, 낙찰자 결정
-- 누구도 다른 입찰가를 보지 못해 순수한 가치 평가로 경쟁
+**User Experience**:
+- Collector Lee (45) intends to bid 50 ETH on rare NFT
+- On regular on-chain auctions, bid amounts are revealed in real-time
+- Competitors snipe with 50.1 ETH at the last moment, or collude using bid information
+- Using ZK sealed bidding, all bids are submitted in encrypted form
+- At closing time, ZK proof verifies highest bid and determines winner
+- No one can see other bids, competing purely on value assessment
 
-**관찰 가능한 이점**:
-- 스나이핑 및 막판 조작 완전 방지
-- 담합을 위한 입찰 정보 공유 불가능
-- 참여자가 진정한 가치 평가로 입찰하는 공정한 경매
+**Observable Benefits**:
+- Completely prevents sniping and last-minute manipulation
+- Impossible to share bid information for collusion
+- Fair auction where participants bid based on true value assessment
 
-### 2. "청산 경매 프라이버시" - 담보 청산 입찰자 보호 서비스
+### 2. "Liquidation Auction Privacy" - Collateral Liquidation Bidder Protection Service
 
-**제품 설명**:
-DeFi 프로토콜에서 담보 청산 경매 시, 청산인(Liquidator)의 입찰 금액과 전략이 노출되지 않도록 하는 서비스. 청산 입찰이 공개되면 MEV 봇이 프론트러닝하여 청산 기회를 가로채거나, 입찰 경쟁 정보를 이용한 조작이 가능함.
+**Product Description**:
+A service that prevents liquidator bid amounts and strategies from being exposed during collateral liquidation auctions in DeFi protocols. When liquidation bids are public, MEV bots can front-run to steal liquidation opportunities or manipulate using bidding competition information.
 
-**일반 사용자 경험**:
-- 박청산인(38세)은 DeFi 청산 봇 운영으로 수익 창출
-- 일반 프로토콜에서 청산 입찰 제출 시 멤풀에 정보 노출
-- MEV 봇이 더 높은 가스비로 동일 청산 기회 가로채기
-- 또는 입찰가 보고 더 유리한 조건으로 경쟁
-- ZK 청산 경매로 입찰가와 조건이 암호화 제출
-- 프론트러닝 불가능, 공정한 청산 경쟁 환경 확보
+**User Experience**:
+- Liquidator Park (38) operates DeFi liquidation bot for profit
+- Regular protocols expose liquidation bid information in mempool when submitted
+- MEV bots steal same liquidation opportunity with higher gas fees
+- Or compete with more favorable terms after seeing bid price
+- Using ZK liquidation auction, bid price and conditions are submitted encrypted
+- Front-running impossible, ensures fair liquidation competition environment
 
-**관찰 가능한 이점**:
-- 청산 MEV 가로채기 방지
-- 청산인 간 공정한 경쟁 환경
-- 더 많은 참여자가 청산에 참여하여 프로토콜 안정성 향상
+**Observable Benefits**:
+- Prevents liquidation MEV snatching
+- Fair competition environment among liquidators
+- More participants in liquidation improves protocol stability
 
-### 3. "DAO 자산 매각 비공개 경매" - 프로젝트 자산 처분 프라이버시 서비스
+### 3. "DAO Asset Sale Private Auction" - Project Asset Disposal Privacy Service
 
-**제품 설명**:
-DAO나 프로젝트가 대규모 자산(토큰, NFT, 프로토콜 자산)을 매각할 때, 입찰 정보가 시장에 미리 노출되지 않도록 하는 서비스. 매각 규모와 입찰 상황이 공개되면 시장이 미리 반응하여 불리한 가격에 매각하게 됨.
+**Product Description**:
+A service that prevents bid information from being prematurely exposed to the market when DAOs or projects sell large-scale assets (tokens, NFTs, protocol assets). When sale size and bidding status are public, markets react in advance, resulting in sales at unfavorable prices.
 
-**일반 사용자 경험**:
-- DeFi DAO가 프로토콜 수익으로 축적된 100만 USDC 가치의 토큰 매각 결정
-- 일반 공개 경매 시 "대규모 매각 진행 중" 정보가 시장에 퍼짐
-- 토큰 가격 하락 + 입찰자들이 "어차피 팔아야 하니 낮게 써도 되겠지" 심리
-- 예상 매각가 100만 달러 → 실제 낙찰가 75만 달러
-- ZK 봉인 경매로 매각 규모, 입찰 참여자, 입찰가 모두 비공개
-- 시장 반응 없이 공정한 가격에 매각 완료
+**User Experience**:
+- DeFi DAO decides to sell tokens worth $1M USDC accumulated from protocol revenue
+- Regular public auction spreads information "large-scale sale in progress" to market
+- Token price drops + bidders think "they have to sell anyway, can bid low"
+- Expected sale price $1M → actual winning bid $750K
+- Using ZK sealed auction, sale size, bidders, and bid amounts all remain private
+- Completes sale at fair price without market reaction
 
-**관찰 가능한 이점**:
-- 대규모 자산 매각 정보 유출로 인한 가격 하락 방지
-- 입찰자 담합 및 저가 입찰 유도 차단
-- DAO 및 프로젝트 자산의 공정 가치 실현
+**Observable Benefits**:
+- Prevents price drops from large asset sale information leakage
+- Blocks bidder collusion and low-bid inducement
+- Realizes fair value for DAO and project assets

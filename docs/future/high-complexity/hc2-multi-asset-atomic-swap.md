@@ -260,7 +260,7 @@ component main {public [inputHashes, outputHashes, swapConfigHash]} =
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../product/high-complexity/hc2-multi-asset-atomic-swap-products.md) for detailed product scenarios and use cases.
+See [Real-World Products & User Experience](../product/high-complexity/hc2-multi-asset-atomic-swap-products.md) for detailed product scenarios and use cases.
 
 ---
 

@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "청산 방어막" - 청산 사냥 공격 방어 서비스
+## 1. "Liquidation Shield" - Liquidation Hunting Attack Defense Service
 
-**제품 설명**:
-레버리지 포지션의 청산 가격이 노출되면 고래들이 해당 가격까지 가격을 밀어붙여 강제 청산시키는 "청산 사냥"을 방어하는 서비스.
+**Product Description**:
+Service defending against "liquidation hunting" where whales push prices to liquidation levels when leveraged positions' liquidation prices are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 10x 레버리지 롱포지션의 청산가 $2,800 노출 → 고래가 대량 매도로 $2,799까지 푸시 → 강제 청산 + 5% 페널티 손실
-- ZK DeFi 사용: 레버리지 배율과 청산가가 비공개 → 공격자가 타겟 가격 특정 불가
-- 결과: 청산 사냥 공격 무력화, 자율적 포지션 관리
+**Typical User Experience**:
+- Without Privacy: 10x leverage long position's liquidation price $2,800 exposed → Whale mass sells to push to $2,799 → Forced liquidation + 5% penalty loss
+- With ZK DeFi: Leverage multiplier and liquidation price private → Attacker cannot identify target price
+- Result: Liquidation hunting attacks neutralized, autonomous position management
 
-**관찰 가능한 이점**:
-- 청산 가격 노출로 인한 타겟 공격 차단
-- 레버리지 규모에 따른 시장 조작 방지
-- 트레이더의 리스크 관리 자율성 보장
+**Observable Benefits**:
+- Blocking targeted attacks from liquidation price exposure
+- Prevention of market manipulation based on leverage size
+- Guaranteed autonomy in trader's risk management
 
-## 2. "고스트 트레이딩" - 전략 복제 방지 무기한 거래
+## 2. "Ghost Trading" - Strategy Replication Prevention for Perpetual Trading
 
-**제품 설명**:
-무기한 선물 포지션이 온체인에 노출되면 알고리즘 트레이더들이 즉시 반대매매를 잡아 수익을 갈취하는 문제를 해결.
+**Product Description**:
+Solving the problem where algorithmic traders immediately take opposite trades to extract profits when perpetual futures positions are exposed on-chain.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대형 롱 포지션 진입이 감지됨 → 알고리즘 봇들이 같은 방향으로 진입 후 먼저 청산 → 원래 트레이더에게 불리한 가격 형성
-- ZK DeFi 사용: 포지션 규모와 방향이 감지 불가 → 프론트러닝 봇 무력화
-- 결과: 독자적 트레이딩 전략 보호, 공정한 진입/청산
+**Typical User Experience**:
+- Without Privacy: Large long position entry detected → Algorithm bots enter same direction then liquidate first → Unfavorable price formation for original trader
+- With ZK DeFi: Position size and direction undetectable → Front-running bots neutralized
+- Result: Protection of proprietary trading strategies, fair entry/exit
 
-**관찰 가능한 이점**:
-- HFT 봇의 신호 감지 기반 프론트러닝 차단
-- 트레이딩 전략 및 시그널 보호
-- 소형 트레이더도 대형 트레이더와 동등한 환경
+**Observable Benefits**:
+- Blocking signal-detection-based front-running by HFT bots
+- Protection of trading strategies and signals
+- Equal environment for small and large traders
 
-## 3. "펀딩비 익스플로잇 방어" - 펀딩비 공격 차단
+## 3. "Funding Rate Exploit Defense" - Funding Rate Attack Blocking
 
-**제품 설명**:
-대형 포지션이 노출되면 상대방이 의도적으로 포지션을 쌓아 펀딩비를 극단적으로 올려 손실을 강제하는 공격을 방어.
+**Product Description**:
+Defense against attacks where large positions are exposed and counterparties intentionally stack positions to drive funding rates to extremes, forcing losses.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대형 롱 포지션 노출 → 공격자가 대량 롱 추가 진입 → 펀딩비 0.1%/8h로 급등 → 포지션 유지 비용 폭증
-- ZK DeFi 사용: 전체 OI(미결제약정) 분포가 불투명 → 펀딩비 조작 타겟팅 불가
-- 결과: 펀딩비 공격 무력화, 합리적 포지션 유지 비용
+**Typical User Experience**:
+- Without Privacy: Large long position exposed → Attacker adds massive long entries → Funding rate spikes to 0.1%/8h → Position holding cost explodes
+- With ZK DeFi: Total OI (open interest) distribution opaque → Funding rate manipulation targeting impossible
+- Result: Funding rate attacks neutralized, reasonable position holding costs
 
-**관찰 가능한 이점**:
-- 펀딩비 조작을 통한 간접 청산 유도 방지
-- 포지션 규모에 따른 선택적 공격 차단
-- 장기 포지션 유지의 예측 가능성 확보
+**Observable Benefits**:
+- Prevention of indirect liquidation through funding rate manipulation
+- Blocking selective attacks based on position size
+- Predictability secured for long-term position holding

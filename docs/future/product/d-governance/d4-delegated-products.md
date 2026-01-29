@@ -4,53 +4,53 @@
 
 ---
 
-## 1. "비밀 위임 네트워크" - 정치적 동맹 숨김 시스템
+## 1. "Secret Delegation Network" - Political Alliance Concealment System
 
-**제품 설명**:
-DAO에서 누가 누구에게 투표권을 위임했는지 완전히 비밀로 유지하는 시스템. 위임 관계가 공개되면 정치적 파벌이 형성되고, 반대파에서 위임자를 표적으로 삼아 압력을 가할 수 있음. ZK로 위임 관계를 숨겨 자유로운 대리인 선택 보장.
+**Product Description**:
+A system keeping delegation relationships in DAOs completely secret. When delegation relationships are public, political factions form, and opposing factions can target delegators for pressure. ZK hides delegation relationships, ensuring free delegate selection.
 
-**일반 사용자 경험**:
-- DAO에서 두 파벌(A파 vs B파)이 격렬히 대립 중
-- 김중립씨는 B파 대표에게 위임하고 싶지만, A파가 알면 괴롭힘 우려
-- ZK 위임 시스템: 위임 관계가 암호학적으로 숨겨짐
-- B파 대표는 위임받은 투표력으로 투표하지만, 누구에게서 받았는지 모름
-- 결과: 김중립씨는 파벌 갈등에 휘말리지 않고 소신대로 위임
+**End-User Experience**:
+- In DAO with two intensely opposed factions (Faction A vs B)
+- Kim wants to delegate to Faction B representative, but fears harassment if Faction A knows
+- ZK delegation system: delegation relationships cryptographically hidden
+- Faction B representative votes with delegated power, but doesn't know who delegated
+- Result: Kim delegates according to conscience without getting caught in factional conflicts
 
-**관찰 가능한 이점**:
-- 정치적 보복/괴롭힘 없이 자유로운 대리인 선택
-- 파벌 간 위임 관계 분석을 통한 압박 전술 무력화
-- 투표권 매매 시도 차단 (위임 증명 불가)
+**Observable Benefits**:
+- Free delegate selection without political retaliation/harassment
+- Neutralizes pressure tactics through delegation relationship analysis
+- Blocks vote buying attempts (delegation unprovable)
 
-## 2. "기관 투표 전략 보호" - 펀드 위임 비밀 유지
+## 2. "Institutional Voting Strategy Protection" - Fund Delegation Secrecy
 
-**제품 설명**:
-암호화폐 펀드가 여러 프로토콜에 투표권을 행사할 때, 어떤 대리인에게 위임했는지 경쟁사에 노출되지 않게 하는 시스템. 위임 전략이 공개되면 경쟁 펀드가 역이용하거나 시장에서 불리해질 수 있음.
+**Product Description**:
+A system preventing exposure to competitors when crypto funds exercise voting rights across protocols through delegation. When delegation strategies are public, competing funds can exploit them or gain market disadvantages.
 
-**일반 사용자 경험**:
-- 크립토 펀드 "알파캐피탈"이 10개 DeFi 프로토콜에 거버넌스 참여
-- 각 프로토콜마다 전문 대리인(거버넌스 서비스 제공자)에게 위임
-- 경쟁 펀드가 위임 패턴을 분석하면 투자 전략 유추 가능 -> 심각한 불이익
-- ZK 위임: 대리인은 투표하지만, 누가 위임했는지 체인상에서 추적 불가
-- 결과: 펀드의 거버넌스 전략과 포트폴리오 구성 비밀 유지
+**End-User Experience**:
+- Crypto fund "Alpha Capital" participating in governance across 10 DeFi protocols
+- Delegates to specialized delegates (governance service providers) in each protocol
+- Competing funds analyzing delegation patterns can infer investment strategy -> serious disadvantage
+- ZK delegation: delegates vote, but who delegated remains untraceable on-chain
+- Result: Fund's governance strategy and portfolio composition remain secret
 
-**관찰 가능한 이점**:
-- 기관 투자자의 전략적 프라이버시 보호
-- 위임 패턴 분석을 통한 내부자 정보 유출 방지
-- 공정한 시장 경쟁 환경 유지
+**Observable Benefits**:
+- Strategic privacy protection for institutional investors
+- Prevents insider information leaks through delegation pattern analysis
+- Maintains fair market competition environment
 
-## 3. "내부자 보호 위임" - 직원의 안전한 거버넌스 참여
+## 3. "Insider Protection Delegation" - Safe Governance Participation for Employees
 
-**제품 설명**:
-프로젝트 팀원이나 초기 투자자가 특정 대리인에게 위임할 때, 이 관계가 노출되면 "내부자 담합" 의혹이나 커뮤니티 반발을 받을 수 있음. ZK로 내부자의 위임 관계를 보호하여 자유로운 거버넌스 참여 보장.
+**Product Description**:
+When project team members or early investors delegate to specific delegates, exposure can trigger "insider collusion" suspicions or community backlash. ZK protects insider delegation relationships, ensuring free governance participation.
 
-**일반 사용자 경험**:
-- 이개발자씨는 프로젝트 핵심 개발자로 상당한 토큰 보유
-- 시간이 없어 신뢰하는 거버넌스 전문가에게 위임하고 싶음
-- 공개 시: "개발자가 특정인에게 위임 -> 담합 의혹" 커뮤니티 분란
-- ZK 위임: 위임 사실 자체는 공개 가능하나, 대리인 신원은 비밀
-- 결과: 내부자도 부담 없이 거버넌스에 효율적으로 참여
+**End-User Experience**:
+- Lee, a core project developer, holds substantial tokens
+- Wants to delegate to trusted governance expert due to time constraints
+- Public delegation: "Developer delegates to specific person -> collusion suspicions" causes community turmoil
+- ZK delegation: delegation fact may be public, but delegate identity remains secret
+- Result: Insiders can efficiently participate in governance without burden
 
-**관찰 가능한 이점**:
-- 팀원/내부자의 거버넌스 참여 장벽 제거
-- 불필요한 담합 의혹 및 커뮤니티 분란 방지
-- 모든 토큰 보유자의 평등한 위임권 보장
+**Observable Benefits**:
+- Removes governance participation barriers for team/insiders
+- Prevents unnecessary collusion suspicions and community conflicts
+- Ensures equal delegation rights for all token holders

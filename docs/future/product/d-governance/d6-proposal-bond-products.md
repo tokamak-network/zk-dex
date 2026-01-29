@@ -4,53 +4,53 @@
 
 ---
 
-## 1. "익명 내부고발 안건 제출" - 신원 보호 제안 시스템
+## 1. "Anonymous Whistleblower Proposal Submission" - Identity Protection Proposal System
 
-**제품 설명**:
-DAO나 조직에서 비리/문제를 고발하는 안건을 익명으로 제출하되, 보증금을 통해 스팸이나 악의적 고발은 필터링하는 시스템. 제안자 신원은 ZK로 완전히 숨기면서, 보증금으로 진지한 제안만 걸러냄.
+**Product Description**:
+A system for anonymously submitting proposals exposing organizational misconduct/problems in DAOs or organizations, while filtering spam or malicious accusations through bonds. Proposer identity completely hidden via ZK, while bonds filter for serious proposals only.
 
-**일반 사용자 경험**:
-- 김내부자씨는 DAO 운영진의 자금 유용 의혹을 발견
-- 공개 제안 시: 신원 노출 -> 운영진 보복(해고, 커뮤니티 매장) 우려
-- ZK 익명 제안 + 보증금: 신원 숨기고 1000 토큰 보증금으로 안건 제출
-- 안건이 일정 지지를 받으면 조사 진행 + 보증금 환급
-- 허위 고발이면 보증금 몰수 - 하지만 신원은 여전히 비밀
+**End-User Experience**:
+- Kim, an insider, discovers evidence of fund misappropriation by DAO management
+- Public proposal: identity exposure -> management retaliation (termination, community burial) concerns
+- ZK anonymous proposal + bond: submits "Request for Embezzlement Investigation" proposal anonymously with 1000 token bond
+- If proposal receives sufficient support, investigation proceeds + bond refunded
+- If false accusation, bond forfeited - but identity remains secret
 
-**관찰 가능한 이점**:
-- 내부고발자 보호와 스팸 방지 동시 달성
-- 보복 두려움 없이 조직 비리 견제 가능
-- 익명성 남용(허위 고발) 억제
+**Observable Benefits**:
+- Achieves both whistleblower protection and spam prevention
+- Enables checking organizational misconduct without fear of retaliation
+- Discourages abuse of anonymity (false accusations)
 
-## 2. "논쟁적 안건 익명 제안" - 민감 이슈 제기 시스템
+## 2. "Controversial Proposal Anonymous Submission" - Sensitive Issue Raising System
 
-**제품 설명**:
-커뮤니티에서 논쟁이 될 수 있는 안건(특정 인물 해임, 정책 비판 등)을 익명으로 제안하는 시스템. 제안자가 노출되면 지지자/반대자 양쪽에서 공격받을 수 있는 상황에서, 신원 보호하면서 건전한 토론 유도.
+**Product Description**:
+A system for anonymously proposing potentially controversial issues (specific personnel dismissal, policy criticism) in communities. When proposers are exposed, they can be attacked by both supporters and opponents. Protects identity while encouraging healthy debate.
 
-**일반 사용자 경험**:
-- 박용기씨는 인기 있는 핵심 기여자의 해임을 제안하고 싶음
-- 공개 제안 시: 해당 인물 팬덤에서 집중 공격 예상
-- ZK 익명 제안: 보증금과 함께 해임 안건 제출 - 제안자 완전 익명
-- 커뮤니티는 안건 내용만 보고 투표 - "누가 제안했나"가 아닌 "타당한가"로 판단
-- 결과: 제안자 신원과 무관하게 순수하게 안건의 merit로 평가
+**End-User Experience**:
+- Park wants to propose dismissal of popular core contributor
+- Public proposal: expects concentrated attacks from that person's fandom
+- ZK anonymous proposal: submits dismissal proposal with bond - proposer completely anonymous
+- Community votes based on proposal content only - judged by "merit" not "who proposed"
+- Result: Pure evaluation based on proposal merit, independent of proposer identity
 
-**관찰 가능한 이점**:
-- 인기 있는 인물/정책 비판도 안전하게 가능
-- "누가 제안했는가"에 따른 편향 제거
-- 건전한 거버넌스 토론 문화 형성
+**Observable Benefits**:
+- Safe criticism of popular individuals/policies
+- Eliminates bias based on "who proposed"
+- Forms healthy governance debate culture
 
-## 3. "경쟁사 비밀 유지 제안" - 전략적 프라이버시 보장
+## 3. "Competitor Confidentiality Proposal" - Strategic Privacy Assurance
 
-**제품 설명**:
-DeFi 프로토콜에서 파트너십이나 전략적 제안을 할 때, 제안자(예: 경쟁 프로토콜, 기관)의 신원이 노출되면 시장에서 불리해질 수 있음. ZK로 제안자 신원을 보호하면서 진지한 제안만 보증금으로 필터링.
+**Product Description**:
+In DeFi protocols, when making partnership or strategic proposals, proposer identity (e.g., competing protocol, institution) exposure can be market-disadvantageous. ZK protects proposer identity while bonds filter for serious proposals only.
 
-**일반 사용자 경험**:
-- 경쟁 DeFi 프로토콜 "알파프로토콜"이 협력 제안을 하고 싶음
-- 공개 제안 시: "알파프로토콜이 접근 중" 소문 -> 시장 영향, 협상력 약화
-- ZK 익명 제안 + 대형 보증금: 신원 숨기고 진지한 협력 제안 전달
-- 커뮤니티가 제안 내용을 검토하고 관심 표명하면 비공개 협상 진행
-- 결과: 전략적 기밀 유지하면서 거버넌스 프로세스 활용
+**End-User Experience**:
+- Competing DeFi protocol "Alpha Protocol" wants to propose collaboration
+- Public proposal: "Alpha Protocol approaching" rumor -> market impact, weakened negotiating position
+- ZK anonymous proposal + large bond: delivers serious collaboration proposal with identity hidden
+- If community reviews proposal and shows interest, private negotiation proceeds
+- Result: Utilizes governance process while maintaining strategic confidentiality
 
-**관찰 가능한 이점**:
-- 제안자의 전략적 프라이버시 보호
-- 시장 영향 없이 민감한 협상 시작 가능
-- 보증금으로 비진지한 익명 제안 필터링
+**Observable Benefits**:
+- Strategic privacy protection for proposers
+- Enables starting sensitive negotiations without market impact
+- Bonds filter non-serious anonymous proposals

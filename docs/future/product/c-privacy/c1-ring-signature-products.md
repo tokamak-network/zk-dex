@@ -4,44 +4,44 @@
 
 ---
 
-## 1. "익명 기부 플랫폼" - 신원 노출 없는 기부 서비스
+## 1. "Anonymous Donation Platform" - Identity-Protected Donation Service
 
-**제품 설명**:
-기부자의 신원이 완전히 보호되는 익명 기부 플랫폼. 링 서명을 통해 기부금이 여러 잠재적 기부자 중 누구로부터 왔는지 알 수 없도록 보장합니다.
+**Product Description**:
+An anonymous donation platform where donors' identities are completely protected. Through ring signatures, donations are indistinguishable among multiple potential donors, ensuring no one can determine the true source.
 
-**일반 사용자 경험**:
-박지영씨(42세, 회사원)는 정치적으로 민감한 인권단체에 기부하고 싶지만, 직장에서의 불이익이 걱정됩니다. 이 플랫폼에서 기부할 때, 그녀의 기부금은 8명의 다른 기부자들과 함께 "링"을 형성합니다. 인권단체는 기부금을 받지만, 박지영씨가 실제 기부자인지 아니면 다른 7명 중 한 명인지 절대 알 수 없습니다. 박지영씨는 마음 편히 자신의 가치관에 맞는 단체를 후원할 수 있게 되었습니다.
+**User Experience**:
+Ji-young Park (42, office worker) wants to donate to a politically sensitive human rights organization but worries about potential workplace repercussions. When she donates through this platform, her contribution forms a "ring" with 8 other donors. The human rights organization receives the donation, but it's cryptographically impossible to determine whether Ms. Park is the actual donor or one of the other 7 members. She can now comfortably support organizations aligned with her values without fear.
 
-**관찰 가능한 이점**:
-- 기부자 신원이 완벽하게 보호되어 사회적/직업적 불이익 우려 없이 기부 가능
-- 기부 내역이 추적 불가능하여 프라이버시 완전 보장
-- 민감한 사회 이슈에 대한 기부 참여율 증가
+**Observable Benefits**:
+- Donor identity perfectly protected, enabling donations without social or professional concerns
+- Donation history completely untraceable, ensuring full privacy
+- Increased participation in donations for sensitive social causes
 
-## 2. "내부고발자 보호 시스템" - 익명 제보 및 보상 플랫폼
+## 2. "Whistleblower Protection System" - Anonymous Reporting and Reward Platform
 
-**제품 설명**:
-기업 비리나 불법 행위를 신고하는 내부고발자에게 보상금을 안전하게 지급하는 시스템. 제보자의 신원이 절대 노출되지 않습니다.
+**Product Description**:
+A system that safely compensates whistleblowers who report corporate misconduct or illegal activities, ensuring their identity is never exposed.
 
-**일반 사용자 경험**:
-이민수씨(38세, 대기업 직원)는 회사의 회계 부정을 발견했습니다. 기존 제보 시스템은 신원 노출 위험이 있어 망설였지만, 이 플랫폼을 통해 익명으로 제보합니다. 수사 결과 부정이 확인되어 보상금이 지급될 때, 링 서명 기술로 이민수씨의 계좌로 보상금이 전달되지만, 어떤 제보자가 실제로 보상을 받았는지는 아무도 알 수 없습니다. 이민수씨는 보복 걱정 없이 정의를 실현할 수 있었습니다.
+**User Experience**:
+Min-su Lee (38, corporate employee) discovers accounting fraud at his company. Traditional reporting systems carry identity exposure risks that made him hesitant, but through this platform, he reports anonymously. When the investigation confirms the fraud and rewards are distributed, ring signature technology delivers the compensation to Mr. Lee's account, yet no one can determine which whistleblower actually received the reward. He successfully achieved justice without fear of retaliation.
 
-**관찰 가능한 이점**:
-- 내부고발자의 신원이 암호학적으로 보호되어 보복 위험 제거
-- 제보 활성화로 기업 투명성 및 사회 정의 향상
-- 보상금 수령 과정에서도 완전한 익명성 유지
+**Observable Benefits**:
+- Whistleblower identity cryptographically protected, eliminating retaliation risks
+- Increased reporting activity enhances corporate transparency and social justice
+- Complete anonymity maintained throughout the entire reward process
 
-## 3. "프라이버시 급여 시스템" - 직원 급여 익명화 서비스
+## 3. "Privacy Payroll System" - Employee Salary Anonymization Service
 
-**제품 설명**:
-같은 회사 직원들 간에 서로의 급여를 알 수 없도록 보장하는 급여 지급 시스템. 회사는 급여를 지급하지만, 누가 얼마를 받는지 외부에서 추적할 수 없습니다.
+**Product Description**:
+A payroll system that ensures employees within the same company cannot determine each other's salaries. The company disburses salaries, but external tracking of individual compensation amounts is cryptographically impossible.
 
-**일반 사용자 경험**:
-김서현씨(29세, 스타트업 개발자)는 팀 내에서 연봉 협상을 잘해서 동료보다 높은 급여를 받게 되었습니다. 회사의 프라이버시 급여 시스템 덕분에, 급여가 블록체인으로 지급되지만 링 서명으로 묶여 있어 누가 얼마를 받았는지 동료들이 알 수 없습니다. 팀 내 불필요한 갈등 없이 김서현씨는 자신의 능력에 맞는 보상을 받을 수 있게 되었습니다.
+**User Experience**:
+Seo-hyun Kim (29, startup developer) negotiated well and receives a higher salary than her colleagues. Thanks to the company's privacy payroll system, salaries are distributed via blockchain but bundled with ring signatures, making it impossible for colleagues to determine individual compensation. Ms. Kim receives compensation commensurate with her abilities without creating unnecessary team conflicts.
 
-**관찰 가능한 이점**:
-- 직원 간 급여 비교로 인한 갈등 방지
-- 개인의 협상력과 성과에 따른 보상 체계 유지 가능
-- 급여 정보 유출로 인한 헤드헌팅 타겟팅 방지
+**Observable Benefits**:
+- Prevents conflicts arising from salary comparisons among employees
+- Maintains compensation systems based on individual negotiation skills and performance
+- Prevents headhunting targeting based on leaked salary information
 
 ---
 

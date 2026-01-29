@@ -367,7 +367,7 @@ component main {public [stakeNoteHash, depositNoteHash, validatorCommitment,
 
 ## Real-World Products & User Experience
 
-See: [Staking Deposit/Withdraw - Real-World Products](../../../product/e-defi/e8-staking-products.md)
+See: [Staking Deposit/Withdraw - Real-World Products](../../product/e-defi/e8-staking-products.md)
 ---
 
 [Back to Index](../../README.md)

@@ -19,7 +19,7 @@ Uniswap과 같은 현재 AMM은 LP 포지션을 완전히 노출합니다. 프�
 
 ## 실제 제품 및 사용자 경험
 
-참조: [유동성 추가/제거 - 실제 제품](../../../product/e-defi/e7-liquidity-products.md)
+참조: [유동성 추가/제거 - 실제 제품](../../product/e-defi/e7-liquidity-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

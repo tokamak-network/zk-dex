@@ -219,7 +219,7 @@ component main {public [voteCommitment, proposalId, creditsSpent, creditRoot]} =
 
 ## 실제 제품 및 사용자 경험
 
-참조: [Quadratic Voting Products & UX](../../../product/d-governance/d2-quadratic-products.md)
+참조: [Quadratic Voting Products & UX](../../product/d-governance/d2-quadratic-products.md)
 
 ---
 

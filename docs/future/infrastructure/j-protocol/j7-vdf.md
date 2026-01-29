@@ -227,7 +227,7 @@ component main {public [seed, output, proofCommitment]} = VDFVerifier(1000);
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j7-vdf-products.md](../../../product/j-protocol/j7-vdf-products.md)
+See: [../../product/j-protocol/j7-vdf-products.md](../../product/j-protocol/j7-vdf-products.md)
 
 ---
 

@@ -389,7 +389,7 @@ component main {public [positionNoteHash, yieldNoteHash, yieldPoolCommitment,
 
 ## Real-World Products & User Experience
 
-See: [Yield Claim - Real-World Products](../../../product/e-defi/e9-yield-products.md)
+See: [Yield Claim - Real-World Products](../../product/e-defi/e9-yield-products.md)
 ---
 
 [Back to Index](../../README.md)

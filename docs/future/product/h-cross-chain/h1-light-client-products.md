@@ -6,53 +6,53 @@
 
 ## Real-World Products & User Experience
 
-### 1. "프라이빗 브릿지" - 브릿지 금액 숨김 서비스
+### 1. "Private Bridge" - Bridge Amount Concealment Service
 
-**제품 설명**:
-크로스체인 자산 이동 시 이동 금액과 패턴이 외부에 노출되지 않도록 보호하는 프라이버시 브릿지. 일반 브릿지는 누가 얼마를 이동했는지 모두 공개되어 자산 규모가 추적됩니다.
+**Product Description**:
+A privacy bridge that protects the transfer amount and patterns from external visibility during cross-chain asset transfers. Regular bridges publicly expose who transferred how much, making asset holdings trackable.
 
-**일반 사용자 경험**:
-- 박지민씨(42세, 사업가)는 이더리움에서 ZK-DEX로 대량의 ETH를 이동하려 함
-- 일반 브릿지 사용 시: "지민씨가 500 ETH를 브릿지했다"가 공개됨
-- 프라이빗 브릿지: ZK 라이트 클라이언트가 금액을 숨기면서 검증
-- 외부 관찰자는 브릿지 사용 사실만 알고 금액은 알 수 없음
-- 지민씨의 자산 규모와 크로스체인 이동 패턴이 보호됨
+**User Experience**:
+- Mr. Park (42, entrepreneur) wants to transfer a large amount of ETH from Ethereum to ZK-DEX
+- Regular bridge usage: "Park transferred 500 ETH via bridge" is publicly visible
+- Private Bridge: ZK light client verifies the amount while keeping it hidden
+- External observers only know a bridge was used, not the amount
+- Park's asset holdings and cross-chain transfer patterns remain protected
 
-**관찰 가능한 이점**:
-- 크로스체인 자산 이동 시 금액 노출 방지
-- "고래 추적" 서비스로부터 프라이버시 보호
-- 자산 규모 파악을 통한 타겟 공격 방지
+**Observable Benefits**:
+- Prevention of amount exposure during cross-chain asset transfers
+- Privacy protection from "whale tracking" services
+- Prevention of targeted attacks through asset size identification
 
-### 2. "익명 크로스체인 포트폴리오" - 체인 간 자산 흐름 추적 방지
+### 2. "Anonymous Cross-Chain Portfolio" - Cross-Chain Asset Flow Tracking Prevention
 
-**제품 설명**:
-여러 체인에 분산된 자산을 이동할 때 전체 포트폴리오 규모가 추론되지 않도록 보호하는 서비스. 체인 간 이동을 연결하는 분석을 차단합니다.
+**Product Description**:
+A service that protects the overall portfolio size from being inferred when transferring assets distributed across multiple chains. It blocks analytics that connect transfers across chains.
 
-**일반 사용자 경험**:
-- 김서연씨(29세)는 이더리움, 폴리곤, ZK-DEX에 총 $500,000 분산 보유
-- 일반 이동: 각 체인 분석가가 이동을 연결해 전체 자산 파악 가능
-- 프라이빗 브릿지: 각 이동이 연결되지 않아 전체 규모 추론 불가
-- 서연씨가 "이더리움에서 $100K, 폴리곤에서 $200K 이동"해도 연결 안 됨
-- 외부에서는 서로 다른 사용자의 별개 거래로 보임
+**User Experience**:
+- Ms. Kim (29) holds a total of $500,000 distributed across Ethereum, Polygon, and ZK-DEX
+- Regular transfers: Chain analysts can connect transfers to determine total assets
+- Private Bridge: Each transfer remains unconnected, making total size inference impossible
+- Even if Kim transfers "$100K from Ethereum, $200K from Polygon," they remain unconnected
+- Externally appears as separate transactions by different users
 
-**관찰 가능한 이점**:
-- 멀티체인 포트폴리오 전체 규모 비공개
-- 체인 간 자산 흐름 추적 차단
-- 분산 투자 전략이 외부에 노출되지 않음
+**Observable Benefits**:
+- Keeps multi-chain portfolio total size private
+- Blocks cross-chain asset flow tracking
+- Diversified investment strategy remains unexposed
 
-### 3. "스텔스 크로스체인 송금" - 수취인 프라이버시 보호 송금
+### 3. "Stealth Cross-Chain Remittance" - Recipient Privacy Protection Transfer
 
-**제품 설명**:
-해외 송금 시 송금인과 수취인의 연결고리가 외부에 노출되지 않는 프라이버시 송금 서비스. 누가 누구에게 보냈는지 추적이 불가능합니다.
+**Product Description**:
+A privacy remittance service for international transfers where the connection between sender and recipient is not exposed externally. Tracking who sent to whom becomes impossible.
 
-**일반 사용자 경험**:
-- 이준호씨(38세, 해외 근무자)는 한국 부모님께 매달 송금
-- 일반 크로스체인 송금: "준호 → 부모님 지갑" 연결이 공개됨
-- 스텔스 송금: ZK 증명으로 금액과 수취인이 숨겨진 채 이동
-- 부모님은 정상적으로 수령하지만 외부에서 연결고리 파악 불가
-- 송금 패턴과 가족 재정 상황이 프라이빗하게 보호됨
+**User Experience**:
+- Mr. Lee (38, overseas worker) sends monthly remittances to his parents in Korea
+- Regular cross-chain remittance: "Lee → Parents' wallet" connection is public
+- Stealth remittance: ZK proof hides both amount and recipient during transfer
+- Parents receive normally but external connection cannot be determined
+- Remittance patterns and family financial situations remain privately protected
 
-**관찰 가능한 이점**:
-- 송금인-수취인 관계 비공개
-- 정기 송금 패턴이 노출되지 않음
-- 가족 간 재정 지원 내역 보호
+**Observable Benefits**:
+- Sender-recipient relationship remains private
+- Regular remittance patterns are not exposed
+- Protection of family financial support details

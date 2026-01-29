@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "리밸런싱 프론트런 방어" - 정기 리밸런싱 MEV 차단
+## 1. "Rebalancing Front-Run Defense" - Periodic Rebalancing MEV Blocking
 
-**제품 설명**:
-인덱스 펀드나 ETF의 정기 리밸런싱 일정과 목표 비중이 노출되면 아비트라저들이 선행 매매하여 불리한 가격에 리밸런싱하게 되는 문제를 해결.
+**Product Description**:
+Solving the problem where arbitrageurs front-run trades when index fund or ETF periodic rebalancing schedules and target weights are exposed, causing rebalancing at unfavorable prices.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 펀드 리밸런싱 "ETH 비중 30%→40% 증가" 노출 → 아비트라저가 ETH 선행 매수 → 펀드가 비싸게 매수
-- ZK DeFi 사용: 목표 비중과 리밸런싱 규모 비공개 → 프론트러닝 불가
-- 결과: 공정한 가격에 리밸런싱, MEV 손실 제로
+**Typical User Experience**:
+- Without Privacy: Fund rebalancing "ETH weight 30%→40% increase" exposed → Arbitrageur front-runs ETH buy → Fund buys at inflated price
+- With ZK DeFi: Target weight and rebalancing size private → Front-running impossible
+- Result: Rebalancing at fair price, zero MEV loss
 
-**관찰 가능한 이점**:
-- 정기 리밸런싱 프론트러닝 완전 차단
-- 인덱스/ETF 추종 비용 감소
-- 펀드 투자자 수익률 보호
+**Observable Benefits**:
+- Complete blocking of periodic rebalancing front-running
+- Reduced index/ETF tracking costs
+- Protected fund investor returns
 
-## 2. "전략 복제 차단" - 포트폴리오 배분 보호
+## 2. "Strategy Replication Blocking" - Portfolio Allocation Protection
 
-**제품 설명**:
-성과가 좋은 펀드의 포트폴리오 배분이 노출되면 경쟁자가 전략을 복제하여 알파가 사라지는 문제를 해결.
+**Product Description**:
+Solving the problem where competitors replicate strategies when successful fund portfolio allocations are exposed, causing alpha to disappear.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 탑 펀드의 "신규 DeFi 토큰 20% 배분" 공개 → 팔로워들이 동일 토큰 매수 → 가격 상승으로 펀드 진입가 상승
-- ZK DeFi 사용: 포트폴리오 구성 비공개 → 전략 복제 불가
-- 결과: 독자적 투자 판단의 알파 유지
+**Typical User Experience**:
+- Without Privacy: Top fund's "20% allocation to new DeFi token" public → Followers buy same token → Price rises, increasing fund's entry price
+- With ZK DeFi: Portfolio composition private → Strategy replication impossible
+- Result: Proprietary investment judgment alpha maintained
 
-**관찰 가능한 이점**:
-- 포트폴리오 배분 전략 기밀 유지
-- 카피 트레이딩으로 인한 알파 침식 방지
-- 펀드 매니저의 경쟁 우위 보호
+**Observable Benefits**:
+- Confidentiality of portfolio allocation strategies maintained
+- Prevention of alpha erosion from copy trading
+- Protection of fund managers' competitive advantage
 
-## 3. "쏠림 신호 차단" - 시장 심리 조작 방지
+## 3. "Herding Signal Blocking" - Market Psychology Manipulation Prevention
 
-**제품 설명**:
-대형 펀드의 포트폴리오 변화가 노출되면 "스마트머니 시그널"로 해석되어 시장 쏠림을 유발하는 문제를 해결.
+**Product Description**:
+Solving the problem where large fund portfolio changes become interpreted as "smart money signals," inducing market herding when exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 유명 펀드가 "스테이블 비중 80%로 증가" 노출 → 시장 "약세 전환 신호" 해석 → 패닉 매도
-- ZK DeFi 사용: 포트폴리오 변화 비공개 → 시장 심리 조작 불가
-- 결과: 개별 펀드 활동이 시장 전체에 영향 주지 않음
+**Typical User Experience**:
+- Without Privacy: Famous fund "stablecoin weight increased to 80%" exposed → Market interprets as "bearish signal" → Panic selling
+- With ZK DeFi: Portfolio changes private → Market psychology manipulation impossible
+- Result: Individual fund activity doesn't affect entire market
 
-**관찰 가능한 이점**:
-- 대형 펀드 움직임의 시그널 효과 차단
-- 불필요한 시장 변동성 감소
-- 펀더멘털 기반 투자 결정 유도
+**Observable Benefits**:
+- Blocking signal effect of large fund movements
+- Reduced unnecessary market volatility
+- Inducing fundamental-based investment decisions

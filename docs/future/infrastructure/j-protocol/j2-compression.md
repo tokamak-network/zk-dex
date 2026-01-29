@@ -217,7 +217,7 @@ component main {public [starkPublicInputs, proofCommitment]} = STARKVerifierSNAR
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j2-compression-products.md](../../../product/j-protocol/j2-compression-products.md)
+See: [../../product/j-protocol/j2-compression-products.md](../../product/j-protocol/j2-compression-products.md)
 
 ---
 

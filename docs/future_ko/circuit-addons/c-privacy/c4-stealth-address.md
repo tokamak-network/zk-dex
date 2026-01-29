@@ -249,7 +249,7 @@ component main {public [noteHash, outputHash, ephemeralPkX, ephemeralPkY, tokenT
 
 ## 실제 제품 및 사용자 경험
 
-자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Stealth Address Receive - Products & UX](../../../product/c-privacy/c4-stealth-address-products.md)를 참조하세요.
+자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [Stealth Address Receive - Products & UX](../../product/c-privacy/c4-stealth-address-products.md)를 참조하세요.
 
 ---
 

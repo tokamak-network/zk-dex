@@ -4,53 +4,53 @@
 
 ---
 
-## 1. "익명 대량 이탈 경고 시스템" - 고래 탈출 비밀 보장
+## 1. "Anonymous Mass Exit Warning System" - Whale Exit Confidentiality
 
-**제품 설명**:
-DAO에서 대형 지분자가 rage quit할 때, 누가 탈퇴했는지 알 수 없게 하는 시스템. 특정 고래의 탈퇴가 공개되면 시장 패닉이나 해당 고래에 대한 커뮤니티 비난이 발생할 수 있음. ZK로 탈퇴자 신원을 보호하면서 정당한 지분 인출 보장.
+**Product Description**:
+In DAOs, a system making it impossible to identify who rage quit when large stakeholders exit. When specific whales' departures are public, market panic or community backlash against those whales can occur. ZK protects exiting party identity while ensuring legitimate stake withdrawal.
 
-**일반 사용자 경험**:
-- 박고래씨는 DAO 방향성에 반대하여 rage quit 결정
-- 공개 시: "박고래 탈퇴!" 뉴스 -> 토큰 가격 폭락 + 커뮤니티에서 "배신자" 낙인
-- ZK rage quit: 정당한 지분만큼 트레저리에서 인출, 하지만 누가 인출했는지 비밀
-- 다른 참여자들은 "트레저리에서 X만큼 인출됨"만 확인 가능
-- 결과: 박고래씨는 비난이나 시장 영향 없이 조용히 자신의 권리 행사
+**End-User Experience**:
+- Park, a whale, decides to rage quit due to disagreement with DAO direction
+- Publicly: "Park the whale exits!" news -> token price crash + "traitor" label from community
+- ZK rage quit: withdraws legitimate stake from treasury, but who withdrew remains secret
+- Other participants only confirm "X amount withdrawn from treasury"
+- Result: Park exercises rights quietly without backlash or market impact
 
-**관찰 가능한 이점**:
-- 탈퇴자에 대한 커뮤니티 린치/비난 방지
-- 특정인 탈퇴로 인한 시장 패닉 완화
-- 정당한 퇴출권 행사에 대한 사회적 처벌 제거
+**Observable Benefits**:
+- Prevents community lynching/backlash against those who exit
+- Mitigates market panic from specific person's exit
+- Removes social punishment for exercising legitimate exit rights
 
-## 2. "내부자 조용한 이탈" - 팀원의 안전한 exit
+## 2. "Insider Quiet Exit" - Safe Exit for Team Members
 
-**제품 설명**:
-프로젝트 팀원이나 초기 투자자가 rage quit할 때, 이들의 신원이 노출되면 "내부자가 떠난다 = 프로젝트 문제"라는 FUD(공포, 불확실성, 의심)가 발생. ZK로 내부자도 신원 노출 없이 정당한 권리 행사 가능.
+**Product Description**:
+When project team members or early investors rage quit, their identity exposure creates FUD (Fear, Uncertainty, Doubt) that "insiders leaving = project problems." ZK enables insiders to exercise legitimate rights without identity exposure.
 
-**일반 사용자 경험**:
-- 이개발자씨는 프로젝트 초기 기여자였으나 방향성 차이로 이탈 결정
-- 공개 시: "핵심 개발자 이탈!" -> 프로젝트 신뢰도 급락, 토큰 가격 폭락
-- ZK rage quit: 자신의 지분을 조용히 인출 - 내부자 여부 구분 불가
-- 커뮤니티는 일반적인 rage quit으로만 인식
-- 결과: 이개발자씨의 개인 결정이 프로젝트 전체에 불필요한 타격 주지 않음
+**End-User Experience**:
+- Lee, an early project contributor, decides to exit due to directional differences
+- Publicly: "Core developer exits!" -> project credibility plummets, token price crashes
+- ZK rage quit: quietly withdraws own stake - insider status indistinguishable
+- Community perceives only as regular rage quit
+- Result: Lee's personal decision doesn't unnecessarily damage entire project
 
-**관찰 가능한 이점**:
-- 내부자 이탈로 인한 FUD 방지
-- 팀원들의 자유로운 퇴출권 보장
-- 프로젝트 안정성과 개인 권리의 균형
+**Observable Benefits**:
+- Prevents FUD from insider exits
+- Guarantees team members' free exit rights
+- Balance between project stability and individual rights
 
-## 3. "반대파 보복 방지 탈퇴" - 안전한 소수자 이탈
+## 3. "Opposition Retaliation Prevention Exit" - Safe Minority Departure
 
-**제품 설명**:
-논쟁적인 거버넌스 결정 후, 반대편이었던 소수파가 rage quit할 때 그들의 신원이 보호되는 시스템. 반대파로 식별되면 다수파의 보복이나 괴롭힘 대상이 될 수 있음.
+**Product Description**:
+After controversial governance decisions, a system protecting identity when minority opposition rage quits. If identified as opposition, they can become targets for majority retaliation or harassment.
 
-**일반 사용자 경험**:
-- DAO에서 중대 결정 후, 반대했던 김소수씨가 이탈 결정
-- 공개 시: 반대파 명단 + 탈퇴자 명단 비교 -> "저 사람이 반대파였구나" 노출
-- 다수파에서 김소수씨를 다른 프로젝트에서도 배척하거나 불이익 줄 우려
-- ZK rage quit: 탈퇴해도 반대파였는지 확인 불가 - 신원 완전 보호
-- 결과: 소수 의견을 가졌다가 떠나는 것이 안전한 선택이 됨
+**End-User Experience**:
+- After major DAO decision, Kim from the opposition decides to exit
+- Publicly: comparing opposition list + exit list -> "That person was opposition" exposure
+- Majority may ostracize or disadvantage Kim in other projects
+- ZK rage quit: exit doesn't reveal opposition membership - identity fully protected
+- Result: Having minority opinion and leaving becomes a safe choice
 
-**관찰 가능한 이점**:
-- 정치적 보복 두려움 없이 소수 의견 표명 후 안전한 이탈
-- 다수결 횡포에 대한 실질적 견제
-- 건전한 거버넌스 문화 (의견 차이 =/= 적대 관계)
+**Observable Benefits**:
+- Safe expression of minority opinion and exit without fear of political retaliation
+- Practical check against tyranny of the majority
+- Healthy governance culture (difference of opinion =/= hostile relationship)

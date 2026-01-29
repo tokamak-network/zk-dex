@@ -230,7 +230,7 @@ component main {public [delegationHash, noteHash, merkleRoot, currentTime]} =
 
 ## 실제 제품 및 사용자 경험
 
-자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [View Key Delegation - Products & UX](../../../product/c-privacy/c6-view-key-products.md)를 참조하세요.
+자세한 실제 응용 프로그램 및 사용자 경험 시나리오는 [View Key Delegation - Products & UX](../../product/c-privacy/c6-view-key-products.md)를 참조하세요.
 
 ---
 

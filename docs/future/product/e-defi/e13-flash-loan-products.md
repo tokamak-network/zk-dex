@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "아비트라지 전략 보호" - 차익거래 경로 은닉
+## 1. "Arbitrage Strategy Protection" - Arbitrage Path Concealment
 
-**제품 설명**:
-플래시론 차익거래의 대출 규모와 거래 경로가 노출되면 경쟁 봇들이 동일 기회를 복제하여 수익이 사라지는 문제를 해결.
+**Product Description**:
+Solving the problem where competing bots replicate the same opportunities when flash loan arbitrage loan sizes and trading paths are exposed, causing profits to disappear.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $5M 플래시론 + DEX A→B→C 경로 노출 → 다른 봇들이 동일 경로 탐색 → 다음 기회 시 경쟁 심화로 수익 감소
-- ZK DeFi 사용: 대출 규모와 거래 경로 비공개 → 전략 복제 불가
-- 결과: 독자적 차익거래 전략 보호, 지속적 수익
+**Typical User Experience**:
+- Without Privacy: $5M flash loan + DEX A→B→C path exposed → Other bots search same path → Next opportunity faces intensified competition, reduced profit
+- With ZK DeFi: Loan size and trading path private → Strategy replication impossible
+- Result: Proprietary arbitrage strategy protected, sustainable profits
 
-**관찰 가능한 이점**:
-- 수익성 높은 차익거래 경로 기밀 유지
-- 전략 복제로 인한 경쟁 심화 방지
-- 개발한 알고리즘의 경쟁 우위 보호
+**Observable Benefits**:
+- Confidentiality of profitable arbitrage paths maintained
+- Prevention of competition intensification from strategy replication
+- Protection of developed algorithm competitive advantage
 
-## 2. "기회 규모 은닉" - 시장 비효율성 정보 보호
+## 2. "Opportunity Size Concealment" - Market Inefficiency Information Protection
 
-**제품 설명**:
-플래시론 규모가 노출되면 시장의 비효율성(차익거래 기회) 규모가 추정되어 다른 참가자들이 해당 시장에 집중하는 문제를 해결.
+**Product Description**:
+Solving the problem where flash loan size exposure allows estimation of market inefficiency (arbitrage opportunity) size, causing other participants to focus on that market.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $10M 플래시론 노출 → "이 규모의 차익 기회가 있구나" → 경쟁자 유입 → 시장 효율화로 기회 소멸
-- ZK DeFi 사용: 대출 규모 비공개 → 기회 규모 추정 불가
-- 결과: 발견한 비효율성을 더 오래 활용
+**Typical User Experience**:
+- Without Privacy: $10M flash loan exposed → "There's an arbitrage opportunity of this size" → Competitor influx → Market efficiency eliminates opportunity
+- With ZK DeFi: Loan size private → Opportunity size estimation impossible
+- Result: Discovered inefficiency exploited longer
 
-**관찰 가능한 이점**:
-- 시장 비효율성 정보 유출 차단
-- 경쟁자 유입 속도 감소
-- 초기 발견자의 수익 기회 연장
+**Observable Benefits**:
+- Blocking market inefficiency information leakage
+- Reduced competitor influx rate
+- Extended profit opportunity for early discoverers
 
-## 3. "청산 전략 보호" - 청산 수익 정보 은닉
+## 3. "Liquidation Strategy Protection" - Liquidation Profit Information Concealment
 
-**제품 설명**:
-플래시론 청산의 대상 포지션과 수익 규모가 노출되면 경쟁 청산봇들이 해당 프로토콜에 집중하는 문제를 해결.
+**Product Description**:
+Solving the problem where competing liquidation bots focus on specific protocols when flash loan liquidation target positions and profit sizes are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: "프로토콜 X에서 $500K 청산 수익" 노출 → 경쟁 청산봇들이 X 모니터링 강화 → 다음 청산 기회 경쟁 심화
-- ZK DeFi 사용: 청산 대상과 수익 비공개 → 프로토콜별 기회 추정 불가
-- 결과: 발굴한 청산 기회 원천 보호
+**Typical User Experience**:
+- Without Privacy: "$500K liquidation profit from protocol X" exposed → Competing liquidation bots intensify X monitoring → Next liquidation opportunity faces intensified competition
+- With ZK DeFi: Liquidation target and profit private → Protocol-specific opportunity estimation impossible
+- Result: Protection of discovered liquidation opportunity sources
 
-**관찰 가능한 이점**:
-- 수익성 높은 청산 시장 정보 보호
-- 청산봇 간 경쟁 우위 유지
-- 프로토콜별 청산 기회 분석 차단
+**Observable Benefits**:
+- Protection of profitable liquidation market information
+- Maintained competitive advantage between liquidation bots
+- Blocking protocol-specific liquidation opportunity analysis

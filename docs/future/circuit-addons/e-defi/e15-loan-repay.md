@@ -441,7 +441,7 @@ component main {public [loanNoteHash, newLoanNoteHash, repaymentNoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Loan Repay - Real-World Products](../../../product/e-defi/e15-loan-repay-products.md)
+See: [Loan Repay - Real-World Products](../../product/e-defi/e15-loan-repay-products.md)
 ---
 
 [Back to Index](../../README.md)

@@ -4,58 +4,58 @@
 
 ---
 
-## 1. "고래 추적 방지 적립" - 대규모 투자 전략 비공개 시스템
+## 1. "Whale Tracking Prevention DCA" - Large-Scale Investment Strategy Privacy System
 
-**제품 설명**:
-기관 투자자나 고액 자산가가 정기적으로 대규모 자산을 매수할 때, 매수 스케줄과 금액이 시장에 노출되지 않는 서비스. 기존 온체인 DCA는 "고래 추적"으로 전략이 즉시 노출됨.
+**Product Description**:
+A service where institutional investors or high-net-worth individuals' purchase schedules and amounts are not exposed to the market when regularly buying large-scale assets. Existing on-chain DCA immediately exposes strategies through "whale tracking."
 
-**일반 사용자 경험**:
-- 패밀리오피스 "한강자산운용"의 CIO 김성호씨(50세)는 ETH 장기 매집 결정
-- 계획: 매주 10억원씩, 1년간 총 520억원 매수
-- 기존 온체인 DCA 사용 시 → 고래 추적 봇들이 즉시 감지 → "한강자산운용 ETH 매집 중" 소문
-- 트레이더들이 선매수 후 가격 올려 매도(프런트러닝), 매집 비용 급증
-- ZK DCA 설정: 매수 간격, 금액, 총 예산 모두 비공개
-- 매주 거래는 발생하지만 "누가 얼마나 사는지" 외부에서 파악 불가
-- 1년 후 520억원 매집 완료, 프런트러닝 피해 없이 평균 단가 유지
+**General User Experience**:
+- Sung-ho Kim (50), CIO of family office "Hangang Asset Management," decides on long-term ETH accumulation
+- Plan: 1B KRW weekly for 1 year, total 52B KRW purchase
+- Using existing on-chain DCA → whale tracking bots immediately detect → rumor "Hangang Asset Management accumulating ETH"
+- Traders front-run by pre-buying then selling at higher prices, accumulation costs surge
+- Sets up ZK DCA: purchase intervals, amounts, total budget all private
+- Weekly transactions occur but "who's buying how much" cannot be determined externally
+- After 1 year, completes 52B KRW accumulation, maintains average cost without front-running damage
 
-**관찰 가능한 이점**:
-- 대규모 매수 전략이 노출되어 가격이 미리 오르는 것 방지
-- 다른 투자자들의 카피트레이딩, 프런트러닝 전략 무력화
-- 투자 규모와 포지션이 경쟁 펀드에 노출되지 않음
+**Observable Benefits**:
+- Prevents prices from rising prematurely due to exposed large purchase strategy
+- Neutralizes other investors' copy-trading and front-running strategies
+- Investment scale and positions not exposed to competing funds
 
-## 2. "DAO 재무 분산 익명화" - 프로젝트 토큰 매도 전략 비공개
+## 2. "DAO Treasury Diversification Anonymization" - Private Project Token Selling Strategy
 
-**제품 설명**:
-DAO나 프로젝트 재단이 보유 토큰을 스테이블코인으로 전환할 때, 매도 스케줄이 시장에 노출되지 않는 역DCA 서비스. 매도 계획 공개는 패닉셀과 가격 폭락 유발.
+**Product Description**:
+A reverse DCA service where selling schedules are not exposed to the market when DAOs or project foundations convert holdings to stablecoins. Disclosing selling plans triggers panic selling and price crashes.
 
-**일반 사용자 경험**:
-- DeFi 프로토콜 "유니스왑클론"의 재단은 운영비 충당을 위해 보유 토큰 매도 필요
-- 계획: 매월 토큰 100만개씩 매도, 1년간 총 1,200만개 (전체 발행량의 5%)
-- 기존 공개 DCA: "재단이 매월 100만개 판다" 공지 → 커뮤니티 패닉 → 토큰 가격 50% 폭락
-- ZK 역DCA 설정: 매도 스케줄, 수량 완전 비공개
-- 시장에는 "누군가 매도함"만 보일 뿐 재단인지, 얼마인지 파악 불가
-- 점진적 매도로 시장 충격 최소화, 가격 안정 유지하며 운영비 확보
+**General User Experience**:
+- DeFi protocol "UniswapClone" foundation needs to sell tokens for operating expenses
+- Plan: sell 1M tokens monthly, 12M tokens total over 1 year (5% of total supply)
+- Existing public DCA: announcing "foundation sells 1M monthly" → community panic → token price crashes 50%
+- Sets up ZK reverse DCA: selling schedule and quantity completely private
+- Market only sees "someone selling," cannot determine if it's foundation or how much
+- Gradual selling minimizes market shock, secures operating funds while maintaining price stability
 
-**관찰 가능한 이점**:
-- 재단 매도 공포(FUD)로 인한 불필요한 가격 폭락 방지
-- 매도 타이밍을 노린 숏포지션 공격 차단
-- 프로젝트의 재무 상황이 경쟁 프로토콜에 노출되지 않음
+**Observable Benefits**:
+- Prevents unnecessary price crashes due to foundation selling fear (FUD)
+- Blocks short position attacks targeting selling timing
+- Project's financial situation not exposed to competing protocols
 
-## 3. "익명 정치 자금 적립" - 후원자 추적 불가 정기 후원
+## 3. "Anonymous Political Fund Accumulation" - Untraceable Supporter Regular Donations
 
-**제품 설명**:
-정치인이나 시민단체에 정기적으로 후원할 때, 후원자의 신원과 후원 금액, 패턴이 완전히 비공개로 유지되는 서비스. 정기 후원 패턴 분석으로 후원자를 역추적하는 것을 차단.
+**Product Description**:
+A service where supporter identity, donation amount, and patterns remain completely private when regularly supporting politicians or civic groups. Blocks reverse-tracking of supporters through regular donation pattern analysis.
 
-**일반 사용자 경험**:
-- 중소기업 대표 박영진씨(58세)는 야당 정치인에게 정기 후원 희망
-- 문제: 현 정권과 사업 관계가 있어 후원 사실이 알려지면 사업에 불이익 우려
-- 기존 정치자금은 기부자 공개 필수, 암호화폐도 정기 패턴 분석으로 추적 가능
-- ZK DCA 후원: 매월 후원, 금액/시점 모두 랜덤화되어 비공개
-- "매월 1일 500만원" 같은 패턴이 아닌, 변동되는 시점에 변동 금액으로 후원
-- 블록체인 분석으로도 "정기 후원자"임을 파악할 수 없음
-- 정치 성향 노출 없이 1년간 6천만원 후원 완료
+**General User Experience**:
+- SME CEO Young-jin Park (58) wants to regularly support opposition politician
+- Problem: has business relationship with current administration; if support becomes known, business disadvantages feared
+- Existing political funds require donor disclosure; cryptocurrency also traceable through regular pattern analysis
+- ZK DCA donations: monthly support, amounts/timing all randomized and private
+- Not a pattern like "5M KRW on the 1st every month," but varying amounts at varying times
+- Even blockchain analysis cannot determine "regular supporter" status
+- Completes 60M KRW donation over 1 year without political orientation exposure
 
-**관찰 가능한 이점**:
-- 정기 후원 패턴 분석을 통한 후원자 역추적 불가능
-- 후원 사실로 인한 사업적, 사회적 불이익 방지
-- 민주주의 참여의 프라이버시 보장으로 더 많은 시민 참여 유도
+**Observable Benefits**:
+- Makes reverse-tracking of supporters through regular donation pattern analysis impossible
+- Prevents business and social disadvantages from donation activities
+- Guarantees privacy in democratic participation, encouraging more citizen involvement

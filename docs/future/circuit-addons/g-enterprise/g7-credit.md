@@ -309,7 +309,7 @@ component main {public [creditCommitment, bureauCommit, scoreRangeMin, scoreRang
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g7-credit-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g7-credit-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

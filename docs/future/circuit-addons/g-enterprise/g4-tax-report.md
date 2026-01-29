@@ -326,7 +326,7 @@ component main {public [taxpayerCommit, taxYear, jurisdictionId, taxOwed, taxPai
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g4-tax-report-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g4-tax-report-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

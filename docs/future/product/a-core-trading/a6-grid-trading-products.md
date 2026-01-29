@@ -6,56 +6,56 @@
 
 ## Real-World Products & User Experience
 
-### 1. "그리드 레벨 은닉 마켓메이킹" - 트레이딩 봇 전략 보호 서비스
+### 1. "Hidden Grid Level Market Making" - Trading Bot Strategy Protection Service
 
-**제품 설명**:
-그리드 트레이딩 봇의 매수/매도 레벨이 시장에 노출되지 않도록 보호하는 서비스. 일반 DEX에서 그리드 주문이 공개되면 경쟁 봇이나 MEV 봇이 그리드 레벨 직전에서 먼저 거래하여 수익을 가로챌 수 있음(그리드 헌팅). ZK 그리드는 모든 레벨을 암호화하여 이 공격을 방지함.
+**Product Description**:
+A service that protects grid trading bot buy/sell levels from market exposure. On regular DEXs when grid orders are public, competing bots or MEV bots can trade just before grid levels to steal profits (grid hunting). ZK grids encrypt all levels to prevent this attack.
 
-**일반 사용자 경험**:
-- 김봇운영자(36세, 알고리즘 트레이더)는 ETH/USDC 페어에 10단 그리드 설정
-- 일반 DEX에서는 "$1,800 매수, $1,850 매도, $1,900 매도..." 레벨 공개
-- MEV 봇이 $1,849에서 먼저 매수, $1,800 매수 주문 앞에서 프론트런
-- 김씨의 그리드 수익을 MEV 봇이 가로채는 구조
-- ZK 그리드로 모든 레벨이 암호화되어 MEV 봇이 레벨 예측 불가
-- 그리드 전략이 의도대로 작동하여 정당한 수익 확보
+**User Experience**:
+- Bot Operator Kim (36, algorithmic trader) sets 10-level grid on ETH/USDC pair
+- On regular DEX, levels are public: "Buy at $1,800, sell at $1,850, sell at $1,900..."
+- MEV bots buy first at $1,849, front-running the $1,800 buy order
+- MEV bots steal Kim's grid profits
+- Using ZK grid, all levels are encrypted, MEV bots cannot predict levels
+- Grid strategy operates as intended, securing legitimate profits
 
-**관찰 가능한 이점**:
-- 그리드 헌팅/프론트러닝 공격 완전 차단
-- 트레이딩 봇 전략의 알파 보호
-- 경쟁 봇에게 전략 복제당하는 것 방지
+**Observable Benefits**:
+- Completely blocks grid hunting/front-running attacks
+- Protects trading bot strategy alpha
+- Prevents strategy replication by competing bots
 
-### 2. "마켓메이커 재고 비공개" - 유동성 공급자 포지션 보호 서비스
+### 2. "Market Maker Inventory Privacy" - Liquidity Provider Position Protection Service
 
-**제품 설명**:
-마켓메이커가 그리드 전략으로 유동성을 공급할 때, 현재 재고(인벤토리) 수준이 노출되지 않도록 하는 서비스. 재고 정보가 공개되면 대형 트레이더가 마켓메이커를 불리한 방향으로 밀어붙여 손실을 유발할 수 있음.
+**Product Description**:
+A service that prevents current inventory levels from being exposed when market makers provide liquidity using grid strategies. When inventory information is public, large traders can push market makers in unfavorable directions to cause losses.
 
-**일반 사용자 경험**:
-- 이MM(42세, 개인 마켓메이커)은 DEX에서 유동성 공급 중
-- 그리드 주문 상태가 공개되어 "현재 ETH 과다 보유, 달러 부족" 파악 가능
-- 고래 트레이더가 이를 이용해 ETH 대량 매도, 이MM에게 더 많은 ETH 떠넘기기
-- 재고 불균형이 심화되면서 손실 누적
-- ZK 그리드로 각 레벨의 체결 상태와 잔여 수량 비공개
-- 외부에서 재고 수준을 파악할 수 없어 역이용 공격 불가능
+**User Experience**:
+- Market Maker Lee (42, individual market maker) provides liquidity on DEX
+- Grid order status is public, revealing "currently holding excess ETH, short on dollars"
+- Whale traders exploit this by selling large ETH volume, forcing more ETH onto Lee
+- Losses accumulate as inventory imbalance worsens
+- Using ZK grid, fill status and remaining quantity at each level are private
+- Impossible for outsiders to determine inventory level, preventing exploitation attacks
 
-**관찰 가능한 이점**:
-- 마켓메이커 재고 상태 노출 방지
-- 재고 불균형을 이용한 공격으로부터 보호
-- 더 안정적인 유동성 공급 환경 제공
+**Observable Benefits**:
+- Prevents market maker inventory status exposure
+- Protects against attacks exploiting inventory imbalance
+- Provides more stable liquidity provision environment
 
-### 3. "기관급 프라이빗 AMM" - 기관 자동매매 전략 보호 서비스
+### 3. "Institutional-Grade Private AMM" - Institutional Automated Trading Strategy Protection Service
 
-**제품 설명**:
-펀드나 기관이 그리드/AMM 전략을 운용할 때, 전략 파라미터(레인지, 간격, 자본 규모)가 경쟁자에게 노출되지 않도록 하는 서비스. 이 정보가 공개되면 경쟁 기관이 동일 전략을 복제하거나, 역으로 이용할 수 있음.
+**Product Description**:
+A service that prevents strategy parameters (range, spacing, capital size) from being exposed to competitors when funds or institutions operate grid/AMM strategies. When this information is public, competing institutions can replicate the same strategy or exploit it in reverse.
 
-**일반 사용자 경험**:
-- 박헤지펀드(50세, 크립토 펀드)는 고유의 그리드 전략으로 연 15% 수익
-- 일반 DEX 사용 시 온체인 분석으로 전략 파라미터 역공학 가능
-- 경쟁 펀드가 동일 전략 복제, 시장에 같은 전략 과밀화
-- 전략 수익률 하락 및 경쟁 심화
-- ZK 그리드로 레인지, 간격, 자본 규모 모두 비공개
-- 펀드의 고유 전략이 보호되어 지속적 알파 창출
+**User Experience**:
+- Hedge Fund Park (50, crypto fund) earns 15% annual return with proprietary grid strategy
+- Using regular DEX allows strategy parameters to be reverse-engineered through on-chain analysis
+- Competing funds replicate identical strategy, market becomes overcrowded with same strategy
+- Strategy returns decline and competition intensifies
+- Using ZK grid, range, spacing, and capital size all remain private
+- Fund's proprietary strategy is protected, enabling sustained alpha generation
 
-**관찰 가능한 이점**:
-- 기관 트레이딩 전략의 지적재산 보호
-- 전략 복제 및 역이용 방지
-- 고유 알파 소스의 장기적 유지 가능
+**Observable Benefits**:
+- Protects institutional trading strategy intellectual property
+- Prevents strategy replication and reverse exploitation
+- Enables long-term maintenance of proprietary alpha sources

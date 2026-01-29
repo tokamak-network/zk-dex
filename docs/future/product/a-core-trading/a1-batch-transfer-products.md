@@ -6,53 +6,53 @@
 
 ## Real-World Products & User Experience
 
-### 1. "기업 비밀 급여 시스템" - 급여 정보 유출 방지 서비스
+### 1. "Confidential Corporate Payroll System" - Salary Information Leakage Prevention Service
 
-**제품 설명**:
-스타트업 및 기업이 직원들에게 급여를 지급할 때, 블록체인상에서 개별 급여 금액이 노출되지 않도록 하는 프라이버시 급여 지급 서비스. 경쟁사가 온체인 데이터 분석으로 회사의 급여 수준, 인력 규모, 자금 상황을 파악하는 것을 방지함.
+**Product Description**:
+A privacy-preserving payroll service that prevents individual salary amounts from being exposed on the blockchain when startups and corporations pay employees. It protects against competitors analyzing on-chain data to determine the company's salary levels, workforce size, and financial status.
 
-**일반 사용자 경험**:
-- 김대표(38세, AI 스타트업 CEO)는 핵심 개발자 15명에게 블록체인 기반으로 급여 지급
-- 경쟁사가 온체인 데이터를 분석해 "A사 개발자 평균 연봉 1.2억, 핵심 인력 스카우트 가능" 보고서 작성 시도
-- ZK 배치 전송으로 15명 급여를 한 번에 지급하되, 개별 금액은 완전히 숨김
-- 경쟁사는 "어떤 지갑에 얼마가 갔는지" 전혀 파악 불가
-- 핵심 인력 타겟팅 스카우트 시도 무력화, 회사 재무 상태도 비공개 유지
+**User Experience**:
+- CEO Kim (38, AI startup CEO) pays 15 core developers via blockchain
+- Competitors attempt to analyze on-chain data: "Company A developers average $120K annually, core talent can be targeted for recruitment"
+- Using ZK batch transfer, pays all 15 salaries at once while completely hiding individual amounts
+- Competitors cannot determine "which wallet received how much"
+- Targeted recruitment of core talent is neutralized, company financial status remains private
 
-**관찰 가능한 이점**:
-- 경쟁사의 급여 수준 분석 및 스카우트 타겟팅 차단
-- 회사 자금 흐름 및 인력 규모 비공개 유지
-- 직원 간 급여 비교로 인한 내부 갈등 방지
+**Observable Benefits**:
+- Blocks competitor salary analysis and targeted recruitment efforts
+- Maintains privacy of company cash flow and workforce size
+- Prevents internal conflicts from salary comparisons between employees
 
-### 2. "익명 기부 풀" - 프라이버시 보장 단체 후원 서비스
+### 2. "Anonymous Donation Pool" - Privacy-Guaranteed Group Sponsorship Service
 
-**제품 설명**:
-민감한 사회 이슈(정치적 망명자 지원, 내부고발자 보호, 인권단체 후원 등)에 기부할 때, 기부자의 신원과 기부 금액이 노출되지 않는 익명 기부 서비스. 정부나 기업의 보복, 사회적 낙인을 우려하는 기부자를 보호함.
+**Product Description**:
+An anonymous donation service that prevents donor identity and donation amounts from being exposed when contributing to sensitive social issues (political refugee support, whistleblower protection, human rights organizations). Protects donors who fear government or corporate retaliation, and social stigma.
 
-**일반 사용자 경험**:
-- 이기자(45세, 언론인)는 독재 정권 피해자 지원 단체에 기부하고 싶음
-- 일반 블록체인 기부는 지갑 주소가 공개되어 정부 감시 대상이 될 위험
-- ZK 배치 전송을 통해 50명의 기부자 자금이 하나의 트랜잭션으로 통합
-- 누가 얼마를 기부했는지 외부에서 식별 불가능
-- 이기자는 보복 걱정 없이 양심에 따라 기부 완료
+**User Experience**:
+- Journalist Lee (45) wants to donate to a support group for victims of authoritarian regimes
+- Regular blockchain donations expose wallet addresses, risking government surveillance
+- ZK batch transfer combines donations from 50 donors into one transaction
+- Impossible for outsiders to identify who donated how much
+- Journalist Lee completes donation according to conscience without fear of retaliation
 
-**관찰 가능한 이점**:
-- 민감한 이슈 기부자의 신원 보호
-- 정치적/사회적 보복으로부터 안전
-- 더 많은 사람이 두려움 없이 사회 정의 활동 참여 가능
+**Observable Benefits**:
+- Protects identity of donors to sensitive causes
+- Safety from political/social retaliation
+- Enables more people to participate in social justice activities without fear
 
-### 3. "DAO 보조금 프라이버시 배포" - 익명 그랜트 지급 서비스
+### 3. "DAO Grant Privacy Distribution" - Anonymous Grant Disbursement Service
 
-**제품 설명**:
-DAO가 개발자나 프로젝트에 보조금을 지급할 때, 수령자별 금액이 공개되지 않도록 하는 서비스. 수령자가 받은 금액으로 인해 표적 공격을 받거나, 프로젝트 가치가 사전에 노출되는 것을 방지함.
+**Product Description**:
+A service that prevents recipient-specific amounts from being disclosed when DAOs disburse grants to developers or projects. Prevents recipients from being targeted for attacks based on amounts received, or project values from being prematurely exposed.
 
-**일반 사용자 경험**:
-- 박개발자(29세)는 DeFi 프로토콜 취약점을 발견하고 버그 바운티 신청
-- 일반 지급 시 온체인에서 "박개발자 지갑에 50 ETH 입금" 공개
-- 해커들이 "큰 바운티 받은 사람 = 부자 타겟"으로 피싱 공격 집중
-- ZK 배치 전송으로 10명의 바운티 수령자에게 동시 지급, 개별 금액 비공개
-- 박개발자는 자신이 얼마 받았는지 외부에 노출 없이 안전하게 수령
+**User Experience**:
+- Developer Park (29) discovers a DeFi protocol vulnerability and applies for bug bounty
+- Regular payment publicly shows "50 ETH deposited to Developer Park's wallet" on-chain
+- Hackers target "large bounty recipient = wealthy target" for phishing attacks
+- ZK batch transfer simultaneously pays 10 bounty recipients, keeping individual amounts private
+- Developer Park safely receives payment without external exposure of amount
 
-**관찰 가능한 이점**:
-- 버그 바운티/그랜트 수령자에 대한 표적 공격 방지
-- 프로젝트 평가 금액 사전 노출 방지로 공정한 생태계 유지
-- 기여자들이 금액 노출 걱정 없이 적극적으로 참여
+**Observable Benefits**:
+- Prevents targeted attacks against bug bounty/grant recipients
+- Maintains fair ecosystem by preventing premature exposure of project valuation amounts
+- Contributors participate actively without worrying about amount exposure

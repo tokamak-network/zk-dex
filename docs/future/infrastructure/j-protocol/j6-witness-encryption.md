@@ -220,7 +220,7 @@ component main {public [ciphertextCommitment, conditionHash, decryptedCommitment
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j6-witness-encryption-products.md](../../../product/j-protocol/j6-witness-encryption-products.md)
+See: [../../product/j-protocol/j6-witness-encryption-products.md](../../product/j-protocol/j6-witness-encryption-products.md)
 
 ---
 

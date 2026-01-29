@@ -6,53 +6,53 @@
 
 ## Real-World Products & User Experience
 
-### 1. "고래 은폐 거래 시스템" - 대형 매수 주문 노출 방지 서비스
+### 1. "Whale Stealth Trading System" - Large Order Exposure Prevention Service
 
-**제품 설명**:
-기관 투자자나 대형 트레이더가 큰 규모의 매수/매도 주문을 실행할 때, 전체 주문 크기가 시장에 노출되지 않도록 부분 체결하는 서비스. 전체 주문 규모가 알려지면 프론트러닝(선행매매)이나 MEV 공격에 노출되는 위험을 방지함.
+**Product Description**:
+A service that executes large buy/sell orders through partial fills for institutional investors or large traders, preventing the full order size from being exposed to the market. Protects against front-running and MEV attacks that occur when complete order sizes are revealed.
 
-**일반 사용자 경험**:
-- 한펀드매니저(42세, 헤지펀드)는 ETH 10,000개를 매수해야 함
-- 일반 DEX에서 이 주문을 넣으면 "10,000 ETH 매수 대기 중" 정보가 온체인에 공개
-- MEV 봇이 이를 감지하고 먼저 ETH를 매수해 가격을 올린 후 비싸게 되팔기 (샌드위치 공격)
-- ZK 부분 체결 시스템으로 500 ETH씩 20회에 걸쳐 체결, 전체 규모 비공개
-- 각 체결마다 잔여 주문량이 암호화되어 MEV 봇이 전체 규모 파악 불가
+**User Experience**:
+- Fund Manager Han (42, hedge fund) needs to buy 10,000 ETH
+- Placing this order on a regular DEX publicly reveals "10,000 ETH buy order pending"
+- MEV bots detect this and buy ETH first to raise the price, then sell back at a premium (sandwich attack)
+- Using ZK partial fill system, executes 500 ETH at a time over 20 fills, keeping total size private
+- Remaining order quantity is encrypted each time, MEV bots cannot determine full size
 
-**관찰 가능한 이점**:
-- 대형 주문에 대한 프론트러닝/샌드위치 공격 방지
-- 주문 전체 규모 노출로 인한 가격 불이익 제거
-- 기관 투자자가 안심하고 DEX 사용 가능
+**Observable Benefits**:
+- Prevents front-running/sandwich attacks on large orders
+- Eliminates price disadvantages from full order size exposure
+- Institutional investors can use DEX with confidence
 
-### 2. "기업 인수 비밀 매집 서비스" - M&A 지분 확보 프라이버시 도구
+### 2. "Corporate Acquisition Silent Accumulation Service" - M&A Stake Acquisition Privacy Tool
 
-**제품 설명**:
-기업 인수합병(M&A)을 준비하는 회사가 대상 기업의 토큰/지분을 조용히 매집할 때, 매집 진행 상황이 시장에 노출되지 않도록 하는 서비스. 매집 사실이 알려지면 가격이 급등하여 인수 비용이 크게 증가하는 문제를 방지함.
+**Product Description**:
+A service that prevents accumulation progress from being exposed to the market when a company preparing for M&A quietly accumulates tokens/equity of a target company. Prevents the problem where prices surge dramatically when accumulation becomes known, significantly increasing acquisition costs.
 
-**일반 사용자 경험**:
-- 이전략가(48세, 대기업 M&A팀)는 경쟁 프로토콜 거버넌스 토큰 30% 확보 목표
-- 일반 거래소에서 대량 매수하면 "특정 지갑이 계속 사들이고 있다" 분석 보고서 등장
-- 시장이 인수 가능성을 눈치채고 토큰 가격 50% 급등, 인수 비용 폭증
-- ZK 부분 체결로 소량씩 매수, 누적 매수량과 매수 주체 완전 비공개
-- 30% 확보 완료할 때까지 시장은 인수 움직임 전혀 감지 못함
+**User Experience**:
+- Strategist Lee (48, corporate M&A team) aims to secure 30% of competing protocol governance tokens
+- Buying in volume on regular exchanges leads to analysis reports: "Specific wallet is continuously buying"
+- Market senses acquisition possibility, token price surges 50%, acquisition costs explode
+- Using ZK partial fills to buy small amounts, cumulative purchases and buyer identity completely private
+- Market doesn't detect acquisition movement until 30% is secured
 
-**관찰 가능한 이점**:
-- 전략적 지분 매집 시 시장 반응으로 인한 가격 상승 방지
-- 경쟁 인수자에게 의도 노출 차단
-- 합리적인 비용으로 인수 목표 달성
+**Observable Benefits**:
+- Prevents price increases from market reaction during strategic stake accumulation
+- Blocks exposure of intentions to competing acquirers
+- Achieves acquisition goals at reasonable cost
 
-### 3. "OTC 거래 정보 차단기" - 장외거래 프라이버시 보호 서비스
+### 3. "OTC Trade Information Shield" - Over-the-Counter Trading Privacy Protection Service
 
-**제품 설명**:
-대형 프로젝트 팀원, 초기 투자자, 벤처캐피탈이 보유 토큰을 OTC(장외거래)로 매도할 때, 매도 규모와 상대방 정보가 노출되지 않도록 하는 서비스. 내부자 매도 정보가 공개되면 시장 패닉과 가격 폭락을 유발하는 문제를 방지함.
+**Product Description**:
+A service that prevents sale volume and counterparty information from being exposed when large project team members, early investors, and VCs sell held tokens through OTC (over-the-counter) trading. Prevents market panic and price crashes caused by disclosure of insider selling information.
 
-**일반 사용자 경험**:
-- 박창업자(35세, DeFi 프로토콜 창업자)는 베스팅 해제된 토큰 일부를 현금화해야 함
-- 일반 온체인 거래 시 "창업자 지갑에서 대량 토큰 이동" 알림이 온체인 분석 서비스에 포착
-- 트위터에 "창업자 덤핑 시작" 루머 확산, 토큰 가격 30% 급락
-- ZK 부분 체결로 여러 OTC 바이어에게 분할 매도, 거래 규모와 상대방 모두 비공개
-- 시장에 불필요한 패닉 없이 계획대로 자금 확보
+**User Experience**:
+- Founder Park (35, DeFi protocol founder) needs to liquidate some vested tokens
+- Regular on-chain trading triggers alerts: "Large token movement from founder wallet" detected by on-chain analysis services
+- Twitter spreads rumors of "founder dumping," token price drops 30%
+- Using ZK partial fills to split-sell to multiple OTC buyers, keeping trade size and counterparties private
+- Secures funds as planned without unnecessary market panic
 
-**관찰 가능한 이점**:
-- 내부자 거래 노출로 인한 시장 패닉 방지
-- 프로젝트 평판 보호와 동시에 정당한 자산 관리 가능
-- 장외거래 상대방 정보 보호로 양측 모두 안전
+**Observable Benefits**:
+- Prevents market panic from insider trading exposure
+- Enables legitimate asset management while protecting project reputation
+- Protects counterparty information in OTC trades, ensuring safety for both sides

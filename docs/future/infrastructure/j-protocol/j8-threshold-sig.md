@@ -225,7 +225,7 @@ component main {public [message, publicKey, signature, participantMask]} = Thres
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j8-threshold-sig-products.md](../../../product/j-protocol/j8-threshold-sig-products.md)
+See: [../../product/j-protocol/j8-threshold-sig-products.md](../../product/j-protocol/j8-threshold-sig-products.md)
 
 ---
 

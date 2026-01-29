@@ -282,7 +282,7 @@ component main {public [streamHash, newStreamHash, claimHash, currentTime, token
 
 ## Real-World Products & User Experience
 
-See [Streaming Payment - Products & User Experience](../../../product/b-time-conditions/b4-streaming-products.md) for detailed product scenarios and user stories.
+See [Streaming Payment - Products & User Experience](../../product/b-time-conditions/b4-streaming-products.md) for detailed product scenarios and user stories.
 
 ---
 

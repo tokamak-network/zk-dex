@@ -237,7 +237,7 @@ component main {public [jobId, circuitHash, inputCommitment, deadline, maxPrice]
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i10-prover-market-products.md](../../../product/i-off-chain/i10-prover-market-products.md)
+See: [../../product/i-off-chain/i10-prover-market-products.md](../../product/i-off-chain/i10-prover-market-products.md)
 
 ---
 

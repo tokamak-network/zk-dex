@@ -190,7 +190,7 @@ component main {public [noteHash, outputHash, currentTime, tokenType]} =
 
 ## Real-World Products & User Experience
 
-See [Time-Locked Notes - Products & User Experience](../../../product/b-time-conditions/b1-time-lock-products.md) for detailed product scenarios and user stories.
+See [Time-Locked Notes - Products & User Experience](../../product/b-time-conditions/b1-time-lock-products.md) for detailed product scenarios and user stories.
 
 ---
 

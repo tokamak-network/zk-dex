@@ -19,7 +19,7 @@
 
 ## 실제 제품 및 사용자 경험
 
-참조: [대출 상환 - 실제 제품](../../../product/e-defi/e15-loan-repay-products.md)
+참조: [대출 상환 - 실제 제품](../../product/e-defi/e15-loan-repay-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

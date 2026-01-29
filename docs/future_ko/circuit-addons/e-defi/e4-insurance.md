@@ -366,7 +366,7 @@ component main {public [policyNoteHash, premiumNoteHash, poolCommitment,
 
 ## 실제 제품 및 사용자 경험
 
-참조: [보험 구매/청구 - 실제 제품](../../../product/e-defi/e4-insurance-products.md)
+참조: [보험 구매/청구 - 실제 제품](../../product/e-defi/e4-insurance-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

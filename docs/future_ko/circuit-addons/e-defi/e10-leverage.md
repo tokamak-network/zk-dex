@@ -19,7 +19,7 @@ Aave 및 Compound와 같은 현재 대출 프로토콜은 모든 레버리지 �
 
 ## 실제 제품 및 사용자 경험
 
-참조: [레버리지 포지션 - 실제 제품](../../../product/e-defi/e10-leverage-products.md)
+참조: [레버리지 포지션 - 실제 제품](../../product/e-defi/e10-leverage-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

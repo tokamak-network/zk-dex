@@ -4,59 +4,59 @@
 
 ---
 
-## 1. "비밀 협상 에스크로" - 거래 조건 비공개 B2B 계약
+## 1. "Confidential Negotiation Escrow" - Private Terms for B2B Contracts
 
-**제품 설명**:
-기업 간 거래에서 계약 금액과 조건이 외부에 절대 노출되지 않는 에스크로 서비스. 거래 조건이 알려지면 향후 협상에서 불리해지거나 경쟁사에게 정보를 제공하는 문제 해결.
+**Product Description**:
+An escrow service where contract amounts and terms in business transactions remain absolutely unexposed externally. Solves the problem where disclosed transaction terms become disadvantageous in future negotiations or provide information to competitors.
 
-**일반 사용자 경험**:
-- 반도체 장비업체 "칩테크"의 구매팀장 이현수씨(45세)는 원자재 공급사와 대량 구매 협상 중
-- 협상 결과: 킬로그램당 $50 (시장가 $65 대비 23% 할인)
-- 이 가격이 알려지면 → 다른 공급사가 동일 조건 요구, 경쟁사가 같은 공급사에 접근
-- 기존 에스크로는 금액이 온체인에 공개되어 경쟁사가 즉시 파악 가능
-- ZK 에스크로 사용: 계약금 5억원 예치, 금액과 조건 완전 비공개
-- 납품 완료 확인 시 자동 지급, 외부에서는 "칩테크와 공급사 간 거래 있었음"만 확인 가능
-- 협상력 우위 유지, 경쟁사는 칩테크의 원가 구조 파악 불가
+**General User Experience**:
+- Hyun-soo Lee (45), Purchasing Manager at semiconductor equipment company "ChipTech," is in raw material supplier negotiations
+- Negotiation result: $50 per kilogram (23% discount vs. market price of $65)
+- If this price becomes known → other suppliers demand identical terms, competitors approach same supplier
+- Existing escrow exposes amounts on-chain, allowing competitors to immediately identify
+- Uses ZK escrow: deposits 500M KRW contract amount, amount and terms completely private
+- Automatically pays upon delivery confirmation; externally only "transaction occurred between ChipTech and supplier" is visible
+- Maintains negotiation advantage, competitors cannot determine ChipTech's cost structure
 
-**관찰 가능한 이점**:
-- 유리한 협상 조건이 공개되어 향후 거래에서 불리해지는 것 방지
-- 경쟁사가 거래 조건 파악하여 동일 공급사 접근하는 것 차단
-- 원가 구조, 마진율 등 핵심 경영 정보 유출 방지
+**Observable Benefits**:
+- Prevents favorable negotiation terms from becoming disadvantageous in future transactions
+- Blocks competitors from approaching same suppliers after learning transaction terms
+- Prevents leakage of core business information like cost structure and margin rates
 
-## 2. "익명 분쟁 중재" - 중재자도 당사자 모르는 에스크로
+## 2. "Anonymous Dispute Arbitration" - Escrow Where Arbitrator Doesn't Know Parties
 
-**제품 설명**:
-거래 분쟁 발생 시 중재자가 당사자들의 신원을 모르는 상태에서 증거만 보고 판단하는 익명 중재 시스템. 중재자의 편향이나 외부 압력 개입 불가능.
+**Product Description**:
+An anonymous arbitration system where arbitrators judge based only on evidence without knowing the parties' identities when transaction disputes arise. Arbitrator bias or external pressure intervention impossible.
 
-**일반 사용자 경험**:
-- 유명 인플루언서 "뷰티퀸"(본명 비공개)은 화장품 브랜드와 협찬 계약 분쟁 중
-- 계약금 3천만원이 에스크로에 묶인 상태에서 콘텐츠 품질 이견 발생
-- 일반 중재 시 중재자가 "뷰티퀸이니까 편들어주자" 또는 "대기업이니까 힘 실어주자" 편향 우려
-- ZK 에스크로 분쟁 중재: 중재자는 "당사자 A, B" 그리고 계약서/증거만 확인
-- 당사자가 유명인인지, 대기업인지 전혀 알 수 없는 상태에서 순수하게 증거 기반 판단
-- 중재 결과: 70% 브랜드, 30% 인플루언서 → 자동 분배 실행
-- 양측 모두 "공정한 판단"이라고 수긍
+**General User Experience**:
+- Famous influencer "BeautyQueen" (real name undisclosed) is in sponsorship contract dispute with cosmetics brand
+- 30M KRW contract amount locked in escrow, disagreement over content quality
+- In regular arbitration, arbitrator may think "since it's BeautyQueen, let's favor her" or "it's a big company, let's support them"
+- ZK escrow dispute arbitration: arbitrator only sees "Party A, Party B" and contract/evidence
+- Judges purely based on evidence without knowing if party is celebrity or corporation
+- Arbitration result: 70% to brand, 30% to influencer → automatically distributes
+- Both sides accept as "fair judgment"
 
-**관찰 가능한 이점**:
-- 중재자의 지위/명성 편향 완전 제거
-- 일방 당사자가 중재자에게 외부 압력 행사 불가능
-- 유명인/대기업이 분쟁에서 부당한 유불리를 갖지 않음
+**Observable Benefits**:
+- Completely eliminates arbitrator's status/reputation bias
+- Makes external pressure on arbitrator by one party impossible
+- Celebrities/corporations don't have unfair advantages or disadvantages in disputes
 
-## 3. "민감 거래 보호" - 신원 노출이 위험한 거래를 위한 에스크로
+## 3. "Sensitive Transaction Protection" - Escrow for Transactions Where Identity Exposure is Dangerous
 
-**제품 설명**:
-거래 당사자의 신원이 노출되면 위험한 상황에서, 양측 모두 익명으로 안전하게 거래할 수 있는 에스크로. 내부고발 정보 거래, 민감한 예술품 거래 등에 활용.
+**Product Description**:
+Escrow enabling safe anonymous transactions for both parties when disclosure of transaction party identities would be dangerous. Used for whistleblower information trading, sensitive artwork transactions, etc.
 
-**일반 사용자 경험**:
-- 대기업 회계 부정을 알고 있는 내부자가 탐사보도 매체에 자료 제공 고려
-- 자료 제공의 대가로 법률 비용 지원 5천만원 요청
-- 문제: 자료 먼저 주면 돈 안 줄 수 있고, 돈 먼저 받으면 자료 안 줄 수 있음
-- 더 큰 문제: 거래 사실이 알려지면 내부고발자 신변 위협
-- ZK 에스크로 사용: 매체가 5천만원 예치, 내부고발자는 자료를 암호화하여 제출
-- 매체가 자료 확인 후 에스크로 해제 → 내부고발자에게 익명으로 5천만원 전달
-- 블록체인에는 "익명 A와 익명 B 간 거래 완료"만 기록, 양측 신원 추적 불가
+**General User Experience**:
+- Corporate insider knowing accounting fraud considers providing materials to investigative journalism outlet
+- Requests 50M KRW legal cost support in exchange for materials
+- Problem: if materials provided first, payment may not come; if payment received first, materials may not be provided
+- Bigger problem: if transaction becomes known, whistleblower's safety threatened
+- Uses ZK escrow: outlet deposits 50M KRW, whistleblower submits encrypted materials
+- After outlet confirms materials, releases escrow → anonymously delivers 50M KRW to whistleblower
+- Blockchain only records "transaction completed between anonymous A and anonymous B," both identities untraceable
 
-**관찰 가능한 이점**:
-- 거래 사실 자체가 위험한 상황에서도 안전한 거래 가능
-- 양측 모두 상대방 신원을 몰라도 거래 이행이 보장됨
-- 내부고발, 민감 정보 거래 등 사회적으로 필요하지만 위험한 거래 촉진
+**Observable Benefits**:
+- Enables safe transactions even when the transaction itself is dangerous
+- Guarantees transaction fulfillment even when both parties don't know each other's identities
+- Facilitates socially necessary but risky transactions like whistleblowing and sensitive information trading

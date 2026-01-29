@@ -246,7 +246,7 @@ component main {public [inputCommitment, outputCommitment, relayCommitment]} = R
 
 ## Real-World Products & User Experience
 
-See: [../../../product/i-off-chain/i6-graph-obfuscation-products.md](../../../product/i-off-chain/i6-graph-obfuscation-products.md)
+See: [../../product/i-off-chain/i6-graph-obfuscation-products.md](../../product/i-off-chain/i6-graph-obfuscation-products.md)
 
 ---
 

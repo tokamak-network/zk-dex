@@ -384,7 +384,7 @@ component main {public [positionNoteHash, collateralNoteHash, syntheticNoteHash,
 
 ## 실제 제품 및 사용자 경험
 
-참조: [합성 자산 발행/소각 - 실제 제품](../../../product/e-defi/e5-synthetics-products.md)
+참조: [합성 자산 발행/소각 - 실제 제품](../../product/e-defi/e5-synthetics-products.md)
 ---
 
 [색인으로 돌아가기](../../README.md)

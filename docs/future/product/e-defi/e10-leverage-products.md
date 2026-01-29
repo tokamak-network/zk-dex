@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "청산 사냥 방어" - 레버리지 청산가 보호
+## 1. "Liquidation Hunting Defense" - Leverage Liquidation Price Protection
 
-**제품 설명**:
-레버리지 포지션의 청산 가격이 노출되면 고래들이 해당 가격까지 시장을 밀어붙여 강제 청산시키는 "청산 사냥" 공격을 방어.
+**Product Description**:
+Defense against "liquidation hunting" attacks where whales push the market to liquidation prices to force liquidation when leveraged positions' liquidation prices are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 5x 레버리지 롱, 청산가 $1,800 노출 → 고래가 대량 매도로 $1,799까지 푸시 → 강제 청산 + 5% 페널티
-- ZK DeFi 사용: 레버리지 배율과 청산가 비공개 → 공격자가 타겟 가격 특정 불가
-- 결과: 청산 사냥 공격 무력화, 공정한 가격에서 자율적 청산
+**Typical User Experience**:
+- Without Privacy: 5x leverage long, liquidation price $1,800 exposed → Whale mass sells to push to $1,799 → Forced liquidation + 5% penalty
+- With ZK DeFi: Leverage multiplier and liquidation price private → Attacker cannot identify target price
+- Result: Liquidation hunting attacks neutralized, autonomous liquidation at fair price
 
-**관찰 가능한 이점**:
-- 청산 가격 노출로 인한 타겟 공격 완전 차단
-- 레버리지 포지션의 시장 조작 취약점 제거
-- 트레이더의 리스크 관리 자율성 확보
+**Observable Benefits**:
+- Complete blocking of targeted attacks from liquidation price exposure
+- Elimination of leverage position market manipulation vulnerability
+- Secured autonomy in trader's risk management
 
-## 2. "대출 규모 은닉" - 신용 정보 유출 방지
+## 2. "Loan Size Concealment" - Credit Information Leak Prevention
 
-**제품 설명**:
-레버리지 대출 규모가 노출되면 차입자의 재정 상황과 리스크 성향이 추정되어 다른 거래에서 불리해지는 문제를 해결.
+**Product Description**:
+Solving the problem where leverage loan size exposure allows estimation of borrower's financial situation and risk appetite, causing disadvantages in other transactions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $10M 레버리지 대출 노출 → "고위험 투자자" 낙인 → 다른 프로토콜에서 담보비율 상향 요구
-- ZK DeFi 사용: 대출 규모 비공개, 적정 담보화만 증명 → 신용 정보 유출 차단
-- 결과: 레버리지 사용이 다른 금융 활동에 영향 주지 않음
+**Typical User Experience**:
+- Without Privacy: $10M leverage loan exposed → "High-risk investor" stigma → Other protocols demand higher collateral ratios
+- With ZK DeFi: Loan size private, only adequate collateralization proven → Credit information leak blocked
+- Result: Leverage use doesn't affect other financial activities
 
-**관찰 가능한 이점**:
-- 대출 규모를 통한 재정 상황 추정 차단
-- 레버리지 사용의 사회적 낙인 방지
-- 프로토콜 간 신용 정보 연계 차단
+**Observable Benefits**:
+- Blocking financial situation estimation through loan size
+- Prevention of social stigma from leverage use
+- Blocking cross-protocol credit information linkage
 
-## 3. "캐스케이드 청산 방지" - 연쇄 청산 공격 차단
+## 3. "Cascade Liquidation Prevention" - Chain Liquidation Attack Blocking
 
-**제품 설명**:
-레버리지 포지션 분포가 노출되면 특정 가격대에 청산 물량이 집중된 것을 파악하여 의도적으로 연쇄 청산을 유발하는 공격을 방어.
+**Product Description**:
+Defense against attacks that identify concentrated liquidation volume at specific price levels when leverage position distribution is exposed, intentionally triggering chain liquidations.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $2,000에 $50M 청산 물량 집중 노출 → 공격자가 $2,000까지 가격 하락 유도 → 연쇄 청산으로 $1,500까지 폭락
-- ZK DeFi 사용: 청산 가격 분포 불투명 → 청산 집중 지점 파악 불가
-- 결과: 캐스케이드 청산 공격 무력화, 시장 안정성 향상
+**Typical User Experience**:
+- Without Privacy: $50M liquidation volume concentrated at $2,000 exposed → Attacker induces price decline to $2,000 → Chain liquidation crashes price to $1,500
+- With ZK DeFi: Liquidation price distribution opaque → Cannot identify liquidation concentration points
+- Result: Cascade liquidation attacks neutralized, improved market stability
 
-**관찰 가능한 이점**:
-- 청산 물량 집중 지점 노출 방지
-- 의도적 가격 조작 인센티브 제거
-- 전체 시장의 시스템 리스크 감소
+**Observable Benefits**:
+- Prevention of liquidation volume concentration point exposure
+- Elimination of intentional price manipulation incentives
+- Reduced systemic risk across entire market

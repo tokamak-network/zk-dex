@@ -234,7 +234,7 @@ component main {public [noteHash, outputHash, conditionType, threshold,
 
 ## Real-World Products & User Experience
 
-See [Conditional Payment (Oracle) - Products & User Experience](../../../product/b-time-conditions/b3-conditional-products.md) for detailed product scenarios and user stories.
+See [Conditional Payment (Oracle) - Products & User Experience](../../product/b-time-conditions/b3-conditional-products.md) for detailed product scenarios and user stories.
 
 ---
 

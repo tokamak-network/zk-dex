@@ -6,50 +6,50 @@
 
 ## Real-World Products & User Experience
 
-### 1. "수출 바이어 비밀 유지" - 경쟁사에 해외 고객 숨김
+### 1. "Export Buyer Confidentiality" - Hide Overseas Customers from Competitors
 
-**제품 설명**:
-수출 통관 기록에서 바이어 정보가 노출되면 경쟁사가 해외 고객 명단 파악해 직접 영업 가능. ZK로 "규제 준수" 증명하고 바이어 신원/물량/가격은 관세청에도 최소한만 제공.
+**Product Description**:
+When buyer information is exposed in export customs records, competitors can identify overseas customer lists and directly sell to them. ZK proves "regulatory compliance" while providing buyer identity/volume/price minimally even to customs.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 수출 기록에서 독일 A사에 월 100만달러 수출 중인 것 확인, 경쟁사가 A사에 더 싼 가격 제시해 거래 탈취
-- ZK 솔루션 사용: "수출 규제 품목 아님, 금수국 아님" 증명만, 바이어명/금액은 비공개
-- 결과: 경쟁사가 핵심 해외 고객 파악 불가, 영업 자산 보호
+**User Experience**:
+- Without Privacy: Export records reveal monthly $1 million exports to German Company A, competitor offers lower price to A and wins account
+- With ZK Solution: Prove only "not regulated export item, not embargoed country", buyer name/amount kept private
+- Result: Competitors cannot identify core overseas customers, sales assets protected
 
-**관찰 가능한 이점**:
-- 해외 바이어 명단이라는 핵심 영업비밀 보호
-- 경쟁사의 타겟 영업 차단
-- 규제 준수와 영업비밀 보호 양립
+**Observable Benefits**:
+- Protects overseas buyer list as core trade secret
+- Blocks competitor targeted sales
+- Balances regulatory compliance with trade secret protection
 
-### 2. "기술 수출 스펙 비공개" - 제품 사양 숨기고 규제 통과
+### 2. "Technology Export Spec Privacy" - Pass Regulations While Hiding Product Specifications
 
-**제품 설명**:
-기술 제품 수출 시 상세 스펙 제출하면 기술 유출 위험. 특히 수출 허가 신청서는 여러 기관 거치며 유출 가능성. ZK로 "이중용도 기준 미달" 증명하고 실제 스펙은 비공개.
+**Product Description**:
+Submitting detailed specs when exporting technology products creates technology leak risks. Export permit applications especially pass through multiple agencies with leak possibilities. ZK proves "below dual-use criteria" while keeping actual specs private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 반도체 장비 수출 허가 신청서에 정밀 스펙 기재, 심사 과정에서 경쟁국 정보기관이 스펙 입수
-- ZK 솔루션 사용: "전략물자 기준 해당 안 됨" 증명만, 실제 성능 수치는 비공개
-- 결과: 기술 유출 없이 수출 허가 취득
+**User Experience**:
+- Without Privacy: Semiconductor equipment export permit application includes precise specs, competitor nation intelligence agency obtains specs during review process
+- With ZK Solution: Prove only "not applicable to strategic materials criteria", actual performance figures kept private
+- Result: Obtain export permit without technology leaks
 
-**관찰 가능한 이점**:
-- 수출 허가 과정에서의 기술 유출 방지
-- 핵심 제품 스펙이라는 영업비밀 보호
-- 규제 기관에 필요한 정보만 최소 제공
+**Observable Benefits**:
+- Prevents technology leaks during export permit process
+- Protects core product specs as trade secrets
+- Provides only minimum necessary information to regulatory agencies
 
-### 3. "제재 스크리닝 비추적" - 거래 상대방 검증하되 기록 안 남김
+### 3. "Sanction Screening Untraceability" - Verify Counterparty Without Leaving Records
 
-**제품 설명**:
-제재 리스트 검색 기록 자체가 "누구와 거래 검토 중"이라는 정보 유출. 경쟁사가 이 기록 입수하면 우리 사업 계획 파악. ZK로 "제재 대상 아님" 확인하되 누구를 검색했는지 기록 안 남김.
+**Product Description**:
+Sanction list search records themselves leak "who we're considering trading with" information. If competitors obtain these records, they grasp our business plans. ZK confirms "not sanctioned target" without recording who was searched.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 중동 A사와 거래 검토 위해 제재 리스트 검색, 검색 기록이 컴플라이언스 업체 통해 유출돼 "저 회사 중동 진출하려나?" 정보 노출
-- ZK 솔루션 사용: "거래 상대방이 제재 리스트에 없음" 증명 로컬 생성, 외부에 검색 기록 안 남김
-- 결과: 제재 준수하면서 사업 계획 비밀 유지
+**User Experience**:
+- Without Privacy: Search sanction list to consider trade with Middle East Company A, search record leaks through compliance company revealing "is that company entering Middle East?" information
+- With ZK Solution: Generate "counterparty not on sanction list" proof locally, no external search records
+- Result: Maintain sanction compliance while keeping business plans confidential
 
-**관찰 가능한 이점**:
-- 거래 검토 단계의 정보 유출 방지
-- 컴플라이언스 업체 통한 사업 정보 유출 차단
-- 규제 준수와 사업 기밀 보호 양립
+**Observable Benefits**:
+- Prevents information leaks during trade consideration stage
+- Blocks business information leaks through compliance companies
+- Balances regulatory compliance with business confidentiality
 
 ---
 

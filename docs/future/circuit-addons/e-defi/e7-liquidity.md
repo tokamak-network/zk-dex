@@ -395,7 +395,7 @@ component main {public [lpNoteHash, token0NoteHash, token1NoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Liquidity Add/Remove - Real-World Products](../../../product/e-defi/e7-liquidity-products.md)
+See: [Liquidity Add/Remove - Real-World Products](../../product/e-defi/e7-liquidity-products.md)
 ---
 
 [Back to Index](../../README.md)

@@ -282,7 +282,7 @@ component main {public [auctionId, itemNoteHash, bidNoteHash, sellerOutputHash,
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a7-auction-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a7-auction-products.md)
 
 ---
 

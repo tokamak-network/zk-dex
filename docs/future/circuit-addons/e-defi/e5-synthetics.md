@@ -384,7 +384,7 @@ component main {public [positionNoteHash, collateralNoteHash, syntheticNoteHash,
 
 ## Real-World Products & User Experience
 
-See: [Synthetic Asset Mint/Burn - Real-World Products](../../../product/e-defi/e5-synthetics-products.md)
+See: [Synthetic Asset Mint/Burn - Real-World Products](../../product/e-defi/e5-synthetics-products.md)
 ---
 
 [Back to Index](../../README.md)

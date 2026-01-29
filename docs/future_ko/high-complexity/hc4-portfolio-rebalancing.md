@@ -275,7 +275,7 @@ component main {public [portfolioCommitment, newPortfolioCommitment, oraclePrice
 
 ## 실제 제품 및 사용자 경험
 
-자세한 제품 시나리오 및 사용 사례는 [실제 제품 및 사용자 경험](../../future/product/high-complexity/hc4-portfolio-rebalancing-products.md)을 참조하세요.
+자세한 제품 시나리오 및 사용 사례는 [실제 제품 및 사용자 경험](../product/high-complexity/hc4-portfolio-rebalancing-products.md)을 참조하세요.
 
 ---
 

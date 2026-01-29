@@ -317,7 +317,7 @@ component main {public [attributeCommitment, verifierCommit, documentRoot, verif
 
 ## Real-World Products & User Experience
 
-See [Real-World Products & User Experience](../../../product/g-enterprise/g6-kyc-products.md) for detailed product descriptions and user experience scenarios.
+See [Real-World Products & User Experience](../../product/g-enterprise/g6-kyc-products.md) for detailed product descriptions and user experience scenarios.
 
 ---
 

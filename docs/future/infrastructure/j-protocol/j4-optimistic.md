@@ -211,7 +211,7 @@ component main {public [claimedStateRoot, correctStateRoot, transactionHash, pre
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j4-optimistic-products.md](../../../product/j-protocol/j4-optimistic-products.md)
+See: [../../product/j-protocol/j4-optimistic-products.md](../../product/j-protocol/j4-optimistic-products.md)
 
 ---
 

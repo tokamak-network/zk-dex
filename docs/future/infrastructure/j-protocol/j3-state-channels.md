@@ -230,7 +230,7 @@ component main {public [channelId, oldStateHash, newStateHash, nonce]} = StateCh
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j3-state-channels-products.md](../../../product/j-protocol/j3-state-channels-products.md)
+See: [../../product/j-protocol/j3-state-channels-products.md](../../product/j-protocol/j3-state-channels-products.md)
 
 ---
 

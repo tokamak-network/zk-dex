@@ -6,53 +6,53 @@
 
 ## Real-World Products & User Experience
 
-### 1. "체인 연결 끊기" - 크로스체인 거래 링크 차단 서비스
+### 1. "Chain Link Breaker" - Cross-Chain Transaction Link Blocking Service
 
-**제품 설명**:
-ZK-HTLC를 사용해 두 체인의 거래가 연결되지 않도록 하는 프라이버시 스왑. 일반 HTLC는 같은 해시로 두 체인 거래가 연결되어 추적됩니다.
+**Product Description**:
+A privacy swap using ZK-HTLC that prevents transactions on two chains from being connected. Regular HTLC uses the same hash to link transactions on both chains, making them trackable.
 
-**일반 사용자 경험**:
-- 최민수씨(31세)는 비트코인을 ZK-DEX 토큰으로 교환하려 함
-- 일반 HTLC: 같은 preimage가 양쪽 체인에 공개되어 거래 연결됨
-- ZK-HTLC: preimage 지식을 ZK로 증명, 체인에 공개하지 않음
-- 비트코인 거래와 ZK-DEX 거래가 별개 거래로 보임
-- 블록체인 분석가도 민수씨의 크로스체인 활동을 추적 불가
+**User Experience**:
+- Mr. Choi (31) wants to exchange Bitcoin for ZK-DEX tokens
+- Regular HTLC: Same preimage is revealed on both chains, linking the transactions
+- ZK-HTLC: Knowledge of preimage is proven with ZK, not revealed on-chain
+- Bitcoin transaction and ZK-DEX transaction appear as separate, unrelated transactions
+- Blockchain analysts cannot track Choi's cross-chain activities
 
-**관찰 가능한 이점**:
-- 두 체인 간 거래 연결고리 완전 차단
-- 크로스체인 자산 흐름 추적 방지
-- 거래 상대방에게도 다른 체인 활동 숨김
+**Observable Benefits**:
+- Complete blocking of transaction linkage between two chains
+- Prevention of cross-chain asset flow tracking
+- Hides activities on other chains even from counterparty
 
-### 2. "비밀 크로스체인 OTC" - 대량 거래 완전 비공개
+### 2. "Secret Cross-Chain OTC" - Large Transaction Complete Privacy
 
-**제품 설명**:
-대량의 크로스체인 스왑을 실행할 때 거래 금액, 참여자, 타이밍이 모두 숨겨지는 기관급 프라이버시 서비스.
+**Product Description**:
+An institutional-grade privacy service where transaction amount, participants, and timing are all hidden during large cross-chain swaps.
 
-**일반 사용자 경험**:
-- 정예진씨(35세)는 $500,000 규모의 ETH를 BTC로 교환하려 함
-- 일반 스왑: "이 지갑이 대량 스왑했다"가 양쪽 체인에 공개
-- 비밀 OTC: 금액이 commitment로 숨겨지고, ZK로 정확한 교환 증명
-- 양쪽 체인에서 거래 금액이 보이지 않음
-- 예진씨가 대량 거래자라는 사실 자체가 비공개
+**User Experience**:
+- Ms. Jung (35) wants to exchange $500,000 worth of ETH for BTC
+- Regular swap: "This wallet made a large swap" is public on both chains
+- Secret OTC: Amount is hidden in commitment, with ZK proof of accurate exchange
+- Transaction amounts are not visible on either chain
+- The fact that Jung is a large trader remains private
 
-**관찰 가능한 이점**:
-- 거래 규모가 시장에 노출되지 않아 가격 영향 없음
-- "고래" 라벨링 및 추적 방지
-- 거래 상대방에게도 자산 규모 비공개
+**Observable Benefits**:
+- Transaction size not exposed to market, eliminating price impact
+- Prevention of "whale" labeling and tracking
+- Asset size remains private even from counterparty
 
-### 3. "프라이빗 온램프" - 투명 자산을 프라이빗하게 전환
+### 3. "Private Onramp" - Transparent Asset to Private Conversion
 
-**제품 설명**:
-공개 체인의 스테이블코인을 ZK-DEX의 프라이빗 자산으로 전환할 때, 전환 과정 자체도 숨겨지는 서비스.
+**Product Description**:
+A service that hides the conversion process itself when converting stablecoins from public chains to private assets on ZK-DEX.
 
-**일반 사용자 경험**:
-- 박현우씨(27세)는 USDC 급여를 프라이빗하게 관리하고 싶음
-- 일반 브릿지: "현우씨가 USDC를 프라이빗 체인으로 보냈다" 공개
-- 프라이빗 온램프: HTLC로 교환하되, 연결고리 없이 전환
-- 이더리움에서는 "누군가에게 USDC 전송", ZK-DEX에서는 "새로운 프라이빗 자산"
-- 두 이벤트가 연결되지 않아 프라이버시 전환 자체가 숨겨짐
+**User Experience**:
+- Mr. Park (27) wants to privately manage his USDC salary
+- Regular bridge: "Park sent USDC to private chain" is public
+- Private onramp: Exchange via HTLC with no linkage
+- On Ethereum: "USDC transfer to someone", on ZK-DEX: "New private asset"
+- Two events are not connected, hiding the privacy conversion itself
 
-**관찰 가능한 이점**:
-- 프라이버시 체인으로의 이동 자체가 비공개
-- "이 사람이 프라이버시를 원한다"는 신호 숨김
-- 프라이빗 자산과 공개 자산 간 연결 차단
+**Observable Benefits**:
+- Movement to privacy chain itself remains private
+- Hides the signal "this person wants privacy"
+- Blocks connection between private and public assets

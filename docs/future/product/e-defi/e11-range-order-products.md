@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "히든 리밋" - 대형 지정가 주문 보호
+## 1. "Hidden Limit" - Large Limit Order Protection
 
-**제품 설명**:
-레인지 오더의 가격 범위가 노출되면 해당 가격대 직전에서 프론트러닝하여 불리한 체결을 유도하는 공격을 방어.
+**Product Description**:
+Defense against attacks that front-run just before target prices when range order price ranges are exposed, inducing unfavorable execution.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $2,000에 100 ETH 매수 주문 노출 → 봇이 $2,001에 선행 매수 → 가격 도달 시 봇이 $2,000에 매도 → 주문자에게 불리한 체결
-- ZK DeFi 사용: 주문 가격과 규모 비공개 → 프론트러닝 불가
-- 결과: 공정한 가격에 체결, MEV 손실 제로
+**Typical User Experience**:
+- Without Privacy: 100 ETH buy order at $2,000 exposed → Bot front-runs buy at $2,001 → When price reaches, bot sells at $2,000 → Unfavorable execution for orderer
+- With ZK DeFi: Order price and size private → Front-running impossible
+- Result: Fair price execution, zero MEV loss
 
-**관찰 가능한 이점**:
-- 지정가 주문 프론트러닝 완전 차단
-- 대형 주문의 시장 영향 최소화
-- 주문 의도 노출 없이 전략 실행
+**Observable Benefits**:
+- Complete blocking of limit order front-running
+- Minimized market impact of large orders
+- Strategy execution without order intent exposure
 
-## 2. "레인지 전략 보호" - 마켓메이커 범위 은닉
+## 2. "Range Strategy Protection" - Market Maker Range Concealment
 
-**제품 설명**:
-Uniswap V3 스타일 집중 유동성의 가격 범위가 노출되면 경쟁 MM이 동일 범위를 복제하거나 범위 끝에서 공격하는 문제를 해결.
+**Product Description**:
+Solving the problem where competing MMs replicate the same range or attack at range ends when Uniswap V3 style concentrated liquidity price ranges are exposed.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: MM의 $1,900-$2,100 유동성 범위 노출 → 경쟁자가 동일 범위 복제 → 수수료 경쟁으로 수익 감소
-- ZK DeFi 사용: 유동성 범위 비공개 → 전략 복제 불가
-- 결과: 독자적 마켓메이킹 전략 보호, 알파 유지
+**Typical User Experience**:
+- Without Privacy: MM's $1,900-$2,100 liquidity range exposed → Competitor replicates same range → Fee competition reduces profits
+- With ZK DeFi: Liquidity range private → Strategy replication impossible
+- Result: Proprietary market making strategy protected, alpha preserved
 
-**관찰 가능한 이점**:
-- 집중 유동성 전략의 기밀 유지
-- 범위 끝 공격(range attack) 차단
-- 프로 마켓메이커의 경쟁 우위 보호
+**Observable Benefits**:
+- Confidentiality of concentrated liquidity strategy maintained
+- Blocking range attacks
+- Protection of professional market makers' competitive advantage
 
-## 3. "지지/저항 은닉" - 기술적 분석 악용 방지
+## 3. "Support/Resistance Concealment" - Technical Analysis Exploitation Prevention
 
-**제품 설명**:
-대형 레인지 오더가 노출되면 해당 가격이 지지/저항선으로 인식되어 의도치 않은 시장 신호가 되는 문제를 해결.
+**Product Description**:
+Solving the problem where large range orders become unintended market signals when exposed, being recognized as support/resistance levels.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: $1,800에 대형 매수 주문 노출 → 시장이 "지지선"으로 인식 → 해당 가격까지 하락 유도 + 바로 위에서 매도 대기
-- ZK DeFi 사용: 주문 가격 비공개 → 기술적 분석에 악용 불가
-- 결과: 대형 주문이 시장 구조에 영향 주지 않음
+**Typical User Experience**:
+- Without Privacy: Large buy order at $1,800 exposed → Market recognizes as "support level" → Decline induced to that price + sell positions waiting just above
+- With ZK DeFi: Order price private → Cannot be exploited in technical analysis
+- Result: Large orders don't affect market structure
 
-**관찰 가능한 이점**:
-- 대형 주문의 시장 신호화 방지
-- 기술적 분석 기반 조작 차단
-- 순수한 수급에 의한 가격 형성
+**Observable Benefits**:
+- Prevention of large orders becoming market signals
+- Blocking technical analysis-based manipulation
+- Price formation by pure supply and demand

@@ -294,7 +294,7 @@ component main {public [gridConfigHash, noteHashes, outputHashes, currentPrice,
 
 ## Real-World Products & User Experience
 
-See dedicated product documentation: [Product Applications](../../../product/a-core-trading/a6-grid-trading-products.md)
+See dedicated product documentation: [Product Applications](../../product/a-core-trading/a6-grid-trading-products.md)
 
 ---
 

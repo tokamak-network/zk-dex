@@ -4,53 +4,53 @@
 
 ---
 
-## 1. "노조 파업 투표 시스템" - 보복 없는 노동자 의사결정
+## 1. "Union Strike Voting System" - Worker Decision-Making Without Retaliation
 
-**제품 설명**:
-노동조합의 파업 찬반투표를 비밀리에 진행하는 시스템. 회사 측이 누가 파업에 찬성했는지 절대 알 수 없어 노동자들이 보복 두려움 없이 진정한 의사를 표현할 수 있음.
+**Product Description**:
+A system for conducting secret strike votes in labor unions. Management can never identify who voted for the strike, enabling workers to express their true opinions without fear of retaliation.
 
-**일반 사용자 경험**:
-- 김노동씨(38세, 공장 노동자)는 임금 인상 파업 투표에 참여
-- 회사가 파업 찬성자 명단을 파악해 불이익을 줄 수 있다는 두려움 존재
-- ZK 투표 앱에서 익명으로 '찬성' 투표 - 누가 어떻게 투표했는지 암호학적으로 증명 불가능
-- 결과 발표: "찬성 78%, 반대 22%" - 개인별 투표 내용은 영원히 비밀
-- 회사는 총 결과만 알 뿐, 김노동씨를 특정해 보복할 수 없음
+**End-User Experience**:
+- Kim, a 38-year-old factory worker, participates in a vote on wage increase strike
+- Fear exists that the company could identify strike supporters and retaliate
+- Votes 'Yes' anonymously through ZK voting app - cryptographically impossible to prove who voted how
+- Result announcement: "78% Yes, 22% No" - individual votes remain secret forever
+- The company only knows aggregate results, cannot target Kim for retaliation
 
-**관찰 가능한 이점**:
-- 회사 보복 두려움 없이 진정한 노동자 의사 반영
-- 투표 매수/협박 시도 무력화 (증명 불가능)
-- 노사 갈등에서 노동자 권리 실질적 보호
+**Observable Benefits**:
+- True worker sentiment reflected without fear of company retaliation
+- Vote buying/intimidation attempts neutralized (unprovable)
+- Practical protection of worker rights in labor disputes
 
-## 2. "DAO 고래 보호 투표" - 대형 지분자 표적 공격 방지
+## 2. "DAO Whale Protection Voting" - Preventing Targeted Attacks on Large Stakeholders
 
-**제품 설명**:
-블록체인 DAO에서 대형 토큰 보유자(고래)의 투표 패턴이 노출되면 해커의 표적이 되거나, 다른 참여자들이 고래 투표를 보고 편승하는 문제 발생. ZK 투표로 투표 패턴 분석을 통한 고래 식별 방지.
+**Product Description**:
+In blockchain DAOs, when large token holders' (whales) voting patterns are exposed, they become hacker targets, or other participants bandwagon on whale votes. ZK voting prevents whale identification through voting pattern analysis.
 
-**일반 사용자 경험**:
-- 박고래씨는 DeFi 프로토콜 토큰 100만 개(전체의 5%) 보유
-- 공개 투표 시 투표 패턴 분석으로 고래 주소 특정 가능 -> 해킹 표적
-- ZK 비밀 투표로 참여 - 투표력(voting power)만 공개, 주소와 투표 내용은 비밀
-- 다른 참여자들도 고래의 선택을 보고 따라하지 못함
-- 결과: 모든 참여자가 독립적으로 판단한 진정한 커뮤니티 의사 도출
+**End-User Experience**:
+- Park holds 1 million protocol tokens (5% of total supply)
+- With public voting, voting pattern analysis can identify whale addresses -> becomes hacking target
+- Participates via ZK private voting - only voting power is public, address and vote content remain secret
+- Other participants cannot see and follow the whale's choices
+- Result: True community sentiment derived from independent judgment of all participants
 
-**관찰 가능한 이점**:
-- 대형 보유자 표적 해킹/사회공학 공격 방지
-- 고래 편승 투표(bandwagon effect) 제거
-- 소수 대형 보유자가 아닌 커뮤니티 전체 의사 반영
+**Observable Benefits**:
+- Prevents targeted hacking/social engineering attacks on large holders
+- Eliminates bandwagon effect on whale votes
+- Reflects entire community will, not just large holders
 
-## 3. "내부고발자 안건 제출" - 익명 거버넌스 제안 시스템
+## 3. "Whistleblower Proposal Submission" - Anonymous Governance Proposal System
 
-**제품 설명**:
-조직 내부의 비리나 문제를 고발하는 안건을 익명으로 제출하고 투표하는 시스템. 고발자의 신원이 절대 노출되지 않아 보복 위험 없이 조직 정화 가능.
+**Product Description**:
+A system for anonymously submitting and voting on proposals that expose organizational misconduct or problems. The whistleblower's identity is never revealed, enabling organizational accountability without retaliation risk.
 
-**일반 사용자 경험**:
-- 이직원씨는 회사 임원의 횡령 의혹을 알게 됨
-- 공개적으로 문제 제기하면 해고 등 보복이 두려움
-- ZK 시스템으로 "횡령 조사 요청" 안건을 익명 제출 - 제안자 신원 암호학적으로 숨김
-- 다른 직원/주주들이 익명 투표로 조사 여부 결정
-- 결과: 신원 노출 위험 없이 조직 내 비리 견제 가능
+**End-User Experience**:
+- Lee discovers evidence of embezzlement by company executives
+- Fears retaliation like termination if raising the issue publicly
+- Submits "Request for Embezzlement Investigation" proposal anonymously via ZK system - proposer identity cryptographically hidden
+- Other employees/shareholders vote anonymously on whether to investigate
+- Result: Internal misconduct can be checked without risk of identity exposure
 
-**관찰 가능한 이점**:
-- 내부고발자 보호를 통한 조직 투명성 향상
-- 권력자의 보복 가능성 원천 차단
-- 건전한 거버넌스 문화 정착
+**Observable Benefits**:
+- Organizational transparency through whistleblower protection
+- Complete elimination of retaliation possibilities by those in power
+- Establishment of healthy governance culture

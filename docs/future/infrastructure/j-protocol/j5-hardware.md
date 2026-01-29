@@ -214,7 +214,7 @@ interface ZKHardware {
 
 ## Real-World Products & User Experience
 
-See: [../../../product/j-protocol/j5-hardware-products.md](../../../product/j-protocol/j5-hardware-products.md)
+See: [../../product/j-protocol/j5-hardware-products.md](../../product/j-protocol/j5-hardware-products.md)
 
 ---
 

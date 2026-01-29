@@ -4,47 +4,47 @@
 
 ---
 
-## 1. "프라이빗 M&A" - 기업 인수 비밀 입찰
+## 1. "Private M&A" - Corporate Acquisition Secret Bidding
 
-**제품 설명**:
-기업 인수합병 시 입찰자의 신원, 입찰가, 인수 전략이 완전히 보호되는 기관급 비밀 경매 플랫폼. 낙찰자만 공개되고, 패찰자의 신원과 입찰가는 영구 비공개입니다.
+**Product Description**:
+An institutional-grade secret auction platform where bidder identity, bid price, and acquisition strategy are fully protected during M&A. Only the winner is revealed, while losing bidders' identities and bids remain permanently private.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: PE 펀드 A가 입찰 참여 → 인수 의향 노출 → 경쟁사 전략 분석, 타겟 기업 협상력 상승, 주가 급등
-- 고급 ZK 솔루션: 50개 입찰이 암호화, "낙찰가 $500M, 낙찰자: 비공개(본인에게만 통보)"
-- 결과: 패찰 PE 펀드들의 입찰 참여 사실 자체가 비공개, 인수 전략 보호
+**User Experience**:
+- Without Privacy: PE Fund A participates in bidding → acquisition interest exposed → competitor strategy analysis, target company negotiating power rises, stock price surges
+- Advanced ZK Solution: 50 bids encrypted, "winning bid $500M, winner: private (notified only to winner)"
+- Result: Losing PE funds' bidding participation itself private, acquisition strategies protected
 
-**관찰 가능한 이점**:
-- 입찰 참여 사실 자체가 기밀 (관심 영역 노출 방지)
-- 패찰 시에도 입찰가 비공개 (향후 협상력 보호)
-- 경쟁사의 M&A 전략 분석 불가
+**Observable Benefits**:
+- Bidding participation fact itself confidential (prevents interest area exposure)
+- Losing bid prices remain private (protects future negotiating power)
+- Competitor M&A strategy analysis impossible
 
-## 2. "시크릿 IP 옥션" - 지적재산권 비밀 경매
+## 2. "Secret IP Auction" - Intellectual Property Secret Auction
 
-**제품 설명**:
-특허, 기술 라이선스 경매에서 입찰 기업의 기술 관심 분야와 R&D 전략을 숨기는 프라이버시 경매 플랫폼.
+**Product Description**:
+A privacy auction platform that hides bidding companies' technology interest areas and R&D strategies during patent and technology license auctions.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 대기업 A가 AI 특허 입찰 → "A사가 AI 진출 준비 중" 노출 → 경쟁사 선제 대응, 해당 분야 특허 선점
-- 고급 ZK 솔루션: 기업 신원 암호화 입찰, 낙찰 결과도 "낙찰됨"만 본인에게 통보
-- 결과: 어떤 기업이 어떤 기술에 관심 있는지 외부에서 파악 불가
+**User Experience**:
+- Without Privacy: Large corporation A bids on AI patent → "Company A preparing AI entry" exposed → competitor preemptive response, patent preemption in field
+- Advanced ZK Solution: Corporate identity encrypted bidding, winning result also only "won" notified to winner
+- Result: Which company is interested in which technology cannot be determined externally
 
-**관찰 가능한 이점**:
-- R&D 방향 및 기술 로드맵 기밀 유지
-- 경쟁사의 기술 관심 분야 역추적 차단
-- 특허 트롤의 전략적 가격 인상 방지
+**Observable Benefits**:
+- R&D direction and technology roadmap kept confidential
+- Blocks competitor technology interest area reverse tracking
+- Prevents patent troll strategic price inflation
 
-## 3. "익명 부동산 입찰" - 상업용 부동산 프라이버시 경매
+## 3. "Anonymous Real Estate Bidding" - Commercial Real Estate Privacy Auction
 
-**제품 설명**:
-고가 상업용 부동산 입찰에서 입찰자의 재정 능력, 사업 계획, 입찰가를 완전히 숨기는 프라이버시 경매 시스템.
+**Product Description**:
+A privacy auction system that completely hides bidders' financial capacity, business plans, and bid prices during high-value commercial real estate bidding.
 
-**일반 사용자 경험**:
-- 프라이버시 없이: 유명 재벌이 입찰 참여 → 지역 부동산 가격 급등, 다른 입찰자들 포기, 가격 조작
-- 고급 ZK 솔루션: 모든 입찰자가 익명, 입찰가 암호화, 낙찰 후에도 낙찰자 신원 선택적 공개
-- 결과: 입찰자의 재정 능력이나 사업 의도 추론 불가
+**User Experience**:
+- Without Privacy: Famous billionaire participates in bidding → local real estate prices surge, other bidders withdraw, price manipulation
+- Advanced ZK Solution: All bidders anonymous, bid prices encrypted, winner identity selectively disclosed even after winning
+- Result: Bidders' financial capacity or business intent cannot be inferred
 
-**관찰 가능한 이점**:
-- 입찰자 재정 상태 및 사업 계획 완전 보호
-- 유명 입찰자에 의한 시장 왜곡 방지
-- 투기적 가격 담합 원천 차단
+**Observable Benefits**:
+- Bidder financial status and business plans fully protected
+- Prevents market distortion by famous bidders
+- Blocks speculative price collusion at source

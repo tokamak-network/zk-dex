@@ -6,56 +6,56 @@
 
 ## Real-World Products & User Experience
 
-### 1. "익시트 전략 비공개 시스템" - 목표가 노출 방지 거래 서비스
+### 1. "Private Exit Strategy System" - Target Price Exposure Prevention Trading Service
 
-**제품 설명**:
-트레이더가 수익 실현 목표가를 설정할 때, 이 가격이 시장에 노출되지 않도록 보호하는 서비스. 목표가가 공개되면 대형 트레이더나 MEV 봇이 해당 가격 직전에서 대량 매도하여 목표가 도달을 방해하거나, 목표가 도달 시 발생할 매물을 이용한 역거래를 할 수 있음.
+**Product Description**:
+A service that protects traders' profit-taking target prices from being exposed to the market. When target prices are public, large traders or MEV bots can sell heavily just before those prices to prevent target achievement, or execute reverse trades using the anticipated sell pressure at target prices.
 
-**일반 사용자 경험**:
-- 김트레이더(32세, 알고리즘 트레이더)는 ETH 1만 개 보유, 목표가 $3,000 설정
-- 일반 DEX에서는 "이 지갑은 $3,000에 대량 매도 예정" 정보가 온체인 공개
-- 대형 트레이더가 $2,990에서 먼저 매도하여 가격 상승을 차단
-- 또는 $3,000 도달 시 발생할 매물을 예상하고 숏 포지션 진입
-- ZK 익절 주문 사용 시 목표가가 암호화되어 아무도 예측 불가
-- 순수 시장 움직임에 따라 목표가 도달 시 공정하게 체결
+**User Experience**:
+- Trader Kim (32, algorithmic trader) holds 10,000 ETH, sets target price at $3,000
+- On regular DEX, information "this wallet plans to sell large volume at $3,000" is publicly on-chain
+- Large traders sell first at $2,990 to block price appreciation
+- Or enter short positions anticipating sell pressure at $3,000
+- Using ZK take-profit orders, target price is encrypted and unpredictable
+- Fairly executes at target price following pure market movements
 
-**관찰 가능한 이점**:
-- 목표가 정보를 이용한 역거래 방지
-- 대형 매도 예정 정보 노출로 인한 가격 억제 차단
-- 공정한 시장 가격 형성 기여
+**Observable Benefits**:
+- Prevents reverse trading using target price information
+- Blocks price suppression from large pending sell information exposure
+- Contributes to fair market price formation
 
-### 2. "기관 청산 프라이버시" - 펀드 익시트 전략 보호 서비스
+### 2. "Institutional Exit Privacy" - Fund Exit Strategy Protection Service
 
-**제품 설명**:
-헤지펀드, VC, 대형 투자자가 포지션을 청산할 목표가를 설정할 때, 이 전략이 시장이나 경쟁자에게 노출되지 않도록 하는 서비스. 청산 계획이 알려지면 시장이 미리 반응하거나 경쟁자가 이를 이용할 수 있음.
+**Product Description**:
+A service that prevents this strategy from being exposed to the market or competitors when hedge funds, VCs, and large investors set target prices to liquidate positions. When liquidation plans are known, markets can react in advance or competitors can exploit this information.
 
-**일반 사용자 경험**:
-- 이펀드매니저(47세, 크립토 VC)는 초기 투자한 프로젝트 토큰 대량 보유
-- 목표 수익률 달성 시 청산 계획이 온체인에 공개되면 문제 발생
-- "VC가 매도 준비 중" 뉴스로 토큰 가격 급락, 목표가 도달 전 손실
-- 또는 경쟁 VC가 먼저 매도하여 유동성 고갈
-- ZK 익절 시스템으로 청산 목표가와 수량 완전 비공개
-- 시장 반응 없이 계획대로 조용히 익시트 완료
+**User Experience**:
+- Fund Manager Lee (47, crypto VC) holds large amount of initially invested project tokens
+- Problems arise when liquidation plan at target return is exposed on-chain
+- News of "VC preparing to sell" causes token price to crash, losses before reaching target
+- Or competing VCs sell first, depleting liquidity
+- Using ZK take-profit system, liquidation target price and quantity completely private
+- Quietly completes exit as planned without market reaction
 
-**관찰 가능한 이점**:
-- 기관 매도 계획 노출로 인한 가격 급락 방지
-- 경쟁자의 정보 이용 차단
-- 투자 전략 및 수익 정보 비공개 유지
+**Observable Benefits**:
+- Prevents price crashes from institutional selling plan exposure
+- Blocks competitors from exploiting information
+- Maintains privacy of investment strategies and profit information
 
-### 3. "프론트러닝 방지 익절 주문" - MEV 공격 차단 수익 실현 서비스
+### 3. "Front-Running Prevention Take-Profit Order" - MEV Attack Blocking Profit Realization Service
 
-**제품 설명**:
-익절 주문이 실행될 때 MEV 봇이 해당 거래를 감지하고 앞서 실행하여 수익을 가로채는 것을 방지하는 서비스. ZK 증명으로 목표가와 실행 조건이 숨겨져 있어 MEV 봇이 예측하고 선행할 수 없음.
+**Product Description**:
+A service that prevents MEV bots from detecting and front-running take-profit order execution to steal profits. With ZK proofs, target prices and execution conditions are hidden, preventing MEV bots from predicting and executing ahead.
 
-**일반 사용자 경험**:
-- 박개미(29세, 개인 투자자)는 수익 실현 목표가 도달 시 자동 매도 설정
-- 일반 DEX에서 익절 조건 충족 시 트랜잭션이 멤풀에 공개
-- MEV 봇이 이를 감지하고 더 높은 가스비로 먼저 실행 (프론트러닝)
-- 박개미의 주문은 불리한 가격에 체결되거나 실패
-- ZK 익절 주문은 조건과 금액이 암호화되어 멤풀에서도 내용 파악 불가
-- MEV 봇이 선행 거래를 계획할 수 없어 공정한 가격에 체결
+**User Experience**:
+- Retail Investor Park (29) sets automatic sell when profit target price is reached
+- On regular DEX when take-profit conditions are met, transaction is exposed in mempool
+- MEV bots detect this and execute first with higher gas fees (front-running)
+- Park's order fills at unfavorable price or fails
+- ZK take-profit orders encrypt conditions and amounts, making content undetectable even in mempool
+- MEV bots cannot plan front-running trades, ensuring fair price execution
 
-**관찰 가능한 이점**:
-- 프론트러닝 공격으로 인한 수익 손실 방지
-- 설정한 목표가에 정확히 체결
-- 일반 개인 투자자도 기관과 동등한 실행 품질 확보
+**Observable Benefits**:
+- Prevents profit loss from front-running attacks
+- Executes precisely at set target price
+- Regular retail investors achieve execution quality equal to institutions

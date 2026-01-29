@@ -295,7 +295,7 @@ component main {public [escrowHash, outputHash, currentTime, releaseType]} =
 
 ## Real-World Products & User Experience
 
-See [Escrow with Timeout - Products & User Experience](../../../product/b-time-conditions/b5-escrow-products.md) for detailed product scenarios and user stories.
+See [Escrow with Timeout - Products & User Experience](../../product/b-time-conditions/b5-escrow-products.md) for detailed product scenarios and user stories.
 
 ---
 

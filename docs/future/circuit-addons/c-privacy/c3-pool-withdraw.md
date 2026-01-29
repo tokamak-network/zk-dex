@@ -229,7 +229,7 @@ component main {public [poolRoot, nullifierHash, outputHash, denomination, token
 
 ## Real-World Products & User Experience
 
-See [Privacy Pool Withdraw - Products & UX](../../../product/c-privacy/c3-pool-withdraw-products.md) for detailed real-world applications and user experience scenarios.
+See [Privacy Pool Withdraw - Products & UX](../../product/c-privacy/c3-pool-withdraw-products.md) for detailed real-world applications and user experience scenarios.
 
 ---
 
