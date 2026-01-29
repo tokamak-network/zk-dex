@@ -434,13 +434,38 @@ Aggregate proofs over multiple notes (e.g., balance sum of 5 notes) currently re
 
 **Improvement**: Pre-generate proofs for individual notes, then compose a final proof using a lightweight recursive proof aggregation circuit. Since Groth16 does not natively support recursive composition, this would require transitioning to PLONK or Nova proof systems.
 
+## ZKDIP (ZK-DEX Improvement Proposals)
+
+ZKDIP is the standard format for documenting improvement proposals to the ZK-DEX protocol.
+
+| ZKDIP | Title | Status |
+|-------|-------|--------|
+| [ZKDIP-1](docs/zkdip/zkdip-1.md) ([KO](docs/zkdip/zkdip-1_ko.md)) | Fungible Smart Notes | Draft |
+
+See [ZKDIP README](docs/zkdip/README.md) ([KO](docs/zkdip/README_ko.md)) for details.
+
 ## Documents
+
+### Core Documentation
 
 - [Core Concepts (EN)](docs/concept.md) / [Core Concepts (KO)](docs/concept_ko.md)
 - [Architecture (EN)](docs/architecture.md) / [Architecture (KO)](docs/architecture_ko.md)
+- [Docker (EN)](docs/docker.md) / [Docker (KO)](docs/docker_ko.md)
+
+### Migration Guides
+
 - [Circuit Migration (EN)](docs/migration-circuits.md) / [Circuit Migration (KO)](docs/migration-circuits_ko.md)
 - [Frontend Migration (EN)](docs/migration-frontend.md) / [Frontend Migration (KO)](docs/migration-frontend_ko.md)
-- [Docker (EN)](docs/docker.md) / [Docker (KO)](docs/docker_ko.md)
+
+### Security
+
+- [Security Analysis Report](docs/security/ZK-DEX_Security_Analysis_Report_EN.md)
+- Security Fixes: [EN](docs/security/SECURITY_FIXES.md) / [KO](docs/security/SECURITY_FIXES_ko.md)
+- Circuit Security Analysis: [EN](docs/security/CIRCUIT_SECURITY_ANALYSIS.md) / [KO](docs/security/CIRCUIT_SECURITY_ANALYSIS_ko.md)
+- Deployment Checklist: [EN](docs/DEPLOYMENT_CHECKLIST.md) / [KO](docs/DEPLOYMENT_CHECKLIST_ko.md)
+
+### External Resources
+
 - [Architecture Presentation](https://docs.google.com/presentation/d/1b6yD4iV-vS_KyK27CG9ImMRdTypm9mtIbd5m3a_MNeU/edit?usp=sharing)
 - [Demo Video](https://youtu.be/QvKaqMH_5lk)
 
