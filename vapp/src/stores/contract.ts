@@ -6,6 +6,7 @@ import { useWeb3Store } from './web3'
 // Import contract ABIs (recompiled for Poseidon migration - uint256[4] inputs)
 import ZkDexABI from '../../../build/contracts/ZkDex.json'
 import MockDaiABI from '../../../build/contracts/MockDai.json'
+import { logger } from '@/lib/logger'
 
 export interface ContractInfo {
   address: string
@@ -29,7 +30,7 @@ export const useContractStore = defineStore('contract', () => {
    */
   async function initContracts() {
     if (!web3Store.signer || !web3Store.networkId) {
-      console.error('Web3 not connected')
+      logger.error('Web3 not connected')
       return false
     }
 
@@ -38,9 +39,9 @@ export const useContractStore = defineStore('contract', () => {
       const dexNetworks = ZkDexABI.networks as Record<string, { address: string }>
       const daiNetworks = MockDaiABI.networks as Record<string, { address: string }>
 
-      console.log('Available DEX networks:', Object.keys(dexNetworks))
-      console.log('Available DAI networks:', Object.keys(daiNetworks))
-      console.log('MetaMask chainId:', web3Store.networkId.toString())
+      logger.log('Available DEX networks:', Object.keys(dexNetworks))
+      logger.log('Available DAI networks:', Object.keys(daiNetworks))
+      logger.log('MetaMask chainId:', web3Store.networkId.toString())
 
       // Try to find a matching network - check both chainId and any available network
       let networkIdStr = web3Store.networkId.toString()
@@ -56,18 +57,18 @@ export const useContractStore = defineStore('contract', () => {
         if (commonNetworkIds.length > 0) {
           // Use the last (most recent) deployment
           const latestNetworkId = commonNetworkIds[commonNetworkIds.length - 1]
-          console.log(`Using network ${latestNetworkId} instead of chainId ${networkIdStr}`)
+          logger.log(`Using network ${latestNetworkId} instead of chainId ${networkIdStr}`)
           networkIdStr = latestNetworkId
         } else {
-          console.error('Contracts not deployed on this network')
+          logger.error('Contracts not deployed on this network')
           return false
         }
       }
 
       dexAddress.value = dexNetworks[networkIdStr].address
       daiAddress.value = daiNetworks[networkIdStr].address
-      console.log('DEX address:', dexAddress.value)
-      console.log('DAI address:', daiAddress.value)
+      logger.log('DEX address:', dexAddress.value)
+      logger.log('DAI address:', daiAddress.value)
 
       dexContract.value = new Contract(
         dexAddress.value,
@@ -83,7 +84,7 @@ export const useContractStore = defineStore('contract', () => {
 
       return true
     } catch (err) {
-      console.error('Failed to init contracts:', err)
+      logger.error('Failed to init contracts:', err)
       return false
     }
   }

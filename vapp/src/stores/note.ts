@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, triggerRef } from 'vue'
 import { useAccountStore } from './account'
 import { useContractStore } from './contract'
 import { decodeNoteData, isNoteOwner } from '@/utils/noteEncryption'
@@ -7,6 +7,7 @@ import { isECDHEncrypted } from '@/lib/ecdhCrypto'
 import { computeCircuitHash, type NoteData } from '@/lib/circuitInputs'
 import * as api from '@/api'
 import type { RawNoteEvent } from '@/api'
+import { logger } from '@/lib/logger'
 
 export interface Note {
   hash: string
@@ -23,6 +24,7 @@ export interface Note {
   createdInTx?: string    // Transaction hash
   createdBy?: string      // Ethereum address
   spentInTx?: string      // Transaction hash
+  isKnownOnly?: boolean   // True if we know this note from a transfer but don't own it
 }
 
 export interface TransferNote {
@@ -30,6 +32,8 @@ export interface TransferNote {
   type: string  // '0x0' = Send, '0x1' = Receive
   from?: string
   to?: string
+  fromPk?: { x: string; y: string }
+  toPk?: { x: string; y: string }
   value: string
   token: string
   change?: string
@@ -140,29 +144,29 @@ export const useNoteStore = defineStore('note', () => {
     if (!contractStore.dexContract) {
       // Contract not yet initialized - this is expected during initial page load
       // User can click Refresh button once connected, or notes will load on next navigation
-      console.log('Waiting for contract initialization...')
+      logger.log('Waiting for contract initialization...')
       return
     }
 
     if (isScanning.value) {
-      console.log('Already scanning...')
+      logger.log('Already scanning...')
       return
     }
 
     isScanning.value = true
-    console.log('Scanning blockchain for notes...')
+    logger.log('Scanning blockchain for notes...')
 
     try {
       const accounts = accountStore.accounts || []
       if (accounts.length === 0) {
-        console.log('No accounts to scan for')
+        logger.log('No accounts to scan for')
         return
       }
 
       // Get NoteStateChange events
       const filter = contractStore.dexContract.filters.NoteStateChange()
       const events = await contractStore.dexContract.queryFilter(filter, 0, 'latest')
-      console.log(`Found ${events.length} NoteStateChange events`)
+      logger.log(`Found ${events.length} NoteStateChange events`)
 
       // Track note states and data
       const noteStates = new Map<string, number>()
@@ -289,16 +293,16 @@ export const useNoteStore = defineStore('note', () => {
             noteDataMap.set(noteHash, note)
           }
         } catch (err) {
-          console.warn(`Failed to process note ${noteHash}:`, err)
+          logger.warn(`Failed to process note ${noteHash}:`, err)
         }
       }
 
       // Update notes
       notes.value = Array.from(noteDataMap.values())
-      console.log(`Found ${notes.value.length} notes belonging to user`)
+      logger.log(`Found ${notes.value.length} notes belonging to user`)
 
     } catch (err) {
-      console.error('Failed to scan blockchain:', err)
+      logger.error('Failed to scan blockchain:', err)
     } finally {
       isScanning.value = false
     }
@@ -326,7 +330,7 @@ export const useNoteStore = defineStore('note', () => {
 
       transferNotes.value = allTransferNotes
     } catch (err) {
-      console.error('Failed to load transfer notes:', err)
+      logger.error('Failed to load transfer notes:', err)
     }
   }
 
@@ -336,11 +340,11 @@ export const useNoteStore = defineStore('note', () => {
    */
   async function scanTransferHistory() {
     if (!contractStore.dexContract) {
-      console.log('Contract not initialized')
+      logger.log('Contract not initialized')
       return
     }
 
-    console.log('Scanning blockchain for transfer history...')
+    logger.log('Scanning blockchain for transfer history...')
 
     try {
       // Get all NoteStateChange events
@@ -438,7 +442,7 @@ export const useNoteStore = defineStore('note', () => {
               }
             }
           } catch (err) {
-            console.warn(`Failed to decode note ${noteHash}:`, err)
+            logger.warn(`Failed to decode note ${noteHash}:`, err)
           }
         }
 
@@ -494,13 +498,13 @@ export const useNoteStore = defineStore('note', () => {
         }
       }
 
-      console.log(`Found ${transferCount} transfer records`)
+      logger.log(`Found ${transferCount} transfer records`)
 
       // Reload transfer notes from storage
       await loadTransferNotes()
 
     } catch (err) {
-      console.error('Failed to scan transfer history:', err)
+      logger.error('Failed to scan transfer history:', err)
     }
   }
 
@@ -510,22 +514,22 @@ export const useNoteStore = defineStore('note', () => {
    */
   async function fetchAllNoteEvents() {
     if (!contractStore.dexContract) {
-      console.log('Contract not initialized')
+      logger.log('Contract not initialized')
       return
     }
 
     if (isScanning.value) {
-      console.log('Already scanning...')
+      logger.log('Already scanning...')
       return
     }
 
     isScanning.value = true
-    console.log('Fetching all note events from blockchain...')
+    logger.log('Fetching all note events from blockchain...')
 
     try {
       const filter = contractStore.dexContract.filters.NoteStateChange()
       const events = await contractStore.dexContract.queryFilter(filter, 0, 'latest')
-      console.log(`Found ${events.length} NoteStateChange events`)
+      logger.log(`Found ${events.length} NoteStateChange events`)
 
       // Track latest state for each note
       const noteStates = new Map<string, number>()
@@ -601,19 +605,28 @@ export const useNoteStore = defineStore('note', () => {
             spentInTx: noteSpentTx.get(noteHash)
           })
         } catch (err) {
-          console.warn(`Failed to fetch encrypted data for ${noteHash}:`, err)
+          logger.warn(`Failed to fetch encrypted data for ${noteHash}:`, err)
         }
       }
 
       // Save to localStorage
       api.saveRawNoteEvents(rawEvents)
-      console.log(`Saved ${rawEvents.length} raw note events to localStorage`)
+      logger.log(`Saved ${rawEvents.length} raw note events to localStorage`)
+
+      // Update known note states from blockchain
+      const knownNotes = api.getKnownNotes()
+      for (const hash of Object.keys(knownNotes)) {
+        const state = noteStates.get(hash)
+        if (state !== undefined) {
+          api.updateKnownNoteState(hash, state)
+        }
+      }
 
       // After fetching, decrypt and display notes for unlocked accounts
       await decryptAndDisplayNotes()
 
     } catch (err) {
-      console.error('Failed to fetch note events:', err)
+      logger.error('Failed to fetch note events:', err)
     } finally {
       isScanning.value = false
     }
@@ -627,12 +640,6 @@ export const useNoteStore = defineStore('note', () => {
     const rawEvents = api.getRawNoteEvents()
     const accounts = accountStore.accounts || []
 
-    console.log('[decryptAndDisplayNotes] Starting...', {
-      rawEventCount: Object.keys(rawEvents).length,
-      accountCount: accounts.length,
-      accountsWithSk: accounts.filter(a => a.secretKey).map(a => a.address)
-    })
-
     // Collect unlocked secret keys from accounts array
     // Each account stores its own secretKey after unlock
     const accountSecretKeys = new Map<string, string>()
@@ -645,11 +652,9 @@ export const useNoteStore = defineStore('note', () => {
     // holds the most recently unlocked account's key, which could overwrite
     // the correct key for a different account
 
-    console.log('[decryptAndDisplayNotes] Unlocked accounts:', [...accountSecretKeys.keys()])
-
     if (accountSecretKeys.size === 0) {
-      console.log('No unlocked accounts - cannot decrypt notes')
       notes.value = []
+      triggerRef(notes)  // Force Vue to detect the change
       return
     }
 
@@ -659,9 +664,6 @@ export const useNoteStore = defineStore('note', () => {
     // Group events by tx for transfer reconstruction
     const txEvents = new Map<string, { spent: RawNoteEvent[]; created: RawNoteEvent[] }>()
 
-    // Debug: show secretKey lengths for each account
-    console.log('[decryptAndDisplayNotes] Account secretKey status:',
-      accounts.map(a => ({ addr: a.address.slice(0,8), hasSk: !!a.secretKey, skLen: a.secretKey?.length })))
 
     for (const [noteHash, rawEvent] of Object.entries(rawEvents)) {
       try {
@@ -731,7 +733,7 @@ export const useNoteStore = defineStore('note', () => {
           }
         }
       } catch (err) {
-        console.warn(`Failed to decrypt note ${noteHash}:`, err)
+        logger.warn(`Failed to decrypt note ${noteHash}:`, err)
       }
     }
 
@@ -745,18 +747,109 @@ export const useNoteStore = defineStore('note', () => {
       }
     }
 
+    // Add known notes (notes we know about from transfers but don't own)
+    const knownNotes = api.getKnownNotes()
+    const decryptedHashes = new Set(decryptedNotes.map(n => n.hash))
+
+    // Build a map of unlocked account public keys for quick lookup
+    const unlockedPkSet = new Set<string>()
+    const unlockedAddressSet = new Set<string>()
+    for (const acc of accounts) {
+      if (acc.secretKey && acc.publicKey?.x && acc.publicKey?.y) {
+        // Normalize the public key to a string for comparison
+        const pkKey = `${acc.publicKey.x.toLowerCase()}_${acc.publicKey.y.toLowerCase()}`
+        unlockedPkSet.add(pkKey)
+        unlockedAddressSet.add(acc.address.toLowerCase())
+      }
+    }
+
+    let addedKnownCount = 0
+    let skippedDecrypted = 0
+    let skippedWrongSender = 0
+
+    for (const [hash, known] of Object.entries(knownNotes)) {
+      // Skip if we already have this note decrypted (we own it)
+      if (decryptedHashes.has(hash)) {
+        skippedDecrypted++
+        continue
+      }
+
+      // Skip if this known note was not sent by any of the currently unlocked accounts
+      if (known.senderAddress && !unlockedAddressSet.has(known.senderAddress.toLowerCase())) {
+        skippedWrongSender++
+        continue
+      }
+
+      // Check if the owner's account is unlocked
+      const knownPkKey = `${known.ownerPkX?.toLowerCase()}_${known.ownerPkY?.toLowerCase()}`
+      const ownerIsUnlocked = unlockedPkSet.has(knownPkKey)
+
+      // If owner is unlocked, skip known note - it should be decrypted from blockchain instead
+      // If it wasn't decrypted, that means the encrypted data is missing/corrupted
+      if (ownerIsUnlocked) {
+        continue
+      }
+
+      // Owner is locked - show as known-only (green dotted)
+      const rawEvent = rawEvents[hash]
+      const state = rawEvent?.state !== undefined
+        ? STATE_MAP[rawEvent.state] || '0x1'
+        : (known.state !== undefined ? STATE_MAP[known.state] : '0x1')
+      decryptedNotes.push({
+        hash: known.hash,
+        owner: '', // We don't know the account address, only the pk
+        pkX: known.ownerPkX,
+        pkY: known.ownerPkY,
+        value: known.value,
+        token: known.token,
+        state,
+        isSmart: '0x0',
+        salt: known.salt,
+        createdInTx: known.createdInTx,
+        parentNoteHash: known.parentNoteHash,
+        spentInTx: known.spentInTx,
+        createdBy: known.createdBy,
+        isKnownOnly: true
+      })
+
+      // Add to txEvents for transfer reconstruction (rawEvent already declared above)
+      if (rawEvent) {
+        if (rawEvent.createdInTx) {
+          if (!txEvents.has(rawEvent.createdInTx)) {
+            txEvents.set(rawEvent.createdInTx, { spent: [], created: [] })
+          }
+          if (rawEvent.state === 1) {
+            txEvents.get(rawEvent.createdInTx)!.created.push(rawEvent)
+          }
+        }
+        if (rawEvent.spentInTx) {
+          if (!txEvents.has(rawEvent.spentInTx)) {
+            txEvents.set(rawEvent.spentInTx, { spent: [], created: [] })
+          }
+          txEvents.get(rawEvent.spentInTx)!.spent.push(rawEvent)
+        }
+      }
+
+      addedKnownCount++
+    }
+
     notes.value = decryptedNotes
-    console.log(`Decrypted ${decryptedNotes.length} notes for unlocked accounts`)
+    triggerRef(notes)  // Force Vue to detect the change
+
 
     // Reconstruct transfer history from decrypted notes
-    const noteDataMap = new Map<string, { owner: string; value: string; token: string }>()
+    const noteDataMap = new Map<string, { owner: string; pkX: string; pkY: string; value: string; token: string }>()
     for (const note of decryptedNotes) {
-      noteDataMap.set(note.hash, { owner: note.owner, value: note.value, token: note.token })
+      noteDataMap.set(note.hash, {
+        owner: note.owner,
+        pkX: note.pkX,
+        pkY: note.pkY,
+        value: note.value,
+        token: note.token
+      })
     }
 
     for (const [txHash, txData] of txEvents) {
-      if (txData.spent.length === 0 || txData.created.length === 0) continue
-
       const spentNotes = txData.spent
         .filter(e => noteDataMap.has(e.hash))
         .map(e => ({ hash: e.hash, ...noteDataMap.get(e.hash)! }))
@@ -765,19 +858,55 @@ export const useNoteStore = defineStore('note', () => {
         .filter(e => noteDataMap.has(e.hash))
         .map(e => ({ hash: e.hash, ...noteDataMap.get(e.hash)! }))
 
-      if (spentNotes.length > 0 && createdNotes.length > 0) {
+      // Case 1: Mint (create-only, no spend) - show as "Receive" from empty sender
+      if (spentNotes.length === 0 && createdNotes.length > 0) {
+        for (const createdNote of createdNotes) {
+          const toPk = { x: createdNote.pkX, y: createdNote.pkY }
+          newTransferNotes.push({
+            hash: createdNote.hash,
+            type: '0x1', // Receive
+            to: createdNote.owner,
+            toPk,
+            value: createdNote.value,
+            token: createdNote.token,
+            transactionHash: txHash
+          })
+        }
+      }
+      // Case 2: Redeem (spend-only, no create) - show as "Send" to empty recipient
+      else if (spentNotes.length > 0 && createdNotes.length === 0) {
+        for (const spentNote of spentNotes) {
+          const fromPk = { x: spentNote.pkX, y: spentNote.pkY }
+          newTransferNotes.push({
+            hash: spentNote.hash,
+            type: '0x0', // Send
+            from: spentNote.owner,
+            fromPk,
+            value: spentNote.value,
+            token: spentNote.token,
+            transactionHash: txHash
+          })
+        }
+      }
+      // Case 3: Transfer (spend + create) - existing logic
+      else if (spentNotes.length > 0 && createdNotes.length > 0) {
         const fromOwner = spentNotes[0].owner
+        const fromPk = { x: spentNotes[0].pkX, y: spentNotes[0].pkY }
 
         const recipientNotes = createdNotes.filter(n => n.owner !== fromOwner)
         const changeNotes = createdNotes.filter(n => n.owner === fromOwner)
 
         for (const recipientNote of recipientNotes) {
+          const toPk = { x: recipientNote.pkX, y: recipientNote.pkY }
+
           // Send record
           newTransferNotes.push({
             hash: spentNotes[0].hash,
             type: '0x0',
             from: fromOwner,
             to: recipientNote.owner,
+            fromPk,
+            toPk,
             value: recipientNote.value,
             token: recipientNote.token,
             change: changeNotes.length > 0 ? changeNotes[0].value : '0',
@@ -790,6 +919,8 @@ export const useNoteStore = defineStore('note', () => {
             type: '0x1',
             from: fromOwner,
             to: recipientNote.owner,
+            fromPk,
+            toPk,
             value: recipientNote.value,
             token: recipientNote.token,
             transactionHash: txHash
@@ -803,6 +934,8 @@ export const useNoteStore = defineStore('note', () => {
             type: '0x0',
             from: fromOwner,
             to: fromOwner,
+            fromPk,
+            toPk: fromPk,
             value: changeNotes[0].value,
             token: changeNotes[0].token,
             transactionHash: txHash
@@ -812,7 +945,10 @@ export const useNoteStore = defineStore('note', () => {
     }
 
     transferNotes.value = newTransferNotes
-    console.log(`Reconstructed ${newTransferNotes.length} transfer records`)
+    logger.log(`Reconstructed ${newTransferNotes.length} transfer records`)
+
+    // Sync note states from blockchain to ensure accuracy
+    await refreshNoteStatesFromChain()
   }
 
   /** Resets all note state to initial values. */
@@ -821,6 +957,63 @@ export const useNoteStore = defineStore('note', () => {
     transferNotes.value = []
     selectedNote.value = null
     lastScannedBlock.value = 0
+  }
+
+  /**
+   * Refresh note states from blockchain.
+   * Directly queries the contract for each note's current state.
+   */
+  async function refreshNoteStatesFromChain() {
+    if (!contractStore.dexContract) {
+      logger.warn('[NoteStore] Cannot refresh: contract not initialized')
+      return 0
+    }
+
+    logger.log('[NoteStore] Refreshing note states from blockchain...')
+    logger.log('[NoteStore] Total notes to check:', notes.value.length)
+    let updatedCount = 0
+
+    for (const note of notes.value) {
+      try {
+        // Convert hash to bytes32 hex format if it's a decimal string
+        let hashForQuery = note.hash
+        if (!note.hash.startsWith('0x')) {
+          hashForQuery = '0x' + BigInt(note.hash).toString(16).padStart(64, '0')
+        }
+        const onChainState = await contractStore.dexContract.notes(hashForQuery)
+        const newState = STATE_MAP[Number(onChainState)] || '0x0'
+
+        if (note.state !== newState) {
+          note.state = newState
+          updatedCount++
+        }
+      } catch (err) {
+        logger.error(`[NoteStore] Failed to query state for note ${note.hash}:`, err)
+      }
+    }
+
+    logger.log(`[NoteStore] Refreshed ${notes.value.length} notes, ${updatedCount} states updated`)
+
+    // Also update the raw events in localStorage to persist the state changes
+    if (updatedCount > 0) {
+      try {
+        const rawEventsStr = localStorage.getItem('zkdex_raw_note_events')
+        if (rawEventsStr) {
+          const rawEvents = JSON.parse(rawEventsStr)
+          for (const note of notes.value) {
+            if (rawEvents[note.hash]) {
+              const stateNum = { '0x0': 0, '0x1': 1, '0x2': 2, '0x3': 3 }[note.state] ?? 0
+              rawEvents[note.hash].state = stateNum
+            }
+          }
+          localStorage.setItem('zkdex_raw_note_events', JSON.stringify(rawEvents))
+        }
+      } catch (e) {
+        logger.warn('[NoteStore] Failed to update localStorage:', e)
+      }
+    }
+
+    return updatedCount
   }
 
   return {
@@ -844,6 +1037,7 @@ export const useNoteStore = defineStore('note', () => {
     scanTransferHistory,
     fetchAllNoteEvents,
     decryptAndDisplayNotes,
+    refreshNoteStatesFromChain,
     reset
   }
 })

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import * as api from '@/api'
 import { useAccountStore } from './account'
 import { useNoteStore, type Note } from './note'
+import { logger } from '@/lib/logger'
 
 export interface Order {
   hash: string
@@ -136,7 +137,7 @@ export const useOrderStore = defineStore('order', () => {
       const data = await api.getOrders(accountStore.key!)
       orders.value = data || []
     } catch (err) {
-      console.error('Failed to load orders:', err)
+      logger.error('Failed to load orders:', err)
     }
   }
 
@@ -146,7 +147,7 @@ export const useOrderStore = defineStore('order', () => {
       const data = await api.getOrderHistory(accountStore.key!)
       orderHistory.value = data || []
     } catch (err) {
-      console.error('Failed to load order history:', err)
+      logger.error('Failed to load order history:', err)
     }
   }
 

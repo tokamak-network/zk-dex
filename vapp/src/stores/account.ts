@@ -7,6 +7,7 @@ import {
   type BabyJubJubPublicKey,
   type Keystore
 } from '@/lib/accountCrypto'
+import { logger } from '@/lib/logger'
 
 // Re-export types for use by other modules
 export type { BabyJubJubPublicKey, Keystore }
@@ -157,10 +158,10 @@ export const useAccountStore = defineStore('account', () => {
     // Update account in accounts array (needed for note scanning)
     // Use array index replacement to ensure Vue reactivity triggers watchers
     const index = accounts.value.findIndex(a => a.address === address)
-    console.log('[unlockAccountLocal] Updating account at index:', index, 'address:', address)
+    logger.log('[unlockAccountLocal] Updating account at index:', index, 'address:', address)
     if (index !== -1) {
       accounts.value[index] = { ...accounts.value[index], secretKey: result.secretKey }
-      console.log('[unlockAccountLocal] Account updated, accounts with sk:',
+      logger.log('[unlockAccountLocal] Account updated, accounts with sk:',
         accounts.value.filter(a => a.secretKey).map(a => a.address))
     }
 
@@ -233,6 +234,35 @@ export const useAccountStore = defineStore('account', () => {
     return getKeystore(address) !== null
   }
 
+  /**
+   * Lock an account - clear secretKey from memory
+   * This provides security by removing the decrypted key when not in use
+   */
+  function lockAccount(address: string): void {
+    // Clear global secretKey if it matches
+    if (secretKey.value) {
+      // Find the account to check if this is the one with the secretKey
+      const account = accounts.value.find(a => a.address === address)
+      if (account?.secretKey) {
+        secretKey.value = null
+      }
+    }
+
+    // Update account in accounts array to remove secretKey
+    const index = accounts.value.findIndex(a => a.address === address)
+    if (index !== -1) {
+      const { secretKey: _, ...accountWithoutSk } = accounts.value[index]
+      accounts.value[index] = accountWithoutSk
+      logger.log('[lockAccount] Account locked:', address)
+    }
+
+    // Update currentAccount if needed
+    if (currentAccount.value?.address === address) {
+      const { secretKey: _, ...currentWithoutSk } = currentAccount.value
+      currentAccount.value = currentWithoutSk
+    }
+  }
+
   /** No-op: viewing key is now derived client-side from BabyJubJub keypair. */
   async function loadViewingKey() {
     // No-op: viewing key is now derived client-side from BabyJubJub keypair
@@ -283,6 +313,7 @@ export const useAccountStore = defineStore('account', () => {
     initializeCrypto,
     createAccountLocal,
     unlockAccountLocal,
+    lockAccount,
     exportAccountJson,
     importAccountJson,
     hasKeystore,

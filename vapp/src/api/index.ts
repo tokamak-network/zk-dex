@@ -165,6 +165,70 @@ export function clearRawNoteEvents(): void {
   localStorage.removeItem(RAW_NOTE_EVENTS_KEY)
 }
 
+// ============================================================================
+// Known Notes (notes we know about from our transfers, but don't own)
+// ============================================================================
+
+const KNOWN_NOTES_KEY = 'zkdex_known_notes'
+
+/**
+ * A note we know about from a transfer we made, but don't own.
+ * This allows showing transfer recipients in the tree even when their account is locked.
+ */
+export interface KnownNote {
+  hash: string              // Note hash
+  ownerPkX: string          // Recipient's public key X
+  ownerPkY: string          // Recipient's public key Y
+  value: string             // Amount
+  token: string             // Token type (0=ETH, 1=DAI)
+  salt: string              // Salt used in note hash
+  createdInTx: string       // Transaction hash where this note was created
+  parentNoteHash: string    // The note that was spent to create this
+  senderAddress?: string    // Account address that sent this transfer
+  createdBy?: string        // Ethereum address that created the note on-chain
+  spentInTx?: string        // Transaction hash where note was spent
+  state?: number            // Note state (can be updated from blockchain)
+}
+
+/**
+ * Get all known notes from localStorage
+ */
+export function getKnownNotes(): Record<string, KnownNote> {
+  try {
+    const data = localStorage.getItem(KNOWN_NOTES_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Save a known note to localStorage
+ */
+export function saveKnownNote(note: KnownNote): void {
+  const notes = getKnownNotes()
+  notes[note.hash] = note
+  localStorage.setItem(KNOWN_NOTES_KEY, JSON.stringify(notes))
+}
+
+/**
+ * Update known note state from blockchain
+ */
+export function updateKnownNoteState(hash: string, state: number): void {
+  const notes = getKnownNotes()
+  if (notes[hash]) {
+    notes[hash].state = state
+    localStorage.setItem(KNOWN_NOTES_KEY, JSON.stringify(notes))
+  }
+}
+
+/**
+ * Clear all known notes from localStorage
+ */
+export function clearKnownNotes(): void {
+  localStorage.removeItem(KNOWN_NOTES_KEY)
+}
+
 /**
  * Updates the state of a note on the server.
  *
