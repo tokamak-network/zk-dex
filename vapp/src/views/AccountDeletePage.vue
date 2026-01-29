@@ -34,6 +34,11 @@ function selectAccount(account: Account) {
 async function deleteAccountHandler() {
   if (!accountToDelete.value) return
 
+  const confirmed = confirm(
+    `Are you sure you want to delete this account?\n\n${fmt.formatZkPk(accountToDelete.value.publicKey)}\n\nThis action cannot be undone. Make sure you have exported your keystore if you need to recover this account later.`
+  )
+  if (!confirmed) return
+
   accountStore.deleteAccount(accountToDelete.value)
   accountToDelete.value = null
   addressToDelete.value = ''

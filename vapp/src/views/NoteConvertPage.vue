@@ -37,6 +37,7 @@ import { toBigInt } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareConvertInputs, generateSalt, computeCircuitHash, type NoteData, type SmartNoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 const router = useRouter()
 const accountStore = useAccountStore()
@@ -88,7 +89,7 @@ function selectNote(selectedNote: Note) {
       originNote.value = found
     } else {
       originNote.value = null
-      console.warn('Origin note not found for smart note with parentHash:', parentHash)
+      logger.warn('Origin note not found for smart note with parentHash:', parentHash)
     }
   }
 }
@@ -178,14 +179,14 @@ async function convertNote() {
     const newNoteHash = await computeCircuitHash(newNoteData)
 
     // Generate proof entirely in browser (secretKey never leaves browser!)
-    console.log('Generating convertNote proof...')
+    logger.log('Generating convertNote proof...')
     const proof = await generateConvertProof(
       note.value,
       originNote.value,
       newNoteData,
       originNote.value.secretKey
     )
-    console.log('ConvertNote proof generated:', proof)
+    logger.log('ConvertNote proof generated:', proof)
 
     // Extract proof components
     const { a, b, c, input } = proof
@@ -212,15 +213,15 @@ async function convertNote() {
 
     // Call convert on contract
     proofProgress.value = 'Submitting transaction...'
-    console.log('Calling contract convert with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('Calling contract convert with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.convert(
       aBigInt, bBigInt, cBigInt, inputBigInt,
       encryptedNewNote
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       // Update smart note state to SPENT
@@ -250,7 +251,7 @@ async function convertNote() {
       alert('Transaction failed')
     }
   } catch (err) {
-    console.error('Failed to convert note:', err)
+    logger.error('Failed to convert note:', err)
     alert('Failed to convert note: ' + (err as Error).message)
   } finally {
     loading.value = false

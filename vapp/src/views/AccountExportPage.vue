@@ -105,8 +105,15 @@ async function unlockAccountHandler() {
 function exportAccount() {
   if (!accountToExport.value) return
 
-  const keyObj = accountToExport.value.keystore
-  data.value = 'text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(keyObj))
+  // Export in the format expected by importAccount: {address, publicKey, keystore, label}
+  const exportData = {
+    address: accountToExport.value.address,
+    publicKey: accountToExport.value.publicKey,
+    keystore: accountToExport.value.keystore,
+    label: accountToExport.value.name,
+    exportedAt: Date.now()
+  }
+  data.value = 'text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2))
   // Reset after export
   passphrase.value = ''
   isUnlock.value = false

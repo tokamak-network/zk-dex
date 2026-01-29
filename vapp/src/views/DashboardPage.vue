@@ -4,25 +4,16 @@
       <aside class="menu">
         <ul class="menu-list">
           <li>
-            <router-link to="/">Summary</router-link>
-          </li>
-        </ul>
-        <p class="menu-label" style="margin-top: 30px;">Accounts</p>
-        <ul class="menu-list">
-          <li>
-            <router-link to="/accounts/import">Import</router-link>
-          </li>
-          <li>
-            <router-link to="/accounts/export">Export</router-link>
-          </li>
-          <li>
-            <router-link to="/accounts/delete">Delete</router-link>
+            <router-link to="/">Dashboard</router-link>
           </li>
         </ul>
         <p class="menu-label" style="margin-top: 30px;">Wallets</p>
         <ul class="menu-list">
           <li>
-            <router-link to="/wallet">My Wallet</router-link>
+            <router-link to="/zaccounts">zAccounts</router-link>
+          </li>
+          <li>
+            <router-link to="/wallet">Notes</router-link>
           </li>
           <li>
             <router-link to="/transfer">Transfer</router-link>
