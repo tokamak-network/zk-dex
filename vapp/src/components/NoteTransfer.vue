@@ -72,7 +72,7 @@
     </div>
     <div style="margin-top: 20px; display: flex; justify-content: flex-end">
       <button
-        class="button is-link"
+        class="button action-button"
         @click="handleTransferClick"
         :class="{ 'is-static': !canClickTransfer, 'is-loading': loading }"
       >Transfer</button>
@@ -89,7 +89,7 @@
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button class="button" @click="showPassphraseModal = false">Cancel</button>
-          <button class="button is-link" :class="{ 'is-loading': unlocking }" @click="confirmPassphrase" :disabled="!passphrase">Confirm</button>
+          <button class="button action-button" :class="{ 'is-loading': unlocking }" @click="confirmPassphrase" :disabled="!passphrase">Confirm</button>
         </div>
       </div>
     </o-modal>
@@ -127,6 +127,7 @@ import { toBigInt, parseEther } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
+import { logger } from '@/lib/logger'
 
 const router = useRouter()
 const contractStore = useContractStore()
@@ -167,7 +168,14 @@ const canClickTransfer = computed(() => {
 })
 
 function onlyNumber(event: KeyboardEvent) {
-  if (event.keyCode < 48 || event.keyCode > 57) {
+  const char = event.key
+  // Allow digits (0-9) and decimal point (.)
+  if (!/^\d$/.test(char) && char !== '.') {
+    event.preventDefault()
+    return
+  }
+  // Allow only one decimal point
+  if (char === '.' && amount.value.includes('.')) {
     event.preventDefault()
   }
 }
@@ -212,6 +220,18 @@ function handleTransferClick() {
 async function confirmPassphrase() {
   if (!senderAccount.value || !passphrase.value) return
 
+  logger.log('[NoteTransfer] confirmPassphrase called')
+  logger.log('[NoteTransfer] noteOwner.value:', noteOwner.value)
+  logger.log('[NoteTransfer] senderAccount.value:', senderAccount.value ? {
+    address: senderAccount.value.address,
+    name: senderAccount.value.name,
+    hasKeystore: !!senderAccount.value.keystore
+  } : 'null')
+  logger.log('[NoteTransfer] selectedNote.value:', selectedNote.value ? {
+    hash: selectedNote.value.hash?.slice(0, 12),
+    owner: selectedNote.value.owner
+  } : 'null')
+
   unlocking.value = true
   try {
     // Unlock account in browser (secret key never leaves browser!)
@@ -224,7 +244,12 @@ async function confirmPassphrase() {
     // Now proceed with transfer
     await doTransfer()
   } catch (err) {
-    console.error('Failed to unlock account:', err)
+    logger.error('[NoteTransfer] Failed to unlock account:', err)
+    logger.error('[NoteTransfer] Error details:', {
+      message: (err as Error).message,
+      noteOwner: noteOwner.value,
+      senderAccountAddress: senderAccount.value?.address
+    })
     alert('Failed to unlock account: Wrong passphrase?')
   } finally {
     unlocking.value = false
@@ -233,6 +258,7 @@ async function confirmPassphrase() {
 }
 
 function calculateChange(originalValue: string, transferAmount: string): bigint {
+  // Both originalValue and transferAmount are in wei
   return toBigInt(originalValue) - toBigInt(transferAmount)
 }
 
@@ -242,7 +268,8 @@ function isValidRecipient(): boolean {
 
 function isValidAmount(fromValue: string, toAmount: string): boolean {
   const from = toBigInt(fromValue)
-  const to = toBigInt(toAmount)
+  // toAmount is in ETH (user input like "1.2"), convert to wei
+  const to = parseEther(toAmount)
   return from >= to
 }
 
@@ -358,15 +385,23 @@ async function doTransfer() {
     if (recipientAccount?.publicKey) {
       recipientPk = recipientAccount.publicKey
     } else {
-      // For external transfers, we need the pk - for now require it to be a known account
-      alert('Recipient account not found locally. External transfers require recipient public key.')
-      loading.value = false
-      return
+      // For external transfers, parse JSON pk
+      try {
+        const parsedPk = JSON.parse(toAccountAddress.value)
+        if (!parsedPk.x || !parsedPk.y) {
+          throw new Error('Invalid public key format')
+        }
+        recipientPk = { x: parsedPk.x, y: parsedPk.y }
+      } catch (err) {
+        alert('Invalid recipient public key JSON. Expected format: {"x":"0x...","y":"0x..."}')
+        loading.value = false
+        return
+      }
     }
 
-    console.log('Generating transfer proof with public keys...')
-    console.log('Recipient pk:', recipientPk)
-    console.log('Sender pk:', senderAccount.value!.publicKey)
+    logger.log('Generating transfer proof with public keys...')
+    logger.log('Recipient pk:', recipientPk)
+    logger.log('Sender pk:', senderAccount.value!.publicKey)
 
     const { proof, notes } = await generateTransferProof(
       selectedNote.value,
@@ -376,8 +411,8 @@ async function doTransfer() {
       recipientPk,
       senderAccount.value!.publicKey
     )
-    console.log('Transfer proof generated:', proof)
-    console.log('Generated notes:', notes)
+    logger.log('Transfer proof generated:', proof)
+    logger.log('Generated notes:', notes)
 
     // Extract proof components
     const { a, b, c, input } = proof
@@ -407,20 +442,35 @@ async function doTransfer() {
       salt: notes.changeNote.salt.toString()
     }, senderAccount.value!.publicKey)
 
-    console.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
+    logger.log('Calling contract spend with:', { a: aBigInt, b: bBigInt, c: cBigInt, input: inputBigInt })
     const tx = await contractStore.dexContract!.spend(
       aBigInt, bBigInt, cBigInt, inputBigInt,
       encryptedNewNote,
       encryptedChangeNote
     )
 
-    console.log('Transaction sent:', tx.hash)
+    logger.log('Transaction sent:', tx.hash)
     const receipt = await tx.wait()
-    console.log('Transaction receipt:', receipt)
+    logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
       // Notes are now stored on-chain via RLP encoding
       // Both recipient's note and sender's change note will be discovered via blockchain scan
+
+      // Save known note for the recipient (so we can show it in tree even if recipient is locked)
+      api.saveKnownNote({
+        hash: notes.newNote.noteHash,
+        ownerPkX: notes.newNote.pkX,
+        ownerPkY: notes.newNote.pkY,
+        value: notes.newNote.value.toString(),
+        token: notes.newNote.token.toString(),
+        salt: notes.newNote.salt.toString(),
+        createdInTx: receipt.hash,
+        parentNoteHash: noteHash.value,
+        senderAddress: noteOwner.value,  // Save sender info for filtering
+        state: 1 // VALID
+      })
+      logger.log('[NoteTransfer] Saved known note:', notes.newNote.noteHash)
 
       // Add transfer history records (still local for now)
       // Sender record (type: '0x0' = Send)
@@ -446,8 +496,8 @@ async function doTransfer() {
         transactionHash: receipt.hash
       })
 
-      // Scan blockchain to discover notes
-      await noteStore.loadNotes()
+      // Re-fetch from blockchain and update localStorage (important for state sync)
+      await noteStore.fetchAllNoteEvents()
       await noteStore.loadTransferNotes()
 
       alert('Transfer successful!')
@@ -457,7 +507,7 @@ async function doTransfer() {
 
     router.push({ path: '/' })
   } catch (err) {
-    console.error('Failed to transfer note:', err)
+    logger.error('Failed to transfer note:', err)
     alert('Failed to transfer note: ' + (err as Error).message)
   } finally {
     loading.value = false
