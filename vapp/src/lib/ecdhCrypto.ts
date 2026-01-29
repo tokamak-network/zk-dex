@@ -8,7 +8,7 @@
  *   0x01 || epk_x(32B) || epk_y(32B) || nonce(12B) || ciphertext || authTag(16B)
  */
 
-import { getBabyJub, BN128_FIELD_PRIME, bytesToHex, hexToBytes } from './accountCrypto'
+import { getBabyJub, BN128_FIELD_PRIME, bytesToHex, hexToBytes, normalizeFieldElement, getSecureRandomBytes } from './accountCrypto'
 
 /** Version byte for ECDH encrypted data */
 const ECDH_VERSION = 0x01
@@ -38,9 +38,8 @@ function bigIntToBytes32(value: bigint): Uint8Array {
 async function generateEphemeralKeypair(): Promise<{ esk: bigint; epk: { x: bigint; y: bigint } }> {
   const babyJub = await getBabyJub()
 
-  const randomBytes = new Uint8Array(32)
-  crypto.getRandomValues(randomBytes)
-  const esk = BigInt('0x' + bytesToHex(randomBytes)) % BN128_FIELD_PRIME
+  const randomBytes = getSecureRandomBytes(32)
+  const esk = normalizeFieldElement(BigInt('0x' + bytesToHex(randomBytes)))
 
   const epkPoint = babyJub.mulPointEscalar(babyJub.Base8, esk)
 
@@ -130,9 +129,8 @@ export async function encryptForRecipient(
   // 3. Derive AES key
   const aesKey = await deriveAESKey(shared, ['encrypt'])
 
-  // 4. Generate random nonce (12 bytes for AES-GCM)
-  const nonce = new Uint8Array(12)
-  crypto.getRandomValues(nonce)
+  // 4. Generate random nonce (12 bytes for AES-GCM) with entropy verification
+  const nonce = getSecureRandomBytes(12)
 
   // 5. AES-256-GCM encrypt
   const encryptedData = await crypto.subtle.encrypt(
@@ -181,11 +179,8 @@ export async function decryptWithSecretKey(
     const nonce = data.slice(65, 77)
     const ciphertextAndTag = data.slice(77)
 
-    // ECDH shared secret: sk * epk
-    let skBigInt = BigInt(sk)
-    if (skBigInt >= BN128_FIELD_PRIME) {
-      skBigInt = skBigInt % BN128_FIELD_PRIME
-    }
+    // ECDH shared secret: sk * epk (with consistent field reduction)
+    const skBigInt = normalizeFieldElement(BigInt(sk))
     const shared = await computeSharedSecret(skBigInt, { x: epkX, y: epkY })
 
     // Derive AES key

@@ -16,6 +16,60 @@ let babyJub: BabyJub | null = null
 // so the browser must also reduce sk mod p before scalar multiplication.
 export const BN128_FIELD_PRIME = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617')
 
+/**
+ * Normalize a bigint to a valid BN128 field element.
+ * Applies modulo reduction consistently across all cryptographic operations.
+ *
+ * Security: Ensures consistent field reduction behavior (Issue 3.3)
+ *
+ * @param value - The value to normalize
+ * @returns The value reduced modulo BN128_FIELD_PRIME
+ */
+export function normalizeFieldElement(value: bigint): bigint {
+  return value % BN128_FIELD_PRIME
+}
+
+/**
+ * Generate cryptographically secure random bytes with entropy verification.
+ *
+ * Security: Detects CSPRNG failures that could compromise key generation (Issue 3.5)
+ *
+ * @param length - Number of random bytes to generate
+ * @returns A Uint8Array containing cryptographically secure random bytes
+ * @throws Error if secure random number generator is unavailable or produces all zeros
+ */
+export function getSecureRandomBytes(length: number): Uint8Array {
+  if (!crypto || !crypto.getRandomValues) {
+    throw new Error('Secure random number generator not available')
+  }
+
+  const bytes = new Uint8Array(length)
+  crypto.getRandomValues(bytes)
+
+  // Simple entropy check: all zeros indicates CSPRNG failure
+  const sum = bytes.reduce((acc, val) => acc + val, 0)
+  if (sum === 0) {
+    throw new Error('Random number generator produced all zeros - possible CSPRNG failure')
+  }
+
+  return bytes
+}
+
+/**
+ * Attempt to wipe sensitive data from memory.
+ *
+ * Security: Best-effort memory wiping for secret keys (Issue 3.4)
+ * Note: JavaScript doesn't guarantee memory wiping, but this provides defense-in-depth.
+ *
+ * @param key - The Uint8Array to wipe
+ */
+export function wipeKey(key: Uint8Array): void {
+  // Overwrite with random data first
+  crypto.getRandomValues(key)
+  // Then clear with zeros
+  key.fill(0)
+}
+
 export interface Keystore {
   crypto: {
     cipher: string
@@ -70,12 +124,11 @@ export async function initCrypto(): Promise<void> {
  * @returns The secret key as a 0x-prefixed, zero-padded 64-character hex string
  */
 function generateSecretKey(): string {
-  const randomBytes = new Uint8Array(32)
-  crypto.getRandomValues(randomBytes)
+  const randomBytes = getSecureRandomBytes(32)
 
   // Reduce modulo BN128 field prime to ensure sk is a valid field element.
   // This matches the backend which uses % subOrder (subOrder < p).
-  const skBigInt = BigInt('0x' + bytesToHex(randomBytes)) % BN128_FIELD_PRIME
+  const skBigInt = normalizeFieldElement(BigInt('0x' + bytesToHex(randomBytes)))
 
   return '0x' + skBigInt.toString(16).padStart(64, '0')
 }
@@ -92,12 +145,8 @@ export async function derivePublicKey(sk: string): Promise<BabyJubJubPublicKey> 
   await initCrypto()
   if (!babyJub) throw new Error('BabyJubJub not initialized')
 
-  let skBigInt = BigInt(sk)
-
-  // Reduce mod p to match circuit behavior (signals are field elements mod p)
-  if (skBigInt >= BN128_FIELD_PRIME) {
-    skBigInt = skBigInt % BN128_FIELD_PRIME
-  }
+  // Consistent field reduction using normalizeFieldElement helper
+  const skBigInt = normalizeFieldElement(BigInt(sk))
 
   const pubKey = babyJub.mulPointEscalar(babyJub.Base8, skBigInt)
 
@@ -168,12 +217,9 @@ export async function unlockAccount(passphrase: string, keystore: Keystore): Pro
  * @returns A Keystore object containing all data needed for later decryption
  */
 async function encryptSecretKey(secretKey: string, passphrase: string): Promise<Keystore> {
-  // Generate random salt and IV
-  const salt = new Uint8Array(32)
-  crypto.getRandomValues(salt)
-
-  const iv = new Uint8Array(16)
-  crypto.getRandomValues(iv)
+  // Generate random salt and IV with entropy verification
+  const salt = getSecureRandomBytes(32)
+  const iv = getSecureRandomBytes(16)
 
   // Derive key using scrypt
   const passphraseBytes = new TextEncoder().encode(passphrase)
