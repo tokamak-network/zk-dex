@@ -4,12 +4,15 @@ export interface NoteTreeNode {
   token: string
   state: string
   owner: string
+  pkX?: string          // BabyJubJub public key X (for known-only notes)
+  pkY?: string          // BabyJubJub public key Y (for known-only notes)
   createdBy?: string
   children: NoteTreeNode[]
   isRoot?: boolean
   isMerge?: boolean
   mergeParents?: string[]
   isMergeRef?: boolean
+  isKnownOnly?: boolean // True if we know this note from a transfer but don't own it
 }
 
 export interface CreatorGroup {

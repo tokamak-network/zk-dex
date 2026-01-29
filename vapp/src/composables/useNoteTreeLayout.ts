@@ -17,7 +17,7 @@ const DEPTH_SPACING = 230   // depth spacing (parent→child distance)
 const BREADTH_SPACING = 52  // breadth spacing (sibling distance)
 
 // Creator label area
-export const CREATOR_LABEL_WIDTH = 100
+export const CREATOR_LABEL_WIDTH = 105
 const GROUP_GAP = 30
 
 export function useNoteTreeLayout(
@@ -71,30 +71,48 @@ function computeGroupLayout(group: CreatorGroup): LayoutGroup {
   const links: LayoutLink[] = []
 
   if (group.roots.length === 0) {
-    return { createdBy: group.createdBy, nodes, links, width: 0, height: 0, offsetX: 0, offsetY: 0, labelX: 0, labelY: 0 }
+    // Empty group (e.g., logged-in account with no notes yet)
+    // Show creator label with minimal space
+    const width = CREATOR_LABEL_WIDTH + 20
+    const height = 30
+    return {
+      createdBy: group.createdBy,
+      nodes,
+      links,
+      width,
+      height,
+      offsetX: 0,
+      offsetY: 0,
+      labelX: 0,
+      labelY: 3
+    }
   }
 
-  // Build a single hierarchy: if multiple roots, create a synthetic root
-  let rootData: NoteTreeNode
-  const hasSyntheticRoot = group.roots.length > 1
-
-  if (hasSyntheticRoot) {
-    rootData = {
-      hash: '__synthetic__',
-      value: '0',
-      token: '0x0',
-      state: '0x0',
-      owner: '',
-      children: group.roots
-    }
-  } else {
-    rootData = group.roots[0]
+  // Always use a synthetic root for consistent layout and creator label connection
+  const hasSyntheticRoot = true
+  const rootData: NoteTreeNode = {
+    hash: '__synthetic__',
+    value: '0',
+    token: '0x0',
+    state: '0x0',
+    owner: '',
+    children: group.roots
   }
 
   const root = hierarchy(rootData, d => d.children)
 
   // d3.tree nodeSize: [breadth, depth]
-  const treeLayout = tree<NoteTreeNode>().nodeSize([BREADTH_SPACING, DEPTH_SPACING])
+  // Use separation to adjust spacing: normal spacing for siblings, wider spacing between branches
+  const treeLayout = tree<NoteTreeNode>()
+    .nodeSize([BREADTH_SPACING, DEPTH_SPACING])
+    .separation((a, b) => {
+      // Same parent (siblings): use slightly reduced spacing
+      if (a.parent === b.parent) {
+        return 0.85  // Slightly reduced spacing (44px center-to-center, 8px gap)
+      }
+      // Different parents: add extra spacing to separate different branches clearly
+      return 2.0  // Double spacing (104px) between different branches
+    })
   treeLayout(root)
 
   const d3Nodes = root.descendants()
@@ -143,21 +161,43 @@ function computeGroupLayout(group: CreatorGroup): LayoutGroup {
   }
   alignFirstChildToParent(root)
 
-  // --- Phase 1.5: Equalize root node spacing ---
+  // --- Phase 1.5: Compact root node subtrees (pack them tightly) ---
   if (hasSyntheticRoot) {
     const rootD3Nodes = d3Nodes.filter(n => n.parent?.data.hash === '__synthetic__')
-    if (rootD3Nodes.length > 2) {
+    if (rootD3Nodes.length > 1) {
+      // Sort by current Y position
       rootD3Nodes.sort((a, b) => nodeMap.get(a.data)!.y - nodeMap.get(b.data)!.y)
-      const firstY = nodeMap.get(rootD3Nodes[0].data)!.y
-      const lastY = nodeMap.get(rootD3Nodes[rootD3Nodes.length - 1].data)!.y
-      const step = (lastY - firstY) / (rootD3Nodes.length - 1)
 
-      for (let i = 1; i < rootD3Nodes.length - 1; i++) {
-        const targetY = firstY + i * step
-        const currentY = nodeMap.get(rootD3Nodes[i].data)!.y
-        const shift = targetY - currentY
+      const SUBTREE_GAP = 8  // Small gap between adjacent subtrees
+
+      for (let i = 1; i < rootD3Nodes.length; i++) {
+        const prevSubtree = rootD3Nodes[i - 1]
+        const currentSubtree = rootD3Nodes[i]
+
+        // Find max Y of previous subtree (including all descendants)
+        let prevMaxY = -Infinity
+        for (const desc of prevSubtree.descendants()) {
+          const pos = nodeMap.get(desc.data)
+          if (pos) {
+            prevMaxY = Math.max(prevMaxY, pos.y + NODE_HEIGHT)
+          }
+        }
+
+        // Find min Y of current subtree
+        let currentMinY = Infinity
+        for (const desc of currentSubtree.descendants()) {
+          const pos = nodeMap.get(desc.data)
+          if (pos) {
+            currentMinY = Math.min(currentMinY, pos.y)
+          }
+        }
+
+        // Calculate shift to place current subtree right after previous
+        const shift = (prevMaxY + SUBTREE_GAP) - currentMinY
+
+        // Apply shift to entire current subtree
         if (Math.abs(shift) > 0.5) {
-          for (const desc of rootD3Nodes[i].descendants()) {
+          for (const desc of currentSubtree.descendants()) {
             const pos = nodeMap.get(desc.data)
             if (pos) pos.y += shift
           }
