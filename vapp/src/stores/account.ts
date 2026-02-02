@@ -46,7 +46,10 @@ export const useAccountStore = defineStore('account', () => {
   const path = ref('/')
   const cryptoInitialized = ref(false)
 
-  const isLoggedIn = computed(() => key.value !== null)
+  const isLoggedIn = computed(() => {
+    // User is logged in if at least one account is unlocked
+    return accounts.value.some(acc => acc.secretKey !== undefined)
+  })
   const accountCount = computed(() => accounts.value?.length ?? 0)
 
   /**

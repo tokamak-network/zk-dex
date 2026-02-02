@@ -129,6 +129,10 @@ import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
 import { logger } from '@/lib/logger'
 
+const emit = defineEmits<{
+  complete: []
+}>()
+
 const router = useRouter()
 const contractStore = useContractStore()
 const accountStore = useAccountStore()
@@ -501,11 +505,10 @@ async function doTransfer() {
       await noteStore.loadTransferNotes()
 
       alert('Transfer successful!')
+      emit('complete')
     } else {
       alert('Transaction failed')
     }
-
-    router.push({ path: '/' })
   } catch (err) {
     logger.error('Failed to transfer note:', err)
     alert('Failed to transfer note: ' + (err as Error).message)

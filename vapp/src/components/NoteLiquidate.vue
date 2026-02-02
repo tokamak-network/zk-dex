@@ -70,6 +70,10 @@ withDefaults(defineProps<{
   token: 'ETH'
 })
 
+const emit = defineEmits<{
+  complete: []
+}>()
+
 const router = useRouter()
 const web3Store = useWeb3Store()
 const contractStore = useContractStore()
@@ -362,11 +366,10 @@ async function liquidateNote() {
       await noteStore.fetchAllNoteEvents()
       await updateDaiAmount()
       alert('Redemption successful!')
+      emit('complete')
     } else {
       alert('Transaction failed')
     }
-
-    router.push({ path: '/' })
   } catch (err) {
     logger.error('Failed to redeem note:', err)
     alert('Failed to redeem note: ' + (err as Error).message)

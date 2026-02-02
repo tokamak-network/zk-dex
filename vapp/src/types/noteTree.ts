@@ -6,7 +6,8 @@ export interface NoteTreeNode {
   owner: string
   pkX?: string          // BabyJubJub public key X (for known-only notes)
   pkY?: string          // BabyJubJub public key Y (for known-only notes)
-  createdBy?: string
+  createdBy?: string    // Ethereum address that minted the note
+  spentBy?: string      // Ethereum address that redeemed/spent the note
   children: NoteTreeNode[]
   isRoot?: boolean
   isMerge?: boolean

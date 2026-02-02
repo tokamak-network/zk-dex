@@ -22,8 +22,9 @@ export interface Note {
   secretKey?: string      // For proving ownership in transfers
   createdAt?: number      // Unix timestamp
   createdInTx?: string    // Transaction hash
-  createdBy?: string      // Ethereum address
+  createdBy?: string      // Ethereum address that minted the note
   spentInTx?: string      // Transaction hash
+  spentBy?: string        // Ethereum address that spent/redeemed the note
   isKnownOnly?: boolean   // True if we know this note from a transfer but don't own it
 }
 
@@ -583,6 +584,18 @@ export const useNoteStore = defineStore('note', () => {
         }))
       }
 
+      // Resolve tx senders for spentInTx (Ethereum address that redeemed/spent the note)
+      const spentTxSenders = new Map<string, string>()
+      const uniqueSpentTxs = [...new Set(noteSpentTx.values())]
+      if (web3Store.provider) {
+        await Promise.all(uniqueSpentTxs.map(async (txHash) => {
+          try {
+            const tx = await web3Store.provider!.getTransaction(txHash)
+            if (tx?.from) spentTxSenders.set(txHash, tx.from)
+          } catch { /* skip */ }
+        }))
+      }
+
       // Fetch encrypted data for each note and store in localStorage
       const rawEvents: RawNoteEvent[] = []
 
@@ -594,6 +607,7 @@ export const useNoteStore = defineStore('note', () => {
 
           const createdBlock = noteCreatedBlock.get(noteHash)
           const createdTx = noteCreatedTx.get(noteHash)
+          const spentTx = noteSpentTx.get(noteHash)
           rawEvents.push({
             hash: noteHash,
             encryptedData,
@@ -602,7 +616,8 @@ export const useNoteStore = defineStore('note', () => {
             createdAtBlock: createdBlock,
             createdAt: createdBlock ? blockTimestamps.get(createdBlock) : undefined,
             createdBy: createdTx ? txSenders.get(createdTx) : undefined,
-            spentInTx: noteSpentTx.get(noteHash)
+            spentInTx: spentTx,
+            spentBy: spentTx ? spentTxSenders.get(spentTx) : undefined
           })
         } catch (err) {
           logger.warn(`Failed to fetch encrypted data for ${noteHash}:`, err)
@@ -712,7 +727,8 @@ export const useNoteStore = defineStore('note', () => {
             createdAt: rawEvent.createdAt,
             createdInTx: rawEvent.createdInTx,
             createdBy: rawEvent.createdBy,
-            spentInTx: rawEvent.spentInTx
+            spentInTx: rawEvent.spentInTx,
+            spentBy: rawEvent.spentBy
           }
           decryptedNotes.push(note)
 
@@ -808,6 +824,7 @@ export const useNoteStore = defineStore('note', () => {
         createdInTx: known.createdInTx,
         parentNoteHash: known.parentNoteHash,
         spentInTx: known.spentInTx,
+        spentBy: rawEvent?.spentBy || known.spentBy,
         createdBy: known.createdBy,
         isKnownOnly: true
       })

@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.3",
+    "babyjubjub": "^1.0.4",
     "bn.js": "^5.0.0",
     "circomlibjs": "^0.1.7",
     "ethlint": "^1.2.2",

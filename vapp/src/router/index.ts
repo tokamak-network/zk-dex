@@ -82,7 +82,17 @@ const router = createRouter({
 
 router.beforeResolve((to, _from, next) => {
   const accountStore = useAccountStore()
-  if (!accountStore.key && to.path !== '/login') {
+
+  // Load accounts from localStorage if not already loaded
+  if (accountStore.accounts.length === 0) {
+    accountStore.loadAccounts()
+  }
+
+  // Allow access if at least one account exists (even if locked)
+  // Users can unlock accounts in the dashboard
+  const hasAccounts = accountStore.accounts.length > 0
+
+  if (!hasAccounts && to.path !== '/login') {
     next({ path: '/login' })
   } else {
     next()

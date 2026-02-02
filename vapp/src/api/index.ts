@@ -121,6 +121,7 @@ export interface RawNoteEvent {
   createdAt?: number      // Unix timestamp
   createdBy?: string      // Ethereum address that submitted the mint tx
   spentInTx?: string
+  spentBy?: string        // Ethereum address that spent/redeemed the note
 }
 
 /**
@@ -187,6 +188,7 @@ export interface KnownNote {
   senderAddress?: string    // Account address that sent this transfer
   createdBy?: string        // Ethereum address that created the note on-chain
   spentInTx?: string        // Transaction hash where note was spent
+  spentBy?: string          // Ethereum address that spent/redeemed the note
   state?: number            // Note state (can be updated from blockchain)
 }
 

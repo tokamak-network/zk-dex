@@ -19,12 +19,28 @@
     <NoteList v-else :notes="filteredNotes" @selectNote="handleSelectNote" />
 
     <NoteListTransferHistory :transferNotes="noteStore.transferNotes || []" />
+
+    <!-- Modal Overlay -->
+    <div v-if="activeModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            {{ activeModal === 'mint' ? 'Issue Note' : activeModal === 'transfer' ? 'Transfer Note' : 'Redeem Note' }}
+          </h3>
+          <button class="modal-close" @click="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <NoteMint v-if="activeModal === 'mint'" :accounts="accountStore.accounts" @complete="closeModal" />
+          <NoteTransfer v-else-if="activeModal === 'transfer'" ref="transferRef" @complete="closeModal" />
+          <NoteLiquidate v-else-if="activeModal === 'redeem'" ref="redeemRef" @complete="closeModal" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useAccountStore, type Account } from '@/stores/account'
 import { useContractStore } from '@/stores/contract'
 import { useNoteStore, type Note } from '@/stores/note'
@@ -33,8 +49,10 @@ import AccountList from '@/components/AccountList.vue'
 import NoteList from '@/components/NoteList.vue'
 import NoteListTransferHistory from '@/components/NoteListTransferHistory.vue'
 import NoteTree from '@/components/NoteTree.vue'
+import NoteMint from '@/components/NoteMint.vue'
+import NoteTransfer from '@/components/NoteTransfer.vue'
+import NoteLiquidate from '@/components/NoteLiquidate.vue'
 
-const router = useRouter()
 const accountStore = useAccountStore()
 const contractStore = useContractStore()
 const noteStore = useNoteStore()
@@ -43,6 +61,11 @@ const web3Store = useWeb3Store()
 const selectedAccount = ref<Account | null>(null)
 const web3Account = computed(() => web3Store.account)
 const noteViewTab = ref<'tree' | 'list'>('tree')
+
+// Modal state
+const activeModal = ref<'mint' | 'transfer' | 'redeem' | null>(null)
+const transferRef = ref<InstanceType<typeof NoteTransfer> | null>(null)
+const redeemRef = ref<InstanceType<typeof NoteLiquidate> | null>(null)
 
 // Filter notes by selected account, or show all if none selected
 const filteredNotes = computed(() => {
@@ -121,21 +144,44 @@ interface SelectedNoteData {
   owner: string
 }
 
-function handleIssueNote(createdBy: string) {
-  // Navigate to wallet page with mint tab
-  router.push({ path: '/wallet', query: { action: 'mint', token: 'ETH' } })
+function closeModal() {
+  activeModal.value = null
+  // Refresh notes after action completes
+  noteStore.fetchAllNoteEvents()
+  noteStore.decryptAndDisplayNotes()
 }
 
-function handleTransferNote(noteData: SelectedNoteData) {
-  console.log('[DashboardSummaryPage] handleTransferNote called with:', noteData)
-  console.log('[DashboardSummaryPage] Navigating to /wallet with action=transfer')
-  // Navigate to wallet page with transfer tab and note hash
-  router.push({ path: '/wallet', query: { action: 'transfer', noteHash: noteData.hash } })
+function handleIssueNote(_createdBy: string) {
+  // Open mint modal
+  activeModal.value = 'mint'
 }
 
-function handleRedeemNote(noteData: SelectedNoteData) {
-  // Navigate to wallet page with redeem tab and note hash
-  router.push({ path: '/wallet', query: { action: 'redeem', noteHash: noteData.hash } })
+async function handleTransferNote(noteData: SelectedNoteData) {
+  // Find full note object
+  const note = noteStore.notes.find(n => n.hash === noteData.hash)
+  if (!note) {
+    console.error('Note not found:', noteData.hash)
+    return
+  }
+
+  // Open transfer modal and pass the note
+  activeModal.value = 'transfer'
+  await nextTick()
+  transferRef.value?.selectNote(note)
+}
+
+async function handleRedeemNote(noteData: SelectedNoteData) {
+  // Find full note object
+  const note = noteStore.notes.find(n => n.hash === noteData.hash)
+  if (!note) {
+    console.error('Note not found:', noteData.hash)
+    return
+  }
+
+  // Open redeem modal and pass the note
+  activeModal.value = 'redeem'
+  await nextTick()
+  redeemRef.value?.selectNote(note)
 }
 </script>
 
@@ -171,5 +217,62 @@ function handleRedeemNote(noteData: SelectedNoteData) {
 
 .tab-btn:not(.active):hover {
   background: #e8e8e8;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25em;
+  font-weight: 600;
+  color: #363636;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
 }
 </style>

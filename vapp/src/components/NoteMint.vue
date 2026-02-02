@@ -78,6 +78,10 @@ const props = withDefaults(defineProps<{
   token: 'ETH'
 })
 
+const emit = defineEmits<{
+  complete: []
+}>()
+
 const router = useRouter()
 const web3Store = useWeb3Store()
 const contractStore = useContractStore()
@@ -276,11 +280,10 @@ async function doCreateNote() {
       updateDaiAmount().catch(err => logger.warn('Failed to update DAI:', err))
 
       alert('Note issued successfully!')
+      emit('complete')
     } else {
       alert('Transaction failed')
     }
-
-    router.push({ path: '/' })
   } catch (err) {
     logger.error('Failed to issue note:', err)
     alert('Failed to issue note: ' + (err as Error).message)

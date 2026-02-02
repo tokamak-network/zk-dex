@@ -1,15 +1,35 @@
 <template>
   <div class="box tree-box">
     <div class="tree-header">
-      <button class="ctrl-btn" :class="{ active: masked }" @click="masked = !masked">
+      <button class="ctrl-btn" @click="zoomOut" :disabled="zoomLevel <= 0.5" title="Zoom Out">
+        &#x2212;
+      </button>
+      <span style="display: inline-block; min-width: 50px; text-align: center; font-size: 0.9em; color: #666;">
+        {{ Math.round(zoomLevel * 100) }}%
+      </span>
+      <button class="ctrl-btn" @click="zoomIn" :disabled="zoomLevel >= 2.0" title="Zoom In">
+        &#x002B;
+      </button>
+      <button class="ctrl-btn" @click="resetZoom" title="Reset Zoom" style="margin-left: 5px;">
+        &#x21BA;
+      </button>
+      <button class="ctrl-btn" :class="{ active: masked }" @click="masked = !masked" style="margin-left: 10px;" title="Toggle Privacy">
         {{ masked ? '&#x1F512;' : '&#x1F513;' }}
       </button>
     </div>
     <div v-if="treeData.roots.length === 0" style="clear: both; padding: 20px; color: #999; text-align: center;">
       No note history found.
     </div>
-    <div v-else class="tree-container" style="clear: both; overflow: auto; padding: 10px 0; text-align: left; position: relative;" @click="closeActionMenu">
-      <svg :viewBox="`0 0 ${totalWidth} ${totalHeight}`" preserveAspectRatio="xMinYMin meet" :style="{ maxWidth: totalWidth + 'px' }" class="tree-svg">
+    <div v-else class="tree-container" @click="closeActionMenu">
+      <!-- SVG: viewBox defines coordinate system with pan offset, size controlled by CSS -->
+      <svg class="tree-svg"
+           :class="{ dragging: isDragging }"
+           :viewBox="`${panX} ${panY} ${adjustedWidth / zoomLevel} ${totalHeight / zoomLevel}`"
+           preserveAspectRatio="xMinYMin meet"
+           @mousedown="handleMouseDown"
+           @mousemove="handleMouseMove"
+           @mouseup="handleMouseUp"
+           @mouseleave="handleMouseLeave">
         <g v-for="(group, gi) in layoutGroups" :key="group.createdBy || `g${gi}`"
            :transform="`translate(${group.offsetX}, ${group.offsetY})`">
           <!-- Creator label (Ethereum address that minted the note) -->
@@ -52,6 +72,31 @@
             :masked="masked"
             @selectNote="handleNoteSelect"
           />
+          <!-- Redeemer labels and lines (Ethereum address that redeemed the note) -->
+          <template v-for="node in group.nodes.filter(n => n.data.spentBy && n.data.children.length === 0 && n.data.state === '0x3')" :key="`spent-${node.data.hash}`">
+            <!-- Line from note to redeemer label -->
+            <path
+              :d="getRedeemerLinkPath(node, getGroupRedeemerX(group))"
+              class="redeemer-link"
+              fill="none"
+            />
+            <!-- Redeemer label -->
+            <foreignObject
+              :x="getGroupRedeemerX(group)"
+              :y="node.y + 6"
+              :width="CREATOR_LABEL_WIDTH"
+              :height="24"
+              style="pointer-events: none;"
+            >
+              <div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="redeemer-label"
+                :title="node.data.spentBy"
+              >
+                {{ fmt.abbreviate(node.data.spentBy!) }}
+              </div>
+            </foreignObject>
+          </template>
         </g>
       </svg>
       <!-- Action menu for selected note -->
@@ -77,7 +122,7 @@
 import { computed, ref } from 'vue'
 import { toBigInt } from 'ethers'
 import type { Note } from '@/stores/note'
-import type { NoteTreeNode, CreatorGroup } from '@/types/noteTree'
+import type { NoteTreeNode, CreatorGroup, LayoutNode, LayoutGroup } from '@/types/noteTree'
 import NoteTreeSvgNode from './NoteTreeSvgNode.vue'
 import { useFormatters } from '@/composables/useFormatters'
 import { useNoteTreeLayout, CREATOR_LABEL_WIDTH } from '@/composables/useNoteTreeLayout'
@@ -107,6 +152,71 @@ const actionMenuPosition = ref({ x: 0, y: 0 })
 
 const fmt = useFormatters()
 const masked = ref(false)
+const zoomLevel = ref(1.0)
+
+// Pan state for drag-to-scroll
+const panX = ref(0)
+const panY = ref(0)
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+const panStart = ref({ x: 0, y: 0 })
+
+function zoomIn() {
+  if (zoomLevel.value < 2.0) {
+    zoomLevel.value = Math.min(2.0, +(zoomLevel.value + 0.1).toFixed(1))
+  }
+}
+
+function zoomOut() {
+  if (zoomLevel.value > 0.5) {
+    zoomLevel.value = Math.max(0.5, +(zoomLevel.value - 0.1).toFixed(1))
+  }
+}
+
+function resetZoom() {
+  zoomLevel.value = 1.0
+  panX.value = 0
+  panY.value = 0
+}
+
+// Drag handlers for panning
+function handleMouseDown(e: MouseEvent) {
+  // Only start drag with left mouse button
+  if (e.button !== 0) return
+  isDragging.value = true
+  dragStart.value = { x: e.clientX, y: e.clientY }
+  panStart.value = { x: panX.value, y: panY.value }
+  e.preventDefault()
+}
+
+function handleMouseMove(e: MouseEvent) {
+  if (!isDragging.value) return
+
+  // Calculate delta in SVG coordinate space
+  const viewBoxWidth = adjustedWidth.value / zoomLevel.value
+  const viewBoxHeight = totalHeight.value / zoomLevel.value
+  const svgElement = e.currentTarget as SVGSVGElement
+  const rect = svgElement.getBoundingClientRect()
+
+  // Convert pixel movement to viewBox units
+  const scaleX = viewBoxWidth / rect.width
+  const scaleY = viewBoxHeight / rect.height
+
+  const dx = (e.clientX - dragStart.value.x) * scaleX
+  const dy = (e.clientY - dragStart.value.y) * scaleY
+
+  // Update pan (subtract because dragging right should show content on the left)
+  panX.value = Math.max(0, panStart.value.x - dx)
+  panY.value = Math.max(0, panStart.value.y - dy)
+}
+
+function handleMouseUp() {
+  isDragging.value = false
+}
+
+function handleMouseLeave() {
+  isDragging.value = false
+}
 
 function handleCreatorClick(createdBy: string) {
   if (masked.value) return
@@ -267,6 +377,7 @@ const treeData = computed(() => {
       pkX: note.pkX,
       pkY: note.pkY,
       createdBy: note.createdBy,
+      spentBy: note.spentBy,
       children,
       isKnownOnly: note.isKnownOnly
     }
@@ -331,11 +442,43 @@ const treeData = computed(() => {
 const groupsRef = computed(() => treeData.value.groups)
 const { layoutGroups, totalWidth, totalHeight, getLinkPath } = useNoteTreeLayout(groupsRef)
 
+// Add extra width for redeemer labels (positioned at maxX + 215, plus label width 120)
+const adjustedWidth = computed(() => {
+  // Check if any notes have redeemer labels
+  const hasRedeemers = props.notes.some(n => n.spentBy && n.state === '0x3')
+  if (!hasRedeemers) return totalWidth.value
+
+  // Add space for redeemer labels: gap (215) + label width (120) = 335
+  return totalWidth.value + 335
+})
+
+// Calculate redeemer label X position for a group (aligned horizontally)
+function getGroupRedeemerX(group: LayoutGroup): number {
+  // Find the rightmost node X coordinate
+  const xCoords = group.nodes.map((n: LayoutNode) => n.x)
+  const maxX = Math.max(...xCoords)
+
+  // Position labels slightly to the right of the rightmost nodes
+  return maxX + 215 // NODE_WIDTH (200) + gap (15)
+}
+
+// Calculate line path from redeemed note to redeemer label
+function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
+  const startX = node.x + 200 // Right edge of note (NODE_WIDTH)
+  const startY = node.y + 18  // Center of note (NODE_HEIGHT / 2)
+  const endX = labelX
+  const endY = node.y + 18    // Same Y as start (horizontal alignment)
+
+  return `M${startX},${startY} L${endX},${endY}`
+}
+
 </script>
 
 <style scoped>
 .tree-box {
   padding-top: 15px;
+  overflow: hidden;  /* Prevent any content from affecting parent layout */
+  contain: layout;   /* CSS containment for layout isolation */
 }
 
 .tree-header {
@@ -359,15 +502,41 @@ const { layoutGroups, totalWidth, totalHeight, getLinkPath } = useNoteTreeLayout
   background: #f0f0f0;
 }
 
+.ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ctrl-btn:disabled:hover {
+  background: none;
+}
+
+.ctrl-btn.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
 .tree-container {
+  overflow: auto;
+  max-height: 600px;
+  max-width: 100%;  /* Constrain width to parent */
+  padding: 10px 0;
   font-size: 0.85em;
   text-align: left;
+  position: relative;
 }
+
 
 .tree-svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 500px;  /* Fixed height for the SVG viewport */
+  cursor: grab;
+}
+
+.tree-svg.dragging {
+  cursor: grabbing;
 }
 
 .tree-link {
@@ -378,6 +547,12 @@ const { layoutGroups, totalWidth, totalHeight, getLinkPath } = useNoteTreeLayout
 .tree-link.merge-link {
   stroke: #e08040;
   stroke-dasharray: 4 2;
+}
+
+.redeemer-link {
+  stroke: #999;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
 }
 
 .creator-label {
@@ -475,5 +650,17 @@ const { layoutGroups, totalWidth, totalHeight, getLinkPath } = useNoteTreeLayout
 .menu-icon {
   font-size: 1.1em;
   color: #666;
+}
+
+.redeemer-label {
+  font-family: monospace;
+  font-size: 0.75em;
+  color: #999;
+  white-space: nowrap;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-style: italic;
 }
 </style>
