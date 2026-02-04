@@ -24,10 +24,10 @@
     </div>
     <div class="field has-addons">
       <p class="control">
-        <a class="button is-static" style="width: 140px">Note Amount</a>
+        <a class="button is-static" style="width: 140px">Value</a>
       </p>
       <p class="control is-expanded">
-        <a class="button is-static" style="width: 100%;">{{ fmt.hexToNumberString(noteValue || '0x0') }}</a>
+        <a class="button is-static" style="width: 100%;">{{ formatNoteValue(noteValue) }}</a>
       </p>
     </div>
     <div class="field has-addons" style="margin-top: 40px;">
@@ -79,7 +79,8 @@
     </div>
     <!-- Passphrase modal -->
     <o-modal v-model:active="showPassphraseModal">
-      <div class="box" style="width: 400px;">
+      <div class="box" style="width: 400px; position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="showPassphraseModal = false"></button>
         <p class="title is-5">Enter Passphrase</p>
         <p class="subtitle is-6">Unlock account to transfer note</p>
         <div class="field">
@@ -94,7 +95,8 @@
       </div>
     </o-modal>
     <o-modal v-model:active="createAccountModalActive">
-      <div class="box">
+      <div class="box" style="position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="closeModal"></button>
         <table class="table">
           <thead>
             <tr>
@@ -123,7 +125,7 @@ import { useAccountStore, type Account } from '@/stores/account'
 import { useNoteStore, type Note } from '@/stores/note'
 import { useFormatters } from '@/composables/useFormatters'
 import * as api from '@/api'
-import { toBigInt, parseEther } from 'ethers'
+import { toBigInt, parseEther, formatEther } from 'ethers'
 import { encodeNoteData } from '@/utils/noteEncryption'
 import { proofGenerator, type FormattedProof } from '@/lib/proofGenerator'
 import { prepareTransferInputs, computeCircuitHash, generateSalt, type NoteData } from '@/lib/circuitInputs'
@@ -181,6 +183,19 @@ function onlyNumber(event: KeyboardEvent) {
   // Allow only one decimal point
   if (char === '.' && amount.value.includes('.')) {
     event.preventDefault()
+  }
+}
+
+function formatNoteValue(value: string): string {
+  if (!value || value === '0x0') return '0'
+  try {
+    const wei = toBigInt(value)
+    const ether = formatEther(wei)
+    // Determine token symbol based on selected note
+    const token = selectedNote.value?.token === '0x1' ? 'DAI' : 'ETH'
+    return `${ether} ${token}`
+  } catch {
+    return '0'
   }
 }
 

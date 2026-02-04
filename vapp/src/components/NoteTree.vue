@@ -120,7 +120,10 @@
         :style="{ left: actionMenuPosition.x + 'px', top: actionMenuPosition.y + 'px' }"
         @click.stop
       >
-        <div class="menu-header">{{ fmt.formatNoteValue(selectedNoteForAction.value) }} {{ fmt.tokenType(selectedNoteForAction.token) }}</div>
+        <div class="menu-header">
+          <span>{{ fmt.formatNoteValue(selectedNoteForAction.value) }} {{ fmt.tokenType(selectedNoteForAction.token) }}</span>
+          <button class="menu-close" @click="closeActionMenu">&times;</button>
+        </div>
         <button class="menu-item" @click="handleTransfer">
           <span class="menu-icon">&#x2192;</span> Transfer
         </button>
@@ -663,6 +666,24 @@ function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
   font-weight: 600;
   background: #f5f5f5;
   border-bottom: 1px solid #eee;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-close {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-left: 8px;
+}
+
+.menu-close:hover {
   color: #333;
 }
 

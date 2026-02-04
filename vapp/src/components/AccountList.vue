@@ -84,7 +84,8 @@
     </p>
     <!-- Unlock account modal -->
     <o-modal v-model:active="unlockModalActive">
-      <div class="box" style="width: 400px;">
+      <div class="box" style="width: 400px; position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="unlockModalActive = false"></button>
         <p class="title is-5">Unlock Account</p>
         <p class="subtitle is-6">Enter passphrase to decrypt notes</p>
         <div class="field">
@@ -104,6 +105,7 @@
         <div class="modal-card" style="width: auto">
           <header class="modal-card-head">
             <p class="modal-card-title">Create New Account</p>
+            <button class="delete" @click="createAccountModalActive = false"></button>
           </header>
           <section class="modal-card-body">
             <o-field label="Passphrase">

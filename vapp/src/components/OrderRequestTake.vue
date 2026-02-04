@@ -42,7 +42,8 @@
       <button class="button" @click="takeOrder" :class="{ 'is-static': orderId === '' || noteHash === '', 'is-loading': loading }">Sell DAI</button>
     </div>
     <o-modal v-model:active="orderModalActive">
-      <div class="box">
+      <div class="box" style="position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="closeModal"></button>
         <table class="table">
           <thead>
             <tr>

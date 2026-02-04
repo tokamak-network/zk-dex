@@ -27,7 +27,7 @@
           <h3 class="modal-title">
             {{ activeModal === 'mint' ? 'Issue Note' : activeModal === 'transfer' ? 'Transfer Note' : 'Redeem Note' }}
           </h3>
-          <button class="modal-close" @click="closeModal">&times;</button>
+          <button class="delete is-medium" @click="closeModal"></button>
         </div>
         <div class="modal-body">
           <NoteMint v-if="activeModal === 'mint'" :accounts="accountStore.accounts" :initial-account-address="selectedAccountForMint" @complete="closeModal" />
@@ -148,9 +148,11 @@ interface SelectedNoteData {
 function closeModal() {
   activeModal.value = null
   selectedAccountForMint.value = ''
-  // Refresh notes after action completes
-  noteStore.fetchAllNoteEvents()
-  noteStore.decryptAndDisplayNotes()
+  // Refresh notes after modal closes (non-blocking)
+  setTimeout(() => {
+    noteStore.fetchAllNoteEvents()
+    noteStore.decryptAndDisplayNotes()
+  }, 0)
 }
 
 function handleIssueNote(createdBy: string) {

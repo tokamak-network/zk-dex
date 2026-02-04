@@ -59,7 +59,8 @@
     </div>
     <!-- Passphrase modal -->
     <o-modal v-model:active="showPassphraseModal">
-      <div class="box" style="width: 400px;">
+      <div class="box" style="width: 400px; position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="showPassphraseModal = false"></button>
         <p class="title is-5">Enter Passphrase</p>
         <p class="subtitle is-6">Unlock account to issue note</p>
         <div class="field">
@@ -78,7 +79,8 @@
     </o-modal>
     <!-- Create New Account modal -->
     <o-modal v-model:active="showCreateAccountModal">
-      <div class="box" style="width: 400px;">
+      <div class="box" style="width: 400px; position: relative;">
+        <button class="delete" style="position: absolute; top: 10px; right: 10px;" @click="cancelCreateAccount"></button>
         <p class="title is-5">Create New ZK Account</p>
         <p class="subtitle is-6">This passphrase encrypts your private key locally</p>
         <div class="field">
