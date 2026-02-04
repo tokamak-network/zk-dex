@@ -103,7 +103,7 @@ async function runBoundaryValueTests() {
         );
         const proof = await noteProofHelper.generateMintProof(note, sk);
         assert(proof.a && proof.b && proof.c, 'Proof should be generated');
-        assert(proof.input.length === 5, 'Should have 5 public inputs');
+        assert(proof.input.length === 4, 'Should have 4 public inputs');
     });
 
     await test('Note with value = 1 ETH (10^18 wei)', async () => {
@@ -210,7 +210,9 @@ async function runEdgeCaseTests() {
     await test('Empty note hash matches constant', async () => {
         const emptyNote = noteProofHelper.createEmptyNote();
         const hash = emptyNote.hash();
-        assertEqual(hash, EMPTY_NOTE_HASH, 'Empty note hash should match constant');
+        // EMPTY_NOTE_HASH is computed lazily after init, so get it dynamically
+        const expectedHash = constants.EMPTY_NOTE_HASH;
+        assertEqual(hash, expectedHash, 'Empty note hash should match constant');
     });
 
     // Same value notes
@@ -228,21 +230,25 @@ async function runEdgeCaseTests() {
     await test('Two notes with same parameters and salt have same hash', async () => {
         const { sk, pk } = await noteProofHelper.generateKeypair();
         const fixedSalt = '0x' + '1'.repeat(64);
+        const value = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
 
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
         const note1 = new Note(
             pk.x,
             pk.y,
-            SCALING_FACTOR.toString(),
+            value,
             '0x0',
-            '0x0',
+            pk.x,
+            pk.y,
             fixedSalt
         );
         const note2 = new Note(
             pk.x,
             pk.y,
-            SCALING_FACTOR.toString(),
+            value,
             '0x0',
-            '0x0',
+            pk.x,
+            pk.y,
             fixedSalt
         );
         assertEqual(note1.hash(), note2.hash(), 'Identical notes should have same hash');
@@ -353,7 +359,7 @@ async function runPriceCalculationEdgeCases() {
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
         // Price is unscaled: 1 means "1 DAI per ETH"
-        const price = 1n;
+        const price = 1n * SCALING_FACTOR;
         const makerValue = SCALING_FACTOR; // 1 ETH
         const takerValue = SCALING_FACTOR; // 1 DAI
 
@@ -372,11 +378,14 @@ async function runPriceCalculationEdgeCases() {
             makerNote, takerValue, constants.DAI_TOKEN_TYPE, '0x0', generateSalt()
         );
 
-        // Circuit calculations with price=1:
-        // q1 = takerValue / price = 10^18 / 1 = 10^18
-        // bit = (makerValue >= q1) = (10^18 >= 10^18) = true
-        // reward = q1 = 10^18, payment = takerValue = 10^18, change = 0
-        const reward = takerValue / price;
+        // Circuit calculations with price=1*10^18:
+        // q1 = takerValue / price = 10^18 / (1*10^18) = 1
+        // o1ValueOverPrice = q1 * 10^18 = 1 * 10^18 = 10^18
+        // bit = (makerValue >= o1ValueOverPrice) = (10^18 >= 10^18) = true
+        // reward = o1ValueOverPrice = 10^18, payment = takerValue = 10^18, change = 0
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -403,7 +412,7 @@ async function runPriceCalculationEdgeCases() {
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
         // Price is unscaled: 10 means "10 DAI per ETH"
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;  // 2 ETH
         const takerValue = 20n * SCALING_FACTOR; // 20 DAI (exactly 2 ETH * 10)
 
@@ -422,7 +431,9 @@ async function runPriceCalculationEdgeCases() {
         // q1 = takerValue / price = 20*10^18 / 10 = 2*10^18
         // bit = (makerValue >= q1) = (2*10^18 >= 2*10^18) = true
         // reward = q1 = 2*10^18, payment = takerValue = 20*10^18, change = 0
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -449,7 +460,7 @@ async function runPriceCalculationEdgeCases() {
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
         // Price: 100 DAI per ETH
-        const price = 100n;
+        const price = 100n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;  // 2 ETH
         const takerValue = 100n * SCALING_FACTOR; // 100 DAI
 
@@ -468,7 +479,9 @@ async function runPriceCalculationEdgeCases() {
         // q1 = takerValue / price = 100*10^18 / 100 = 10^18 (1 ETH)
         // bit = (makerValue >= q1) = (2*10^18 >= 10^18) = true
         // reward = q1 = 10^18, payment = takerValue = 100*10^18, change = 10^18
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -495,7 +508,7 @@ async function runPriceCalculationEdgeCases() {
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
         // Price: 10 DAI per ETH
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR; // 2 ETH
         const takerValue = 10n * SCALING_FACTOR; // 10 DAI (only enough for 1 ETH)
 
@@ -514,7 +527,9 @@ async function runPriceCalculationEdgeCases() {
         // q1 = takerValue / price = 10*10^18 / 10 = 10^18 (1 ETH)
         // bit = (makerValue >= q1) = (2*10^18 >= 10^18) = true
         // reward = q1 = 10^18, payment = takerValue = 10*10^18, change = 10^18
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -612,9 +627,11 @@ async function runHashTests() {
     await test('Hash is deterministic', async () => {
         const { pk } = await noteProofHelper.generateKeypair();
         const salt = generateSalt();
+        const value = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
 
-        const note1 = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
-        const note2 = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
+        const note1 = new Note(pk.x, pk.y, value, '0x0', pk.x, pk.y, salt);
+        const note2 = new Note(pk.x, pk.y, value, '0x0', pk.x, pk.y, salt);
 
         assertEqual(note1.hash(), note2.hash(), 'Same parameters should produce same hash');
     });
@@ -622,9 +639,12 @@ async function runHashTests() {
     await test('Hash changes with different value', async () => {
         const { pk } = await noteProofHelper.generateKeypair();
         const salt = generateSalt();
+        const value1 = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
+        const value2 = '0x' + (2n * SCALING_FACTOR).toString(16).padStart(64, '0');
 
-        const note1 = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
-        const note2 = new Note(pk.x, pk.y, (2n * SCALING_FACTOR).toString(), '0x0', '0x0', salt);
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
+        const note1 = new Note(pk.x, pk.y, value1, '0x0', pk.x, pk.y, salt);
+        const note2 = new Note(pk.x, pk.y, value2, '0x0', pk.x, pk.y, salt);
 
         assert(note1.hash() !== note2.hash(), 'Different values should produce different hashes');
     });
@@ -632,9 +652,11 @@ async function runHashTests() {
     await test('Hash changes with different token type', async () => {
         const { pk } = await noteProofHelper.generateKeypair();
         const salt = generateSalt();
+        const value = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
 
-        const note1 = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
-        const note2 = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x1', '0x0', salt);
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
+        const note1 = new Note(pk.x, pk.y, value, '0x0', pk.x, pk.y, salt);
+        const note2 = new Note(pk.x, pk.y, value, '0x1', pk.x, pk.y, salt);
 
         assert(note1.hash() !== note2.hash(), 'Different token types should produce different hashes');
     });
@@ -643,16 +665,20 @@ async function runHashTests() {
         const { pk: pk1 } = await noteProofHelper.generateKeypair();
         const { pk: pk2 } = await noteProofHelper.generateKeypair();
         const salt = generateSalt();
+        const value = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
 
-        const note1 = new Note(pk1.x, pk1.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
-        const note2 = new Note(pk2.x, pk2.y, SCALING_FACTOR.toString(), '0x0', '0x0', salt);
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
+        const note1 = new Note(pk1.x, pk1.y, value, '0x0', pk1.x, pk1.y, salt);
+        const note2 = new Note(pk2.x, pk2.y, value, '0x0', pk2.x, pk2.y, salt);
 
         assert(note1.hash() !== note2.hash(), 'Different owners should produce different hashes');
     });
 
     await test('HashArr produces valid 128-bit values', async () => {
         const { pk } = await noteProofHelper.generateKeypair();
-        const note = new Note(pk.x, pk.y, SCALING_FACTOR.toString(), '0x0', '0x0', generateSalt());
+        const value = '0x' + SCALING_FACTOR.toString(16).padStart(64, '0');
+        // 7-param constructor: owner0, owner1, value, token, vk0, vk1, salt
+        const note = new Note(pk.x, pk.y, value, '0x0', pk.x, pk.y, generateSalt());
 
         const hashArr = note.hashArr();
         assertEqual(hashArr.length, 2, 'HashArr should have 2 elements');
@@ -725,8 +751,8 @@ async function runProofFormatTests() {
         );
         const orderProof = await noteProofHelper.generateMakeOrderProof(orderNote, sk);
 
-        assertEqual(mintProof.input.length, 5, 'Mint proof should have 5 inputs');
-        assertEqual(orderProof.input.length, 4, 'MakeOrder proof should have 4 inputs');
+        assertEqual(mintProof.input.length, 4, 'Mint proof should have 4 inputs');
+        assertEqual(orderProof.input.length, 3, 'MakeOrder proof should have 3 inputs');
     });
 }
 
@@ -741,7 +767,8 @@ async function runMakeOrderTakeOrderTests() {
 
         const proof = await noteProofHelper.generateMakeOrderProof(note, sk);
         assert(proof.a && proof.b && proof.c, 'MakeOrder proof should be generated for min value');
-        assertEqual(proof.input.length, 4, 'MakeOrder should have 4 public inputs');
+        // MakeOrder has 3 public inputs: output(1), noteHash, tokenType
+        assertEqual(proof.input.length, 3, 'MakeOrder should have 3 public inputs');
     });
 
     await test('TakeOrder creates valid stake note', async () => {
@@ -765,31 +792,24 @@ async function runMakeOrderTakeOrderTests() {
 
         const proof = await noteProofHelper.generateTakeOrderProof(parentNote, stakeNote, takerSk);
         assert(proof.a && proof.b && proof.c, 'TakeOrder proof should be generated');
-        // 7 public inputs + 1 output = 8 total public signals
-        assertEqual(proof.input.length, 8, 'TakeOrder should have 8 public signals');
+        // TakeOrder has 6 public inputs: output, parentNoteHash, newNoteHash, tokenType, value, stakeOwnerAddr
+        assertEqual(proof.input.length, 6, 'TakeOrder should have 6 public signals');
     });
 }
 
 async function runViewingKeyRelationshipTests() {
     log('blue', '\n=== Viewing Key ↔ OwnerAddress Relationship Tests ===\n');
 
-    await test('Normal note: ownerAddress = viewingKey[96:256] (last 160 bits)', async () => {
-        const { sk } = await noteProofHelper.generateKeypair();
+    await test('Normal note: ownerAddress derived from public key', async () => {
+        const { sk, pk } = await noteProofHelper.generateKeypair();
         const { note } = await noteProofHelper.createNote(
             sk, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
         );
 
-        // viewingKey is 256 bits = 64 hex chars
-        // ownerAddress should be last 160 bits = viewingKey[24:64] (last 40 hex chars)
-        const vkClean = note.viewingKey.startsWith('0x') ? note.viewingKey.slice(2) : note.viewingKey;
-        const vkPadded = vkClean.padStart(64, '0');
-        const expectedOwner = vkPadded.slice(24); // last 40 hex chars = 160 bits
-
-        const ownerClean = note.ownerAddress.startsWith('0x') ? note.ownerAddress.slice(2) : note.ownerAddress;
-        const ownerPadded = ownerClean.padStart(40, '0');
-
-        assertEqual(ownerPadded.toLowerCase(), expectedOwner.toLowerCase(),
-            'ownerAddress should be last 160 bits of viewingKey');
+        // In Circom implementation, Note stores owner0=pkX, owner1=pkY directly
+        // Verify that the note has valid owner coordinates matching the public key
+        assert(note.owner0.toLowerCase() === pk.x.toLowerCase(), 'owner0 should match pkX');
+        assert(note.owner1.toLowerCase() === pk.y.toLowerCase(), 'owner1 should match pkY');
     });
 
     await test('Smart note: ownerAddress = truncated(parentNoteHash)', async () => {
@@ -817,7 +837,7 @@ async function runViewingKeyRelationshipTests() {
             'Smart note ownerAddress should be truncated parentNoteHash');
     });
 
-    await test('Smart note: viewingKey equals parentNoteHash', async () => {
+    await test('Smart note: owner derived from parentNoteHash', async () => {
         const { sk } = await noteProofHelper.generateKeypair();
         const { note: parentNote } = await noteProofHelper.createNote(
             sk, SCALING_FACTOR, constants.ETH_TOKEN_TYPE, null, generateSalt()
@@ -827,9 +847,18 @@ async function runViewingKeyRelationshipTests() {
             parentNote, SCALING_FACTOR / 2n, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
+        // For smart notes, owner0=hash_hi, owner1=hash_lo (split from parentNoteHash)
         const parentHash = parentNote.hash();
-        assertEqual(smartNote.viewingKey.toLowerCase(), parentHash.toLowerCase(),
-            'Smart note viewingKey should equal parentNoteHash');
+        const hashClean = parentHash.startsWith('0x') ? parentHash.slice(2) : parentHash;
+        const hashPadded = hashClean.padStart(64, '0');
+        // owner0 = high 128 bits, owner1 = low 128 bits
+        const expectedOwner0 = '0x' + hashPadded.slice(0, 32).padStart(64, '0');
+        const expectedOwner1 = '0x' + hashPadded.slice(32).padStart(64, '0');
+
+        assertEqual(smartNote.owner0.toLowerCase(), expectedOwner0.toLowerCase(),
+            'Smart note owner0 should equal high bits of parentNoteHash');
+        assertEqual(smartNote.owner1.toLowerCase(), expectedOwner1.toLowerCase(),
+            'Smart note owner1 should equal low bits of parentNoteHash');
     });
 
     await test('Different keys produce different ownerAddress', async () => {
@@ -876,19 +905,21 @@ async function runSettleOrderBit0Tests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 5n * SCALING_FACTOR;   // 5 ETH
         const takerValue = 100n * SCALING_FACTOR; // 100 DAI
 
         // Expected outputs for bit=0
-        const q1 = takerValue / price;  // 10×10^18
-        const q0 = (makerValue * price) / SCALING_FACTOR;  // 50
+        const q1 = takerValue / price;  // 10 (DAI units)
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;  // 10×10^18 (wei)
+        const o0ValueTimesPrice = makerValue * price;
+        const q0 = o0ValueTimesPrice / SCALING_FACTOR;  // 50×10^18 (DAI wei)
         const expectedReward = makerValue;  // 5×10^18 (all maker's ETH)
-        const expectedPayment = q0 * SCALING_FACTOR;  // 50×10^18 (DAI to maker)
+        const expectedPayment = q0;  // 50×10^18 (DAI to maker)
         const expectedChange = takerValue - expectedPayment;  // 50×10^18 (DAI refund to taker)
 
         // Verify bit=0 condition
-        assert(makerValue < q1, `Should be bit=0: makerValue(${makerValue}) < q1(${q1})`);
+        assert(makerValue < o1ValueOverPrice, `Should be bit=0: makerValue(${makerValue}) < o1ValueOverPrice(${o1ValueOverPrice})`);
 
         const { note: makerNote } = await noteProofHelper.createNote(
             makerSk, makerValue, constants.ETH_TOKEN_TYPE, null, generateSalt()
@@ -930,13 +961,18 @@ async function runSettleOrderBit0Tests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 5n * SCALING_FACTOR;
         const takerValue = 100n * SCALING_FACTOR;
 
-        const q0 = (makerValue * price) / SCALING_FACTOR;
+        // Circuit calculations for bit=0:
+        // o0ValueTimesPrice = makerValue * price = 5×10^18 * 10×10^18 = 50×10^36
+        // q0 = o0ValueTimesPrice / SCALING_FACTOR = 50×10^18
+        // payment = q0 (NOT q0 * SCALING_FACTOR!)
+        const o0ValueTimesPrice = makerValue * price;
+        const q0 = o0ValueTimesPrice / SCALING_FACTOR;
         const expectedReward = makerValue;
-        const expectedPayment = q0 * SCALING_FACTOR;
+        const expectedPayment = q0;  // Fixed: q0 is already scaled
         const expectedChange = takerValue - expectedPayment;
 
         const { note: makerNote } = await noteProofHelper.createNote(
@@ -983,7 +1019,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1000,7 +1036,9 @@ async function runSettleOrderSecurityTests() {
         );
 
         // Calculate outputs for bit=1
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -1026,7 +1064,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1041,7 +1079,9 @@ async function runSettleOrderSecurityTests() {
             makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -1070,7 +1110,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1085,7 +1125,9 @@ async function runSettleOrderSecurityTests() {
             makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -1112,7 +1154,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1127,7 +1169,9 @@ async function runSettleOrderSecurityTests() {
             makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -1159,7 +1203,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1175,7 +1219,9 @@ async function runSettleOrderSecurityTests() {
             takerParent, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 
@@ -1205,7 +1251,7 @@ async function runSettleOrderSecurityTests() {
         const { sk: makerSk } = await noteProofHelper.generateKeypair();
         const { sk: takerSk } = await noteProofHelper.generateKeypair();
 
-        const price = 10n;
+        const price = 10n * SCALING_FACTOR;
         const makerValue = 2n * SCALING_FACTOR;
         const takerValue = 10n * SCALING_FACTOR;
 
@@ -1220,7 +1266,9 @@ async function runSettleOrderSecurityTests() {
             makerNote, takerValue, constants.DAI_TOKEN_TYPE, null, generateSalt()
         );
 
-        const reward = takerValue / price;
+        const q1 = takerValue / price;
+        const o1ValueOverPrice = q1 * SCALING_FACTOR;
+        const reward = o1ValueOverPrice;
         const payment = takerValue;
         const change = makerValue - reward;
 

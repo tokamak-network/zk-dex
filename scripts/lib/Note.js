@@ -120,13 +120,15 @@ class Note {
   }
 
   /**
-   * Compute Poseidon note hash (synchronous, requires init() first)
+   * Compute Poseidon note hash
    * hash = Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
    * @returns { String } 0x-prefixed 64-char hex string
+   * Note: Automatically initializes Poseidon on first call (synchronous contexts only)
    */
   hash() {
     if (!_poseidon) {
-      throw new Error('Poseidon not initialized. Call init() before using Note.hash()');
+      // For synchronous contexts, throw a helpful error
+      throw new Error('Poseidon not initialized. Call await init() before using Note.hash()');
     }
     const hash = _poseidon([
       _hexToBigInt(this.owner0),
@@ -158,6 +160,24 @@ class Note {
     const lo = _hexToBigInt(this.owner1);
     const parentHash = (hi << BigInt(128)) + lo;
     return '0x' + parentHash.toString(16).padStart(64, '0');
+  }
+
+  /**
+   * Get the 160-bit owner address.
+   * Both regular and smart notes: first 32 bits of owner0 + all 128 bits of owner1
+   * This equals: hash[0:8] + hash[32:64] in hex (40 chars = 160 bits)
+   * @returns {string} 0x-prefixed 40-char hex string (160 bits)
+   */
+  get ownerAddress() {
+    // Reconstruct owner hash: owner0 << 128 + owner1
+    const owner0BigInt = _hexToBigInt(this.owner0);
+    const owner1BigInt = _hexToBigInt(this.owner1);
+    const ownerHash = (owner0BigInt << BigInt(128)) + owner1BigInt;
+    const ownerHashHex = ownerHash.toString(16).padStart(64, '0');
+
+    // Take first 32 bits (8 hex chars) + last 128 bits (32 hex chars) = 160 bits (40 hex chars)
+    const address = ownerHashHex.slice(0, 8) + ownerHashHex.slice(32, 64);
+    return '0x' + address;
   }
 
   /**

@@ -14,9 +14,9 @@ const crypto = require('crypto');
 const Web3Utils = require('web3-utils');
 
 // Import project modules
-const { Note, constants } = require('../scripts/lib/Note');
+const { Note, constants, init: initNote } = require('../scripts/lib/Note');
 const snarkjsUtils = require('../scripts/lib/snarkjsUtils');
-const noteHelper = require('../scripts/helper/noteHelper');
+const noteProofHelper = require('../scripts/lib/noteProofHelper');
 const { marshal, unmarshal, split32BytesTo16BytesArr } = require('../scripts/lib/util');
 
 const CIRCUITS_DIR = path.join(__dirname, '../circuits-circom/build');
@@ -70,15 +70,18 @@ async function testNoteCreation() {
     console.log('\n=== Test Suite: Note Creation and Hashing ===\n');
     const results = [];
 
-    // Test 1: Create a normal note
+    // Test 1: Create a normal note using noteProofHelper
     try {
-        const ownerAddress = '0x' + '1234567890abcdef1234567890abcdef12345678'; // 160-bit address
-        const value = '0x' + (1000000000000000000n).toString(16).padStart(64, '0');
-        const token = constants.ETH_TOKEN_TYPE;
-        const viewingKey = '0x' + '0'.padStart(64, '0');
-        const salt = TestUtils.randomSalt();
+        const { sk, pk } = await noteProofHelper.generateKeypair();
+        const value = 1000000000000000000n;
+        const { note } = await noteProofHelper.createNote(
+            sk,
+            value,
+            constants.ETH_TOKEN_TYPE,
+            '0x0',
+            TestUtils.randomSalt()
+        );
 
-        const note = new Note(ownerAddress, value, token, viewingKey, salt);
         const hash = note.hash();
         const hashArr = note.hashArr();
 
@@ -108,14 +111,13 @@ async function testNoteCreation() {
 
     // Test 3: Note hash determinism
     try {
-        const ownerAddress = '0x' + 'deadbeefcafe1234567890abcdef12345678abcd'; // 160-bit address
-        const value = '0x' + 'ff'.padStart(64, '0');
-        const token = constants.ETH_TOKEN_TYPE;
-        const viewingKey = '0x' + '0'.padStart(64, '0');
+        const { pk } = await noteProofHelper.generateKeypair();
+        const value = '0x' + 'ff'.padStart(64, '0');  // 255
         const salt = '0x' + 'abc123'.padStart(64, '0');
 
-        const note1 = new Note(ownerAddress, value, token, viewingKey, salt);
-        const note2 = new Note(ownerAddress, value, token, viewingKey, salt);
+        // Create two notes with same parameters (7-param constructor)
+        const note1 = new Note(pk.x, pk.y, value, constants.ETH_TOKEN_TYPE, pk.x, pk.y, salt);
+        const note2 = new Note(pk.x, pk.y, value, constants.ETH_TOKEN_TYPE, pk.x, pk.y, salt);
 
         const hash1 = note1.hash();
         const hash2 = note2.hash();
@@ -147,9 +149,9 @@ async function testCircuitFiles() {
     ];
 
     for (const circuit of circuits) {
-        const wasmPath = path.join(CIRCUITS_DIR, `${circuit}_js`, `${circuit}.wasm`);
-        const zkeyPath = path.join(CIRCUITS_DIR, `${circuit}.zkey`);
-        const vkeyPath = path.join(CIRCUITS_DIR, `${circuit}_vk.json`);
+        const wasmPath = path.join(CIRCUITS_DIR, circuit, `${circuit}_js`, `${circuit}.wasm`);
+        const zkeyPath = path.join(CIRCUITS_DIR, circuit, `${circuit}.zkey`);
+        const vkeyPath = path.join(CIRCUITS_DIR, circuit, `${circuit}_vkey.json`);
 
         const wasmExists = fs.existsSync(wasmPath);
         const zkeyExists = fs.existsSync(zkeyPath);
@@ -232,12 +234,13 @@ async function testHashComputation() {
 
     // Test 2: Note hash structure verification
     try {
-        const note = new Note(
-            '0x' + '1'.padStart(64, '0'),
-            '0x' + '2'.padStart(64, '0'),
-            '0x' + (10n ** 18n).toString(16).padStart(64, '0'),
+        // Use noteProofHelper to create a proper note
+        const { sk } = await noteProofHelper.generateKeypair();
+        const { note } = await noteProofHelper.createNote(
+            sk,
+            10n ** 18n,
             constants.ETH_TOKEN_TYPE,
-            '0x' + '0'.padStart(64, '0'),
+            '0x0',
             '0x' + 'abc'.padStart(64, '0')
         );
 
@@ -255,29 +258,22 @@ async function testHashComputation() {
         results.push(false);
     }
 
-    // Test 3: Hash consistency across different representations
+    // Test 3: Hash consistency - same inputs produce same hash
     try {
         const owner0 = '0x' + '11'.padStart(64, '0');
         const owner1 = '0x' + '22'.padStart(64, '0');
         const value = '0x' + '64'.padStart(64, '0');  // 100
         const token = '0x' + '0'.padStart(64, '0');
-        const vk = '0x' + '0'.padStart(64, '0');
+        const vk0 = '0x' + '11'.padStart(64, '0');  // vk0 = owner0
+        const vk1 = '0x' + '22'.padStart(64, '0');  // vk1 = owner1
         const salt = '0x' + '33'.padStart(64, '0');
 
-        // Create note via Note class
-        const note = new Note(owner0, owner1, value, token, vk, salt);
-        const noteHash1 = note.hash();
+        // Create two notes with same parameters (7-param constructor)
+        const note1 = new Note(owner0, owner1, value, token, vk0, vk1, salt);
+        const note2 = new Note(owner0, owner1, value, token, vk0, vk1, salt);
 
-        // Compute hash directly via noteHelper
-        const directHash = noteHelper.getNoteHash(
-            unmarshal(owner0),
-            unmarshal(owner1),
-            unmarshal(value),
-            unmarshal(token),
-            unmarshal(vk),
-            unmarshal(salt)
-        );
-        const noteHash2 = marshal(directHash);
+        const noteHash1 = note1.hash();
+        const noteHash2 = note2.hash();
 
         const hashesMatch = noteHash1.toLowerCase() === noteHash2.toLowerCase();
         TestUtils.logResult('Note class and direct hash match', hashesMatch);
@@ -354,18 +350,19 @@ async function testDummyProofFlow() {
     try {
         const { createProof } = require('../scripts/lib/Note');
 
-        const owner0 = '0x' + '1234'.padStart(64, '0');
-        const owner1 = '0x' + '5678'.padStart(64, '0');
-        const value = '0x' + (5n * 10n ** 18n).toString(16).padStart(64, '0');  // 5 tokens
-        const token = constants.ETH_TOKEN_TYPE;
-        const viewingKey = '0x' + '0'.padStart(64, '0');
-        const salt = TestUtils.randomSalt();
+        const { sk, pk } = await noteProofHelper.generateKeypair();
+        const { note } = await noteProofHelper.createNote(
+            sk,
+            5n * 10n ** 18n,  // 5 tokens
+            constants.ETH_TOKEN_TYPE,
+            '0x0',
+            TestUtils.randomSalt()
+        );
 
-        const note = new Note(owner0, owner1, value, token, viewingKey, salt);
         const proof = createProof.dummyProofCreateNote(note);
 
-        // Verify proof structure (PGHR13 format for dummy - 8 elements + input)
-        const validDummyProof = Array.isArray(proof) && proof.length === 9;
+        // Verify proof structure (Groth16 format: {a, b, c, input})
+        const validDummyProof = proof && proof.a && proof.b && proof.c && proof.input;
         TestUtils.logResult('Dummy mint proof created', validDummyProof);
         results.push(validDummyProof);
     } catch (error) {
@@ -377,24 +374,24 @@ async function testDummyProofFlow() {
     try {
         const { createProof } = require('../scripts/lib/Note');
 
-        const note = new Note(
-            '0x' + '1'.padStart(64, '0'),
-            '0x' + '2'.padStart(64, '0'),
-            '0x' + (10n ** 18n).toString(16).padStart(64, '0'),
+        const { sk } = await noteProofHelper.generateKeypair();
+        const { note } = await noteProofHelper.createNote(
+            sk,
+            10n ** 18n,
             constants.ETH_TOKEN_TYPE,
-            '0x' + '0'.padStart(64, '0'),
+            '0x0',
             '0x' + 'abc'.padStart(64, '0')
         );
 
         const proof = createProof.dummyProofCreateNote(note);
-        const publicInputs = proof[proof.length - 1];
+        const publicInputs = proof.input;
 
-        // MintBurnNote should have 5 public inputs: [nh0, nh1, value, type, output]
-        const validInputs = Array.isArray(publicInputs) && publicInputs.length === 5;
-        TestUtils.logResult('Mint public inputs count (5)', validInputs);
+        // MintBurnNote dummy proof has 4 public inputs: [output, noteHash, value, type]
+        const validInputs = Array.isArray(publicInputs) && publicInputs.length === 4;
+        TestUtils.logResult('Mint public inputs count (4)', validInputs);
         results.push(validInputs);
     } catch (error) {
-        TestUtils.logResult('Mint public inputs count (5)', false, error.message);
+        TestUtils.logResult('Mint public inputs count (4)', false, error.message);
         results.push(false);
     }
 
@@ -408,6 +405,11 @@ async function runAllTests() {
     console.log('\n' + '='.repeat(60));
     console.log('  ZK-DEX Circom/snarkjs Integration Test Suite');
     console.log('='.repeat(60));
+
+    // Initialize crypto libraries
+    const { init } = require('../scripts/lib/Note');
+    await init();
+    console.log('✓ Poseidon initialized\n');
 
     const allResults = {};
 

@@ -49,27 +49,6 @@ async function getOwnerCoords(sk) {
     return [pk.x.toString(), pk.y.toString()];
 }
 
-/**
- * Derive 160-bit ownerAddress from public key
- * address = SHA256(pk.x || pk.y)[96:256] (last 160 bits)
- */
-function getOwnerAddress(pk_x, pk_y) {
-    // Pad pk_x and pk_y to 32 bytes each
-    const xHex = BigInt(pk_x).toString(16).padStart(64, '0');
-    const yHex = BigInt(pk_y).toString(16).padStart(64, '0');
-    const combined = Buffer.from(xHex + yHex, 'hex');
-    const hash = crypto.createHash('sha256').update(combined).digest('hex');
-    // Take last 160 bits (40 hex chars) of hash
-    return hash.slice(-40);
-}
-
-/**
- * Get owner address from secret key (circomlib compatible)
- */
-async function getOwner(sk) {
-    const [pk_x, pk_y] = await getOwnerCoords(sk);
-    return getOwnerAddress(pk_x, pk_y);
-}
 
 /**
  * Format proof for smart contract call
@@ -120,31 +99,24 @@ async function verifyProof(circuitName, proof, publicSignals) {
 }
 
 /**
- * Compute note hash for circuit
- * Hash format: SHA256(ownerAddress(160) || value(256) || type(256) || vk0(128) || vk1(128) || salt(256))
+ * Compute Poseidon note hash for circuit
+ * Hash format: Poseidon(owner0, owner1, value, tokenType, vk0, vk1, salt)
+ * Requires circomlib Poseidon to be initialized first
  */
-function computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt) {
-    // ownerAddress: 20 bytes (160 bits)
-    const addrHex = BigInt('0x' + ownerAddress).toString(16).padStart(40, '0');
-    // value: 32 bytes (256 bits)
-    const valueHex = BigInt(value).toString(16).padStart(64, '0');
-    // tokenType: 32 bytes (256 bits)
-    const typeHex = BigInt(tokenType).toString(16).padStart(64, '0');
-    // vk0: 16 bytes (128 bits)
-    const vk0Hex = BigInt(vk0).toString(16).padStart(32, '0');
-    // vk1: 16 bytes (128 bits)
-    const vk1Hex = BigInt(vk1).toString(16).padStart(32, '0');
-    // salt: 32 bytes (256 bits)
-    const saltHex = BigInt(salt).toString(16).padStart(64, '0');
+async function computeNoteHash(owner0, owner1, value, tokenType, vk0, vk1, salt) {
+    const poseidon = await circomlibBabyJub.getPoseidon();
 
-    const combined = addrHex + valueHex + typeHex + vk0Hex + vk1Hex + saltHex;
-    const hash = crypto.createHash('sha256').update(Buffer.from(combined, 'hex')).digest('hex');
+    const hash = poseidon([
+        BigInt(owner0),
+        BigInt(owner1),
+        BigInt(value),
+        BigInt(tokenType),
+        BigInt(vk0),
+        BigInt(vk1),
+        BigInt(salt)
+    ]);
 
-    // Split into two 128-bit parts
-    const nh0 = BigInt('0x' + hash.slice(0, 32)).toString();
-    const nh1 = BigInt('0x' + hash.slice(32)).toString();
-
-    return [nh0, nh1];
+    return poseidon.F.toString(hash);
 }
 
 /**
@@ -160,35 +132,32 @@ async function testMintBurnNote() {
         // Generate valid secret key and derive public key
         const sk = await getSk();
         const [pk_x, pk_y] = await getOwnerCoords(sk);
-        const ownerAddress = getOwnerAddress(pk_x, pk_y);
 
         console.log('Generated keys:');
         console.log('  sk:', sk.toString().slice(0, 20) + '...');
         console.log('  pk_x:', pk_x.slice(0, 20) + '...');
         console.log('  pk_y:', pk_y.slice(0, 20) + '...');
-        console.log('  ownerAddress:', ownerAddress);
 
         // Note parameters
         const value = '1000000000000000000';  // 1 token
         const tokenType = '0';  // ETH
-        const vk0 = '0';
-        const vk1 = '0';
+        const vk0 = pk_x;  // For regular notes: vk0 = pkX
+        const vk1 = pk_y;  // For regular notes: vk1 = pkY
         const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
 
-        // Compute correct note hash
-        const [nh0, nh1] = computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt);
-        console.log('  nh0:', nh0.slice(0, 20) + '...');
-        console.log('  nh1:', nh1.slice(0, 20) + '...');
+        // Compute correct Poseidon note hash
+        const noteHash = await computeNoteHash(pk_x, pk_y, value, tokenType, vk0, vk1, salt);
+        console.log('  noteHash:', noteHash.slice(0, 20) + '...');
 
         const inputs = {
             // Public inputs
-            nh0,
-            nh1,
+            noteHash,
             value,
             tokenType,
 
             // Private inputs
-            ownerAddress: BigInt('0x' + ownerAddress).toString(),
+            owner0: pk_x,
+            owner1: pk_y,
             vk0,
             vk1,
             salt,
@@ -224,8 +193,7 @@ async function testMintBurnNote() {
         console.error('Test failed with error:', error.message);
         if (error.message.includes('Assert Failed')) {
             console.log('\nNote: This error indicates the circuit constraints were not satisfied.');
-            console.log('This is expected when using dummy hash values.');
-            console.log('The ownership proof (sk -> pk) verification passed, but the hash check failed.');
+            console.log('Check that the Poseidon hash calculation matches the circuit implementation.');
         }
         return false;
     }
@@ -243,22 +211,24 @@ async function testMakeOrder() {
 
         const sk = await getSk();
         const [pk_x, pk_y] = await getOwnerCoords(sk);
-        const ownerAddress = getOwnerAddress(pk_x, pk_y);
 
         const value = '500000000000000000000';  // 500 tokens
         const tokenType = '1';  // DAI
-        const vk0 = '0';
-        const vk1 = '0';
+        const vk0 = pk_x;  // For regular notes: vk0 = pkX
+        const vk1 = pk_y;  // For regular notes: vk1 = pkY
         const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
 
-        // Compute correct note hash
-        const [nh0, nh1] = computeNoteHash(ownerAddress, value, tokenType, vk0, vk1, salt);
+        // Compute correct Poseidon note hash
+        const noteHash = await computeNoteHash(pk_x, pk_y, value, tokenType, vk0, vk1, salt);
 
         const inputs = {
-            nh0,
-            nh1,
+            // Public inputs
+            noteHash,
             tokenType,
-            ownerAddress: BigInt('0x' + ownerAddress).toString(),
+
+            // Private inputs
+            owner0: pk_x,
+            owner1: pk_y,
             value,
             vk0,
             vk1,
@@ -307,9 +277,9 @@ async function testCircuitFilesExist() {
     let allExist = true;
 
     for (const circuit of circuits) {
-        const wasmPath = path.join(CIRCUITS_DIR, `${circuit}_js`, `${circuit}.wasm`);
-        const zkeyPath = path.join(CIRCUITS_DIR, `${circuit}.zkey`);
-        const vkeyPath = path.join(CIRCUITS_DIR, `${circuit}_vk.json`);
+        const wasmPath = path.join(CIRCUITS_DIR, circuit, `${circuit}_js`, `${circuit}.wasm`);
+        const zkeyPath = path.join(CIRCUITS_DIR, circuit, `${circuit}.zkey`);
+        const vkeyPath = path.join(CIRCUITS_DIR, circuit, `${circuit}_vkey.json`);
 
         const wasmExists = fs.existsSync(wasmPath);
         const zkeyExists = fs.existsSync(zkeyPath);

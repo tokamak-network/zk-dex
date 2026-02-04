@@ -232,7 +232,7 @@ async function testMintProofGeneration() {
         assert(Array.isArray(proof.a) && proof.a.length === 2, 'Proof.a should be [2]');
         assert(Array.isArray(proof.b) && proof.b.length === 2, 'Proof.b should be [2][2]');
         assert(Array.isArray(proof.c) && proof.c.length === 2, 'Proof.c should be [2]');
-        assert(proof.input.length === 5, 'Proof should have 5 public inputs');
+        assert(proof.input.length === 4, 'Proof should have 4 public inputs (output, noteHash, value, tokenType)');
     });
 
     await runTest('Verify mint proof locally', async () => {
@@ -316,7 +316,7 @@ async function testTransferProofGeneration() {
         );
 
         assert(proof, 'Transfer proof should exist');
-        assert(proof.input.length === 9, 'Transfer proof should have 9 public inputs');
+        assert(proof.input.length === 5, 'Transfer proof should have 5 public inputs (output, oldNote0Hash, oldNote1Hash, newNoteHash, changeNoteHash)');
 
         const isValid = await noteProofHelper.verifyProof('transfer_note', proof, proof.input);
         assert(isValid === true, 'Transfer proof should be valid');
@@ -341,7 +341,7 @@ async function testMakeOrderProofGeneration() {
         const proof = await noteProofHelper.generateMakeOrderProof(makerNote, sk);
 
         assert(proof, 'MakeOrder proof should exist');
-        assert(proof.input.length === 4, 'MakeOrder proof should have 4 public inputs');
+        assert(proof.input.length === 3, 'MakeOrder proof should have 3 public inputs (output, makerNoteHash, makerToken)');
 
         const isValid = await noteProofHelper.verifyProof('make_order', proof, proof.input);
         assert(isValid === true, 'MakeOrder proof should be valid');
@@ -389,7 +389,7 @@ async function testTakeOrderProofGeneration() {
         const proof = await noteProofHelper.generateTakeOrderProof(parentNote, stakeNote, takerSk);
 
         assert(proof, 'TakeOrder proof should exist');
-        assert(proof.input.length === 8, 'TakeOrder proof should have 8 public inputs (7 inputs + 1 output)');
+        assert(proof.input.length === 6, 'TakeOrder proof should have 6 public inputs (output, parentHash, parentToken, stakeHash, stakeParentHash, stakeToken)');
 
         const isValid = await noteProofHelper.verifyProof('take_order', proof, proof.input);
         assert(isValid === true, 'TakeOrder proof should be valid');
@@ -433,7 +433,7 @@ async function testConvertProofGeneration() {
         const proof = await noteProofHelper.generateConvertProof(smartNote, originNote, newNote, userSk);
 
         assert(proof, 'Convert proof should exist');
-        assert(proof.input.length === 7, 'Convert proof should have 7 public inputs');
+        assert(proof.input.length === 4, 'Convert proof should have 4 public inputs (output, smartNoteHash, originNoteHash, convertedNoteHash)');
 
         const isValid = await noteProofHelper.verifyProof('convert_note', proof, proof.input);
         assert(isValid === true, 'Convert proof should be valid');
@@ -447,9 +447,9 @@ async function testSettleOrderProofGeneration() {
 
     await runTest('Generate settle order proof', async () => {
         // Use same scenario as production test
-        // Price = 10 (unscaled, meaning "10 DAI per ETH")
+        // Price = 10 * 10^18 (scaled, meaning "10 DAI per ETH")
         const SCALING = 10n ** 18n;
-        const PRICE = 10n;
+        const PRICE = 10n * SCALING;
         const MAKER_VALUE = 2n * SCALING; // 2 ETH
         const TAKER_VALUE = 10n * SCALING; // 10 DAI
 
@@ -482,9 +482,10 @@ async function testSettleOrderProofGeneration() {
             generateSalt()
         );
 
-        // Circuit calculations with PRICE = 10:
-        // o1ValueOverPrice = q1 = takerValue / PRICE = 10 * 10^18 / 10 = 10^18 (1 ETH)
-        // o0ValuePrice = q0 = (makerValue * PRICE) / 10^18 = (2 * 10^18 * 10) / 10^18 = 20
+        // Circuit calculations with PRICE = 10 * 10^18:
+        // q1 = takerValue / PRICE = (10 * 10^18) / (10 * 10^18) = 1
+        // o1ValueOverPrice = q1 * 10^18 = 1 * 10^18 = 10^18 (1 ETH)
+        // q0 = (makerValue * PRICE) / 10^18 = (2 * 10^18 * 10 * 10^18) / 10^18 = 20 * 10^18
         //
         // Comparison: o0Value >= o1ValueOverPrice? 2*10^18 >= 10^18? YES! bit = 1
         //
@@ -493,7 +494,8 @@ async function testSettleOrderProofGeneration() {
         // - payment = o1Value = 10 * 10^18 (10 DAI for maker)
         // - change = o0Value - o1ValueOverPrice = 2*10^18 - 10^18 = 10^18 (1 ETH change)
 
-        const o1ValueOverPrice = TAKER_VALUE / PRICE; // 10^18 (1 ETH)
+        const q1 = TAKER_VALUE / PRICE; // 1
+        const o1ValueOverPrice = q1 * SCALING; // 10^18 (1 ETH)
         const rewardValue = o1ValueOverPrice;
         const paymentValue = TAKER_VALUE; // All DAI goes to maker
         const changeValue = MAKER_VALUE - o1ValueOverPrice; // 1 ETH change
@@ -535,7 +537,7 @@ async function testSettleOrderProofGeneration() {
         );
 
         assert(proof, 'Settle order proof should exist');
-        assert(proof.input.length === 19, 'Settle order proof should have 19 public inputs (18 inputs + 1 output)');
+        assert(proof.input.length === 14, 'Settle order proof should have 14 public inputs');
 
         const isValid = await noteProofHelper.verifyProof('settle_order', proof, proof.input);
         assert(isValid === true, 'Settle order proof should be valid');
