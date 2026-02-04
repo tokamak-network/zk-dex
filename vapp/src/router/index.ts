@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { useAccountStore } from '@/stores/account'
 
 import LoginPage from '@/views/LoginPage.vue'
 import MainPage from '@/views/MainPage.vue'
@@ -80,23 +79,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeResolve((to, _from, next) => {
-  const accountStore = useAccountStore()
-
-  // Load accounts from localStorage if not already loaded
-  if (accountStore.accounts.length === 0) {
-    accountStore.loadAccounts()
-  }
-
-  // Allow access if at least one account exists (even if locked)
-  // Users can unlock accounts in the dashboard
-  const hasAccounts = accountStore.accounts.length > 0
-
-  if (!hasAccounts && to.path !== '/login') {
-    next({ path: '/login' })
-  } else {
-    next()
-  }
-})
+// Navigation guard removed - users can create ZK accounts in the dashboard
+// MetaMask connection is handled in LoginPage
 
 export default router

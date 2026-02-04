@@ -7,21 +7,33 @@
       <p class="control">
         <a class="button is-static" style="width: 140px">To</a>
       </p>
-      <p class="control is-expanded">
+      <div class="control is-expanded">
         <div class="select is-fullwidth">
           <select v-model="selectedAccountAddress">
-            <option value="">Select account...</option>
+            <option v-if="accounts.length === 0" value="">No accounts</option>
             <option v-for="acc in accounts" :key="acc.address" :value="acc.address">{{ fmt.formatZkPk(acc.publicKey) }}</option>
+            <option value="__create_new__">+ Create New Account</option>
           </select>
         </div>
-      </p>
+      </div>
     </div>
     <div class="field has-addons">
       <p class="control">
         <a class="button is-static" style="width: 140px">Amount</a>
       </p>
       <p class="control is-expanded">
-        <input style="width: 100%; text-align: right;" class="input" @keypress="onlyNumber" v-model="amount">
+        <input
+          style="width: 100%; text-align: right;"
+          class="input"
+          :class="{ 'amount-disabled': !selectedAccount }"
+          type="text"
+          inputmode="decimal"
+          @keypress="onlyNumber"
+          @input="sanitizeAmount"
+          v-model="amount"
+          :disabled="!selectedAccount"
+          :placeholder="selectedAccount ? '0.0' : 'Select account first'"
+        >
       </p>
     </div>
     <div style="display: flex; justify-content: flex-end">
@@ -51,11 +63,35 @@
         </div>
       </div>
     </o-modal>
+    <!-- Create New Account modal -->
+    <o-modal v-model:active="showCreateAccountModal">
+      <div class="box" style="width: 400px;">
+        <p class="title is-5">Create New ZK Account</p>
+        <p class="subtitle is-6">This passphrase encrypts your private key locally</p>
+        <div class="field">
+          <label class="label">Passphrase</label>
+          <p class="control">
+            <input class="input" type="password" v-model="newAccountPassphrase" placeholder="Enter passphrase">
+          </p>
+        </div>
+        <div class="field">
+          <label class="label">Confirm Passphrase</label>
+          <p class="control">
+            <input class="input" type="password" v-model="newAccountPassphraseConfirm" placeholder="Confirm passphrase" @keyup.enter="createNewAccount">
+          </p>
+        </div>
+        <p v-if="createAccountError" class="help is-danger">{{ createAccountError }}</p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button class="button" @click="cancelCreateAccount">Cancel</button>
+          <button class="button action-button" :class="{ 'is-loading': creatingAccount }" @click="createNewAccount" :disabled="!canCreateAccount">Create</button>
+        </div>
+      </div>
+    </o-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Contract, parseEther } from 'ethers'
 import { useWeb3Store } from '@/stores/web3'
@@ -74,6 +110,7 @@ const fmt = useFormatters()
 const props = withDefaults(defineProps<{
   accounts: Account[]
   token?: string
+  initialAccountAddress?: string  // Auto-select this account and show unlock modal
 }>(), {
   token: 'ETH'
 })
@@ -98,6 +135,13 @@ const showPassphraseModal = ref(false)
 const unlockedSecretKey = ref('')
 const proofProgress = ref('')
 
+// Create new account modal
+const showCreateAccountModal = ref(false)
+const newAccountPassphrase = ref('')
+const newAccountPassphraseConfirm = ref('')
+const creatingAccount = ref(false)
+const createAccountError = ref('')
+
 const ETH_TOKEN_TYPE = '0x0'
 const DAI_TOKEN_TYPE = '0x1'
 
@@ -106,8 +150,59 @@ const selectedAccount = computed(() => {
 })
 
 const canCreate = computed(() => {
-  return selectedAccountAddress.value !== '' && amount.value !== ''
+  return selectedAccountAddress.value !== '' && selectedAccountAddress.value !== '__create_new__' && amount.value !== ''
 })
+
+const canCreateAccount = computed(() => {
+  return newAccountPassphrase.value.length > 0 &&
+         newAccountPassphrase.value === newAccountPassphraseConfirm.value
+})
+
+// Watch for "Create New Account" selection
+watch(selectedAccountAddress, (newValue) => {
+  if (newValue === '__create_new__') {
+    showCreateAccountModal.value = true
+  }
+})
+
+// Auto-select first account if available
+onMounted(() => {
+  if (props.accounts.length > 0) {
+    selectedAccountAddress.value = props.accounts[0].address
+  }
+})
+
+function cancelCreateAccount() {
+  showCreateAccountModal.value = false
+  selectedAccountAddress.value = ''
+  newAccountPassphrase.value = ''
+  newAccountPassphraseConfirm.value = ''
+  createAccountError.value = ''
+}
+
+async function createNewAccount() {
+  if (!canCreateAccount.value) return
+
+  creatingAccount.value = true
+  createAccountError.value = ''
+
+  try {
+    const newAccount = await accountStore.createAccountLocal(newAccountPassphrase.value)
+
+    // Close modal and select the new account
+    showCreateAccountModal.value = false
+    selectedAccountAddress.value = newAccount.address
+
+    // Clear form
+    newAccountPassphrase.value = ''
+    newAccountPassphraseConfirm.value = ''
+  } catch (err) {
+    logger.error('Failed to create account:', err)
+    createAccountError.value = 'Failed to create account: ' + (err as Error).message
+  } finally {
+    creatingAccount.value = false
+  }
+}
 
 function onlyNumber(event: KeyboardEvent) {
   const char = event.key
@@ -121,6 +216,19 @@ function onlyNumber(event: KeyboardEvent) {
   }
   if (char < '0' || char > '9') {
     event.preventDefault()
+  }
+}
+
+function sanitizeAmount() {
+  // Remove any non-numeric characters except decimal point
+  let sanitized = amount.value.replace(/[^0-9.]/g, '')
+  // Ensure only one decimal point
+  const parts = sanitized.split('.')
+  if (parts.length > 2) {
+    sanitized = parts[0] + '.' + parts.slice(1).join('')
+  }
+  if (sanitized !== amount.value) {
+    amount.value = sanitized
   }
 }
 
@@ -305,3 +413,16 @@ async function updateDaiAmount() {
   }
 }
 </script>
+
+<style scoped>
+.amount-disabled {
+  background-color: transparent !important;
+  color: #ccc !important;
+  cursor: not-allowed;
+  border-color: #ddd !important;
+}
+
+.amount-disabled::placeholder {
+  color: #ccc;
+}
+</style>

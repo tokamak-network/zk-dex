@@ -15,7 +15,7 @@
       >Note List</button>
     </div>
 
-    <NoteTree v-if="noteViewTab === 'tree'" :notes="filteredNotes" :currentAccount="web3Account" @issue-note="handleIssueNote" @transfer-note="handleTransferNote" @redeem-note="handleRedeemNote" />
+    <NoteTree v-if="noteViewTab === 'tree'" :notes="filteredNotes" :currentAccount="web3Account" :accounts="accountStore.accounts" @issue-note="handleIssueNote" @transfer-note="handleTransferNote" @redeem-note="handleRedeemNote" />
     <NoteList v-else :notes="filteredNotes" @selectNote="handleSelectNote" />
 
     <NoteListTransferHistory :transferNotes="noteStore.transferNotes || []" />
@@ -30,7 +30,7 @@
           <button class="modal-close" @click="closeModal">&times;</button>
         </div>
         <div class="modal-body">
-          <NoteMint v-if="activeModal === 'mint'" :accounts="accountStore.accounts" @complete="closeModal" />
+          <NoteMint v-if="activeModal === 'mint'" :accounts="accountStore.accounts" :initial-account-address="selectedAccountForMint" @complete="closeModal" />
           <NoteTransfer v-else-if="activeModal === 'transfer'" ref="transferRef" @complete="closeModal" />
           <NoteLiquidate v-else-if="activeModal === 'redeem'" ref="redeemRef" @complete="closeModal" />
         </div>
@@ -64,6 +64,7 @@ const noteViewTab = ref<'tree' | 'list'>('tree')
 
 // Modal state
 const activeModal = ref<'mint' | 'transfer' | 'redeem' | null>(null)
+const selectedAccountForMint = ref<string>('')
 const transferRef = ref<InstanceType<typeof NoteTransfer> | null>(null)
 const redeemRef = ref<InstanceType<typeof NoteLiquidate> | null>(null)
 
@@ -146,14 +147,19 @@ interface SelectedNoteData {
 
 function closeModal() {
   activeModal.value = null
+  selectedAccountForMint.value = ''
   // Refresh notes after action completes
   noteStore.fetchAllNoteEvents()
   noteStore.decryptAndDisplayNotes()
 }
 
-function handleIssueNote(_createdBy: string) {
-  // Open mint modal
+function handleIssueNote(createdBy: string) {
+  console.log('[Dashboard] handleIssueNote received:', createdBy)
+  // Store the account address and open mint modal
+  selectedAccountForMint.value = createdBy
+  console.log('[Dashboard] selectedAccountForMint set to:', selectedAccountForMint.value)
   activeModal.value = 'mint'
+  console.log('[Dashboard] activeModal set to:', activeModal.value)
 }
 
 async function handleTransferNote(noteData: SelectedNoteData) {

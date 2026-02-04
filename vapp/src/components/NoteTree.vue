@@ -17,8 +17,21 @@
         {{ masked ? '&#x1F512;' : '&#x1F513;' }}
       </button>
     </div>
-    <div v-if="treeData.roots.length === 0" style="clear: both; padding: 20px; color: #999; text-align: center;">
-      No note history found.
+    <div v-if="treeData.roots.length === 0" class="empty-tree-state">
+      <div class="empty-message">No notes yet. Start by issuing a note:</div>
+      <div v-if="props.currentAccount" class="ethereum-account-section">
+        <div class="eth-account-label">Connected Ethereum Account:</div>
+        <div class="eth-account-address">{{ props.currentAccount }}</div>
+        <button class="issue-note-button" @click="handleIssueButtonClick">
+          + Issue Note
+        </button>
+        <div class="helper-text">
+          You'll select a ZK account and unlock it in the next step
+        </div>
+      </div>
+      <div v-else class="no-accounts-message">
+        Please connect MetaMask to issue notes
+      </div>
     </div>
     <div v-else class="tree-container" @click="closeActionMenu">
       <!-- SVG: viewBox defines coordinate system with pan offset, size controlled by CSS -->
@@ -128,9 +141,15 @@ import { useFormatters } from '@/composables/useFormatters'
 import { useNoteTreeLayout, CREATOR_LABEL_WIDTH } from '@/composables/useNoteTreeLayout'
 import { logger } from '@/lib/logger'
 
+interface Account {
+  address: string
+  publicKey?: string
+}
+
 const props = defineProps<{
   notes: Note[]
   currentAccount?: string  // Connected MetaMask account
+  accounts?: Account[]     // All available accounts for empty state
 }>()
 
 const emit = defineEmits<{
@@ -218,16 +237,31 @@ function handleMouseLeave() {
   isDragging.value = false
 }
 
+function handleIssueButtonClick() {
+  console.log('[NoteTree] Issue button clicked')
+  // Emit with empty string - parent will show all ZK accounts
+  emit('issueNote', '')
+}
+
 function handleCreatorClick(createdBy: string) {
-  if (masked.value) return
-  if (isMyAccount(createdBy)) {
-    emit('issueNote', createdBy)
+  console.log('[NoteTree] handleCreatorClick called with:', createdBy)
+  console.log('[NoteTree] masked.value:', masked.value)
+  if (masked.value) {
+    console.log('[NoteTree] Masked mode, skipping')
+    return
   }
+  // Always emit the event - let the parent component handle account selection
+  console.log('[NoteTree] Emitting issueNote event')
+  emit('issueNote', createdBy)
 }
 
 function isMyAccount(address: string): boolean {
   if (!props.currentAccount) return false
-  return address.toLowerCase() === props.currentAccount.toLowerCase()
+  // Normalize addresses: remove 0x prefix and compare in lowercase
+  const normalizedAddress = address.toLowerCase().replace(/^0x/, '')
+  const normalizedCurrent = props.currentAccount.toLowerCase().replace(/^0x/, '')
+  console.log('[NoteTree] Comparing addresses:', { address: normalizedAddress, current: normalizedCurrent, match: normalizedAddress === normalizedCurrent })
+  return normalizedAddress === normalizedCurrent
 }
 
 function handleNoteSelect(payload: SelectedNote & { event: MouseEvent }) {
@@ -662,5 +696,85 @@ function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
   display: flex;
   align-items: center;
   font-style: italic;
+}
+
+.empty-tree-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-message {
+  color: #666;
+  font-size: 1.1em;
+  margin-bottom: 30px;
+  font-weight: 500;
+}
+
+.ethereum-account-section {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 30px;
+  background: #f8f9fa;
+  border: 2px solid #e3f2fd;
+  border-radius: 12px;
+}
+
+.eth-account-label {
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.eth-account-address {
+  font-family: monospace;
+  font-size: 1em;
+  color: #1976d2;
+  font-weight: 600;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  word-break: break-all;
+}
+
+.issue-note-button {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 1em;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
+.issue-note-button:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+}
+
+.issue-note-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+}
+
+.helper-text {
+  margin-top: 12px;
+  color: #888;
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.no-accounts-message {
+  margin-top: 20px;
+  color: #999;
+  font-style: italic;
+  font-size: 1em;
 }
 </style>

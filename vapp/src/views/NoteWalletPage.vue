@@ -153,7 +153,7 @@
       </div>
 
       <div v-if="activeTab === 'tree'">
-        <NoteTree :notes="noteStore.notes" :currentAccount="web3Account" @issue-note="handleIssueNote" @transfer-note="handleTransferNote" @redeem-note="handleRedeemNote" />
+        <NoteTree :notes="noteStore.notes" :currentAccount="web3Account" :accounts="accountStore.accounts" @issue-note="handleIssueNote" @transfer-note="handleTransferNote" @redeem-note="handleRedeemNote" />
       </div>
 
       <div v-else-if="activeTab === 'list'">
@@ -161,7 +161,7 @@
       </div>
 
       <div v-else-if="activeTab === 'issue'">
-        <NoteMint :accounts="accountStore.accounts" />
+        <NoteMint :accounts="accountStore.accounts" :initial-account-address="selectedAccountForMint" />
       </div>
 
       <div v-else-if="activeTab === 'transfer'">
@@ -214,6 +214,7 @@ const web3Store = useWeb3Store()
 const fmt = useFormatters()
 
 const activeTab = ref<'tree' | 'list' | 'issue' | 'transfer' | 'redeem'>('tree')
+const selectedAccountForMint = ref<string>('')
 const web3Account = computed(() => web3Store.account)
 const noteLiquidateRef = ref<InstanceType<typeof NoteLiquidate> | null>(null)
 const noteTransferRef = ref<InstanceType<typeof NoteTransfer> | null>(null)
@@ -268,9 +269,17 @@ function handleSelectNoteForRedeem(note: Note) {
 }
 
 function handleIssueNote(createdBy: string) {
-  // Switch to issue tab when clicking creator in tree
+  // Store the account address and switch to issue tab
+  selectedAccountForMint.value = createdBy
   activeTab.value = 'issue'
 }
+
+// Clear selectedAccountForMint when switching away from issue tab
+watch(activeTab, (newTab) => {
+  if (newTab !== 'issue') {
+    selectedAccountForMint.value = ''
+  }
+})
 
 function handleTransferNote(noteData: SelectedNoteData) {
   console.log('[NoteWalletPage] handleTransferNote called with hash:', noteData.hash)
