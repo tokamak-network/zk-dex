@@ -1,7 +1,7 @@
 <template>
   <div class="box">
     <div>
-      <p style="margin-left: 10px; margin-bottom: 40px;">Issue {{ token }} Note</p>
+      <p style="margin-left: 10px; margin-bottom: 40px;">Issue Note</p>
     </div>
     <div class="field has-addons">
       <p class="control">
@@ -13,6 +13,19 @@
             <option v-if="accounts.length === 0" value="">No accounts</option>
             <option v-for="acc in accounts" :key="acc.address" :value="acc.address">{{ fmt.formatZkPk(acc.publicKey) }}</option>
             <option value="__create_new__">+ Create New Account</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field has-addons">
+      <p class="control">
+        <a class="button is-static" style="width: 140px">Token</a>
+      </p>
+      <div class="control is-expanded">
+        <div class="select is-fullwidth">
+          <select v-model="selectedToken">
+            <option value="ETH">ETH</option>
+            <option value="DAI">DAI</option>
           </select>
         </div>
       </div>
@@ -129,6 +142,7 @@ const orderStore = useOrderStore()
 const loading = ref(false)
 const unlocking = ref(false)
 const selectedAccountAddress = ref('')
+const selectedToken = ref(props.token || 'ETH')
 const passphrase = ref('')
 const amount = ref('')
 const showPassphraseModal = ref(false)
@@ -328,7 +342,7 @@ async function doCreateNote() {
   loading.value = true
 
   try {
-    const tokenType = props.token === 'DAI' ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
+    const tokenType = selectedToken.value === 'DAI' ? DAI_TOKEN_TYPE : ETH_TOKEN_TYPE
 
     // Convert ETH/DAI amount to wei
     const amountInWei = parseEther(amount.value).toString()
@@ -358,7 +372,7 @@ async function doCreateNote() {
     const mintContract = new Contract(contractStore.dexAddress, mintAbi, web3Store.signer!)
 
     let tx
-    if (props.token === 'DAI') {
+    if (selectedToken.value === 'DAI') {
       const approveTx = await contractStore.daiContract!.approve(
         contractStore.dexAddress,
         parseEther(amount.value)

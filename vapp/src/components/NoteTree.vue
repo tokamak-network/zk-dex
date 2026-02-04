@@ -38,6 +38,7 @@
       <svg class="tree-svg"
            :class="{ dragging: isDragging }"
            :viewBox="`${panX} ${panY} ${adjustedWidth / zoomLevel} ${totalHeight / zoomLevel}`"
+           :style="{ height: svgHeight + 'px' }"
            preserveAspectRatio="xMinYMin meet"
            @mousedown="handleMouseDown"
            @mousemove="handleMouseMove"
@@ -486,6 +487,14 @@ const adjustedWidth = computed(() => {
   return totalWidth.value + 335
 })
 
+// Dynamic SVG height: use content height directly (no min to avoid scaling up)
+const MAX_SVG_HEIGHT = 500
+const svgHeight = computed(() => {
+  // Use content height directly - no minimum to prevent unwanted scaling
+  const contentHeight = totalHeight.value * zoomLevel.value
+  return Math.min(MAX_SVG_HEIGHT, contentHeight)
+})
+
 // Calculate redeemer label X position for a group (aligned horizontally)
 function getGroupRedeemerX(group: LayoutGroup): number {
   // Find the rightmost node X coordinate
@@ -511,8 +520,7 @@ function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
 <style scoped>
 .tree-box {
   padding-top: 15px;
-  overflow: hidden;  /* Prevent any content from affecting parent layout */
-  contain: layout;   /* CSS containment for layout isolation */
+  overflow: visible;
 }
 
 .tree-header {
@@ -552,8 +560,7 @@ function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
 }
 
 .tree-container {
-  overflow: auto;
-  max-height: 600px;
+  overflow: visible;
   max-width: 100%;  /* Constrain width to parent */
   padding: 10px 0;
   font-size: 0.85em;
@@ -565,7 +572,7 @@ function getRedeemerLinkPath(node: LayoutNode, labelX: number): string {
 .tree-svg {
   display: block;
   width: 100%;
-  height: 500px;  /* Fixed height for the SVG viewport */
+  /* Height is set dynamically via inline style based on content */
   cursor: grab;
 }
 
