@@ -19,6 +19,7 @@ CIRCUITS=(
     "convert_note"
     "transfer_note"
     "settle_order"
+    "private_voting"
 )
 
 compile_circuit() {
