@@ -14,6 +14,7 @@ import NoteConvertPage from '@/views/NoteConvertPage.vue'
 import HistoryNoteTransferPage from '@/views/HistoryNoteTransferPage.vue'
 import HistoryOrderPage from '@/views/HistoryOrderPage.vue'
 import ZAccountsPage from '@/views/ZAccountsPage.vue'
+import TimeLockPage from '@/views/TimeLockPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -63,6 +64,10 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'zaccounts',
             component: ZAccountsPage,
+          },
+          {
+            path: 'timelock',
+            component: TimeLockPage,
           },
         ],
       },

@@ -18,12 +18,14 @@ get_contract_name() {
         "convert_note") echo "ConvertNote" ;;
         "transfer_note") echo "TransferNote" ;;
         "settle_order") echo "SettleOrder" ;;
+        "create_timelock") echo "CreateTimeLock" ;;
+        "spend_timelock") echo "SpendTimeLock" ;;
         *) echo "$1" ;;
     esac
 }
 
 # List of circuits
-CIRCUITS="mint_burn_note make_order take_order convert_note transfer_note settle_order"
+CIRCUITS="mint_burn_note make_order take_order convert_note transfer_note settle_order create_timelock spend_timelock"
 
 generate_verifier() {
     local circuit=$1

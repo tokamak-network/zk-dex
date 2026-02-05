@@ -20,6 +20,8 @@ CIRCUITS=(
     "transfer_note"
     "settle_order"
     "private_voting"
+    "create_timelock"
+    "spend_timelock"
 )
 
 compile_circuit() {

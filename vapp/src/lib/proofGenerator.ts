@@ -17,6 +17,8 @@ export type CircuitName =
   | 'take_order'
   | 'settle_order'
   | 'convert_note'
+  | 'create_timelock'
+  | 'spend_timelock'
 
 export interface ProgressCallback {
   (stage: string, progress: number, message?: string): void

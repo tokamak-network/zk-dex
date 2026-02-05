@@ -39,6 +39,21 @@ export interface SmartNoteData {
 }
 
 /**
+ * Time-lock note data interface (8 inputs)
+ */
+export interface TimeLockNoteData {
+  pkX: string
+  pkY: string
+  value: string | bigint
+  tokenType: string | bigint
+  salt: string | bigint
+  unlockTime: string | bigint
+  lockType: string | bigint
+  vk: string | bigint
+  noteHash?: string
+}
+
+/**
  * Formatted circuit inputs (all values as strings)
  */
 export type CircuitInputs = Record<string, string>
@@ -141,6 +156,24 @@ export async function computeSmartNoteHash(note: SmartNoteData): Promise<string>
     hi,       // vk0 = owner0
     lo,       // vk1 = owner1
     hexToBigInt(note.salt)
+  ])
+  return hash.toString()
+}
+
+/**
+ * Compute time-lock note hash using Poseidon (8 inputs)
+ * hash = Poseidon(pkX, pkY, value, tokenType, salt, unlockTime, lockType, vk)
+ */
+export async function computeTimeLockNoteHash(note: TimeLockNoteData): Promise<string> {
+  const hash = await poseidonHash([
+    hexToBigInt(note.pkX),
+    hexToBigInt(note.pkY),
+    hexToBigInt(note.value),
+    hexToBigInt(note.tokenType),
+    hexToBigInt(note.salt),
+    hexToBigInt(note.unlockTime),
+    hexToBigInt(note.lockType),
+    hexToBigInt(note.vk)
   ])
   return hash.toString()
 }
