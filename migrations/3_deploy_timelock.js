@@ -34,13 +34,15 @@ module.exports = async function (deployer, network) {
   console.log(`   SpendTimeLockVerifier address: ${spendTimeLockVerifier.address}`);
 
   // Deploy TimeLock contract
+  // Note: mintBurnNoteVerifier is used for both requestVerifier and liquidateNoteVerifier
   await deployer.deploy(
     TimeLock,
     isDevelopment,
     mockDai.address,
-    mintBurnNoteVerifier.address,
+    mintBurnNoteVerifier.address,    // requestVerifier (for ZkDaiBase)
     createTimeLockVerifier.address,
-    spendTimeLockVerifier.address
+    spendTimeLockVerifier.address,
+    mintBurnNoteVerifier.address     // liquidateNoteVerifier
   );
 
   const timeLock = await TimeLock.deployed();

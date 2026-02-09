@@ -1,7 +1,6 @@
 pragma circom 2.1.0;
 
 include "../utils/poseidon/poseidon_timelock_note.circom";
-include "../utils/babyjubjub/proof_of_ownership.circom";
 
 // CreateTimeLock Circuit
 // Creates a time-locked note that can only be spent after unlockTime
@@ -12,13 +11,17 @@ include "../utils/babyjubjub/proof_of_ownership.circom";
 // - Confidential investment lockups
 //
 // Proves:
-// 1. Ownership: sk corresponds to the note's public key (pkX, pkY)
-// 2. Hash: PoseidonTimeLockNote(...) == noteHash
+// 1. Hash: PoseidonTimeLockNote(...) == noteHash
+//
+// Note: No ownership proof required for creation because:
+// - The depositor proves they have funds by actually depositing (contract-level)
+// - The recipient is specified by pkX/pkY in the note hash
+// - Only the recipient (who knows sk for pkX/pkY) can spend the note later
 //
 // Public inputs: [noteHash, value, tokenType, unlockTime]
-// Private inputs: [pkX, pkY, salt, sk]
+// Private inputs: [pkX, pkY, salt]
 //
-// ~50K constraints (estimated)
+// ~30K constraints (estimated)
 template CreateTimeLock() {
     // Public inputs
     signal input noteHash;      // Time-lock note hash
@@ -27,10 +30,9 @@ template CreateTimeLock() {
     signal input unlockTime;    // Unix timestamp for unlock
 
     // Private inputs
-    signal input pkX;           // Owner public key X
-    signal input pkY;           // Owner public key Y
+    signal input pkX;           // Recipient public key X
+    signal input pkY;           // Recipient public key Y
     signal input salt;          // Salt for uniqueness
-    signal input sk;            // Secret key for ownership proof
 
     // Output
     signal output out;
@@ -43,13 +45,7 @@ template CreateTimeLock() {
     signal vk;
     vk <== pkX;
 
-    // 1. Check ownership: sk -> pk -> compare with (pkX, pkY)
-    component ownership = ProofOfOwnershipStrict();
-    ownership.pk[0] <== pkX;
-    ownership.pk[1] <== pkY;
-    ownership.sk <== sk;
-
-    // 2. Compute time-lock note hash and verify
+    // Compute time-lock note hash and verify
     component hash = PoseidonTimeLockNote();
     hash.pkX <== pkX;
     hash.pkY <== pkY;

@@ -149,11 +149,10 @@ describe('Time Lock Circuits', function() {
                 tokenType: tokenType,
                 unlockTime: unlockTime,
 
-                // Private inputs
+                // Private inputs (no sk needed - ownership verified at spend time)
                 pkX: pkX,
                 pkY: pkY,
-                salt: noteSalt,
-                sk: sk.toString()
+                salt: noteSalt
             };
 
             const { proof, publicSignals } = await generateProof('create_timelock', inputs);
@@ -170,31 +169,35 @@ describe('Time Lock Circuits', function() {
             expect(isValid).to.be.true;
         });
 
-        it('should reject invalid ownership', async function() {
+        it('should allow creating note for different recipient', async function() {
             if (!createTimeLockFilesExist) {
                 this.skip();
             }
 
-            // Generate a different secret key
-            const wrongSk = await circomlibBabyJub.randomSecretKey();
+            // Generate a different recipient key pair
+            const recipientSk = await circomlibBabyJub.randomSecretKey();
+            const recipientPk = await circomlibBabyJub.getPublicKey(recipientSk);
+            const recipientPkX = recipientPk.x.toString();
+            const recipientPkY = recipientPk.y.toString();
+
+            // Compute note hash for recipient
+            const recipientNoteHash = computeTimeLockNoteHash(
+                recipientPkX, recipientPkY, noteValue, tokenType, noteSalt, unlockTime, '0', recipientPkX
+            );
 
             const inputs = {
-                noteHash: timeLockNoteHash,
+                noteHash: recipientNoteHash,
                 value: noteValue,
                 tokenType: tokenType,
                 unlockTime: unlockTime,
-                pkX: pkX,
-                pkY: pkY,
-                salt: noteSalt,
-                sk: wrongSk.toString() // Wrong secret key
+                pkX: recipientPkX,
+                pkY: recipientPkY,
+                salt: noteSalt
             };
 
-            try {
-                await generateProof('create_timelock', inputs);
-                expect.fail('Should have thrown an error');
-            } catch (error) {
-                expect(error.message).to.include('Assert Failed');
-            }
+            const { proof, publicSignals } = await generateProof('create_timelock', inputs);
+            const isValid = await verifyProof('create_timelock', proof, publicSignals);
+            expect(isValid).to.be.true;
         });
 
         it('should reject wrong note hash', async function() {
@@ -214,8 +217,7 @@ describe('Time Lock Circuits', function() {
                 unlockTime: unlockTime,
                 pkX: pkX,
                 pkY: pkY,
-                salt: noteSalt,
-                sk: sk.toString()
+                salt: noteSalt
             };
 
             try {

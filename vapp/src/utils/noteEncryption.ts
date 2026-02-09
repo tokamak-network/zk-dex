@@ -31,16 +31,31 @@ export interface LegacyEncodedNoteData {
  *   Returns '0x00' for falsy or zero values.
  */
 function toHexString(value: string | bigint | number | undefined | null): string {
-  if (value === undefined || value === null || value === '' || value === '0') return '0x00'
+  // Handle falsy values and explicit zeros
+  if (value === undefined || value === null || value === '' || value === '0' || value === 0 || value === 0n) {
+    return '0x00'
+  }
+
+  // Handle '0x', '0x0', '0x00' etc
+  if (typeof value === 'string' && value.startsWith('0x')) {
+    const cleanHex = value.slice(2)
+    if (cleanHex === '' || cleanHex === '0' || cleanHex === '00' || BigInt('0x' + (cleanHex || '0')) === 0n) {
+      return '0x00'
+    }
+  }
 
   let hex: string
 
   if (typeof value === 'bigint' || typeof value === 'number') {
-    hex = BigInt(value).toString(16)
+    const bigVal = BigInt(value)
+    if (bigVal === 0n) return '0x00'
+    hex = bigVal.toString(16)
   } else if (value.startsWith('0x')) {
     hex = value.slice(2)
   } else if (/^[0-9]+$/.test(value)) {
-    hex = BigInt(value).toString(16)
+    const bigVal = BigInt(value)
+    if (bigVal === 0n) return '0x00'
+    hex = bigVal.toString(16)
   } else {
     hex = value
   }

@@ -164,10 +164,26 @@ export const useNoteStore = defineStore('note', () => {
         return
       }
 
-      // Get NoteStateChange events
+      // Get NoteStateChange events from DEX contract
       const filter = contractStore.dexContract.filters.NoteStateChange()
-      const events = await contractStore.dexContract.queryFilter(filter, 0, 'latest')
-      logger.log(`Found ${events.length} NoteStateChange events`)
+      const dexEvents = await contractStore.dexContract.queryFilter(filter, 0, 'latest')
+      logger.log(`Found ${dexEvents.length} NoteStateChange events from DEX`)
+
+      // Also get NoteStateChange events from TimeLock contract (if available)
+      let timeLockEvents: import('ethers').EventLog[] = []
+      if (contractStore.timeLockContract) {
+        try {
+          const tlFilter = contractStore.timeLockContract.filters.NoteStateChange()
+          timeLockEvents = await contractStore.timeLockContract.queryFilter(tlFilter, 0, 'latest') as import('ethers').EventLog[]
+          logger.log(`Found ${timeLockEvents.length} NoteStateChange events from TimeLock`)
+        } catch (err) {
+          logger.warn('Failed to query TimeLock events:', err)
+        }
+      }
+
+      // Merge events from both contracts
+      const events = [...dexEvents, ...timeLockEvents]
+      logger.log(`Total ${events.length} NoteStateChange events`)
 
       // Track note states and data
       const noteStates = new Map<string, number>()
@@ -238,8 +254,17 @@ export const useNoteStore = defineStore('note', () => {
       // For each note, try to get encrypted data and decode
       for (const [noteHash, state] of noteStates) {
         try {
-          // Get encrypted note data from contract
-          const encryptedData = await contractStore.dexContract!.encryptedNotes(noteHash)
+          // Get encrypted note data from contract (try DEX first, then TimeLock)
+          let encryptedData = await contractStore.dexContract!.encryptedNotes(noteHash)
+
+          // If not found in DEX, try TimeLock contract
+          if ((!encryptedData || encryptedData === '0x') && contractStore.timeLockContract) {
+            try {
+              encryptedData = await contractStore.timeLockContract.encryptedNotes(noteHash)
+            } catch {
+              // TimeLock contract might not have this note
+            }
+          }
 
           if (!encryptedData || encryptedData === '0x') {
             continue

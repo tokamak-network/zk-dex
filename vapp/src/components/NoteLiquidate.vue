@@ -220,7 +220,20 @@ async function generateBurnProof(): Promise<FormattedProof> {
     logger.error('[NoteLiquidate] HASH MISMATCH!')
     logger.error('[NoteLiquidate] Expected (hex):', '0x' + expectedHashBigInt.toString(16))
     logger.error('[NoteLiquidate] Computed (hex):', '0x' + computedHashBigInt.toString(16))
-    throw new Error('Note hash mismatch! The note data (pkX, pkY, salt) does not match the on-chain note.')
+    logger.error('[NoteLiquidate] Note data used for hash:')
+    logger.error('[NoteLiquidate]   pkX:', noteData.pkX)
+    logger.error('[NoteLiquidate]   pkY:', noteData.pkY)
+    logger.error('[NoteLiquidate]   value:', noteData.value)
+    logger.error('[NoteLiquidate]   token:', noteData.token)
+    logger.error('[NoteLiquidate]   salt:', noteData.salt)
+    logger.error('[NoteLiquidate] Raw selectedNote data:')
+    logger.error('[NoteLiquidate]   hash:', selectedNote.value.hash)
+    logger.error('[NoteLiquidate]   pkX:', selectedNote.value.pkX)
+    logger.error('[NoteLiquidate]   pkY:', selectedNote.value.pkY)
+    logger.error('[NoteLiquidate]   value:', selectedNote.value.value)
+    logger.error('[NoteLiquidate]   token:', selectedNote.value.token)
+    logger.error('[NoteLiquidate]   salt:', selectedNote.value.salt)
+    throw new Error('Note hash mismatch! The note data (pkX, pkY, salt) does not match the on-chain note. Check console for details.')
   }
   logger.log('[NoteLiquidate] Hash verification PASSED')
 
@@ -275,8 +288,24 @@ async function liquidateNote() {
     if (!selectedNote.value.hash.startsWith('0x')) {
       hashForQuery = '0x' + BigInt(selectedNote.value.hash).toString(16).padStart(64, '0')
     }
-    const onChainState = await contractStore.dexContract!.notes(hashForQuery)
+
+    // Check both ZkDex and TimeLock contracts for the note
+    let onChainState = await contractStore.dexContract!.notes(hashForQuery)
+    let useTimeLockContract = false
+
+    // If note is invalid in ZkDex, check TimeLock contract
+    if (Number(onChainState) === 0 && contractStore.timeLockContract) {
+      logger.log('[NoteLiquidate] Note not found in ZkDex, checking TimeLock contract...')
+      const timeLockState = await contractStore.timeLockContract.notes(hashForQuery)
+      if (Number(timeLockState) === 1) {
+        logger.log('[NoteLiquidate] Note found in TimeLock contract')
+        onChainState = timeLockState
+        useTimeLockContract = true
+      }
+    }
+
     logger.log('[NoteLiquidate] On-chain note state:', onChainState.toString())
+    logger.log('[NoteLiquidate] Using TimeLock contract:', useTimeLockContract)
     logger.log('[NoteLiquidate] Frontend note state:', selectedNote.value.state)
 
     // State enum: 0=Invalid, 1=Valid, 2=Trading, 3=Spent
@@ -332,9 +361,16 @@ async function liquidateNote() {
     logger.log('  c:', cBigInt)
     logger.log('  input:', inputBigInt)
 
+    // Select the appropriate contract based on where the note exists
+    const liquidateContract = useTimeLockContract
+      ? contractStore.timeLockContract!
+      : contractStore.dexContract!
+
+    logger.log('[NoteLiquidate] Using contract for liquidate:', useTimeLockContract ? 'TimeLock' : 'ZkDex')
+
     // Try to estimate gas first to catch errors early
     try {
-      const gasEstimate = await contractStore.dexContract!.liquidate.estimateGas(
+      const gasEstimate = await liquidateContract.liquidate.estimateGas(
         recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
       )
       logger.log('[NoteLiquidate] Gas estimate:', gasEstimate.toString())
@@ -342,7 +378,7 @@ async function liquidateNote() {
       logger.error('[NoteLiquidate] Gas estimation failed:', gasErr)
       // Try to get more details by calling staticCall
       try {
-        await contractStore.dexContract!.liquidate.staticCall(
+        await liquidateContract.liquidate.staticCall(
           recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
         )
       } catch (staticErr) {
@@ -351,7 +387,7 @@ async function liquidateNote() {
       throw gasErr
     }
 
-    const tx = await contractStore.dexContract!.liquidate(
+    const tx = await liquidateContract.liquidate(
       recipientAddress, aBigInt, bBigInt, cBigInt, inputBigInt
     )
 
@@ -360,10 +396,19 @@ async function liquidateNote() {
     logger.log('Transaction receipt:', receipt)
 
     if (receipt.status === 1) {
-      // Update note state to spent
-      await api.updateNoteState(noteOwner.value, noteHash.value, '0x3')
+      // Try to update note state via API (optional - server may not be running)
+      try {
+        await api.updateNoteState(noteOwner.value, noteHash.value, '0x3')
+      } catch (apiErr) {
+        logger.warn('[NoteLiquidate] API update failed (server may not be running):', apiErr)
+        // Continue anyway - on-chain transaction succeeded
+      }
       // Re-fetch from blockchain and update localStorage (important for state sync)
-      await noteStore.fetchAllNoteEvents()
+      try {
+        await noteStore.fetchAllNoteEvents()
+      } catch (fetchErr) {
+        logger.warn('[NoteLiquidate] Failed to refresh notes:', fetchErr)
+      }
       await updateDaiAmount()
       alert('Redemption successful!')
       emit('complete')

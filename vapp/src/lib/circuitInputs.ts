@@ -83,13 +83,27 @@ export async function getEmptyNoteHash(): Promise<string> {
  * @param value - The value to convert (hex string, decimal string, number, or bigint)
  * @returns The value as a BigInt
  */
-export function hexToBigInt(value: string | bigint | number): bigint {
+export function hexToBigInt(value: string | bigint | number | undefined | null): bigint {
+  // Handle null/undefined/empty
+  if (value === undefined || value === null || value === '') return 0n
+
   if (typeof value === 'bigint') return value
   if (typeof value === 'number') return BigInt(value)
+
+  // Handle '0x' (empty hex) or '0x0' or '0x00' etc
+  if (value === '0x' || value === '0x0' || value === '0x00') return 0n
+
   const cleanHex = value.startsWith('0x') ? value.slice(2) : value
+
+  // Handle empty string after removing 0x prefix
+  if (cleanHex === '' || cleanHex === '0' || cleanHex === '00') return 0n
+
+  // Decimal string (no 0x prefix and all digits)
   if (/^[0-9]+$/.test(cleanHex) && !value.startsWith('0x')) {
     return BigInt(value)
   }
+
+  // Hex string
   return BigInt('0x' + cleanHex)
 }
 

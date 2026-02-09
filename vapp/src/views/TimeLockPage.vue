@@ -101,18 +101,18 @@
 
           <!-- Value -->
           <div class="field">
-            <label class="label">Value (in wei/smallest unit)</label>
+            <label class="label">Value ({{ createForm.tokenType === '0' ? 'ETH' : 'DAI' }})</label>
             <div class="control">
               <input
                 v-model="createForm.value"
                 class="input"
                 type="text"
-                placeholder="e.g., 1000000000000000000 for 1 ETH"
+                placeholder="e.g., 0.1"
                 required
               >
             </div>
             <p class="help">
-              {{ formatValue(createForm.value, createForm.tokenType) }}
+              {{ createForm.value ? `${createForm.value} ${createForm.tokenType === '0' ? 'ETH' : 'DAI'}` : '' }}
             </p>
           </div>
 
@@ -458,13 +458,22 @@ async function handleCreateTimeLock() {
     recipientPkY = currentAccount.value.publicKey.y
   }
 
+  // Convert ETH/DAI to Wei
+  let valueInWei: string
+  try {
+    valueInWei = ethers.parseUnits(createForm.value.value, 18).toString()
+  } catch {
+    alert('Invalid value format. Please enter a valid number.')
+    return
+  }
+
   try {
     await timeLockStore.createTimeLock({
       note: {} as any, // Not needed for direct deposit
       recipientPkX,
       recipientPkY,
       unlockTime,
-      value: createForm.value.value,
+      value: valueInWei,
       tokenType: createForm.value.tokenType
     })
 

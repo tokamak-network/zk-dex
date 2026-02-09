@@ -167,6 +167,19 @@ export const useTimeLockStore = defineStore('timelock', () => {
       throw new Error('TimeLock contract not initialized')
     }
 
+    // Get blockchain time and validate/adjust unlockTime
+    const blockTimestamp = await web3Store.getBlockTimestamp()
+    let unlockTime = params.unlockTime
+
+    // Ensure unlockTime is at least 60 seconds in the future relative to block.timestamp
+    const minUnlockTime = blockTimestamp + 60
+    if (unlockTime <= blockTimestamp) {
+      logger.warn(`[TimeLock] unlockTime (${unlockTime}) is not in future relative to block.timestamp (${blockTimestamp}). Adjusting to ${minUnlockTime}`)
+      unlockTime = minUnlockTime
+    }
+
+    logger.log(`[TimeLock] Block timestamp: ${blockTimestamp}, Unlock time: ${unlockTime}`)
+
     isCreating.value = true
     logger.log('[TimeLock] Creating time-lock note...')
 
@@ -182,7 +195,7 @@ export const useTimeLockStore = defineStore('timelock', () => {
         value: params.value,
         tokenType: params.tokenType,
         salt,
-        unlockTime: params.unlockTime.toString(),
+        unlockTime: unlockTime.toString(),
         lockType: '0',
         vk: params.recipientPkX
       })
@@ -190,15 +203,15 @@ export const useTimeLockStore = defineStore('timelock', () => {
       logger.log('[TimeLock] Note hash:', noteHash.slice(0, 20) + '...')
 
       // Generate proof
+      // Note: sk is not needed for create_timelock - ownership is verified at spend time
       const circuitInputs = {
         noteHash,
         value: params.value,
         tokenType: params.tokenType,
-        unlockTime: params.unlockTime.toString(),
+        unlockTime: unlockTime.toString(),
         pkX: params.recipientPkX,
         pkY: params.recipientPkY,
-        salt,
-        sk: account.secretKey
+        salt
       }
 
       const { proof, publicSignals } = await proofGenerator.generateProof(
@@ -272,9 +285,12 @@ export const useTimeLockStore = defineStore('timelock', () => {
 
     const { timeLockNote } = params
 
+    // Get current time from blockchain (more reliable than Date.now())
+    const blockTimestamp = await web3Store.getBlockTimestamp()
+    logger.log(`[TimeLock] Block timestamp: ${blockTimestamp}, Unlock time: ${timeLockNote.unlockTime}`)
+
     // Verify note is unlocked
-    const now = Math.floor(Date.now() / 1000)
-    if (timeLockNote.unlockTime > now) {
+    if (timeLockNote.unlockTime > blockTimestamp) {
       throw new Error('Note is still locked')
     }
 
@@ -301,7 +317,7 @@ export const useTimeLockStore = defineStore('timelock', () => {
       const circuitInputs = {
         noteHash: timeLockNote.hash,
         outputHash,
-        currentTime: now.toString(),
+        currentTime: blockTimestamp.toString(),
         tokenType: timeLockNote.token === '0x0' ? '0' : '1',
         pkX: timeLockNote.pkX,
         pkY: timeLockNote.pkY,
@@ -322,13 +338,23 @@ export const useTimeLockStore = defineStore('timelock', () => {
       logger.log('[TimeLock] Proof generated')
 
       // Encrypt output note data
-      const encryptedNote = await encodeNoteData({
+      // IMPORTANT: Store values in same format as used for hash computation
+      const outputNoteData = {
         pkX: params.recipientPkX,
         pkY: params.recipientPkY,
         value: timeLockNote.value,
         token: timeLockNote.token === '0x0' ? '0' : '1',
         salt: outSalt
-      }, { x: params.recipientPkX, y: params.recipientPkY })
+      }
+      logger.log('[TimeLock] Output note data being saved:', {
+        pkX: outputNoteData.pkX,
+        pkY: outputNoteData.pkY,
+        value: outputNoteData.value,
+        token: outputNoteData.token,
+        salt: outputNoteData.salt,
+        outputHash
+      })
+      const encryptedNote = await encodeNoteData(outputNoteData, { x: params.recipientPkX, y: params.recipientPkY })
 
       // Prepare contract call
       const input = [

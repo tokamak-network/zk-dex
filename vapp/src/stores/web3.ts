@@ -94,6 +94,22 @@ export const useWeb3Store = defineStore('web3', () => {
     }
   }
 
+  /**
+   * Gets the current block timestamp from the blockchain.
+   * This is more reliable than Date.now() for time-sensitive operations.
+   * @returns The current block timestamp in seconds
+   */
+  async function getBlockTimestamp(): Promise<number> {
+    if (!provider.value) {
+      throw new Error('Provider not connected')
+    }
+    const block = await provider.value.getBlock('latest')
+    if (!block) {
+      throw new Error('Failed to get latest block')
+    }
+    return block.timestamp
+  }
+
   return {
     isListening,
     provider,
@@ -105,7 +121,8 @@ export const useWeb3Store = defineStore('web3', () => {
     isConnected,
     connect,
     disconnect,
-    updateBalance
+    updateBalance,
+    getBlockTimestamp
   }
 })
 

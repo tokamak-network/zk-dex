@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ICreateTimeLockVerifier, ISpendTimeLockVerifier} from "./verifiers/IGroth16Verifier.sol";
+import {ICreateTimeLockVerifier, ISpendTimeLockVerifier, IMintNBurnNoteVerifier} from "./verifiers/IGroth16Verifier.sol";
 import "./ZkDaiBase.sol";
 
 /**
@@ -19,6 +19,7 @@ import "./ZkDaiBase.sol";
 contract TimeLock is ZkDaiBase {
     ICreateTimeLockVerifier public createTimeLockVerifier;
     ISpendTimeLockVerifier public spendTimeLockVerifier;
+    IMintNBurnNoteVerifier public liquidateNoteVerifier;
 
     // Time-lock note tracking
     // Note: The unlock time is stored privately in the note hash itself,
@@ -45,16 +46,19 @@ contract TimeLock is ZkDaiBase {
      * @param _requestVerifier The verifier for mint/burn note proofs (for ZkDaiBase)
      * @param _createTimeLockVerifier The verifier for create time-lock proofs
      * @param _spendTimeLockVerifier The verifier for spend time-lock proofs
+     * @param _liquidateNoteVerifier The verifier for liquidate note proofs
      */
     constructor(
         bool _development,
         address _dai,
         IMintNBurnNoteVerifier _requestVerifier,
         ICreateTimeLockVerifier _createTimeLockVerifier,
-        ISpendTimeLockVerifier _spendTimeLockVerifier
+        ISpendTimeLockVerifier _spendTimeLockVerifier,
+        IMintNBurnNoteVerifier _liquidateNoteVerifier
     ) ZkDaiBase(_development, _dai, _requestVerifier) {
         createTimeLockVerifier = _createTimeLockVerifier;
         spendTimeLockVerifier = _spendTimeLockVerifier;
+        liquidateNoteVerifier = _liquidateNoteVerifier;
     }
 
     /**
@@ -185,5 +189,51 @@ contract TimeLock is ZkDaiBase {
      */
     function isTimeLocked(bytes32 noteHash) external view returns (bool) {
         return isTimeLockNote[noteHash];
+    }
+
+    /**
+     * @dev Liquidate a note to transfer the equivalent amount of ETH/DAI to the recipient.
+     *      This allows spending regular notes that were created from time-lock notes.
+     *
+     *      Proof public inputs: [output, noteHash, value, tokenType]
+     *
+     * @param to Recipient of the tokens
+     * @param a Groth16 proof component a
+     * @param b Groth16 proof component b
+     * @param c Groth16 proof component c
+     * @param input Public inputs [output, noteHash, value, tokenType]
+     */
+    function liquidate(
+        address payable to,
+        uint256[2] calldata a,
+        uint256[2][2] calldata b,
+        uint256[2] calldata c,
+        uint256[4] calldata input
+    ) external {
+        // Verify the proof
+        require(
+            development || liquidateNoteVerifier.verifyProof(a, b, c, input),
+            "TimeLock: Invalid liquidate proof"
+        );
+
+        bytes32 noteHash = bytes32(input[1]);
+        uint256 value = input[2];
+        uint256 tokenType = input[3];
+
+        // Validate note is valid
+        require(notes[noteHash] == State.Valid, "TimeLock: Note is not valid");
+
+        // Mark note as spent
+        notes[noteHash] = State.Spent;
+        emit NoteStateChange(noteHash, State.Spent);
+
+        // Transfer tokens to recipient
+        if (tokenType == ETH_TOKEN_TYPE) {
+            to.transfer(value);
+        } else if (tokenType == DAI_TOKEN_TYPE) {
+            require(dai.transfer(to, value), "TimeLock: DAI transfer failed");
+        } else {
+            revert("TimeLock: Invalid token type");
+        }
     }
 }
